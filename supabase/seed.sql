@@ -1,0 +1,3 @@
+-- Phase 0 intentionally has no seed data.
+-- Phase 1A will add fictional roster fixtures only; never use real TFH members
+-- in automated tests.

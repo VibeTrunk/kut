@@ -49,3 +49,23 @@ product name shown to users is KUT.
   added to `VibeTrunk/home/src/data/tools.ts` — offer that edit once there's
   something more concrete to link to (per the `vibetrunk-new-tool` skill,
   step 6).
+
+## ADR-001 — Phase 0 local development foundation
+
+Date: 2026-08-16
+
+Status: Accepted
+
+Decision: KUT uses a Next.js App Router application with strict TypeScript,
+Tailwind CSS, ESLint, Vitest, Playwright, and a project-scoped Supabase CLI.
+Local Supabase is initialized with a version-controlled `kut` schema
+migration and pgTAP test. The initial page is intentionally only a public
+foundation page; no private TFH data is present.
+
+Reason: This directly follows the canonical Phase 0 acceptance criteria and
+lets every later schema/RLS/economy change be tested locally without touching
+the shared hosted Supabase project.
+
+Consequences: Docker Desktop is required for database tests. `verify:fast`
+does not require Docker; `verify:full` does. Production linking, Vercel, and
+the real Supabase project reference remain deliberately deferred.

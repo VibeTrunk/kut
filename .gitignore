@@ -15,6 +15,12 @@ service-account*.json
 
 # dependencies
 node_modules/
+.next/
+out/
+coverage/
+playwright-report/
+test-results/
+*.tsbuildinfo
 
 # logs
 npm-debug.log*

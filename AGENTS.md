@@ -16,3 +16,13 @@ Do not duplicate that guidance here: keeping a single canonical project descript
 - Normal `git push`, `npm run *`, and `gh ...` commands are allowed by the repository command rules. Never force-push.
 - Treat any push or deployment as an external side effect: only do it when the user's request authorizes it, and never run a `vercel deploy`/`vercel --prod` unless explicitly asked.
 - This same pattern (`.claude/`, `.codex/`, `AGENTS.md`, gitleaks CI) is the template for every VibeTrunk-org repo — copy it into new tool repos and adapt only the stack-specific command lists.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+  "permissions": {
+    "allow": [
+      "Bash(git status)",
+      "Bash(git status *)",
+      "Bash(git diff)",
+      "Bash(git diff *)",
+      "Bash(git log)",
+      "Bash(git log *)",
+      "Bash(git show *)",
+      "Bash(git branch)",
+      "Bash(git branch *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push)",
+      "Bash(git push origin main)",
+      "Bash(npm install)",
+      "Bash(npm run *)",
+      "Bash(npx supabase migration list*)",
+      "Bash(npx supabase db push --dry-run*)",
+      "Bash(npx supabase functions deploy *)",
+      "Bash(gh pr view *)",
+      "Bash(gh pr list*)",
+      "Bash(gh run list*)",
+      "Bash(gh run view *)",
+      "Bash(ls)",
+      "Bash(ls *)",
+      "Bash(cat *)",
+      "PowerShell(git status)",
+      "PowerShell(git status *)",
+      "PowerShell(git diff)",
+      "PowerShell(git diff *)",
+      "PowerShell(git log)",
+      "PowerShell(git log *)",
+      "PowerShell(git show *)",
+      "PowerShell(git branch)",
+      "PowerShell(git branch *)",
+      "PowerShell(npm install)",
+      "PowerShell(npm run *)",
+      "PowerShell(npx supabase migration list*)",
+      "PowerShell(npx supabase db push --dry-run*)",
+      "PowerShell(npx supabase functions deploy *)",
+      "PowerShell(ls)",
+      "PowerShell(ls *)",
+      "PowerShell(cat *)",
+
+      "Read",
+      "Glob",
+      "Grep"
+    ],
+    "deny": [
+      "Bash(git push --force*)",
+      "Bash(git push -f *)",
+      "Bash(git push *--delete*)",
+      "Bash(git reset --hard*)",
+      "Bash(git clean -f*)",
+      "Bash(git branch -D *)",
+      "Bash(rm -rf *)",
+      "Bash(rm -r -f *)",
+      "Bash(sudo *)",
+      "Bash(npx supabase db push)",
+      "Bash(npx supabase db reset*)",
+      "Bash(npx supabase secrets set*)",
+      "PowerShell(git push --force*)",
+      "PowerShell(git push -f *)",
+      "PowerShell(git reset --hard*)",
+      "PowerShell(Remove-Item * -Recurse -Force*)",
+      "PowerShell(Remove-Item * -Force -Recurse*)",
+      "PowerShell(sudo *)",
+      "PowerShell(npx supabase db push)",
+      "PowerShell(npx supabase db reset*)",
+      "PowerShell(npx supabase secrets set*)"
+    ]
+  },
+
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|PowerShell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": [".claude/hooks/block-dangerous-commands.cjs"],
+            "timeout": 10,
+            "statusMessage": "Safety check"
+          },
+          {
+            "type": "command",
+            "command": "node",
+            "args": [".claude/hooks/block-young-packages.cjs"],
+            "timeout": 15,
+            "statusMessage": "Package age check"
+          }
+        ]
+      }
+    ]
+  }
+}

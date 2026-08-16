@@ -1,0 +1,35 @@
+# Secrets — NEVER commit these. This repo is public; a leaked token is live.
+.env*
+!.env.example
+
+# Defense-in-depth for future Supabase/service-account key files
+*.pem
+*.key
+*.pfx
+*.p12
+credentials.json
+service-account*.json
+
+# Machine-specific Claude Code settings (yours only, not shared with the repo)
+.claude/settings.local.json
+
+# dependencies
+node_modules/
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# macOS-specific files
+.DS_Store
+
+# jetbrains setting folder
+.idea/
+
+# Vercel CLI link artifacts — machine-specific project linkage, not portable between clones
+.vercel
+
+# Supabase CLI local state — only relevant if this repo has a supabase/ dir
+supabase/.temp

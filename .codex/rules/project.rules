@@ -1,0 +1,174 @@
+# Mirror the routine command permissions in .claude/settings.json.
+
+prefix_rule(
+    pattern = ["git", "status"],
+    decision = "allow",
+    justification = "Inspecting working tree state is routine and read-only.",
+    match = [
+        "git status",
+        "git status --short",
+    ],
+)
+
+prefix_rule(
+    pattern = ["git", "diff"],
+    decision = "allow",
+    justification = "Reviewing diffs is routine and read-only.",
+    match = [
+        "git diff",
+        "git diff --stat",
+    ],
+)
+
+prefix_rule(
+    pattern = ["git", "log"],
+    decision = "allow",
+    justification = "Reviewing commit history is routine and read-only.",
+    match = [
+        "git log",
+        "git log --oneline -10",
+    ],
+)
+
+prefix_rule(
+    pattern = ["git", "show"],
+    decision = "allow",
+    justification = "Inspecting a specific commit is routine and read-only.",
+    match = [
+        "git show HEAD",
+    ],
+)
+
+prefix_rule(
+    pattern = ["git", "branch"],
+    decision = "allow",
+    justification = "Listing or inspecting branches is routine and read-only.",
+    match = [
+        "git branch",
+        "git branch --show-current",
+    ],
+)
+
+prefix_rule(
+    pattern = ["git", "add"],
+    decision = "allow",
+    justification = "Staging files is routine and reversible (git restore --staged undoes it).",
+    match = [
+        "git add .",
+    ],
+)
+
+prefix_rule(
+    pattern = ["git", "commit"],
+    decision = "allow",
+    justification = "Local commits are routine and reversible; only a push publishes them.",
+    match = [
+        "git commit -m \"Fix typo\"",
+    ],
+)
+
+prefix_rule(
+    pattern = ["git", "push"],
+    decision = "allow",
+    justification = "Normal pushes are allowed; the repository hook separately blocks force pushes and remote-branch deletion.",
+    match = [
+        "git push",
+        "git push origin main",
+    ],
+)
+
+prefix_rule(
+    pattern = ["npm", "install"],
+    decision = "allow",
+    justification = "Installing declared dependencies is routine and reversible (node_modules is disposable and gitignored).",
+    match = [
+        "npm install",
+    ],
+)
+
+prefix_rule(
+    pattern = ["npm", "run"],
+    decision = "allow",
+    justification = "Project scripts (build, dev, test, lint) only read source and write to gitignored build output.",
+    match = [
+        "npm run build",
+        "npm run dev",
+    ],
+)
+
+prefix_rule(
+    pattern = ["ls"],
+    decision = "allow",
+    justification = "Listing directory contents is routine and read-only.",
+    match = [
+        "ls",
+        "ls src",
+    ],
+)
+
+prefix_rule(
+    pattern = ["cat"],
+    decision = "allow",
+    justification = "Reading a file's contents is routine and read-only.",
+    match = [
+        "cat package.json",
+    ],
+)
+
+prefix_rule(
+    pattern = ["gh", "run"],
+    decision = "allow",
+    justification = "Inspecting GitHub Actions runs is routine for this repository.",
+    match = [
+        "gh run list",
+        "gh run view 123456789",
+    ],
+)
+
+prefix_rule(
+    pattern = ["gh", "pr"],
+    decision = "allow",
+    justification = "Inspecting pull requests is routine and read-only.",
+    match = [
+        "gh pr list",
+        "gh pr view 1",
+    ],
+)
+
+# --- Supabase addon -----------------------------------------------------
+# KUT talks to the shared VibeTrunk Supabase project (schema `kut`). Read-only
+# /dry-run Supabase CLI commands are auto-allowed; anything that mutates the
+# live schema or rotates live credentials for the ONE Supabase project every
+# VibeTrunk tool shares stays off the allow-list and gets a deliberate look
+# each time. Copied from VibeTrunk/cogitster's .codex/rules/project.rules.
+
+prefix_rule(
+    pattern = ["npx", "supabase", "migration", "list"],
+    decision = "allow",
+    justification = "Listing applied migrations is routine and read-only.",
+    match = [
+        "npx supabase migration list",
+    ],
+)
+
+prefix_rule(
+    pattern = ["npx", "supabase", "db", "push", "--dry-run"],
+    decision = "allow",
+    justification = "A dry run only prints the plan; it never touches the database.",
+    match = [
+        "npx supabase db push --dry-run",
+    ],
+)
+
+prefix_rule(
+    pattern = ["npx", "supabase", "functions", "deploy"],
+    decision = "allow",
+    justification = "Redeploying an Edge Function is routine and reversible (redeploy again to roll back).",
+    match = [
+        "npx supabase functions deploy <function-name>",
+    ],
+)
+
+# Deliberately NOT allow-listed: `supabase db push` (real), `supabase db
+# reset`, `supabase secrets set` — matching deny entries are in
+# .claude/settings.json's "deny" list, matching cogitster's pattern.

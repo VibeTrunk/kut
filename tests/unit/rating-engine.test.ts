@@ -98,4 +98,13 @@ describe("rating engine invariants", () => {
       previous = current;
     }
   });
+
+  it("uses the documented Live discard examples", () => {
+    expect(calculateLiveDiscardValue(30)).toBe(10);
+    expect(calculateLiveDiscardValue(40)).toBe(22);
+    expect(calculateLiveDiscardValue(50)).toBe(47);
+    expect(calculateLiveDiscardValue(60)).toBe(101);
+    expect(calculateLiveDiscardValue(70)).toBe(217);
+    expect(calculateLiveDiscardValue(80)).toBe(469);
+  });
 });

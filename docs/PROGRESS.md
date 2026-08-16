@@ -89,3 +89,462 @@ Additional migration: `20260816020000_publish_and_rebuild_sessions.sql`.
 The next required slice is SSR email/password sign-in for manually provisioned
 local admins, followed by wiring this form to those server-authoritative
 operations. Invite claim onboarding remains later work.
+
+## Secure admin publishing update â€” 2026-08-16
+
+The attendance flow is now a real, protected local workflow. Supabase SSR
+cookie clients and the Next.js proxy refresh sessions; `/admin/attendance`
+requires both a verified Supabase claim and an enabled `admin` or `superadmin`
+profile. Public registration is disabled in local Supabase configuration and
+the UI exposes sign-in only.
+
+An admin selects the date, session type, attendees, and optional goals, then
+submits a Next.js server action. The action verifies the admin again, finds the
+active season, and calls `kut.publish_attendance_session`. That database
+function validates input, creates the draft session and attendance rows,
+publishes it, and rebuilds season state in one transaction. The browser never
+writes roster, sessions, attendance, or ratings directly.
+
+Additional migration: `20260816030000_publish_attendance_session.sql`.
+
+Tests passing:
+
+- `npm run verify:fast` (13 unit tests)
+- `npm run test:db` (11 pgTAP tests)
+- `npm run test:e2e` (unauthenticated admin route redirect)
+- `npm run build`
+- one local browser smoke flow: fictional admin sign-in, attendance publish,
+  and rebuild confirmation
+
+Manual setup: create a local user in Supabase Studio and give it an enabled
+`kut.profiles` admin role; exact SQL is in `README.md`. Hosted Supabase and
+Vercel remain deliberately untouched. Before production use, create the admin
+profile through a controlled provisioner and apply the equivalent hosted Auth
+setting that disables public registration.
+
+Next recommended task: add the reusable Live Card visual system, then invite
+claim onboarding. Do not start wallets, packs, or market operations yet.
+
+## Live Ratings update â€” 2026-08-16
+
+The homepage now renders the current active-season ratings from the local
+database rather than hard-coded demo data. A published attendance session
+therefore updates the visible OVR, attributes, and rarity after the existing
+rebuild and root-page revalidation.
+
+The page reads the narrow `kut.public_live_ratings` view. It exposes only
+public in-game card fields: chosen display name, archetype, OVR, attributes,
+and rarity. It does not expose profiles, email addresses, attendance history,
+photos, admin notes, or hidden activity/form scores. Anonymous users retain no
+direct table access; their read permission is limited to this view.
+
+Additional migration: `20260816040000_public_live_ratings_view.sql`.
+
+Tests passing:
+
+- `npm run verify:fast`
+- `npm run test:db` (13 pgTAP tests)
+- `npm run test:e2e` (2 Chromium tests)
+- `npm run build`
+
+Next recommended task: extract the rating tile into a reusable Live Card
+component and add the six rarity treatments. Invite claim onboarding remains
+the next authentication milestone.
+
+## Live Card visual-system update â€” 2026-08-16
+
+`src/components/live-card.tsx` is now the reusable Live Card component used by
+the ratings page. It has a CSS-rendered layered frame, portrait/initials
+fallback, compact six-stat grid, OVR, display name, archetype, and a textual
+rarity label. All six tiers have distinct frame treatments: Common, Bronze,
+Silver, Gold, Holo, and Elite.
+
+Holo and Elite use a subtle CSS shine; `prefers-reduced-motion` disables that
+animation. Rarity is also written as text, so no card meaning depends on color
+or hover. The `detail` size is available for future player and collection
+pages without changing the rating data model.
+
+Tests passing:
+
+- `npm run verify:fast` (13 unit tests)
+- manual mobile browser visual check of published local player data
+
+Next recommended task: invite claim onboarding. The visual component is ready
+to be reused in collection, pack, and market interfaces later.
+
+## Invite-only onboarding update â€” 2026-08-16
+
+Admins can now create a one-time invitation at `/admin/invites` for an active
+Player without an existing linked account. A cryptographically random token is
+shown as a shareable link exactly once; only its SHA-256 hash is stored in
+`kut.invitations`, which records creation, expiry, and consumption.
+
+Recipients open `/invite/<token>` and submit an email/password. A server
+action validates input, creates the Auth user using the server-only service
+role, calls the service-role-only `kut.claim_invitation` function, links the
+new profile to the invited Player, and permanently consumes the invite. If the
+claim fails, the newly created Auth user is removed. Public self-registration
+remains unavailable.
+
+Additional migrations:
+
+- `20260816050000_invite_onboarding.sql`
+- `20260816050100_preserve_consumed_invite_audit.sql`
+
+Tests passing:
+
+- `npm run verify:fast` (15 unit tests)
+- `npm run test:db` (20 pgTAP tests)
+- `npm run test:e2e` (3 Chromium tests)
+- local browser smoke flow: create invite, claim it, and sign in as the new
+  normal user
+
+Manual setup: local/hosted server environments need `SUPABASE_SERVICE_ROLE_KEY`.
+No password-recovery email flow exists yet; use an admin-assisted recovery
+process until custom SMTP is configured.
+
+Next recommended task: finish the Phase 1A correction workflow, allowing an
+admin to safely amend a published session and trigger the deterministic
+rebuild. Do not build starter assets or currency until wallet/ledger tables
+are implemented atomically.
+
+## Published-session correction update — 2026-08-16
+
+Phase 1A is complete locally. Admins can open any of the latest published
+sessions from `/admin/attendance`, amend its date, type, attendance, or goals,
+and provide a mandatory reason. `kut.correct_published_attendance_session`
+locks the published session, records both the previous and replacement values
+in `kut.session_corrections`, replaces the attendance, and rebuilds the whole
+season in one transaction. The public ratings page is revalidated after a
+successful correction.
+
+The correction page and Server Action require an enabled admin role; the RPC
+checks that role independently. Its audit table is read-only to admins through
+RLS, and normal users cannot call the RPC. Existing inactive attendees can be
+retained while correcting a historical session, but new inactive attendees are
+still rejected.
+
+Additional migrations:
+
+- `20260816060000_correct_published_sessions.sql`
+- `20260816060100_grant_session_correction_reads.sql` (restores the missing
+  table-level read grant required in addition to RLS for the admin audit view)
+
+Tests passing:
+
+- `npm run verify:fast` (15 unit tests)
+- `npm run test:db` (29 aggregate pgTAP tests)
+- `npm run test:e2e` (admin routes redirect when unauthenticated)
+
+Manual local setup: after receiving this migration, run
+`npx supabase migration up --local` once with the local stack running.
+
+Next recommended task: implement Phase 2's wallet, immutable ledger, Live
+editions, starter grant, and idempotent attendance rewards as one
+server-authoritative data slice. Do not build pack opening or the collection
+UI until those economy foundations and tests exist.
+
+## Published-session cancellation update — 2026-08-16
+
+Admins can now cancel a published session from its correction page. Cancellation
+requires a reason, retains the session and its attendance for audit, clears its
+published timestamp, and rebuilds the season so the cancelled event no longer
+affects any Live Rating. It is deliberately a cancellation rather than a
+destructive delete.
+
+Additional migration: `20260816060200_cancel_published_sessions.sql`.
+
+Tests passing:
+
+- `npm run verify:fast` (15 unit tests)
+- `npm run test:db` (35 aggregate pgTAP tests)
+- `npm run test:e2e` (4 Chromium tests)
+- `npm run build`
+
+Next recommended task remains the server-authoritative wallet, immutable
+ledger, starter grant, Live editions, and idempotent attendance rewards. Do
+not begin packs or collection UI until that data slice passes its security and
+integrity tests.
+
+## Reversible session lifecycle update — 2026-08-16
+
+Cancelled sessions remain in the admin session list and can be revised through
+the existing correction flow without affecting ratings. An admin may then
+reactivate the session with a reason, which publishes it again and rebuilds its
+season. Cancellation and reactivation both appear in an admin-only status
+history.
+
+The former blanket uniqueness rule for `(season, date, session type)` is now a
+partial unique index for only `draft` and `published` sessions. A cancelled
+record therefore does not prevent recording a replacement session at the same
+slot. Conversely, reactivation is safely rejected if a current session now
+occupies that slot.
+
+Additional migration: `20260816060300_reversible_session_lifecycle.sql`.
+
+Tests passing:
+
+- `npm run verify:fast` (15 unit tests)
+- `npm run test:db` (44 aggregate pgTAP tests)
+- `npm run test:e2e` (4 Chromium tests)
+- `npm run build`
+
+Next recommended task remains the server-authoritative wallet, immutable
+ledger, starter grant, Live editions, and idempotent attendance rewards.
+
+## Economy foundation update — 2026-08-16
+
+Phase 1B's data foundation is complete locally. The `kut` schema now has Live
+Card editions, individual Card Copies, wallets, an immutable wallet ledger,
+and idempotent attendance-reward records. All economy tables use RLS; users
+may only read their own wallet, ledger, cards, and reward records, and the
+browser has no direct write policy for any of them.
+
+Invite claim onboarding now atomically creates the Profile, starter wallet
+credit (`+250` TF Coins), one starter ledger entry, and three distinct,
+untradeable Live Card Copies. Existing accounts that predate this migration
+see a one-time server-action prompt on the homepage instead. The starter claim
+locks the Profile and has both a persisted claim marker and a unique ledger
+key, so it cannot mint assets twice.
+
+Publishing a session, adding attendance to a published session, and
+reactivating a cancelled session all invoke the same idempotent reward process.
+An enabled account linked to an attendee receives `+75` TF Coins exactly once
+per Player/session. Migration backfill applies this rule to already-published
+local history; cancellation deliberately does not claw back earlier rewards.
+
+Additional migration: `20260816070000_wallet_starter_and_attendance_rewards.sql`.
+
+Tests passing:
+
+- `npm run verify:full`
+- 15 unit tests, 63 aggregate pgTAP tests, and 4 Chromium tests
+
+Next recommended task: build the authenticated collection page and card detail
+view from these read-only tables. Do not build pack opening or discard until
+the collection can clearly show ownership and starter-card tradeability.
+
+## Audited admin password recovery update — 2026-08-16
+
+`/admin/accounts` is a protected recovery page for local/admin-assisted
+password resets. The action first writes a pending audit event through an
+admin-checked RPC, then calls Supabase Auth's server-only Admin API to set the
+new temporary password, and finally marks the event completed or failed.
+Passwords are neither stored nor logged by KUT.
+
+Ordinary admins can reset normal member accounts but cannot reset themselves
+or another administrator. Superadmins can reset administrator accounts other
+than themselves. The recent reset audit is visible to admins only.
+
+Additional migration: `20260816070100_audited_admin_password_resets.sql`.
+
+Tests passing:
+
+- `npm run verify:full`
+- 15 unit tests, 71 aggregate pgTAP tests, and 5 Chromium tests
+
+Next recommended task remains the authenticated collection page and card
+detail view built on the wallet/card data foundation.
+
+## Private collection and card detail update â€” 2026-08-16
+
+Authenticated, enabled members now have a **My Club** page at `/club` and an
+individual card page at `/club/cards/[cardId]`. The collection shows the
+member's TF Coin balance, all active card copies, current Live ratings, and
+whether each copy is tradeable. It is deliberately read-only: discard,
+pack-opening, and market operations remain future server-authoritative slices.
+
+The pages read `kut.my_collection_cards`, a `security_invoker` database view
+that explicitly filters `owner_id = auth.uid()`. This means an administrator
+cannot accidentally see a different member's collection through this UI even
+though their operational table policies are broader. Live cards resolve their
+current active-season state; future Special cards can use their frozen snapshot
+attributes through the same projection.
+
+Additional migration: `20260816070200_collection_read_projection.sql`.
+
+Tests passing locally:
+
+- `npm run verify:fast` (15 unit tests)
+- `npm run test:db` (74 aggregate pgTAP tests)
+
+Next recommended task: implement a server-authoritative discard flow for
+eligible cards, with a compensating ledger entry and an immutable card burn
+record. Pack opening should follow only after that view of ownership and
+tradeability is proven.
+
+## Atomic basic pack opening update â€” 2026-08-16
+
+My Club now offers the single MVP **TFH Pack**: 250 TF Coins for three
+tradeable Live Card copies. Outcomes are chosen in the database from active,
+collectible Live editions using the specified rarity weights (Common 100,
+Bronze 60, Silver 30, Gold 12, Holo 4, Elite 1). Duplicate editions are
+allowed.
+
+`kut.open_pack(pack_slug, idempotency_key)` locks the member wallet, verifies
+the database-defined price, inserts the opening, debits the wallet with a
+matching immutable ledger entry, randomly selects and mints all three copies,
+and stores every slot before returning the saved opening ID. Replays of the
+same key return the original opening; insufficient balance rolls the complete
+transaction back. `/club/packs/[openingId]` reads only the caller's saved
+result, so refreshing cannot produce a different pack.
+
+Additional migration: `20260816070400_atomic_basic_pack_opening.sql`.
+
+Tests passing locally:
+
+- `npm run verify:fast` (16 unit tests)
+- `npm run test:db` (100 aggregate pgTAP tests)
+- `npm run test:e2e` (7 Chromium tests)
+- `npm run build`
+
+Next recommended task: add the pack expected-value calculation and compact
+admin economy readout before expanding pack types or starting the transfer
+market.
+
+## Server-authoritative card discard update â€” 2026-08-16
+
+Eligible tradeable card copies can now be discarded from their card-detail
+page. The page displays the current discard value and requires an explicit
+browser confirmation. Locked starter cards display their value but have no
+discard control.
+
+`kut.discard_card(card_id, idempotency_key)` locks the owned active card,
+calculates the value from the current Live OVR (or frozen Special OVR and
+multiplier), marks the copy burned, appends one `discard` wallet-ledger row,
+and credits the wallet in one transaction. Replaying the same idempotency key
+returns the original payout without a second credit. There is no browser write
+policy for card copies or wallets.
+
+Additional migration: `20260816070300_server_authoritative_card_discard.sql`.
+
+Tests passing locally:
+
+- `npm run verify:fast` (16 unit tests)
+- `npm run test:db` (84 aggregate pgTAP tests)
+- `npm run test:e2e` (6 Chromium tests)
+- `npm run build`
+
+Next recommended task: build server-authoritative basic pack opening so users
+can obtain the first tradeable cards. It must debit the wallet, choose pack
+contents server-side, mint copies, and preserve retry/idempotency guarantees
+in one transaction.
+
+## Pack economy health readout update â€” 2026-08-16
+
+`/admin/economy` is an admin-only, read-only pack-health dashboard. It shows
+the eligible Live pool, weighted expected discard per slot and per pack, the
+expected return percentage, and compact current totals for coin supply, pack
+openings, card copies, and burned cards. The status bands are Target (<=75%),
+Watch (>75%), Warning (>80%), and Critical (>=95%).
+
+The browser display reads `kut.pack_economy_health`, a security-invoker view
+that returns no rows to normal members. A matching pure TypeScript economy
+calculator has unit coverage for the rarity weighting, formula, input checks,
+and threshold boundaries. The dashboard is deliberately informational; it
+does not create a browser-accessible way to change pack price or odds.
+
+Additional migration: `20260816070500_pack_economy_health.sql`.
+
+Tests passing locally:
+
+- `npm run verify:fast` (20 unit tests)
+- `npm run test:db` (103 aggregate pgTAP tests)
+- `npm run test:e2e` (8 Chromium tests)
+- `npm run build`
+
+Next recommended task: start the transfer-market backend—listings and
+atomic buy-now purchase—with locked-card protection and market-sale ledger
+entries. The card ownership, discard, and pack foundations are now present.
+
+## Atomic transfer market update â€” 2026-08-16
+
+The first buy-now market is available at `/market`. Owners list an eligible
+tradeable Card Copy from its detail page for 24 hours at server-calculated
+bounds. An active listing visibly locks the card, replaces discard with a
+cancel action, and appears through a narrow authenticated market projection.
+
+`kut.buy_listing(listing_id, idempotency_key)` locks the listing and wallets,
+verifies ownership and funds, transfers the one Card Copy, records the sale,
+and writes balanced buyer/seller/tax ledger entries in one transaction. The
+tax is 5%, rounded up with a one-coin minimum; it is deliberately burned.
+Repeating a buyer idempotency key returns the persisted sale without a second
+debit. `market_sales` provides the immutable base for future reference value
+and price history.
+
+Additional migrations: `20260816070600_atomic_marketplace.sql` and
+`20260816070601_fix_market_wallet_lock.sql`.
+
+The market cards also show the seller's KUT display name. The narrow market
+projection exposes this deliberately public marketplace information, not an
+email address or other account data.
+
+Additional migration: `20260817000000_expose_market_seller_name.sql`.
+
+Tests passing locally:
+
+- `npm run verify:fast` (20 unit tests)
+- `npm run test:db` (128 aggregate pgTAP tests)
+- `npm run test:e2e` (9 Chromium tests)
+- `npm run build`
+
+Next recommended task: implement reference value, Club Value calculation, and
+the public Club Value leaderboard. That completes the remaining Phase 1D MVP
+market loop without adding new economy mutations.
+
+## Club Value and leaderboard update - 2026-08-17
+
+`/club` now presents a member's Club Value: their wallet balance plus the
+current reference value of every unburned Card Copy, including locked starter
+cards. `/leaderboard` ranks enabled clubs by that value and shows each member's
+display name, derived club name, card count, and unique-player count.
+
+Reference values reuse the specified 14-day market-median rule once an edition
+has five completed sales; otherwise they use the 1.5x current discard-value
+fallback. Both database views are read-only and evaluate on page request, so
+Live rating changes and qualifying sales are reflected without a cache.
+
+Additional migrations: `20260817010000_club_value_leaderboard.sql` and
+`20260817010001_fix_club_value_projection_permissions.sql`.
+
+Next recommended task: add a Message Center for market sale/purchase and
+other in-app notifications.
+
+## Message Center update - 2026-08-17
+
+`/messages` is now the authenticated in-app inbox. Every completed market
+sale atomically creates one private purchase message for the buyer and one
+private sale message for the seller; the migration also adds messages for
+existing market-sales history. Members can mark one or all of their own
+messages as read, but cannot create, modify, or read another member's inbox
+entries.
+
+My Club shows an unread-message count and links to the inbox. The current
+scope is market events only; attendance, pack, and admin notifications can be
+added through the same append-only event model later.
+
+Additional migrations: `20260817020000_message_center_market_notifications.sql`
+and `20260817020100_include_buyer_in_sale_notifications.sql`.
+
+## MVP hardening update - 2026-08-17
+
+The application now has safe route-level loading, not-found, and error-recovery
+screens. Errors never expose database details in the UI, and the recovery copy
+states that an error did not complete a game action. Key authenticated routes
+have loading skeletons; existing empty states were reviewed for collection,
+market, leaderboard, and messages.
+
+Playwright now checks the public ratings page and a protected sign-in boundary
+at a 390px phone viewport, including horizontal-overflow guards. The database
+suite now verifies that a purchase retry cannot create a second buyer message,
+and that one member cannot directly update or mark another member's message as
+read.
+
+The local security review is recorded in `docs/SECURITY_REVIEW.md`; backup,
+hosted migration dry-run, and explicit preview-deployment steps are in
+`docs/OPERATIONS.md`. No hosted Supabase project, Vercel project, or preview
+deployment was changed. A genuine two-independent-client simultaneous-buy test
+remains the final recommended local pre-alpha integrity check.
+
+Tests passing locally: `npm run verify:full` (20 unit tests, 145 database
+tests, 11 Chromium browser tests, lint, typecheck, and production build).

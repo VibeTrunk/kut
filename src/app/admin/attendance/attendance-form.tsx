@@ -1,40 +1,77 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useActionState, useMemo, useState } from "react";
+import {
+  correctPublishedAttendanceSession,
+  publishAttendanceSession,
+  type PublishAttendanceState,
+} from "./actions";
 
-const PLAYERS = ["Alex Example", "Bea Test", "Charlie Fixture", "Dana Demo", "Elliot Sample"];
+type Player = { id: string; display_name: string };
+type CorrectionSession = {
+  id: string;
+  sessionDate: string;
+  sessionType: string;
+  status: "published" | "cancelled";
+  attendance: Array<{ player_id: string; goals: number }>;
+};
 
-export function AttendanceForm() {
-  const [selected, setSelected] = useState<string[]>([]);
-  const [goals, setGoals] = useState<Record<string, number>>({});
+const initialState: PublishAttendanceState = { error: null };
+
+export function AttendanceForm({
+  correctionSession,
+  players,
+}: {
+  correctionSession?: CorrectionSession;
+  players: Player[];
+}) {
+  const isCorrection = Boolean(correctionSession);
+  const isCancelledSession = correctionSession?.status === "cancelled";
+  const [selected, setSelected] = useState<string[]>(() => correctionSession?.attendance.map((entry) => entry.player_id) ?? []);
+  const [goals, setGoals] = useState<Record<string, number>>(() =>
+    Object.fromEntries(correctionSession?.attendance.map((entry) => [entry.player_id, entry.goals]) ?? []),
+  );
   const [step, setStep] = useState<"attendance" | "goals" | "review">("attendance");
-
-  const selectedPlayers = useMemo(
-    () => PLAYERS.filter((player) => selected.includes(player)),
-    [selected],
+  const [sessionDate, setSessionDate] = useState(() => correctionSession?.sessionDate ?? new Date().toISOString().slice(0, 10));
+  const [sessionType, setSessionType] = useState(() => correctionSession?.sessionType ?? "friday");
+  const [state, formAction, isPending] = useActionState(
+    isCorrection ? correctPublishedAttendanceSession : publishAttendanceSession,
+    initialState,
   );
 
-  function togglePlayer(player: string) {
+  const selectedPlayers = useMemo(
+    () => players.filter((player) => selected.includes(player.id)),
+    [players, selected],
+  );
+  const attendance = useMemo(
+    () => selectedPlayers.map((player) => ({ player_id: player.id, goals: goals[player.id] ?? 0 })),
+    [goals, selectedPlayers],
+  );
+
+  function togglePlayer(playerId: string) {
     setSelected((current) =>
-      current.includes(player)
-        ? current.filter((selectedPlayer) => selectedPlayer !== player)
-        : [...current, player],
+      current.includes(playerId)
+        ? current.filter((selectedPlayerId) => selectedPlayerId !== playerId)
+        : [...current, playerId],
     );
   }
 
+  if (players.length === 0) {
+    return <p className="rounded-xl bg-slate-900 p-4 text-slate-300">There are no active players to record yet.</p>;
+  }
+
   return (
-    <form
-      className="space-y-6"
-      onSubmit={(event) => {
-        event.preventDefault();
-        setStep("review");
-      }}
-    >
+    <form action={formAction} className="space-y-6">
+      <input name="attendance" type="hidden" value={JSON.stringify(attendance)} />
+      <input name="sessionDate" type="hidden" value={sessionDate} />
+      <input name="sessionType" type="hidden" value={sessionType} />
+      {correctionSession && <input name="sessionId" type="hidden" value={correctionSession.id} />}
+
       <div className="flex gap-2 text-sm font-semibold">
         {[
           ["attendance", "1. Attendance"],
           ["goals", "2. Goals"],
-          ["review", "3. Publish"],
+          ["review", isCorrection ? "3. Correct" : "3. Publish"],
         ].map(([value, label]) => (
           <span
             className={`rounded-full px-3 py-1 ${step === value ? "bg-amber-400 text-slate-950" : "bg-slate-800 text-slate-300"}`}
@@ -47,27 +84,52 @@ export function AttendanceForm() {
 
       {step === "attendance" && (
         <fieldset className="space-y-3">
-          <legend className="text-xl font-bold">Who played?</legend>
+          <legend className="text-xl font-bold">Session details</legend>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="space-y-2">
+              <span className="font-semibold">Date</span>
+              <input
+                className="min-h-12 w-full rounded-xl border border-slate-600 bg-slate-900 px-4"
+                onChange={(event) => setSessionDate(event.target.value)}
+                required
+                type="date"
+                value={sessionDate}
+              />
+            </label>
+            <label className="space-y-2">
+              <span className="font-semibold">Session</span>
+              <select
+                className="min-h-12 w-full rounded-xl border border-slate-600 bg-slate-900 px-4"
+                onChange={(event) => setSessionType(event.target.value)}
+                value={sessionType}
+              >
+                <option value="monday">Monday</option>
+                <option value="friday">Friday</option>
+                <option value="other">Other</option>
+              </select>
+            </label>
+          </div>
+          <legend className="pt-4 text-xl font-bold">Who played?</legend>
           <p className="text-slate-300">Tap each attendee. Large targets are intentional for pitch-side use.</p>
           <div className="grid gap-3 sm:grid-cols-2">
-            {PLAYERS.map((player) => {
-              const isSelected = selected.includes(player);
+            {players.map((player) => {
+              const isSelected = selected.includes(player.id);
               return (
                 <button
                   aria-pressed={isSelected}
                   className={`min-h-12 rounded-xl border px-4 py-3 text-left font-semibold ${isSelected ? "border-amber-400 bg-amber-400 text-slate-950" : "border-slate-700 bg-slate-900 text-slate-50"}`}
-                  key={player}
-                  onClick={() => togglePlayer(player)}
+                  key={player.id}
+                  onClick={() => togglePlayer(player.id)}
                   type="button"
                 >
-                  {player}
+                  {player.display_name}
                 </button>
               );
             })}
           </div>
           <button
             className="min-h-12 w-full rounded-xl bg-amber-400 px-4 py-3 font-bold text-slate-950 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-400"
-            disabled={selected.length === 0}
+            disabled={selected.length === 0 || !sessionDate}
             onClick={() => setStep("goals")}
             type="button"
           >
@@ -81,16 +143,14 @@ export function AttendanceForm() {
           <legend className="text-xl font-bold">Goals</legend>
           <p className="text-slate-300">Goals are optional and default to zero.</p>
           {selectedPlayers.map((player) => (
-            <label className="flex items-center justify-between rounded-xl bg-slate-900 p-4" key={player}>
-              <span className="font-semibold">{player}</span>
+            <label className="flex items-center justify-between rounded-xl bg-slate-900 p-4" key={player.id}>
+              <span className="font-semibold">{player.display_name}</span>
               <input
                 className="w-20 rounded-lg border border-slate-600 bg-slate-800 p-2 text-center"
                 min="0"
-                onChange={(event) =>
-                  setGoals((current) => ({ ...current, [player]: Number(event.target.value) }))
-                }
+                onChange={(event) => setGoals((current) => ({ ...current, [player.id]: Number(event.target.value) }))}
                 type="number"
-                value={goals[player] ?? 0}
+                value={goals[player.id] ?? 0}
               />
             </label>
           ))}
@@ -98,8 +158,8 @@ export function AttendanceForm() {
             <button className="min-h-12 flex-1 rounded-xl bg-slate-800 px-4 py-3 font-bold" onClick={() => setStep("attendance")} type="button">
               Back
             </button>
-            <button className="min-h-12 flex-1 rounded-xl bg-amber-400 px-4 py-3 font-bold text-slate-950" type="submit">
-              Review publication
+            <button className="min-h-12 flex-1 rounded-xl bg-amber-400 px-4 py-3 font-bold text-slate-950" onClick={() => setStep("review")} type="button">
+              {isCorrection ? "Review correction" : "Review publication"}
             </button>
           </div>
         </fieldset>
@@ -107,14 +167,40 @@ export function AttendanceForm() {
 
       {step === "review" && (
         <section className="space-y-4 rounded-2xl border border-amber-400 bg-amber-400/10 p-5">
-          <h2 className="text-xl font-bold">Ready to publish</h2>
-          <p>{selected.length} attendees selected. Publishing will recalculate every Live Card from the season history.</p>
-          <p className="text-sm text-amber-200">
-            Preview only: real publication is enabled after the local admin login is wired in the next auth slice.
+          <h2 className="text-xl font-bold">{isCorrection ? "Ready to save correction" : "Ready to publish"}</h2>
+          <p>
+            {selected.length} attendees selected. {isCancelledSession
+              ? "Saving this correction preserves the revised record until it is reactivated."
+              : `${isCorrection ? "Saving this correction" : "Publishing"} will recalculate every Live Card from the season history.`}
           </p>
-          <button className="min-h-12 w-full rounded-xl bg-slate-800 px-4 py-3 font-bold" onClick={() => setStep("goals")} type="button">
-            Back to goals
-          </button>
+          {isCorrection ? (
+            <label className="block space-y-2">
+              <span className="font-semibold">Why is this being corrected?</span>
+              <textarea
+                className="min-h-24 w-full rounded-xl border border-slate-600 bg-slate-900 p-3"
+                maxLength={500}
+                minLength={3}
+                name="correctionReason"
+                placeholder="For example: Alex was selected by mistake."
+                required
+              />
+              <span className="block text-sm text-amber-200">
+                The previous attendance and this reason are retained in the admin audit log.
+                {isCancelledSession && " This session will remain excluded from ratings until reactivated."}
+              </span>
+            </label>
+          ) : (
+            <p className="text-sm text-amber-200">Check the date, session type, attendees, and goals carefully. Published sessions affect ratings immediately.</p>
+          )}
+          {state.error && <p className="rounded-xl bg-rose-950 p-3 text-sm text-rose-200">{state.error}</p>}
+          <div className="flex gap-3">
+            <button className="min-h-12 flex-1 rounded-xl bg-slate-800 px-4 py-3 font-bold" disabled={isPending} onClick={() => setStep("goals")} type="button">
+              Back to goals
+            </button>
+            <button className="min-h-12 flex-1 rounded-xl bg-amber-400 px-4 py-3 font-bold text-slate-950 disabled:bg-slate-700 disabled:text-slate-400" disabled={isPending} type="submit">
+              {isPending ? (isCorrection ? "Saving..." : "Publishing...") : (isCorrection ? "Save correction" : "Publish session")}
+            </button>
+          </div>
         </section>
       )}
     </form>

@@ -1,0 +1,144 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { LiveCard, type LiveCardPlayer } from "@/components/live-card";
+import { requireUser } from "@/lib/auth/user";
+import { createClient } from "@/lib/supabase/server";
+import { DiscardCardForm } from "../discard-card-form";
+import { CreateListingForm } from "../create-listing-form";
+import { CancelListingForm } from "../cancel-listing-form";
+
+type CardPageProps = {
+  params: Promise<{ cardId: string }>;
+  searchParams: Promise<{ listed?: string; listingCancelled?: string }>;
+};
+
+type CollectionCard = {
+  card_id: string;
+  edition_id: string;
+  edition_title: string;
+  edition_type: string;
+  is_live: boolean;
+  is_tradeable: boolean;
+  source: string;
+  display_name: string;
+  archetype: string;
+  ovr: number;
+  pac: number;
+  sho: number;
+  pas: number;
+  dri: number;
+  def: number;
+  phy: number;
+  rarity_tier: LiveCardPlayer["rarityTier"];
+  discard_value: number;
+  active_listing_id: string | null;
+  active_listing_price: number | null;
+};
+
+function readable(value: string) {
+  return value.replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+export default async function CardDetailPage({ params, searchParams }: CardPageProps) {
+  await requireUser();
+  const { cardId } = await params;
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .schema("kut")
+    .from("my_collection_cards")
+    .select("card_id, edition_id, edition_title, edition_type, is_live, is_tradeable, source, display_name, archetype, ovr, pac, sho, pas, dri, def, phy, rarity_tier, discard_value, active_listing_id, active_listing_price")
+    .eq("card_id", cardId)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error("Could not load this card.");
+  }
+
+  if (!data) {
+    notFound();
+  }
+
+  const card = data as CollectionCard;
+  const [query, boundsResponse] = await Promise.all([
+    searchParams,
+    card.is_tradeable && !card.active_listing_id
+      ? supabase.schema("kut").rpc("get_listing_bounds", { p_card_id: card.card_id })
+      : Promise.resolve({ data: null, error: null }),
+  ]);
+  const bounds = boundsResponse.data && typeof boundsResponse.data === "object" ? boundsResponse.data : null;
+  const minimumPrice = bounds && "minimum_price" in bounds ? Number(bounds.minimum_price) : null;
+  const maximumPrice = bounds && "maximum_price" in bounds ? Number(bounds.maximum_price) : null;
+
+  return (
+    <main className="min-h-screen bg-slate-950 p-5 text-slate-50 sm:p-10">
+      <section className="mx-auto max-w-4xl space-y-8">
+        <nav className="flex flex-wrap items-center justify-between gap-3 text-sm font-bold">
+          <Link className="text-amber-400 hover:text-amber-300" href="/club">← My Club</Link>
+          <Link className="text-slate-400 hover:text-slate-200" href="/">Live ratings</Link>
+        </nav>
+
+        <div className="grid gap-8 rounded-3xl border border-slate-700/80 bg-slate-900/70 p-6 sm:p-8 md:grid-cols-[minmax(280px,360px)_1fr] md:items-center">
+          <LiveCard
+            size="detail"
+            player={{
+              id: card.card_id,
+              displayName: card.display_name,
+              archetype: card.archetype,
+              liveOvr: card.ovr,
+              pac: card.pac,
+              sho: card.sho,
+              pas: card.pas,
+              dri: card.dri,
+              def: card.def,
+              phy: card.phy,
+              rarityTier: card.rarity_tier,
+            }}
+          />
+
+          <div className="space-y-5">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.24em] text-amber-400">{card.is_live ? "Live card" : "Special card"}</p>
+              <h1 className="mt-2 text-4xl font-black tracking-tight">{card.display_name}</h1>
+              <p className="mt-2 text-lg text-slate-300">{card.is_live ? "This card’s rating is live and changes with published football sessions." : card.edition_title}</p>
+            </div>
+
+            <dl className="grid grid-cols-2 gap-3 text-sm">
+              <div className="rounded-2xl bg-slate-950/60 p-4">
+                <dt className="font-bold uppercase tracking-[0.12em] text-slate-400">Edition</dt>
+                <dd className="mt-1 text-lg font-black">{readable(card.edition_type)}</dd>
+              </div>
+              <div className="rounded-2xl bg-slate-950/60 p-4">
+                <dt className="font-bold uppercase tracking-[0.12em] text-slate-400">Ownership</dt>
+                <dd className="mt-1 text-lg font-black text-amber-300">{card.is_tradeable ? "Tradeable" : "Locked"}</dd>
+              </div>
+              <div className="rounded-2xl bg-slate-950/60 p-4">
+                <dt className="font-bold uppercase tracking-[0.12em] text-slate-400">Source</dt>
+                <dd className="mt-1 text-lg font-black">{readable(card.source)}</dd>
+              </div>
+              <div className="rounded-2xl bg-slate-950/60 p-4">
+                <dt className="font-bold uppercase tracking-[0.12em] text-slate-400">Card ID</dt>
+                <dd className="mt-1 break-all font-mono text-xs text-slate-300">{card.card_id}</dd>
+              </div>
+              <div className="rounded-2xl bg-slate-950/60 p-4">
+                <dt className="font-bold uppercase tracking-[0.12em] text-slate-400">Discard value</dt>
+                <dd className="mt-1 text-lg font-black">{card.discard_value} TF Coins</dd>
+              </div>
+            </dl>
+
+            {query.listed === "1" && <p className="rounded-2xl bg-emerald-950 p-4 text-sm font-bold text-emerald-100">Listed successfully. This card is now locked for 24 hours or until you cancel it.</p>}
+            {query.listingCancelled === "1" && <p className="rounded-2xl bg-emerald-950 p-4 text-sm font-bold text-emerald-100">Listing cancelled. This card is available again.</p>}
+
+            {!card.is_tradeable && (
+              <p className="rounded-2xl border border-amber-400/30 bg-amber-400/10 p-4 text-sm text-amber-100">Starter cards are locked so every new club begins with a meaningful personal collection. Future pack and market cards can be tradeable.</p>
+            )}
+            {card.is_tradeable && card.active_listing_id && card.active_listing_price && <CancelListingForm cardId={card.card_id} listingId={card.active_listing_id} price={card.active_listing_price} />}
+            {card.is_tradeable && !card.active_listing_id && <>
+              {minimumPrice !== null && maximumPrice !== null && <CreateListingForm cardId={card.card_id} maximumPrice={maximumPrice} minimumPrice={minimumPrice} />}
+              <DiscardCardForm cardId={card.card_id} discardValue={card.discard_value} />
+            </>}
+          </div>
+        </div>
+      </section>
+    </main>
+  );
+}

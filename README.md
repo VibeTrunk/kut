@@ -14,7 +14,9 @@ resolved before implementation starts).
 
 ## Status
 
-Phase 0 is complete locally. KUT is not yet deployed. Target:
+The local MVP is feature-complete through attendance, Live Cards, invite-only
+accounts, starter assets, packs, discard, market, Club Value, and private
+market messages. KUT is not yet deployed. Target:
 `kut.vibetrunk.com`, deployed as its own Vercel project, using the shared
 VibeTrunk Supabase project's `kut` schema.
 
@@ -32,6 +34,7 @@ Prerequisites: Node.js 20.9+ and Docker Desktop running.
 ```powershell
 npm ci
 npx supabase start
+npx supabase migration up --local
 npm run dev
 ```
 
@@ -54,9 +57,139 @@ Install the local browser once with:
 npx playwright install chromium
 ```
 
+## MVP hardening and operations
+
+The current local hardening plan is in
+[docs/MVP_HARDENING_PLAN.md](docs/MVP_HARDENING_PLAN.md). See
+[docs/SECURITY_REVIEW.md](docs/SECURITY_REVIEW.md) for the reviewed security
+boundaries and [docs/OPERATIONS.md](docs/OPERATIONS.md) for backup and preview
+deployment steps. These documents deliberately do not authorize a hosted
+Supabase migration or Vercel deployment.
+
+For the next Codex or Claude Code session, start with
+[docs/HANDOFF.md](docs/HANDOFF.md).
+
 ## Environment
 
 Copy `.env.example` to `.env.local` and add only the browser-safe Supabase
 URL/publishable key when the app begins using Supabase. Keep the service-role
 key server-only, never commit it, and never expose it through a
 `NEXT_PUBLIC_` variable.
+
+Invite onboarding also needs `SUPABASE_SERVICE_ROLE_KEY` in `.env.local`.
+For local development, obtain it from `npx supabase status -o env`; it is used
+only by the server action that creates an invited user's Auth record, never by
+browser code.
+
+## Local admin access
+
+Public registration is disabled. To create a local-only admin for development,
+start the local Supabase stack and apply any new local migrations after pulling
+changes:
+
+```powershell
+npx supabase start
+npx supabase migration up --local
+```
+
+Then open Supabase Studio at `http://127.0.0.1:54323`, add an email/password
+user under Authentication, and run this in the Studio SQL editor with that
+user's UUID:
+
+```sql
+insert into kut.profiles (id, display_name, role)
+values ('<auth-user-id>', 'Local Admin', 'admin')
+on conflict (id) do update
+set display_name = excluded.display_name,
+    role = excluded.role,
+    is_disabled = false;
+```
+
+Sign in at `http://localhost:3000/login`. Admin attendance is published only
+through a server action and a database function; the browser does not receive
+permission to write attendance or ratings directly.
+
+Published sessions can be corrected from the lower section of
+`http://localhost:3000/admin/attendance`. A correction requires a short
+reason, records the previous and replacement attendance in an admin-only audit
+log, and rebuilds all Live Ratings.
+
+From that same correction page, an admin can cancel a published session. This
+is intentionally not a delete: the session and cancellation reason remain in
+the audit trail, while its attendance stops affecting Live Ratings after the
+automatic rebuild. Cancelled sessions remain visible in the admin list, can be
+corrected while inactive, and can be reactivated with a reason. Their date and
+session type are available for a new draft or published session while they are
+cancelled.
+
+## Invite onboarding
+
+After signing in as an admin, open `http://localhost:3000/admin/invites`,
+choose an unlinked Player, and create an invite. Copy the generated link and
+share it manually. The recipient opens that link, supplies an email/password,
+and receives a normal KUT account linked to that Player. The raw token is
+shown only once and expires after 14 days.
+
+Password recovery is not configured for local development or production yet.
+Until custom SMTP is added, an admin must assist a member who loses access.
+
+An enabled KUT admin can set a member's temporary password at
+`http://localhost:3000/admin/accounts`. Enter a reason and share the password
+through a secure channel. The password is sent only to Supabase Auth and is
+never stored in KUT's database; the admin, target, reason, time, and result
+are recorded. Ordinary admins may reset normal member accounts only;
+superadmins may also reset administrator accounts. No administrator can reset
+their own password through this tool.
+
+## Economy foundation
+
+New invite claims automatically receive 250 TF Coins and three distinct,
+untradeable Live Cards. An existing local account created before this feature
+will see a **Claim starter pack** button after signing in. This is a one-time,
+server-authoritative operation.
+
+Publishing attendance automatically awards 75 TF Coins to each enabled user
+linked to an attending Player. Rewards are recorded once per Player/session in
+an immutable ledger, so publishing, correcting, or reactivating a session
+cannot duplicate coins. A cancelled session does not claw back coins already
+earned, per the MVP correction policy.
+
+## My Club and card details
+
+Any signed-in, enabled member can open **My Club** from Live Ratings at
+`http://localhost:3000/club`. It shows only their own active card copies and
+their own TF Coin balance. Selecting a card opens its detail page, including
+its current Live rating, source, and ownership status. These are read-only
+views; no browser route can alter a card, coins, or tradeability.
+
+## Card discard
+
+Only an eligible, tradeable card copy can be discarded. Its detail page shows
+the current server-calculated value and requires confirmation before the card
+is permanently burned. The atomic database operation records a positive
+`discard` ledger entry and credits the same amount to the owner’s wallet.
+Starter cards are locked and cannot be discarded. The button will first be
+visible once an account owns a future tradeable pack or market card.
+
+## Basic pack opening
+
+**My Club** offers one TFH Pack for 250 TF Coins. It contains three
+server-selected, tradeable Live Card copies; duplicate players are possible.
+The purchase, wallet debit, card minting, and saved opening record are one
+database transaction. Reloading a saved result page never rerolls the pack.
+
+## Admin economy health
+
+An admin can open **Admin attendance → Economy** to inspect the current pack
+pool, expected discard value per slot and pack, expected return percentage,
+and compact coin/card totals. The calculation uses the active Live-card pool
+and the server-defined rarity weights. It is a read-only warning screen;
+changing pack price or odds remains a deliberate future configuration change.
+
+## Transfer market
+
+Tradeable card copies can be listed from their detail page for 24 hours at a
+server-validated buy-now price. The card is locked while listed and may be
+cancelled by its seller. Signed-in members browse `/market` and buy listings
+with TF Coins. A purchase atomically transfers the card, debits the buyer,
+credits the seller, and burns the 5% tax (rounded up, minimum one coin).

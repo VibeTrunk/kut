@@ -75,3 +75,17 @@ operation and mobile attendance form. Keep invite onboarding and the economy
 out of scope until that operation has passing database and integration tests.
 
 Additional migration: `20260816010000_phase_1a_roster_and_ratings.sql`.
+
+## Attendance-flow update — 2026-08-16
+
+Added the mobile attendance interface at `/admin/attendance` and a protected
+database foundation for `publish_session` and `rebuild_season`. The interface
+is an interaction preview only: it does not mutate data until Supabase SSR
+authentication and a local admin account are implemented. Both functions
+require an enabled admin role, publish only draft sessions, and rebuild all
+player-season state from published history.
+
+Additional migration: `20260816020000_publish_and_rebuild_sessions.sql`.
+The next required slice is SSR email/password sign-in for manually provisioned
+local admins, followed by wiring this form to those server-authoritative
+operations. Invite claim onboarding remains later work.

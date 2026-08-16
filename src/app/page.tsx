@@ -1,4 +1,5 @@
 import { demoPlayers } from "@/game/demo-players";
+import Link from "next/link";
 
 export default function Home() {
   return (
@@ -16,6 +17,10 @@ export default function Home() {
             real roster data and authentication are not connected yet.
           </p>
         </header>
+
+        <Link className="inline-flex min-h-12 items-center rounded-xl bg-amber-400 px-4 font-bold text-slate-950" href="/admin/attendance">
+          Preview admin attendance
+        </Link>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {demoPlayers.map((player) => (

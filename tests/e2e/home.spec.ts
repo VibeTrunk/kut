@@ -4,6 +4,6 @@ test("renders the KUT foundation page", async ({ page }) => {
   await page.goto("/");
 
   await expect(
-    page.getByRole("heading", { name: "Kelderklasse Ultimate Team" }),
+    page.getByRole("heading", { name: "KUT Player Ratings" }),
   ).toBeVisible();
 });

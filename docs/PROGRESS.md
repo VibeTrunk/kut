@@ -61,3 +61,17 @@ until those data/security foundations and the rating engine pass tests.
 - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
 - `APP_URL`
 - `SUPABASE_SERVICE_ROLE_KEY` (server-only; pre-existing contract retained)
+
+## Phase 1A update — 2026-08-16
+
+This update supersedes the Phase 0 status above. The first Phase 1A slice is
+complete: players, profiles, seasons, sessions, attendance, and derived
+player-season state are migrated in the `kut` schema; RLS denies anonymous
+roster access and limits writes to enabled admins; the deterministic rating
+engine has 13 unit tests and a fictional player-ratings preview.
+
+The next recommended slice is the admin-only session publish/rebuild
+operation and mobile attendance form. Keep invite onboarding and the economy
+out of scope until that operation has passing database and integration tests.
+
+Additional migration: `20260816010000_phase_1a_roster_and_ratings.sql`.

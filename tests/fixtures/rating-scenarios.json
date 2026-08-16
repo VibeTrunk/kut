@@ -1,0 +1,62 @@
+[
+  {
+    "name": "never attends",
+    "archetype": "all_rounder",
+    "weeks": [],
+    "expected": { "activityScore": 0, "formScore": 0, "liveOvr": 30, "rarityTier": "common" }
+  },
+  {
+    "name": "attends first football week",
+    "archetype": "finisher",
+    "weeks": [{ "weekStart": "2026-08-03", "hasPublishedSession": true, "appearances": 1, "goals": 0 }],
+    "expected": { "activityScore": 8, "formScore": 0, "liveOvr": 36, "rarityTier": "common" }
+  },
+  {
+    "name": "weekly regular for twenty football weeks",
+    "archetype": "all_rounder",
+    "weeks": [
+      { "weekStart": "2026-01-05", "hasPublishedSession": true, "appearances": 1, "goals": 0 },
+      { "weekStart": "2026-01-12", "hasPublishedSession": true, "appearances": 1, "goals": 0 },
+      { "weekStart": "2026-01-19", "hasPublishedSession": true, "appearances": 1, "goals": 0 },
+      { "weekStart": "2026-01-26", "hasPublishedSession": true, "appearances": 1, "goals": 0 },
+      { "weekStart": "2026-02-02", "hasPublishedSession": true, "appearances": 1, "goals": 0 },
+      { "weekStart": "2026-02-09", "hasPublishedSession": true, "appearances": 1, "goals": 0 },
+      { "weekStart": "2026-02-16", "hasPublishedSession": true, "appearances": 1, "goals": 0 },
+      { "weekStart": "2026-02-23", "hasPublishedSession": true, "appearances": 1, "goals": 0 },
+      { "weekStart": "2026-03-02", "hasPublishedSession": true, "appearances": 1, "goals": 0 },
+      { "weekStart": "2026-03-09", "hasPublishedSession": true, "appearances": 1, "goals": 0 },
+      { "weekStart": "2026-03-16", "hasPublishedSession": true, "appearances": 1, "goals": 0 },
+      { "weekStart": "2026-03-23", "hasPublishedSession": true, "appearances": 1, "goals": 0 },
+      { "weekStart": "2026-03-30", "hasPublishedSession": true, "appearances": 1, "goals": 0 },
+      { "weekStart": "2026-04-06", "hasPublishedSession": true, "appearances": 1, "goals": 0 },
+      { "weekStart": "2026-04-13", "hasPublishedSession": true, "appearances": 1, "goals": 0 },
+      { "weekStart": "2026-04-20", "hasPublishedSession": true, "appearances": 1, "goals": 0 },
+      { "weekStart": "2026-04-27", "hasPublishedSession": true, "appearances": 1, "goals": 0 },
+      { "weekStart": "2026-05-04", "hasPublishedSession": true, "appearances": 1, "goals": 0 },
+      { "weekStart": "2026-05-11", "hasPublishedSession": true, "appearances": 1, "goals": 0 },
+      { "weekStart": "2026-05-18", "hasPublishedSession": true, "appearances": 1, "goals": 0 }
+    ],
+    "expected": { "activityScore": 70.2739, "formScore": 0, "liveOvr": 64, "rarityTier": "gold" }
+  },
+  {
+    "name": "hat trick creates temporary form",
+    "archetype": "finisher",
+    "weeks": [{ "weekStart": "2026-08-03", "hasPublishedSession": true, "appearances": 1, "goals": 3 }],
+    "expected": { "activityScore": 8, "formScore": 4.75, "liveOvr": 41, "rarityTier": "bronze" }
+  },
+  {
+    "name": "no-game week does not decay",
+    "archetype": "playmaker",
+    "weeks": [
+      { "weekStart": "2026-08-03", "hasPublishedSession": true, "appearances": 1, "goals": 0 },
+      { "weekStart": "2026-08-10", "hasPublishedSession": false, "appearances": 0, "goals": 0 }
+    ],
+    "expected": { "activityScore": 8, "formScore": 0, "liveOvr": 36, "rarityTier": "common" }
+  },
+  {
+    "name": "two sessions in one football week",
+    "archetype": "speedster",
+    "weeks": [{ "weekStart": "2026-08-03", "hasPublishedSession": true, "appearances": 2, "goals": 1 }],
+    "expected": { "activityScore": 11, "formScore": 1.25, "liveOvr": 39, "rarityTier": "common" }
+  }
+]

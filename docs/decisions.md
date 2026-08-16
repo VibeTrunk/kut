@@ -69,3 +69,25 @@ the shared hosted Supabase project.
 Consequences: Docker Desktop is required for database tests. `verify:fast`
 does not require Docker; `verify:full` does. Production linking, Vercel, and
 the real Supabase project reference remain deliberately deferred.
+
+## ADR-002 — Roster and rating data live in the `kut` schema
+
+Date: 2026-08-16
+
+Status: Accepted
+
+Decision: The first Phase 1A migration stores Players, Seasons, Profiles,
+Match Sessions, Attendance, and derived Player Season State in `kut`, using
+constrained text rather than PostgreSQL enums. Row-level security denies
+anonymous access, allows authenticated in-game reads, and permits mutations
+only to enabled admins. Ratings are calculated in a pure TypeScript module
+from published football weeks; the database rebuild operation is the next
+slice and must use the same tested fixtures.
+
+Reason: This keeps category changes migration-friendly, preserves the model
+mandated by the build spec, and makes the critical rating rules independently
+testable before they affect real data.
+
+Consequences: There is no client-authoritative rating state. Future admin
+publish/rebuild code must keep database output in parity with
+`src/game/rating-engine.ts` and its fixtures.

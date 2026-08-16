@@ -1,0 +1,15 @@
+export const GAME_CONFIG = {
+  activityWeeklyDecay: 0.9,
+  activityFirstAppearance: 8,
+  activitySecondAppearance: 3,
+  activityOvrFloor: 30,
+  activityOvrRange: 45,
+  activityOvrExponent: 0.8,
+  formWeeklyDecay: 0.55,
+  formGoalPoints: 1.25,
+  formHatTrickBonus: 1,
+  formGoalCap: 4,
+  formCap: 8,
+  liveOvrMin: 30,
+  liveOvrMax: 83,
+} as const;

@@ -7,9 +7,9 @@ export default async function AdminLayout({ children }: { children: ReactNode })
 
   return (
     <>
-      <div className="border-b border-slate-800 bg-slate-950">
+      <div className="border-b border-panel-2 bg-board">
         <div className="mx-auto max-w-6xl px-5 py-4 sm:px-10">
-          <p className="mb-3 text-xs font-black uppercase tracking-[0.24em] text-amber-400">Admin</p>
+          <p className="mb-3 text-xs font-black uppercase tracking-[0.24em] text-brass">Admin</p>
           <AdminTabs />
         </div>
       </div>

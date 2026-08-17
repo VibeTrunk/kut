@@ -70,38 +70,38 @@ export default async function Home({ searchParams }: HomePageProps) {
   const rank = rankResponse.data?.rank ?? null;
 
   return (
-    <main className="min-h-screen bg-slate-950 p-6 text-slate-50 sm:p-10">
+    <main className="min-h-screen bg-board p-6 text-ink sm:p-10">
       <section className="mx-auto max-w-4xl space-y-8">
         <header className="space-y-3">
-          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-amber-400">
+          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-brass">
             Terrible Football Haarlem
           </p>
           <h1 className="text-4xl font-black tracking-tight sm:text-5xl">
             KUT Player Ratings
           </h1>
-          <p className="max-w-2xl text-lg leading-8 text-slate-300">
+          <p className="max-w-2xl text-lg leading-8 text-ink-dim">
             Published attendance updates these Live Ratings automatically. Only signed-in KUT members can view them.
           </p>
         </header>
 
         {profile.starter_claimed_at && (
           <dl className="flex flex-wrap gap-3">
-            <div className="min-w-28 rounded-2xl border border-slate-700 bg-slate-900/60 px-4 py-3">
-              <dt className="text-xs font-black uppercase tracking-[0.13em] text-slate-400">KUT Coins</dt>
-              <dd className="mt-1 text-2xl font-black text-amber-300">{balance.toLocaleString()}</dd>
+            <div className="min-w-28 rounded-2xl border border-line bg-panel/60 px-4 py-3">
+              <dt className="text-xs font-black uppercase tracking-[0.13em] text-ink-faint">KUT Coins</dt>
+              <dd className="mt-1 text-2xl font-black text-brass">{balance.toLocaleString()}</dd>
             </div>
-            <div className="min-w-28 rounded-2xl border border-slate-700 bg-slate-900/60 px-4 py-3">
-              <dt className="text-xs font-black uppercase tracking-[0.13em] text-slate-400">Club Value</dt>
+            <div className="min-w-28 rounded-2xl border border-line bg-panel/60 px-4 py-3">
+              <dt className="text-xs font-black uppercase tracking-[0.13em] text-ink-faint">Club Value</dt>
               <dd className="mt-1 text-2xl font-black">{Number(clubValue).toLocaleString()}</dd>
             </div>
             {rank !== null && (
-              <div className="min-w-28 rounded-2xl border border-cyan-400/40 bg-cyan-950/30 px-4 py-3">
-                <dt className="text-xs font-black uppercase tracking-[0.13em] text-cyan-200">Rank</dt>
-                <dd className="mt-1 text-2xl font-black text-cyan-100">#{rank}</dd>
+              <div className="min-w-28 rounded-2xl border border-steel-line/40 bg-steel-bg/30 px-4 py-3">
+                <dt className="text-xs font-black uppercase tracking-[0.13em] text-steel">Rank</dt>
+                <dd className="mt-1 text-2xl font-black text-steel">#{rank}</dd>
               </div>
             )}
             <Link
-              className="flex min-w-28 items-center justify-center rounded-2xl border border-amber-400/50 bg-amber-400/10 px-4 py-3 text-sm font-black text-amber-300 hover:bg-amber-400/20"
+              className="flex min-w-28 items-center justify-center rounded-2xl border border-brass/50 bg-brass/10 px-4 py-3 text-sm font-black text-brass hover:bg-brass/20"
               href="/club/packs"
             >
               Open a pack →
@@ -111,13 +111,13 @@ export default async function Home({ searchParams }: HomePageProps) {
 
         {!profile.starter_claimed_at && <StarterClaimForm />}
         {query.starter === "1" && (
-          <p className="rounded-xl bg-emerald-950 p-4 font-semibold text-emerald-200">
+          <p className="rounded-xl bg-moss-bg p-4 font-semibold text-moss">
             Starter pack claimed: 250 KUT Coins and three Live Cards are now yours. <Link className="underline" href="/club/collection">View My Collection</Link>.
           </p>
         )}
 
         {ratings.length === 0 ? (
-          <p className="rounded-2xl border border-slate-700 bg-slate-900 p-5 text-slate-300">
+          <p className="rounded-2xl border border-line bg-panel p-5 text-ink-dim">
             No Live Ratings have been published for the active season yet.
           </p>
         ) : (

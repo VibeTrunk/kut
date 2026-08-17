@@ -51,38 +51,38 @@ export default async function CollectionPage({ searchParams }: CollectionPagePro
   const tradeableCount = cards.filter((card) => card.is_tradeable).length;
 
   return (
-    <main className="min-h-screen bg-slate-950 p-5 text-slate-50 sm:p-10">
+    <main className="min-h-screen bg-board p-5 text-ink sm:p-10">
       <section className="mx-auto max-w-6xl space-y-8">
         <header className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-amber-400">My club</p>
+            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-brass">My club</p>
             <h1 className="mt-2 text-4xl font-black tracking-tight sm:text-5xl">Collection</h1>
-            <p className="mt-2 text-sm text-slate-400">{tradeableCount} tradeable · {cards.length - tradeableCount} locked</p>
+            <p className="mt-2 text-sm text-ink-faint">{tradeableCount} tradeable · {cards.length - tradeableCount} locked</p>
           </div>
-          <p className="rounded-full border border-slate-700 px-3 py-1 text-sm font-semibold text-slate-300">Live cards update automatically</p>
+          <p className="rounded-full border border-line px-3 py-1 text-sm font-semibold text-ink-dim">Live cards update automatically</p>
         </header>
 
         {query.discard && Number.isSafeInteger(Number(query.discard)) && Number(query.discard) > 0 && (
-          <p className="rounded-2xl border border-emerald-400/40 bg-emerald-950/50 p-4 font-bold text-emerald-100">
+          <p className="rounded-2xl border border-moss-line/40 bg-moss-bg/50 p-4 font-bold text-moss">
             Card discarded. {query.discard} KUT Coins were added to your wallet.
           </p>
         )}
         {query.purchase && Number.isSafeInteger(Number(query.purchase)) && Number(query.purchase) > 0 && (
-          <p className="rounded-2xl border border-emerald-400/40 bg-emerald-950/50 p-4 font-bold text-emerald-100">Purchase complete. {query.purchase} KUT Coins were paid and the card is now in your collection.</p>
+          <p className="rounded-2xl border border-moss-line/40 bg-moss-bg/50 p-4 font-bold text-moss">Purchase complete. {query.purchase} KUT Coins were paid and the card is now in your collection.</p>
         )}
 
         {cards.length === 0 ? (
-          <div className="rounded-3xl border border-dashed border-slate-700 bg-slate-900/60 p-8 text-center">
+          <div className="rounded-3xl border border-dashed border-line bg-panel/60 p-8 text-center">
             <h2 className="text-xl font-black">Your collection is empty</h2>
-            <p className="mt-2 text-slate-300">Open a pack to receive your first tradeable Live Cards.</p>
-            <Link className="mt-5 inline-flex min-h-11 items-center rounded-xl bg-amber-400 px-4 font-bold text-slate-950" href="/club/packs">Open a pack</Link>
+            <p className="mt-2 text-ink-dim">Open a pack to receive your first tradeable Live Cards.</p>
+            <Link className="mt-5 inline-flex min-h-11 items-center rounded-xl bg-brass px-4 font-bold text-ink-on-accent" href="/club/packs">Open a pack</Link>
           </div>
         ) : (
           <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-5">
             {cards.map((card) => (
               <Link
                 aria-label={`Open ${card.display_name}'s card`}
-                className="group rounded-[1.25rem] outline-offset-4 outline-amber-400 focus-visible:outline-2"
+                className="group rounded-[1.25rem] outline-offset-4 outline-brass focus-visible:outline-2"
                 href={`/club/collection/${card.card_id}`}
                 key={card.card_id}
               >
@@ -101,7 +101,7 @@ export default async function CollectionPage({ searchParams }: CollectionPagePro
                     rarityTier: card.rarity_tier,
                   }}
                 />
-                <span className="mt-2 flex items-center justify-between px-1 text-xs font-bold uppercase tracking-[0.1em] text-slate-400 group-hover:text-amber-300">
+                <span className="mt-2 flex items-center justify-between px-1 text-xs font-bold uppercase tracking-[0.1em] text-ink-faint group-hover:text-brass">
                   <span>{card.is_live ? "Live edition" : card.edition_title}</span>
                   <span>{card.active_listing_id ? "Listed" : card.is_tradeable ? "Tradeable" : "Locked"}</span>
                 </span>

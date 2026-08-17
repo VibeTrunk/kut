@@ -20,11 +20,11 @@ export default async function InvitesPage() {
   const availablePlayers = (playersResponse.data ?? []).filter((player) => !linkedPlayerIds.has(player.id));
 
   return (
-    <main className="min-h-screen bg-slate-950 p-6 text-slate-50 sm:p-10">
+    <main className="min-h-screen bg-board p-6 text-ink sm:p-10">
       <section className="mx-auto max-w-xl space-y-8">
         <header className="space-y-3">
           <h1 className="text-4xl font-black tracking-tight">Invite a player</h1>
-          <p className="text-slate-300">Each link can create one KUT account tied to one real player. It expires after 14 days.</p>
+          <p className="text-ink-dim">Each link can create one KUT account tied to one real player. It expires after 14 days.</p>
         </header>
         <InviteForm players={availablePlayers} />
       </section>

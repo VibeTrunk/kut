@@ -14,22 +14,22 @@ type AppNavProps = {
   unreadCount: number;
 };
 
-const focusRing = "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400";
+const focusRing = "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brass";
 
 function MoreMenu({ items, displayName }: { items: NavItem[]; displayName: string }) {
   const pathname = usePathname();
   return (
     <div
-      className="absolute right-0 top-full mt-2 w-64 rounded-2xl border border-slate-700 bg-slate-900 p-2 shadow-2xl shadow-slate-950/60"
+      className="absolute right-0 top-full mt-2 w-64 rounded-2xl border border-line bg-panel p-2 shadow-2xl shadow-board/60"
       role="menu"
     >
-      <p className="px-3 pb-1 pt-2 text-xs font-black uppercase tracking-[0.14em] text-slate-500">{displayName}</p>
+      <p className="px-3 pb-1 pt-2 text-xs font-black uppercase tracking-[0.14em] text-ink-faint">{displayName}</p>
       {items.map((item) => {
         const active = item.isActive(pathname);
         return (
           <Link
             className={`flex min-h-11 items-center justify-between gap-3 rounded-lg px-3 text-sm font-bold ${focusRing} ${
-              active ? "bg-amber-400/10 text-amber-300" : item.adminOnly ? "text-rose-300 hover:bg-slate-800" : "text-slate-200 hover:bg-slate-800"
+              active ? "bg-brass/10 text-brass" : item.adminOnly ? "text-brick hover:bg-panel-2" : "text-ink-dim hover:bg-panel-2"
             }`}
             href={item.href}
             key={item.href}
@@ -40,12 +40,12 @@ function MoreMenu({ items, displayName }: { items: NavItem[]; displayName: strin
               {item.label}
             </span>
             {!!item.badgeCount && (
-              <span className="rounded-full bg-amber-400 px-2 py-0.5 text-xs font-black text-slate-950">{item.badgeCount}</span>
+              <span className="rounded-full bg-brass px-2 py-0.5 text-xs font-black text-ink-on-accent">{item.badgeCount}</span>
             )}
           </Link>
         );
       })}
-      <div className="my-1.5 h-px bg-slate-800" />
+      <div className="my-1.5 h-px bg-panel-2" />
       <LogoutButton variant="menu-item" />
     </div>
   );
@@ -91,9 +91,10 @@ export function AppNav({ displayName, isAdmin, balance, unreadCount }: AppNavPro
   return (
     <>
       {/* Desktop / tablet top bar */}
-      <header className="sticky top-0 z-30 hidden border-b border-slate-800 bg-slate-950/95 backdrop-blur sm:block">
+      <header className="sticky top-0 z-30 hidden border-b border-panel-2 bg-board/95 backdrop-blur sm:block">
         <div className="mx-auto flex h-16 max-w-6xl items-center gap-6 px-6">
-          <Link className={`flex items-center gap-2 rounded-lg text-lg font-black tracking-tight text-amber-400 ${focusRing}`} href="/">
+          <Link className={`flex items-center gap-2 rounded-lg text-lg font-black tracking-tight text-brass ${focusRing}`} href="/">
+            <span aria-hidden="true" className="h-3 w-3 shrink-0 bg-brass" style={{ clipPath: "polygon(50% 0%,100% 38%,82% 100%,18% 100%,0% 38%)" }} />
             KUT
           </Link>
           <nav aria-label="Primary" className="flex flex-1 items-center gap-1">
@@ -103,7 +104,7 @@ export function AppNav({ displayName, isAdmin, balance, unreadCount }: AppNavPro
                 <Link
                   aria-current={active ? "page" : undefined}
                   className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-bold transition-colors ${focusRing} ${
-                    active ? "bg-amber-400/10 text-amber-300" : "text-slate-300 hover:text-slate-50"
+                    active ? "bg-brass/10 text-brass" : "text-ink-dim hover:text-ink"
                   }`}
                   href={item.href}
                   key={item.href}
@@ -115,7 +116,7 @@ export function AppNav({ displayName, isAdmin, balance, unreadCount }: AppNavPro
             })}
           </nav>
           <div className="flex items-center gap-3">
-            <span className="flex items-center gap-1.5 rounded-full border border-slate-700 bg-slate-900 px-3 py-1.5 text-sm font-black tabular-nums text-amber-300">
+            <span className="flex items-center gap-1.5 rounded-full border border-line bg-panel px-3 py-1.5 text-sm font-black tabular-nums text-brass">
               <IconCoin className="h-3.5 w-3.5" />
               {balance.toLocaleString()}
             </span>
@@ -123,17 +124,17 @@ export function AppNav({ displayName, isAdmin, balance, unreadCount }: AppNavPro
               <button
                 aria-expanded={moreOpen}
                 aria-haspopup="menu"
-                className={`flex min-h-10 items-center gap-1.5 rounded-lg px-3 text-sm font-bold text-slate-300 hover:text-slate-50 ${focusRing}`}
+                className={`flex min-h-10 items-center gap-1.5 rounded-lg px-3 text-sm font-bold text-ink-dim hover:text-ink ${focusRing}`}
                 onClick={() => setMoreOpen((open) => !open)}
                 type="button"
               >
                 More
-                {moreHasUnread && <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-amber-400" />}
+                {moreHasUnread && <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-brass" />}
                 <IconChevronDown className="h-4 w-4" />
               </button>
               {moreOpen && <MoreMenu displayName={displayName} items={moreItems} />}
             </div>
-            <span aria-hidden="true" className="flex h-9 w-9 items-center justify-center rounded-full bg-amber-400 text-xs font-black text-slate-950">
+            <span aria-hidden="true" className="flex h-9 w-9 items-center justify-center rounded-full bg-brass text-xs font-black text-ink-on-accent">
               {initials || "KUT"}
             </span>
           </div>
@@ -141,10 +142,13 @@ export function AppNav({ displayName, isAdmin, balance, unreadCount }: AppNavPro
       </header>
 
       {/* Mobile top bar */}
-      <header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-3 border-b border-slate-800 bg-slate-950/95 px-4 backdrop-blur sm:hidden">
-        <Link className={`rounded-lg text-base font-black text-amber-400 ${focusRing}`} href="/">KUT</Link>
+      <header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-3 border-b border-panel-2 bg-board/95 px-4 backdrop-blur sm:hidden">
+        <Link className={`flex items-center gap-1.5 rounded-lg text-base font-black text-brass ${focusRing}`} href="/">
+          <span aria-hidden="true" className="h-2.5 w-2.5 shrink-0 bg-brass" style={{ clipPath: "polygon(50% 0%,100% 38%,82% 100%,18% 100%,0% 38%)" }} />
+          KUT
+        </Link>
         <div className="flex items-center gap-2">
-          <span className="flex items-center gap-1 rounded-full border border-slate-700 bg-slate-900 px-2.5 py-1 text-xs font-black tabular-nums text-amber-300">
+          <span className="flex items-center gap-1 rounded-full border border-line bg-panel px-2.5 py-1 text-xs font-black tabular-nums text-brass">
             <IconCoin className="h-3 w-3" />
             {balance.toLocaleString()}
           </span>
@@ -153,13 +157,13 @@ export function AppNav({ displayName, isAdmin, balance, unreadCount }: AppNavPro
               aria-expanded={moreOpen}
               aria-haspopup="menu"
               aria-label="Open menu"
-              className={`relative flex h-9 w-9 items-center justify-center rounded-full border border-slate-700 text-slate-300 ${focusRing}`}
+              className={`relative flex h-9 w-9 items-center justify-center rounded-full border border-line text-ink-dim ${focusRing}`}
               onClick={() => setMoreOpen((open) => !open)}
               type="button"
             >
               <IconMenu className="h-4 w-4" />
               {moreHasUnread && (
-                <span aria-hidden="true" className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border-2 border-slate-950 bg-amber-400" />
+                <span aria-hidden="true" className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border-2 border-board bg-brass" />
               )}
             </button>
             {moreOpen && <MoreMenu displayName={displayName} items={moreItems} />}
@@ -168,13 +172,13 @@ export function AppNav({ displayName, isAdmin, balance, unreadCount }: AppNavPro
       </header>
 
       {/* Mobile bottom tab bar */}
-      <nav aria-label="Primary" className="fixed inset-x-0 bottom-0 z-30 flex border-t border-slate-800 bg-slate-950/95 backdrop-blur sm:hidden">
+      <nav aria-label="Primary" className="fixed inset-x-0 bottom-0 z-30 flex border-t border-panel-2 bg-board/95 backdrop-blur sm:hidden">
         {primaryNavItems.map((item) => {
           const active = item.isActive(pathname);
           return (
             <Link
               aria-current={active ? "page" : undefined}
-              className={`flex flex-1 flex-col items-center gap-1 py-2.5 text-[11px] font-bold ${focusRing} ${active ? "text-amber-300" : "text-slate-400"}`}
+              className={`flex flex-1 flex-col items-center gap-1 py-2.5 text-[11px] font-bold ${focusRing} ${active ? "text-brass" : "text-ink-faint"}`}
               href={item.href}
               key={item.href}
             >

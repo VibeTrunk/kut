@@ -33,7 +33,7 @@ export function LoginForm() {
         <span className="font-semibold">Email</span>
         <input
           autoComplete="email"
-          className="min-h-12 w-full rounded-xl border border-slate-600 bg-slate-900 px-4"
+          className="min-h-12 w-full rounded-xl border border-line bg-board px-4"
           name="email"
           required
           type="email"
@@ -43,16 +43,16 @@ export function LoginForm() {
         <span className="font-semibold">Password</span>
         <input
           autoComplete="current-password"
-          className="min-h-12 w-full rounded-xl border border-slate-600 bg-slate-900 px-4"
+          className="min-h-12 w-full rounded-xl border border-line bg-board px-4"
           minLength={8}
           name="password"
           required
           type="password"
         />
       </label>
-      {errorMessage && <p className="rounded-xl bg-rose-950 p-3 text-sm text-rose-200">{errorMessage}</p>}
+      {errorMessage && <p className="rounded-xl bg-brick-bg p-3 text-sm text-brick">{errorMessage}</p>}
       <button
-        className="min-h-12 w-full rounded-xl bg-amber-400 px-4 py-3 font-bold text-slate-950 disabled:bg-slate-700 disabled:text-slate-400"
+        className="min-h-12 w-full rounded-xl bg-brass px-4 py-3 font-bold text-ink-on-accent disabled:bg-line disabled:text-ink-faint"
         disabled={isSubmitting}
         type="submit"
       >

@@ -20,8 +20,8 @@ export function AdminTabs() {
         return (
           <Link
             aria-current={active ? "page" : undefined}
-            className={`rounded-lg px-3 py-1.5 text-sm font-bold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400 ${
-              active ? "bg-amber-400/10 text-amber-300" : "text-slate-400 hover:text-slate-100"
+            className={`rounded-lg px-3 py-1.5 text-sm font-bold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brass ${
+              active ? "bg-brass/10 text-brass" : "text-ink-faint hover:text-ink"
             }`}
             href={tab.href}
             key={tab.href}

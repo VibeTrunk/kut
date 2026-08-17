@@ -31,21 +31,21 @@ export function OpenPackForm({ packSlug, title, price, cardsPerPack, balance, ca
   }
 
   return (
-    <form action={action} className="rounded-3xl border border-amber-400/50 bg-gradient-to-br from-amber-300 via-amber-500 to-orange-700 p-[1px] shadow-xl shadow-amber-950/30" onSubmit={confirmOpen}>
-      <div className="rounded-[calc(1.5rem-1px)] bg-slate-950/95 p-5">
+    <form action={action} className="rounded-3xl border border-brass/50 bg-gradient-to-br from-brass via-[#a3711d] to-[#4a2f08] p-[1px] shadow-xl shadow-brass/30" onSubmit={confirmOpen}>
+      <div className="rounded-[calc(1.5rem-1px)] bg-board/95 p-5">
         <input name="packSlug" type="hidden" value={packSlug} />
-        <p className="text-xs font-black uppercase tracking-[0.2em] text-amber-300">Pack store</p>
+        <p className="text-xs font-black uppercase tracking-[0.2em] text-brass">Pack store</p>
         <h2 className="mt-2 text-2xl font-black">{title}</h2>
-        <p className="mt-2 text-sm leading-6 text-slate-300">Three server-selected, tradeable Live Cards. Duplicates can happen.</p>
-        {state.error && <p className="mt-3 rounded-xl bg-rose-950 p-3 text-sm text-rose-100">{state.error}</p>}
+        <p className="mt-2 text-sm leading-6 text-ink-dim">Three server-selected, tradeable Live Cards. Duplicates can happen.</p>
+        {state.error && <p className="mt-3 rounded-xl bg-brick-bg p-3 text-sm text-brick">{state.error}</p>}
         <button
-          className="mt-5 min-h-12 w-full rounded-xl bg-amber-400 px-4 py-3 font-black text-slate-950 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-400"
+          className="mt-5 min-h-12 w-full rounded-xl bg-brass px-4 py-3 font-black text-ink-on-accent disabled:cursor-not-allowed disabled:bg-line disabled:text-ink-faint"
           disabled={isPending || !canAfford}
           type="submit"
         >
           {isPending ? "Opening..." : canAfford ? `Open for ${price} KUT Coins` : `Need ${price - balance} more KUT Coins`}
         </button>
-        {!canAfford && <p className="mt-2 text-center text-xs font-semibold text-slate-400">Earn coins by attending published sessions.</p>}
+        {!canAfford && <p className="mt-2 text-center text-xs font-semibold text-ink-faint">Earn coins by attending published sessions.</p>}
       </div>
     </form>
   );

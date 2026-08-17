@@ -68,12 +68,12 @@ export default async function CorrectionPage({ params }: CorrectionPageProps) {
   );
 
   return (
-    <main className="min-h-screen bg-slate-950 p-6 text-slate-50 sm:p-10">
+    <main className="min-h-screen bg-board p-6 text-ink sm:p-10">
       <section className="mx-auto max-w-xl space-y-8">
         <header className="space-y-3">
-          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-amber-400">Correction</p>
+          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-brass">Correction</p>
           <h1 className="text-4xl font-black tracking-tight">{session.status === "cancelled" ? "Review cancelled session" : "Correct published session"}</h1>
-          <p className="text-slate-300">
+          <p className="text-ink-dim">
             {session.status === "cancelled"
               ? "You can update this record before reactivating it. It will not affect Live Ratings while cancelled."
               : "Update the original record carefully. Saving rebuilds Live Ratings immediately and preserves the prior record in the audit log."}
@@ -92,12 +92,12 @@ export default async function CorrectionPage({ params }: CorrectionPageProps) {
         />
 
         {corrections.length > 0 && (
-          <section className="space-y-3 border-t border-slate-800 pt-8">
+          <section className="space-y-3 border-t border-panel-2 pt-8">
             <h2 className="text-xl font-bold">Correction history</h2>
             <ul className="space-y-2">
               {corrections.map((correction) => (
-                <li className="rounded-xl bg-slate-900 p-4 text-sm text-slate-300" key={correction.id}>
-                  <p className="font-semibold text-slate-50">{correction.reason}</p>
+                <li className="rounded-xl bg-panel p-4 text-sm text-ink-dim" key={correction.id}>
+                  <p className="font-semibold text-ink">{correction.reason}</p>
                   <p className="mt-1">{new Date(correction.corrected_at).toLocaleString("en-GB")}</p>
                 </li>
               ))}
@@ -106,12 +106,12 @@ export default async function CorrectionPage({ params }: CorrectionPageProps) {
         )}
 
         {statusEvents.length > 0 && (
-          <section className="space-y-3 border-t border-slate-800 pt-8">
+          <section className="space-y-3 border-t border-panel-2 pt-8">
             <h2 className="text-xl font-bold">Status history</h2>
             <ul className="space-y-2">
               {statusEvents.map((event) => (
-                <li className="rounded-xl bg-slate-900 p-4 text-sm text-slate-300" key={event.id}>
-                  <p className="font-semibold capitalize text-slate-50">{event.event_type}</p>
+                <li className="rounded-xl bg-panel p-4 text-sm text-ink-dim" key={event.id}>
+                  <p className="font-semibold capitalize text-ink">{event.event_type}</p>
                   <p className="mt-1">{event.reason}</p>
                   <p className="mt-1">{new Date(event.occurred_at).toLocaleString("en-GB")}</p>
                 </li>

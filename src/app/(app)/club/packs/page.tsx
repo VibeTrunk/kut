@@ -20,16 +20,16 @@ export default async function PacksPage() {
   const balance = walletResponse.data?.balance ?? 0;
 
   return (
-    <main className="min-h-screen bg-slate-950 p-5 text-slate-50 sm:p-10">
+    <main className="min-h-screen bg-board p-5 text-ink sm:p-10">
       <section className="mx-auto max-w-5xl space-y-8">
         <header>
-          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-amber-400">Pack store</p>
+          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-brass">Pack store</p>
           <h1 className="mt-2 text-4xl font-black tracking-tight sm:text-5xl">Packs</h1>
-          <p className="mt-3 max-w-2xl text-slate-300">Spend KUT Coins on server-selected, tradeable Live Cards. You have {balance.toLocaleString()} KUT Coins.</p>
+          <p className="mt-3 max-w-2xl text-ink-dim">Spend KUT Coins on server-selected, tradeable Live Cards. You have {balance.toLocaleString()} KUT Coins.</p>
         </header>
 
         {packs.length === 0 ? (
-          <p className="rounded-3xl border border-dashed border-slate-700 bg-slate-900/60 p-8 text-center text-slate-300">No packs are available right now.</p>
+          <p className="rounded-3xl border border-dashed border-line bg-panel/60 p-8 text-center text-ink-dim">No packs are available right now.</p>
         ) : (
           <section className="grid gap-4 sm:grid-cols-2">
             {packs.map((pack) => (

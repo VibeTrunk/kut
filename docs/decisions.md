@@ -504,3 +504,47 @@ Consequences: Operators create a verified encrypted backup, check catalogue
 file parity, review a central dry-run, and obtain explicit approval before a
 hosted schema change. This adds a small cross-repository release step while
 preserving each tool's isolated schema and local test workflow.
+
+## ADR-022 - Chrome palette derived from card rarity tiers, not stock Tailwind swatches
+
+Date: 2026-08-17
+
+Status: Accepted
+
+Decision: The player card was redesigned as "Clubblad" — a Panini-style
+sticker-album card (paper background per rarity tier, a corner pennant badge
+carrying tier as colour + shape + word, a taped photo mount, an illustrated
+jersey fallback with initials when there is no player photo). The app's
+surrounding chrome then adopted a token set derived from that same card
+palette instead of Tailwind's default `slate-*`/`amber-*`/`cyan-*`/
+`emerald-*`/`rose-*` swatches, which had been used ad hoc across ~40 files.
+New Tailwind v4 `@theme` tokens (`board`, `panel`, `panel-2`, `line`,
+`ink`/`ink-dim`/`ink-faint`, `brass`, `steel`, `moss`, `brick`, `warning`,
+each with `-bg`/`-line` companions where needed) live in
+`src/app/globals.css`. `--color-board` is literally the Elite pennant's hex
+value; `--color-brass` and `--color-steel` are drawn from the Gold and
+Silver pennants.
+
+Reason: the card face and the surrounding app chrome had drifted into two
+unrelated palettes — a warm paper card sitting on a generic dark-SaaS shell.
+The user asked for one cohesive visual identity; pulling the chrome's colours
+from the card's own tiers was a more specific, less generic choice than
+picking a new brand palette from scratch, and it keeps the whole system
+self-consistent (comparing colours across pages against a fixed set of six
+already-designed tiers, rather than inventing new ones).
+
+Consequences: new UI should reach for these tokens (`bg-board`, `text-brass`,
+`border-line`, etc.) instead of raw Tailwind colour swatches. The chrome
+migration was mechanical — a scripted `\b<old>\b` regex substitution across
+every `.tsx` file under `src/`, then hand-reviewed — and surfaced a few real
+bugs worth remembering: `amber-950` had been used both as a shadow tint and
+as a solid badge background and could not collapse to a single token; a
+fourth "Warning" severity tier on the admin economy page used `orange-*`,
+which had no established mapping and needed the new `warning` token; two
+files (the pack-opening button, the pack-reveal header) had hardcoded
+gradient hex values the regex could not reach and were fixed by hand. Two
+sketch rounds (five initial card directions, then three more ambitious
+card redraws addressing "the no-photo jersey doesn't read as a jersey" and
+"stats don't pop") were shown to the user as throwaway HTML artifacts before
+any code changed; the user picked Clubblad for the base card and declined all
+three redraws, keeping the shipped card as-is.

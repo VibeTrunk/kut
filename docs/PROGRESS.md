@@ -686,3 +686,41 @@ against — local or hosted — instead of a value hardcoded to one environment.
 Verified: rebuilt and confirmed the header via `curl` on both the dev server
 and a fresh `next start` build; local sign-in against a manually created
 Studio admin user succeeded end to end.
+
+## Clubblad visual redesign - 2026-08-17
+
+Replaced the player card's generic dark-gradient look with "Clubblad", a
+Panini-sticker-album system — see ADR-022 for the full design rationale.
+`src/components/live-card.tsx` and the `.live-card*` rules in
+`src/app/globals.css` were rewritten; the `LiveCardPlayer` prop shape and the
+`size` API are unchanged, so no call site outside those two files needed
+edits for the card itself.
+
+The same palette was then extended across the rest of the app chrome — nav
+(`app-nav.tsx`, including a new brass pentagon brand mark), dashboard, and
+every button/badge/banner/input/empty-state pattern across all ~40
+remaining `.tsx` files under `src/app` and `src/components` — via a scripted
+token substitution, hand-reviewed and corrected (see ADR-022 for the bugs
+that surfaced: a mis-mapped `amber-950`, a missing `warning` tier, two
+hardcoded gradients).
+
+Two sketch rounds (five initial card directions, then three more ambitious
+jersey/stat redraws) were shown to the user as throwaway HTML artifacts
+before touching the codebase; nothing from the second round was adopted.
+
+Verified: `npm run typecheck`, `npm run lint`, and `npm run test` (20 unit
+tests) all pass. Both the card redesign and the chrome redesign were checked
+in a real Playwright-driven browser render, via a temporary unauthenticated
+`/design-preview` route deleted immediately after each check — it was never
+committed.
+
+Not verified: the actual authenticated pages (Collection, Market, Packs,
+admin) have not been manually clicked through in a signed-in browser session
+since this change: `/design-preview` only proved the shared tokens and the
+nav component render correctly, not every page that consumes them.
+
+Next recommended task: this work is uncommitted in the working tree as of
+this entry (`git status` shows 42 modified files). Commit it before starting
+unrelated work, and manually click through Collection, Market, Packs, and an
+admin screen in a signed-in session to confirm the token migration reads
+correctly on real data, not just the seed fixtures used in `/design-preview`.

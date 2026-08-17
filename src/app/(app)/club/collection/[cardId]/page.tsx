@@ -69,11 +69,11 @@ export default async function CardDetailPage({ params, searchParams }: CardPageP
   const maximumPrice = bounds && "maximum_price" in bounds ? Number(bounds.maximum_price) : null;
 
   return (
-    <main className="min-h-screen bg-slate-950 p-5 text-slate-50 sm:p-10">
+    <main className="min-h-screen bg-board p-5 text-ink sm:p-10">
       <section className="mx-auto max-w-4xl space-y-8">
-        <p className="text-sm font-semibold uppercase tracking-[0.24em] text-amber-400">Collection</p>
+        <p className="text-sm font-semibold uppercase tracking-[0.24em] text-brass">Collection</p>
 
-        <div className="grid gap-8 rounded-3xl border border-slate-700/80 bg-slate-900/70 p-6 sm:p-8 md:grid-cols-[minmax(280px,360px)_1fr] md:items-center">
+        <div className="grid gap-8 rounded-3xl border border-line/80 bg-panel/70 p-6 sm:p-8 md:grid-cols-[minmax(280px,360px)_1fr] md:items-center">
           <LiveCard
             size="detail"
             player={{
@@ -93,39 +93,39 @@ export default async function CardDetailPage({ params, searchParams }: CardPageP
 
           <div className="space-y-5">
             <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.24em] text-amber-400">{card.is_live ? "Live card" : "Special card"}</p>
+              <p className="text-sm font-semibold uppercase tracking-[0.24em] text-brass">{card.is_live ? "Live card" : "Special card"}</p>
               <h1 className="mt-2 text-4xl font-black tracking-tight">{card.display_name}</h1>
-              <p className="mt-2 text-lg text-slate-300">{card.is_live ? "This card’s rating is live and changes with published football sessions." : card.edition_title}</p>
+              <p className="mt-2 text-lg text-ink-dim">{card.is_live ? "This card’s rating is live and changes with published football sessions." : card.edition_title}</p>
             </div>
 
             <dl className="grid grid-cols-2 gap-3 text-sm">
-              <div className="rounded-2xl bg-slate-950/60 p-4">
-                <dt className="font-bold uppercase tracking-[0.12em] text-slate-400">Edition</dt>
+              <div className="rounded-2xl bg-board/60 p-4">
+                <dt className="font-bold uppercase tracking-[0.12em] text-ink-faint">Edition</dt>
                 <dd className="mt-1 text-lg font-black">{readable(card.edition_type)}</dd>
               </div>
-              <div className="rounded-2xl bg-slate-950/60 p-4">
-                <dt className="font-bold uppercase tracking-[0.12em] text-slate-400">Ownership</dt>
-                <dd className="mt-1 text-lg font-black text-amber-300">{card.is_tradeable ? "Tradeable" : "Locked"}</dd>
+              <div className="rounded-2xl bg-board/60 p-4">
+                <dt className="font-bold uppercase tracking-[0.12em] text-ink-faint">Ownership</dt>
+                <dd className="mt-1 text-lg font-black text-brass">{card.is_tradeable ? "Tradeable" : "Locked"}</dd>
               </div>
-              <div className="rounded-2xl bg-slate-950/60 p-4">
-                <dt className="font-bold uppercase tracking-[0.12em] text-slate-400">Source</dt>
+              <div className="rounded-2xl bg-board/60 p-4">
+                <dt className="font-bold uppercase tracking-[0.12em] text-ink-faint">Source</dt>
                 <dd className="mt-1 text-lg font-black">{readable(card.source)}</dd>
               </div>
-              <div className="rounded-2xl bg-slate-950/60 p-4">
-                <dt className="font-bold uppercase tracking-[0.12em] text-slate-400">Card ID</dt>
-                <dd className="mt-1 break-all font-mono text-xs text-slate-300">{card.card_id}</dd>
+              <div className="rounded-2xl bg-board/60 p-4">
+                <dt className="font-bold uppercase tracking-[0.12em] text-ink-faint">Card ID</dt>
+                <dd className="mt-1 break-all font-mono text-xs text-ink-dim">{card.card_id}</dd>
               </div>
-              <div className="rounded-2xl bg-slate-950/60 p-4">
-                <dt className="font-bold uppercase tracking-[0.12em] text-slate-400">Discard value</dt>
+              <div className="rounded-2xl bg-board/60 p-4">
+                <dt className="font-bold uppercase tracking-[0.12em] text-ink-faint">Discard value</dt>
                 <dd className="mt-1 text-lg font-black">{card.discard_value} KUT Coins</dd>
               </div>
             </dl>
 
-            {query.listed === "1" && <p className="rounded-2xl bg-emerald-950 p-4 text-sm font-bold text-emerald-100">Listed successfully. This card is now locked for 24 hours or until you cancel it.</p>}
-            {query.listingCancelled === "1" && <p className="rounded-2xl bg-emerald-950 p-4 text-sm font-bold text-emerald-100">Listing cancelled. This card is available again.</p>}
+            {query.listed === "1" && <p className="rounded-2xl bg-moss-bg p-4 text-sm font-bold text-moss">Listed successfully. This card is now locked for 24 hours or until you cancel it.</p>}
+            {query.listingCancelled === "1" && <p className="rounded-2xl bg-moss-bg p-4 text-sm font-bold text-moss">Listing cancelled. This card is available again.</p>}
 
             {!card.is_tradeable && (
-              <p className="rounded-2xl border border-amber-400/30 bg-amber-400/10 p-4 text-sm text-amber-100">Starter cards are locked so every new club begins with a meaningful personal collection. Future pack and market cards can be tradeable.</p>
+              <p className="rounded-2xl border border-brass/30 bg-brass/10 p-4 text-sm text-brass">Starter cards are locked so every new club begins with a meaningful personal collection. Future pack and market cards can be tradeable.</p>
             )}
             {card.is_tradeable && card.active_listing_id && card.active_listing_price && <CancelListingForm cardId={card.card_id} listingId={card.active_listing_id} price={card.active_listing_price} />}
             {card.is_tradeable && !card.active_listing_id && <>

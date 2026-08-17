@@ -37,29 +37,33 @@ function initials(name: string) {
 }
 
 export function LiveCard({ player, size = "grid" }: LiveCardProps) {
-  const photoStyle = player.photoUrl
-    ? { backgroundImage: `url("${player.photoUrl}")` }
-    : undefined;
-
   return (
     <article className="live-card" data-rarity={player.rarityTier} data-size={size}>
       <div aria-hidden="true" className="live-card__texture" />
       <div aria-hidden="true" className="live-card__shine" />
 
+      <div aria-hidden="true" className="live-card__pennant">
+        <span className={`live-card__tier-icon live-card__tier-icon--${player.rarityTier}`} />
+        <span>{player.rarityTier}</span>
+      </div>
+
       <header className="live-card__header">
-        <div>
-          <p className="live-card__eyebrow">KUT · Live</p>
-          <p className="live-card__tier">{player.rarityTier} tier</p>
-        </div>
         <p aria-label={`${player.liveOvr} overall`} className="live-card__ovr">
           {player.liveOvr}
           <span>OVR</span>
         </p>
       </header>
 
-      <div className="live-card__portrait" style={photoStyle}>
-        <span className="live-card__portrait-fallback">{initials(player.displayName)}</span>
-      </div>
+      {player.photoUrl ? (
+        <div className="live-card__frame" style={{ backgroundImage: `url("${player.photoUrl}")` }}>
+          <span aria-hidden="true" className="live-card__tape" />
+        </div>
+      ) : (
+        <div className="live-card__frame live-card__frame--jersey">
+          <span aria-hidden="true" className="live-card__tape" />
+          <span className="live-card__jersey-initials">{initials(player.displayName)}</span>
+        </div>
+      )}
 
       <div className="live-card__identity">
         <h2>{player.displayName}</h2>

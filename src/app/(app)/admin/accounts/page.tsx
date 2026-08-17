@@ -28,20 +28,20 @@ export default async function AccountsPage() {
   const displayNameByUserId = new Map((profilesResponse.data ?? []).map((profile) => [profile.id, profile.display_name]));
 
   return (
-    <main className="min-h-screen bg-slate-950 p-6 text-slate-50 sm:p-10">
+    <main className="min-h-screen bg-board p-6 text-ink sm:p-10">
       <section className="mx-auto max-w-xl space-y-8">
         <header className="space-y-3">
           <h1 className="text-4xl font-black tracking-tight">Account recovery</h1>
-          <p className="text-slate-300">Set a temporary password for a member who cannot sign in. Every attempt is recorded; passwords are never logged.</p>
+          <p className="text-ink-dim">Set a temporary password for a member who cannot sign in. Every attempt is recorded; passwords are never logged.</p>
         </header>
         <ResetPasswordForm accounts={accounts} />
         {(eventsResponse.data ?? []).length > 0 && (
-          <section className="space-y-3 border-t border-slate-800 pt-8">
+          <section className="space-y-3 border-t border-panel-2 pt-8">
             <h2 className="text-xl font-bold">Recent reset activity</h2>
             <ul className="space-y-2">
               {(eventsResponse.data ?? []).map((event) => (
-                <li className="rounded-xl bg-slate-900 p-4 text-sm text-slate-300" key={event.id}>
-                  <p className="font-semibold text-slate-50">{displayNameByUserId.get(event.target_user_id) ?? "Unknown member"} · {event.status}</p>
+                <li className="rounded-xl bg-panel p-4 text-sm text-ink-dim" key={event.id}>
+                  <p className="font-semibold text-ink">{displayNameByUserId.get(event.target_user_id) ?? "Unknown member"} · {event.status}</p>
                   <p className="mt-1">{event.reason}</p>
                   <p className="mt-1">{new Date(event.created_at).toLocaleString("en-GB")}</p>
                 </li>

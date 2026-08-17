@@ -490,3 +490,25 @@ Consequences: Sign-out leaves a member at the login page rather than a public
 ratings page. Server and database tests must verify the authentication boundary
 for `/` and deny anonymous view access. The view name remains unchanged to
 avoid a needless migration of member-facing code.
+
+## ADR-021 - Central catalogue for the shared Supabase migration ledger
+
+Date: 2026-08-17
+
+Status: Accepted
+
+Decision: Hosted migrations for the shared VibeTrunk Supabase project are
+catalogued and deployed only from `VibeTrunk/supabase`. KUT keeps identical
+migration files for its local Supabase stack and database tests, but must not
+run a hosted `supabase db push` itself. New schema changes require matching,
+immutable migration files in the owning app repository and the central
+catalogue.
+
+Reason: Supabase records migration versions globally for the database rather
+than separately for schemas. Cogitster's existing migration entry caused KUT's
+otherwise valid hosted push to fail its local/remote-history safety check.
+
+Consequences: Operators create a verified encrypted backup, check catalogue
+file parity, review a central dry-run, and obtain explicit approval before a
+hosted schema change. This adds a small cross-repository release step while
+preserving each tool's isolated schema and local test workflow.

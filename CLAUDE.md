@@ -27,6 +27,18 @@ Vercel project on the `kut.vibetrunk.com` subdomain. `VibeTrunk/home` knows
 nothing about this repo beyond its name, blurb, and URL — keep it that way;
 don't add cross-repo coupling beyond the shared Supabase project.
 
+## Current hosted deployment
+
+KUT is live at `https://kut.vibetrunk.com` as Vercel project `kut`. The
+hosted `kut` schema is applied through
+`20260817030000_private_live_ratings.sql`.
+
+Supabase records migration history globally for the shared database, not per
+schema. Hosted migrations are therefore catalogued and deployed only from
+[`VibeTrunk/supabase`](https://github.com/VibeTrunk/supabase). This repository
+keeps matching SQL files for local Supabase development and database tests;
+never run a hosted `supabase db push` from here.
+
 Before writing code in a new session, read (in order): `docs/BUILD_SPEC.md`,
 `docs/PROGRESS.md` (once it exists), `docs/decisions.md`, and recent git
 history — the build spec itself asks for this same reading order (Part

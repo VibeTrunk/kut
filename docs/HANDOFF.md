@@ -36,6 +36,20 @@ the login page, and anonymous database callers cannot read Live Ratings.
 
 ## Implemented product flow
 
+## Hosted deployment update - 2026-08-17
+
+KUT is now live at `https://kut.vibetrunk.com`. The production Vercel project
+has its hosted Supabase environment values configured, and the shared
+Supabase project's `kut` schema has all 25 KUT migrations through
+`20260817030000_private_live_ratings.sql` applied.
+
+Before the schema change, a verified encrypted logical export was created and
+its temporary plaintext files were removed. Hosted migration history is now
+owned by [`VibeTrunk/supabase`](https://github.com/VibeTrunk/supabase), which
+contains the Cogitster deployed baseline and KUT's applied migrations. Do not
+run hosted migrations from this repository; retain its migration files for
+local tests only.
+
 - Member-only Live Ratings derived from published attendance.
 - Admin-only attendance publication, correction, cancellation, and
   reactivation, with audit history and deterministic rating rebuilds.

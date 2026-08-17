@@ -39,3 +39,6 @@ pnpm-debug.log*
 
 # Supabase CLI local state — only relevant if this repo has a supabase/ dir
 supabase/.temp
+
+# Encrypted operator backups contain private production data and stay local.
+.private-backups/

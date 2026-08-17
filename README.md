@@ -16,7 +16,11 @@ resolved before implementation starts).
 
 The local MVP is feature-complete through attendance, Live Cards, invite-only
 accounts, starter assets, packs, discard, market, Club Value, and private
-market messages. KUT is not yet deployed. Target:
+market messages. KUT is live at [kut.vibetrunk.com](https://kut.vibetrunk.com),
+deployed from its own Vercel project using the shared VibeTrunk Supabase
+project's `kut` schema. Hosted migrations are catalogued and deployed only
+from the central [VibeTrunk/supabase](https://github.com/VibeTrunk/supabase)
+repository. Historical target:
 `kut.vibetrunk.com`, deployed as its own Vercel project, using the shared
 VibeTrunk Supabase project's `kut` schema.
 

@@ -568,6 +568,19 @@ tests, 11 Chromium browser tests, lint, typecheck, and production build).
 Next recommended task: manually review the signed-in Club, Market, Messages,
 and admin attendance flows at a narrow mobile viewport.
 
+## Hosted alpha deployment and shared migration authority - 2026-08-17
+
+KUT is live at `https://kut.vibetrunk.com`. A verified encrypted logical
+export was created before the hosted schema change, then KUT's 25 migrations
+through `20260817030000_private_live_ratings.sql` were applied.
+
+Supabase migration history is global to the shared project rather than per
+schema. `VibeTrunk/supabase` is now the central catalogue and sole hosted
+migration deployment point. KUT retains matching migration files for local
+database tests only. Every future schema change must have matching immutable
+files in both repositories and use the central backup, parity-check, dry-run,
+and explicit-approval workflow.
+
 ## Two-client market-race update - 2026-08-17
 
 `npm run test:market-race` now opens two independent local PostgreSQL sessions

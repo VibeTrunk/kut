@@ -1,6 +1,9 @@
 # Current phase
 
-Phase 0 — Foundation (local implementation complete)
+Hosted alpha — feature-complete MVP live at `https://kut.vibetrunk.com` (see
+the "Hosted alpha deployment" entry below). The sections immediately below
+describe the original Phase 0 foundation; read the dated entries further down
+for the full history through the current hosted state.
 
 # Completed
 

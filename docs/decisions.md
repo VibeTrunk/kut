@@ -32,23 +32,15 @@ product name shown to users is KUT.
 
 ## Open items
 
-- **Framework/stack scaffolding not yet applied.** The build spec specifies
-  Next.js + TypeScript + Tailwind + Supabase + Vercel in detail (Part XX),
-  but this repo currently has only the safety/security/doc layer — no
-  `package.json`, no app code. Building it out should follow the build
-  spec's own phased plan (Part XXXIV, starting at Phase 0 / Session 1).
-- **`vercel.json`'s `connect-src` has a placeholder** (`https://<project-ref>.supabase.co`)
-  since the Supabase project doesn't exist yet — this repo will use the
-  existing shared VibeTrunk Supabase project once the `kut` schema is
-  created there, not a new project. Replace the placeholder with the real
-  project ref once that's done (see build spec Part XXVII, "Supabase
-  considerations", on why this stays one shared project rather than
-  one-per-tool).
 - **Blurb for `home`'s tools grid** was drafted ("Collectible football cards
   for Kelderklasse — showing up matters as much as scoring.") but not yet
-  added to `VibeTrunk/home/src/data/tools.ts` — offer that edit once there's
-  something more concrete to link to (per the `vibetrunk-new-tool` skill,
-  step 6).
+  added to `VibeTrunk/home/src/data/tools.ts`, even though KUT is now live —
+  offer that edit (per the `vibetrunk-new-tool` skill, step 6).
+
+Resolved: framework/stack scaffolding is built (see ADR-001 onward), and the
+CSP `connect-src` placeholder was replaced with the real project ref and
+moved to a per-request nonce in `src/proxy.ts` (see the "Fix login hydration
+under strict CSP" commit).
 
 ## ADR-001 — Phase 0 local development foundation
 

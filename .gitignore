@@ -42,3 +42,7 @@ supabase/.temp
 
 # Encrypted operator backups contain private production data and stay local.
 .private-backups/
+
+# Supabase Studio SQL Editor snippets can contain real production data
+# (user IDs, role grants, etc.) — never commit them.
+supabase/snippets/

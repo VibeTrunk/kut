@@ -13,11 +13,11 @@ in full before implementing anything; this file is orientation, not a
 substitute.
 
 ## Status so far
-- **Repo:** created, not yet live. No application code yet — this is the
-  agent-safety/security scaffold only.
-- **Vercel:** not yet connected. Target subdomain `kut.vibetrunk.com`.
+- **Repo:** feature-complete MVP built and committed; see "Current hosted
+  deployment" below for what's live.
+- **Vercel:** connected as project `kut` at `kut.vibetrunk.com`.
 - **Supabase:** uses the shared VibeTrunk Supabase project, schema `kut`
-  (not `public`). The schema itself has not been created yet.
+  (not `public`); the hosted schema is created and migrated — see below.
 
 ## This repo's job
 Own KUT end to end, per `docs/BUILD_SPEC.md`: the Next.js/TypeScript

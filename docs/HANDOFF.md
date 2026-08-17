@@ -4,9 +4,9 @@ Date: 2026-08-17
 
 ## Current state
 
-KUT is a **local-only, feature-complete MVP**. It has not been linked to a
-hosted Supabase project, connected to Vercel, deployed, or pushed to a remote.
-The local Supabase stack has migrations applied through:
+KUT is a **feature-complete MVP, live in production** at
+`https://kut.vibetrunk.com` (see "Hosted deployment update" below). The local
+Supabase stack has migrations applied through:
 
 `20260817030000_private_live_ratings.sql`
 
@@ -101,9 +101,9 @@ not source code or local database data.
 6. `docs/SECURITY_REVIEW.md`
 7. `docs/OPERATIONS.md`
 
-Then inspect `git status`. The working tree contains the cumulative local MVP
-work and is not committed. Preserve unrelated user files—especially
-`supabase/snippets/`—and do not reset, clean, or overwrite the working tree.
+Then inspect `git status`. The cumulative MVP work is committed and pushed to
+`main`. Preserve unrelated user files—especially `supabase/snippets/`—and do
+not reset, clean, or overwrite the working tree.
 
 ## Known gaps before a real alpha
 
@@ -114,16 +114,15 @@ work and is not committed. Preserve unrelated user files—especially
    Vercel environment variables, CSP host replacement, and preview deployment
    are intentionally not done. Follow `docs/OPERATIONS.md` only with explicit
    approval.
-3. **Git:** review and commit the local work before any deployment. Do not
-   push or deploy without user authorization.
+3. **Git:** the MVP work is committed and pushed. Do not force-push or deploy
+   further changes without user authorization.
 
 ## Recommended next phases
 
 ### Phase A — Alpha readiness and operational safety
 
-1. Commit the completed local MVP after reviewing the working tree.
-2. Complete the signed-in mobile review.
-3. Follow the backup and preview checklist. Use local Supabase for development
+1. Complete the signed-in mobile review.
+2. Follow the backup and preview checklist. Use local Supabase for development
    and a Vercel preview first; do not let previews apply database migrations.
 
 Assessment: all recommended. A separate always-on hosted test environment is

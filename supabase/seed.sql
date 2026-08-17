@@ -9,3 +9,10 @@ on conflict (id) do nothing;
 insert into kut.seasons (id, name, starts_on, is_active)
 values ('00000000-0000-4000-8000-000000000010', 'Test Season 2026', '2026-08-03', true)
 on conflict (id) do nothing;
+
+-- Seeds run after migrations, so create the matching Live editions here too.
+-- This keeps a freshly reset local/CI database eligible for starter-pack tests.
+insert into kut.card_editions (player_id, edition_type, title, is_live)
+select id, 'live', display_name || ' Live', true
+from kut.players
+on conflict do nothing;

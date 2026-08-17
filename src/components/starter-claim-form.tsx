@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { claimStarterPack, type StarterClaimState } from "@/app/starter-actions";
+import { claimStarterPack, type StarterClaimState } from "@/app/(app)/starter-actions";
 
 const initialState: StarterClaimState = { error: null };
 

@@ -1,5 +1,3 @@
-import Link from "next/link";
-import { LogoutButton } from "@/components/logout-button";
 import { requireAdmin } from "@/lib/auth/admin";
 import { createClient } from "@/lib/supabase/server";
 
@@ -30,13 +28,7 @@ export default async function EconomyPage() {
   return (
     <main className="min-h-screen bg-slate-950 p-5 text-slate-50 sm:p-10">
       <section className="mx-auto max-w-5xl space-y-8">
-        <div className="flex justify-end"><LogoutButton /></div>
-        <nav className="flex flex-wrap items-center justify-between gap-3 text-sm font-bold">
-          <Link className="text-amber-400 hover:text-amber-300" href="/admin/attendance">← Admin attendance</Link>
-          <Link className="text-slate-400 hover:text-slate-200" href="/">Live ratings</Link>
-        </nav>
         <header>
-          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-amber-400">Admin · economy</p>
           <h1 className="mt-2 text-4xl font-black tracking-tight sm:text-5xl">Pack health</h1>
           <p className="mt-3 max-w-2xl text-slate-300">Expected values use the active Live Card pool and server-defined rarity weights. They are a warning system, not a setting screen.</p>
         </header>

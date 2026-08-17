@@ -18,6 +18,6 @@ export async function buyListing(_state: BuyState, formData: FormData): Promise<
   if (error || !data || typeof data !== "object" || !("price" in data)) return { error: "This listing could not be bought. It may have sold or you may need more KUT Coins." };
   const price = Number(data.price);
   if (!Number.isSafeInteger(price) || price < 1) return { error: "This listing could not be bought." };
-  revalidatePath("/club"); revalidatePath("/market"); revalidatePath("/messages");
-  redirect(`/club?purchase=${price}`);
+  revalidatePath("/club/collection", "layout"); revalidatePath("/market"); revalidatePath("/messages");
+  redirect(`/club/collection?purchase=${price}`);
 }

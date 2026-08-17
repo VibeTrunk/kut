@@ -16,7 +16,6 @@ export async function markMessagesRead(_state: MessageActionState, formData: For
   const supabase = await createClient();
   const { error } = await supabase.schema("kut").rpc("mark_notifications_read", { p_notification_ids: markAll ? null : ids });
   if (error) return { error: "This message could not be updated." };
-  revalidatePath("/messages");
-  revalidatePath("/club");
+  revalidatePath("/messages", "layout");
   return { error: null };
 }

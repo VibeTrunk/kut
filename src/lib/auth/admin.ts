@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 
 export type AdminIdentity = {
@@ -7,7 +8,8 @@ export type AdminIdentity = {
   role: "admin" | "superadmin";
 };
 
-export async function requireAdmin(): Promise<AdminIdentity> {
+/** Cached per-request: the admin/layout.tsx guard and a page's own call share one round trip. */
+export const requireAdmin = cache(async (): Promise<AdminIdentity> => {
   const supabase = await createClient();
   const { data, error } = await supabase.auth.getClaims();
   const userId = data?.claims?.sub;
@@ -37,4 +39,4 @@ export async function requireAdmin(): Promise<AdminIdentity> {
     displayName: profile.display_name,
     role: profile.role,
   };
-}
+});

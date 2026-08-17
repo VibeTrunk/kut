@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 
 export type UserIdentity = {
@@ -9,8 +10,10 @@ export type UserIdentity = {
 /**
  * Require an enabled KUT profile. This is intentionally separate from the
  * admin guard: any enabled member may see only their own collection.
+ * Wrapped in React's cache() so the AppNav layout and a page's own call
+ * within the same request share one Supabase round trip.
  */
-export async function requireUser(): Promise<UserIdentity> {
+export const requireUser = cache(async (): Promise<UserIdentity> => {
   const supabase = await createClient();
   const { data, error } = await supabase.auth.getClaims();
   const userId = data?.claims?.sub;
@@ -31,4 +34,4 @@ export async function requireUser(): Promise<UserIdentity> {
   }
 
   return { id: userId, displayName: profile.display_name };
-}
+});

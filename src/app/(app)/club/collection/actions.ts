@@ -36,7 +36,7 @@ export async function discardCard(
     return { error: "This card could not be discarded. Please try again." };
   }
 
-  revalidatePath("/club");
-  revalidatePath(`/club/cards/${cardId}`);
-  redirect(`/club?discard=${coins}`);
+  revalidatePath("/club/collection", "layout");
+  revalidatePath(`/club/collection/${cardId}`);
+  redirect(`/club/collection?discard=${coins}`);
 }

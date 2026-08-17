@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { LiveCard, type LiveCardPlayer } from "@/components/live-card";
-import { LogoutButton } from "@/components/logout-button";
 import { StarterClaimForm } from "@/components/starter-claim-form";
 import { createClient } from "@/lib/supabase/server";
 
@@ -33,7 +32,7 @@ export default async function Home({ searchParams }: HomePageProps) {
     redirect("/login");
   }
 
-  const [{ data: profile, error: profileError }, ratingsResponse, query] = await Promise.all([
+  const [{ data: profile, error: profileError }, ratingsResponse, walletResponse, clubValueResponse, rankResponse, query] = await Promise.all([
     supabase
       .schema("kut")
       .from("profiles")
@@ -46,6 +45,9 @@ export default async function Home({ searchParams }: HomePageProps) {
       .select("id, slug, display_name, archetype, live_ovr, pac, sho, pas, dri, def, phy, rarity_tier")
       .order("live_ovr", { ascending: false })
       .order("display_name"),
+    supabase.schema("kut").from("wallets").select("balance").eq("user_id", userId).maybeSingle(),
+    supabase.schema("kut").from("my_club_value").select("club_value").maybeSingle(),
+    supabase.schema("kut").from("club_value_leaderboard").select("rank").eq("is_current_user", true).maybeSingle(),
     searchParams,
   ]);
   const { data, error } = ratingsResponse;
@@ -58,13 +60,14 @@ export default async function Home({ searchParams }: HomePageProps) {
     redirect("/login");
   }
 
-  const isAdmin = profile.role === "admin" || profile.role === "superadmin";
-
   if (error) {
     throw new Error("Could not load the published Live Ratings.");
   }
 
   const ratings = (data ?? []) as LiveRating[];
+  const balance = walletResponse.data?.balance ?? 0;
+  const clubValue = clubValueResponse.data?.club_value ?? balance;
+  const rank = rankResponse.data?.rank ?? null;
 
   return (
     <main className="min-h-screen bg-slate-950 p-6 text-slate-50 sm:p-10">
@@ -81,22 +84,35 @@ export default async function Home({ searchParams }: HomePageProps) {
           </p>
         </header>
 
-        <div className="flex flex-wrap gap-3">
-          <Link className="inline-flex min-h-12 items-center rounded-xl border border-slate-600 px-4 font-bold text-slate-100 hover:border-amber-400 hover:text-amber-300" href="/club">
-            My Club
-          </Link>
-          {isAdmin && (
-            <Link className="inline-flex min-h-12 items-center rounded-xl bg-amber-400 px-4 font-bold text-slate-950" href="/admin/attendance">
-              Admin attendance
+        {profile.starter_claimed_at && (
+          <dl className="flex flex-wrap gap-3">
+            <div className="min-w-28 rounded-2xl border border-slate-700 bg-slate-900/60 px-4 py-3">
+              <dt className="text-xs font-black uppercase tracking-[0.13em] text-slate-400">KUT Coins</dt>
+              <dd className="mt-1 text-2xl font-black text-amber-300">{balance.toLocaleString()}</dd>
+            </div>
+            <div className="min-w-28 rounded-2xl border border-slate-700 bg-slate-900/60 px-4 py-3">
+              <dt className="text-xs font-black uppercase tracking-[0.13em] text-slate-400">Club Value</dt>
+              <dd className="mt-1 text-2xl font-black">{Number(clubValue).toLocaleString()}</dd>
+            </div>
+            {rank !== null && (
+              <div className="min-w-28 rounded-2xl border border-cyan-400/40 bg-cyan-950/30 px-4 py-3">
+                <dt className="text-xs font-black uppercase tracking-[0.13em] text-cyan-200">Rank</dt>
+                <dd className="mt-1 text-2xl font-black text-cyan-100">#{rank}</dd>
+              </div>
+            )}
+            <Link
+              className="flex min-w-28 items-center justify-center rounded-2xl border border-amber-400/50 bg-amber-400/10 px-4 py-3 text-sm font-black text-amber-300 hover:bg-amber-400/20"
+              href="/club/packs"
+            >
+              Open a pack →
             </Link>
-          )}
-          <LogoutButton />
-        </div>
+          </dl>
+        )}
 
         {!profile.starter_claimed_at && <StarterClaimForm />}
         {query.starter === "1" && (
           <p className="rounded-xl bg-emerald-950 p-4 font-semibold text-emerald-200">
-            Starter pack claimed: 250 KUT Coins and three Live Cards are now yours. <Link className="underline" href="/club">View My Club</Link>.
+            Starter pack claimed: 250 KUT Coins and three Live Cards are now yours. <Link className="underline" href="/club/collection">View My Collection</Link>.
           </p>
         )}
 

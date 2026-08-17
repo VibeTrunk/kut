@@ -571,6 +571,53 @@ tests, 11 Chromium browser tests, lint, typecheck, and production build).
 Next recommended task: manually review the signed-in Club, Market, Messages,
 and admin attendance flows at a narrow mobile viewport.
 
+## Navigation overhaul update - 2026-08-17
+
+Every page previously hand-rolled its own back-link; the same destination was
+labelled four different ways depending on which screen linked to it, two
+pages (card detail, pack reveal) had no menu entry at all, and admin sub-pages
+were two hops apart. This addressed the "review signed-in flows at a narrow
+mobile viewport" item above by building the persistent navigation the build
+spec already specified (Part XVII, §46) rather than deferring it further.
+
+Authenticated routes now live under an `(app)` route group with a shared
+`AppNav`: a desktop top bar and a mobile bottom tab bar, both with five
+primary destinations (Home, Collection, Packs, Market, Club) plus a "More"
+overflow menu (Leaderboard, Player directory, Messages with an unread badge,
+Settings, and Admin for admins only). `/club` split into three pages along
+existing data only, no new backend queries beyond reusing `my_club_value` and
+`club_value_leaderboard`: `/club` (wallet/Club Value overview), `/club/collection`
+(the card grid, was `/club`), and `/club/packs` (the pack store, pulled out of
+the old combined page). Card detail moved from `/club/cards/[cardId]` to
+`/club/collection/[cardId]`; pack reveal stays at `/club/packs/[openingId]`.
+Admin pages gained a shared tab strip so Attendance/Accounts/Economy/Invites
+are reachable from each other directly instead of only through Attendance.
+
+`/players` and `/settings` are new placeholder pages ("coming soon") so the
+spec-mandated overflow menu items have somewhere to point before Player
+Directory (Phase 1A) and full Settings (Phase 1.5) are built. `requireUser`
+and `requireAdmin` are now wrapped in React's `cache()` so the new layout-level
+auth check and a page's own call share one Supabase round trip per request
+instead of duplicating it.
+
+No route/label change here needed a `docs/decisions.md` entry: this
+implements the spec's own navigation section rather than deviating from it.
+Squad building (Phase 3) will need a real nav placement decision later; no
+slot was reserved speculatively.
+
+Tests passing locally: `npm run lint`, `npm run typecheck` (via `next build`),
+`npm run test` (20 unit tests), `npm run test:e2e` (11 Chromium tests,
+including the 390px viewport checks), and `npm run build`. Full authenticated
+click-through (verifying the AppNav itself renders correctly, not just the
+pre-login redirect boundary) was not possible in this environment: local
+Supabase requires Docker, which is not installed here, and the shared hosted
+project was deliberately not used for interactive testing.
+
+Next recommended task: manually sign in locally and click through Home,
+Collection, Packs, Club, Market, and the admin tab strip to confirm the
+AppNav renders and behaves as designed, since automated coverage here only
+proved the pre-login redirect boundary.
+
 ## Hosted alpha deployment and shared migration authority - 2026-08-17
 
 KUT is live at `https://kut.vibetrunk.com`. A verified encrypted logical
@@ -620,3 +667,22 @@ tests, 11 Chromium browser tests, lint, typecheck, and production build).
 
 Next recommended task: manually review the signed-in Club, Market, Messages,
 and admin attendance flows at a narrow mobile viewport.
+
+## Local sign-in CSP fix - 2026-08-17
+
+Discovered while manually verifying the navigation overhaul below: `src/proxy.ts`
+hardcoded the CSP `connect-src` directive to the hosted Supabase project's
+domain only. Signing in against a local `supabase start` stack therefore had
+the browser silently block the `auth/v1/token` request as a CSP violation,
+which `signInWithPassword` surfaced only as a generic "Sign-in failed" message
+with no indication the real cause was a blocked network request rather than
+wrong credentials.
+
+`connect-src` now derives from `NEXT_PUBLIC_SUPABASE_URL` at request time
+(falling back to the hosted project URL only if that variable is unset), so it
+always matches whatever Supabase instance the app is actually configured
+against — local or hosted — instead of a value hardcoded to one environment.
+
+Verified: rebuilt and confirmed the header via `curl` on both the dev server
+and a fresh `next start` build; local sign-in against a manually created
+Studio admin user succeeded end to end.

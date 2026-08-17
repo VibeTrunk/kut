@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { LogoutButton } from "@/components/logout-button";
 import { requireAdmin } from "@/lib/auth/admin";
 import { createClient } from "@/lib/supabase/server";
 import { AttendanceForm } from "./attendance-form";
@@ -40,17 +39,7 @@ export default async function AttendancePage({ searchParams }: AttendancePagePro
   return (
     <main className="min-h-screen bg-slate-950 p-6 text-slate-50 sm:p-10">
       <section className="mx-auto max-w-xl space-y-8">
-        <div className="flex justify-end"><LogoutButton /></div>
-        <div className="flex items-center justify-between gap-4 text-sm font-semibold">
-          <Link className="text-amber-400" href="/">← Player ratings</Link>
-          <div className="flex gap-4">
-            <Link className="text-amber-400" href="/admin/accounts">Accounts</Link>
-            <Link className="text-amber-400" href="/admin/economy">Economy</Link>
-            <Link className="text-amber-400" href="/admin/invites">Manage invites →</Link>
-          </div>
-        </div>
         <header className="space-y-3">
-          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-amber-400">Admin</p>
           <h1 className="text-4xl font-black tracking-tight">Record attendance</h1>
           <p className="text-slate-300">Signed in as {admin.displayName}. Publishing rebuilds every Live Card from season history.</p>
         </header>

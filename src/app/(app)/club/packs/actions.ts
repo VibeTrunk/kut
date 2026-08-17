@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth/user";
 import { createClient } from "@/lib/supabase/server";
@@ -31,5 +32,6 @@ export async function openPack(
     return { error: "The pack could not be opened. Check your TF Coin balance and try again." };
   }
 
+  revalidatePath("/club/packs", "layout");
   redirect(`/club/packs/${data.opening_id}`);
 }

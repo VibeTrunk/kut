@@ -47,4 +47,7 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx supabase start
+      # start applies migrations, but reset also loads the committed fictional
+      # seed fixtures required by the database contract tests.
+      - run: npx supabase db reset --local
       - run: npm run test:db

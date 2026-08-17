@@ -8,7 +8,7 @@ KUT is a **local-only, feature-complete MVP**. It has not been linked to a
 hosted Supabase project, connected to Vercel, deployed, or pushed to a remote.
 The local Supabase stack has migrations applied through:
 
-`20260817020100_include_buyer_in_sale_notifications.sql`
+`20260817030000_private_live_ratings.sql`
 
 The normal Next development server was deliberately stopped at the end of the
 last session so that `next build` could clear the generated `.next` output.
@@ -25,9 +25,18 @@ npx supabase start
 npx supabase migration up --local
 ```
 
+The first alpha-readiness slice is also complete: signed-in members now have
+a visible current-device Sign out control on the core member and admin
+screens, and all visible currency wording uses **KUT Coins**. This was a
+copy/auth UI change only; it did not alter migrations, ledger fields, economy
+rules, or historical records.
+
+KUT is now fully member-only: unauthenticated visits to the root route go to
+the login page, and anonymous database callers cannot read Live Ratings.
+
 ## Implemented product flow
 
-- Public Live Ratings derived from published attendance.
+- Member-only Live Ratings derived from published attendance.
 - Admin-only attendance publication, correction, cancellation, and
   reactivation, with audit history and deterministic rating rebuilds.
 - Invite-only member onboarding and local admin-assisted password resets.
@@ -77,18 +86,14 @@ work and is not committed. Preserve unrelated user files—especially
 
 ## Known gaps before a real alpha
 
-1. **Two-client market race test:** the database function locks rows in a
-   safe order and tests retry/idempotency, but a true simultaneous buy attempt
-   from two independent authenticated connections is still recommended against
-   the local stack.
-2. **Manual signed-in mobile review:** automated phone checks cover public and
+1. **Manual signed-in mobile review:** automated phone checks cover public and
    auth-boundary pages. Manually check My Club, Market, Messages, and admin
    attendance at a narrow viewport while signed in.
-3. **Hosted setup:** backup, Supabase migration dry-run, hosted Auth settings,
+2. **Hosted setup:** backup, Supabase migration dry-run, hosted Auth settings,
    Vercel environment variables, CSP host replacement, and preview deployment
    are intentionally not done. Follow `docs/OPERATIONS.md` only with explicit
    approval.
-4. **Git:** review and commit the local work before any deployment. Do not
+3. **Git:** review and commit the local work before any deployment. Do not
    push or deploy without user authorization.
 
 ## Recommended next phases
@@ -96,13 +101,8 @@ work and is not committed. Preserve unrelated user files—especially
 ### Phase A — Alpha readiness and operational safety
 
 1. Commit the completed local MVP after reviewing the working tree.
-2. Add a visible **logout** action. This is small, high-value, and expected in
-   any shared-device/mobile use case.
-3. Change visible currency wording from **TF Coins** to **KUT Coins** if that
-   is the final brand. Treat this as a UI/copy sweep only; do not rename ledger
-   fields or rewrite historical records unless a schema reason emerges.
-4. Complete the local two-client market-race test and signed-in mobile review.
-5. Follow the backup and preview checklist. Use local Supabase for development
+2. Complete the signed-in mobile review.
+3. Follow the backup and preview checklist. Use local Supabase for development
    and a Vercel preview first; do not let previews apply database migrations.
 
 Assessment: all recommended. A separate always-on hosted test environment is

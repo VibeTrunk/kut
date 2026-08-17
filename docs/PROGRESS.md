@@ -544,7 +544,63 @@ The local security review is recorded in `docs/SECURITY_REVIEW.md`; backup,
 hosted migration dry-run, and explicit preview-deployment steps are in
 `docs/OPERATIONS.md`. No hosted Supabase project, Vercel project, or preview
 deployment was changed. A genuine two-independent-client simultaneous-buy test
-remains the final recommended local pre-alpha integrity check.
+was the remaining local pre-alpha integrity check; it is covered by the later
+two-client market-race update below.
 
 Tests passing locally: `npm run verify:full` (20 unit tests, 145 database
 tests, 11 Chromium browser tests, lint, typecheck, and production build).
+
+## Alpha-readiness UI update - 2026-08-17
+
+Signed-in members and administrators now have a visible **Sign out** control
+on the core member, card/pack detail, market, messages, leaderboard, and
+admin screens. It performs a local Supabase sign-out and returns to the public
+login page; a failure leaves the session intact and gives a safe retry
+message.
+
+All visible application and README currency copy now says **KUT Coins**. This
+is intentionally a display-only branding sweep: database field names, ledger
+records, formulas, pack price, and historical data remain unchanged.
+
+Tests passing locally: `npm run verify:full` (20 unit tests, 145 database
+tests, 11 Chromium browser tests, lint, typecheck, and production build).
+
+Next recommended task: manually review the signed-in Club, Market, Messages,
+and admin attendance flows at a narrow mobile viewport.
+
+## Two-client market-race update - 2026-08-17
+
+`npm run test:market-race` now opens two independent local PostgreSQL sessions
+as fictional authenticated buyers and starts the same `buy_listing` RPC
+concurrently. It verifies one completed sale, one resulting card owner, the
+expected seller/winner/loser balances, and exactly three ledger entries. Its
+fixed local fixtures are deleted after every run.
+
+The development-only `pg` client and its TypeScript declarations support this
+test; they are not shipped to the browser or production application code.
+
+Tests passing locally: `npm run test:market-race` (1 race test) and
+`npm run verify:full` (20 unit tests, 145 database tests, 11 Chromium browser
+tests, lint, typecheck, and production build).
+
+Next recommended task: manually review the signed-in Club, Market, Messages,
+and admin attendance flows at a narrow mobile viewport. Do not perform market
+race testing against the shared hosted Supabase project.
+
+## Member-only Live Ratings update - 2026-08-17
+
+The group chose to keep Live Ratings private. The root route now redirects an
+unauthenticated or disabled visitor to `/login`; its member-facing card data
+is fetched only after a valid enabled profile is confirmed. The login copy now
+correctly describes private, invite-only member access rather than admin-only
+access.
+
+Migration `20260817030000_private_live_ratings.sql` revokes anonymous SELECT
+access to `kut.public_live_ratings`. The authenticated projection remains the
+same, so no rating formula, card state, or economy rule changed.
+
+Tests passing locally: `npm run verify:full` (20 unit tests, 145 database
+tests, 11 Chromium browser tests, lint, typecheck, and production build).
+
+Next recommended task: manually review the signed-in Club, Market, Messages,
+and admin attendance flows at a narrow mobile viewport.

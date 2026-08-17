@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { LiveCard, type LiveCardPlayer } from "@/components/live-card";
+import { LogoutButton } from "@/components/logout-button";
 import { requireUser } from "@/lib/auth/user";
 import { createClient } from "@/lib/supabase/server";
 import { DiscardCardForm } from "../discard-card-form";
@@ -72,6 +73,7 @@ export default async function CardDetailPage({ params, searchParams }: CardPageP
   return (
     <main className="min-h-screen bg-slate-950 p-5 text-slate-50 sm:p-10">
       <section className="mx-auto max-w-4xl space-y-8">
+        <div className="flex justify-end"><LogoutButton /></div>
         <nav className="flex flex-wrap items-center justify-between gap-3 text-sm font-bold">
           <Link className="text-amber-400 hover:text-amber-300" href="/club">← My Club</Link>
           <Link className="text-slate-400 hover:text-slate-200" href="/">Live ratings</Link>
@@ -121,7 +123,7 @@ export default async function CardDetailPage({ params, searchParams }: CardPageP
               </div>
               <div className="rounded-2xl bg-slate-950/60 p-4">
                 <dt className="font-bold uppercase tracking-[0.12em] text-slate-400">Discard value</dt>
-                <dd className="mt-1 text-lg font-black">{card.discard_value} TF Coins</dd>
+                <dd className="mt-1 text-lg font-black">{card.discard_value} KUT Coins</dd>
               </div>
             </dl>
 

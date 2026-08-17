@@ -9,7 +9,7 @@ export function CreateListingForm({ cardId, minimumPrice, maximumPrice }: { card
   return <form action={action} className="rounded-2xl border border-cyan-400/35 bg-cyan-950/20 p-4">
     <input name="cardId" type="hidden" value={cardId} />
     <p className="font-black text-cyan-100">List on the market</p>
-    <p className="mt-1 text-sm text-cyan-100/80">Choose a buy-now price from {minimumPrice} to {maximumPrice} TF Coins. The listing lasts 24 hours and locks this card.</p>
+    <p className="mt-1 text-sm text-cyan-100/80">Choose a buy-now price from {minimumPrice} to {maximumPrice} KUT Coins. The listing lasts 24 hours and locks this card.</p>
     <label className="mt-4 block text-sm font-bold" htmlFor="listing-price">Price</label>
     <input className="mt-1 min-h-11 w-full rounded-xl border border-slate-600 bg-slate-950 px-3 font-bold" defaultValue={minimumPrice} id="listing-price" max={maximumPrice} min={minimumPrice} name="price" required step="1" type="number" />
     {state.error && <p className="mt-3 rounded-xl bg-rose-950 p-3 text-sm text-rose-100">{state.error}</p>}

@@ -48,6 +48,7 @@ production database.
 npm run verify:fast  # lint, typecheck, unit tests
 npm run test:e2e     # requires Playwright Chromium once installed
 npm run test:db      # requires `npx supabase start`
+npm run test:market-race # two concurrent local PostgreSQL buyers; requires `npx supabase start`
 npm run verify:full  # all checks plus production build
 ```
 
@@ -143,12 +144,12 @@ their own password through this tool.
 
 ## Economy foundation
 
-New invite claims automatically receive 250 TF Coins and three distinct,
+New invite claims automatically receive 250 KUT Coins and three distinct,
 untradeable Live Cards. An existing local account created before this feature
 will see a **Claim starter pack** button after signing in. This is a one-time,
 server-authoritative operation.
 
-Publishing attendance automatically awards 75 TF Coins to each enabled user
+Publishing attendance automatically awards 75 KUT Coins to each enabled user
 linked to an attending Player. Rewards are recorded once per Player/session in
 an immutable ledger, so publishing, correcting, or reactivating a session
 cannot duplicate coins. A cancelled session does not claw back coins already
@@ -173,7 +174,7 @@ visible once an account owns a future tradeable pack or market card.
 
 ## Basic pack opening
 
-**My Club** offers one TFH Pack for 250 TF Coins. It contains three
+**My Club** offers one TFH Pack for 250 KUT Coins. It contains three
 server-selected, tradeable Live Card copies; duplicate players are possible.
 The purchase, wallet debit, card minting, and saved opening record are one
 database transaction. Reloading a saved result page never rerolls the pack.
@@ -191,5 +192,5 @@ changing pack price or odds remains a deliberate future configuration change.
 Tradeable card copies can be listed from their detail page for 24 hours at a
 server-validated buy-now price. The card is locked while listed and may be
 cancelled by its seller. Signed-in members browse `/market` and buy listings
-with TF Coins. A purchase atomically transfers the card, debits the buyer,
+with KUT Coins. A purchase atomically transfers the card, debits the buyer,
 credits the seller, and burns the 5% tax (rounded up, minimum one coin).

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LogoutButton } from "@/components/logout-button";
 import { requireUser } from "@/lib/auth/user";
 import { createClient } from "@/lib/supabase/server";
 
@@ -28,6 +29,7 @@ export default async function LeaderboardPage() {
   return (
     <main className="min-h-screen bg-slate-950 p-5 text-slate-50 sm:p-10">
       <section className="mx-auto max-w-5xl space-y-8">
+        <div className="flex justify-end"><LogoutButton /></div>
         <nav className="flex flex-wrap items-center justify-between gap-3 text-sm font-bold">
           <Link className="text-amber-400 hover:text-amber-300" href="/club">← My Club</Link>
           <Link className="text-slate-400 hover:text-slate-200" href="/market">Transfer market</Link>
@@ -36,7 +38,7 @@ export default async function LeaderboardPage() {
         <header>
           <p className="text-sm font-semibold uppercase tracking-[0.24em] text-amber-400">KUT standings</p>
           <h1 className="mt-2 text-4xl font-black tracking-tight sm:text-5xl">Club Value Leaderboard</h1>
-          <p className="mt-3 max-w-2xl text-slate-300">Club Value is TF Coins plus the current reference value of every unburned card. References use recent completed sales when there is enough history, otherwise a safe discard-value fallback.</p>
+          <p className="mt-3 max-w-2xl text-slate-300">Club Value is KUT Coins plus the current reference value of every unburned card. References use recent completed sales when there is enough history, otherwise a safe discard-value fallback.</p>
         </header>
 
         {clubs.length === 0 ? (

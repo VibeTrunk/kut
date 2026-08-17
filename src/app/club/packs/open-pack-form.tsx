@@ -25,7 +25,7 @@ export function OpenPackForm({ packSlug, title, price, cardsPerPack, balance, ca
   }
 
   function confirmOpen(event: React.FormEvent<HTMLFormElement>) {
-    if (!window.confirm(`Open ${title} for ${price} TF Coins? You will receive ${cardsPerPack} tradeable Live Cards.`)) {
+    if (!window.confirm(`Open ${title} for ${price} KUT Coins? You will receive ${cardsPerPack} tradeable Live Cards.`)) {
       event.preventDefault();
     }
   }
@@ -43,7 +43,7 @@ export function OpenPackForm({ packSlug, title, price, cardsPerPack, balance, ca
           disabled={isPending || !canAfford}
           type="submit"
         >
-          {isPending ? "Opening..." : canAfford ? `Open for ${price} TF Coins` : `Need ${price - balance} more TF Coins`}
+          {isPending ? "Opening..." : canAfford ? `Open for ${price} KUT Coins` : `Need ${price - balance} more KUT Coins`}
         </button>
         {!canAfford && <p className="mt-2 text-center text-xs font-semibold text-slate-400">Earn coins by attending published sessions.</p>}
       </div>

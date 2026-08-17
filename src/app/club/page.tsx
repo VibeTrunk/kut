@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { LiveCard, type LiveCardPlayer } from "@/components/live-card";
+import { LogoutButton } from "@/components/logout-button";
 import { requireUser } from "@/lib/auth/user";
 import { createClient } from "@/lib/supabase/server";
 import { OpenPackForm } from "./packs/open-pack-form";
@@ -70,6 +71,7 @@ export default async function ClubPage({ searchParams }: ClubPageProps) {
   return (
     <main className="min-h-screen bg-slate-950 p-5 text-slate-50 sm:p-10">
       <section className="mx-auto max-w-6xl space-y-8">
+        <div className="flex justify-end"><LogoutButton /></div>
         <nav className="flex flex-wrap items-center justify-between gap-3 text-sm font-bold">
           <Link className="text-amber-400 hover:text-amber-300" href="/">← Live ratings</Link>
           <span className="text-slate-400">KUT · My Club</span>
@@ -88,7 +90,7 @@ export default async function ClubPage({ searchParams }: ClubPageProps) {
           </div>
           <dl className="flex flex-wrap gap-3 sm:justify-end">
             <div className="min-w-28 rounded-2xl bg-amber-400 px-4 py-3 text-slate-950">
-              <dt className="text-xs font-black uppercase tracking-[0.13em]">TF Coins</dt>
+              <dt className="text-xs font-black uppercase tracking-[0.13em]">KUT Coins</dt>
               <dd className="mt-1 text-2xl font-black">{balance}</dd>
             </div>
             <div className="min-w-28 rounded-2xl border border-slate-700 bg-slate-950/60 px-4 py-3">
@@ -102,15 +104,15 @@ export default async function ClubPage({ searchParams }: ClubPageProps) {
           </dl>
         </header>
 
-        <p className="text-sm text-slate-400">{Number(clubValue?.card_value ?? 0).toLocaleString()} TF in card reference value across {clubValue?.unique_player_count ?? 0} unique players.</p>
+        <p className="text-sm text-slate-400">{Number(clubValue?.card_value ?? 0).toLocaleString()} KUT Coins in card reference value across {clubValue?.unique_player_count ?? 0} unique players.</p>
 
         {query.discard && Number.isSafeInteger(Number(query.discard)) && Number(query.discard) > 0 && (
           <p className="rounded-2xl border border-emerald-400/40 bg-emerald-950/50 p-4 font-bold text-emerald-100">
-            Card discarded. {query.discard} TF Coins were added to your wallet.
+            Card discarded. {query.discard} KUT Coins were added to your wallet.
           </p>
         )}
         {query.purchase && Number.isSafeInteger(Number(query.purchase)) && Number(query.purchase) > 0 && (
-          <p className="rounded-2xl border border-emerald-400/40 bg-emerald-950/50 p-4 font-bold text-emerald-100">Purchase complete. {query.purchase} TF Coins were paid and the card is now in your collection.</p>
+          <p className="rounded-2xl border border-emerald-400/40 bg-emerald-950/50 p-4 font-bold text-emerald-100">Purchase complete. {query.purchase} KUT Coins were paid and the card is now in your collection.</p>
         )}
 
         <div className="flex flex-wrap items-center justify-between gap-3">

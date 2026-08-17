@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { LiveCard, type LiveCardPlayer } from "@/components/live-card";
+import { LogoutButton } from "@/components/logout-button";
 import { requireUser } from "@/lib/auth/user";
 import { createClient } from "@/lib/supabase/server";
 
@@ -45,6 +46,7 @@ export default async function PackResultPage({ params }: PackResultPageProps) {
   return (
     <main className="min-h-screen bg-slate-950 p-5 text-slate-50 sm:p-10">
       <section className="mx-auto max-w-5xl space-y-8">
+        <div className="flex justify-end"><LogoutButton /></div>
         <nav className="flex items-center justify-between gap-3 text-sm font-bold">
           <Link className="text-amber-400 hover:text-amber-300" href="/club">← My Club</Link>
           <span className="text-slate-400">Pack opening saved</span>

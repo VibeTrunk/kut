@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { LogoutButton } from "@/components/logout-button";
 import { requireAdmin } from "@/lib/auth/admin";
 import { createClient } from "@/lib/supabase/server";
 import { AttendanceForm } from "../attendance-form";
@@ -71,6 +72,7 @@ export default async function CorrectionPage({ params }: CorrectionPageProps) {
   return (
     <main className="min-h-screen bg-slate-950 p-6 text-slate-50 sm:p-10">
       <section className="mx-auto max-w-xl space-y-8">
+        <div className="flex justify-end"><LogoutButton /></div>
         <Link className="text-sm font-semibold text-amber-400" href="/admin/attendance">← Admin attendance</Link>
         <header className="space-y-3">
           <p className="text-sm font-semibold uppercase tracking-[0.24em] text-amber-400">Admin correction</p>

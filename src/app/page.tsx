@@ -1,5 +1,7 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { LiveCard, type LiveCardPlayer } from "@/components/live-card";
+import { LogoutButton } from "@/components/logout-button";
 import { StarterClaimForm } from "@/components/starter-claim-form";
 import { createClient } from "@/lib/supabase/server";
 
@@ -24,28 +26,39 @@ type HomePageProps = {
 
 export default async function Home({ searchParams }: HomePageProps) {
   const supabase = await createClient();
-  const [ratingsResponse, claimsResponse, query] = await Promise.all([
+  const { data: claimsData, error: claimsError } = await supabase.auth.getClaims();
+  const userId = claimsData?.claims?.sub;
+
+  if (claimsError || typeof userId !== "string") {
+    redirect("/login");
+  }
+
+  const [{ data: profile, error: profileError }, ratingsResponse, query] = await Promise.all([
+    supabase
+      .schema("kut")
+      .from("profiles")
+      .select("role, is_disabled, starter_claimed_at")
+      .eq("id", userId)
+      .maybeSingle(),
     supabase
       .schema("kut")
       .from("public_live_ratings")
       .select("id, slug, display_name, archetype, live_ovr, pac, sho, pas, dri, def, phy, rarity_tier")
       .order("live_ovr", { ascending: false })
       .order("display_name"),
-    supabase.auth.getClaims(),
     searchParams,
   ]);
   const { data, error } = ratingsResponse;
 
-  const userId = claimsResponse.data?.claims?.sub;
-  const { data: profile } = typeof userId === "string"
-    ? await supabase
-      .schema("kut")
-      .from("profiles")
-      .select("role, is_disabled, starter_claimed_at")
-      .eq("id", userId)
-      .maybeSingle()
-    : { data: null };
-  const isAdmin = !profile?.is_disabled && (profile?.role === "admin" || profile?.role === "superadmin");
+  if (profileError) {
+    throw new Error("Could not verify your KUT membership.");
+  }
+
+  if (!profile || profile.is_disabled) {
+    redirect("/login");
+  }
+
+  const isAdmin = profile.role === "admin" || profile.role === "superadmin";
 
   if (error) {
     throw new Error("Could not load the published Live Ratings.");
@@ -64,27 +77,26 @@ export default async function Home({ searchParams }: HomePageProps) {
             KUT Player Ratings
           </h1>
           <p className="max-w-2xl text-lg leading-8 text-slate-300">
-            Published attendance updates these Live Ratings automatically. Only public in-game card data is shown here.
+            Published attendance updates these Live Ratings automatically. Only signed-in KUT members can view them.
           </p>
         </header>
 
-        {profile && !profile.is_disabled && (
-          <div className="flex flex-wrap gap-3">
-            <Link className="inline-flex min-h-12 items-center rounded-xl border border-slate-600 px-4 font-bold text-slate-100 hover:border-amber-400 hover:text-amber-300" href="/club">
-              My Club
+        <div className="flex flex-wrap gap-3">
+          <Link className="inline-flex min-h-12 items-center rounded-xl border border-slate-600 px-4 font-bold text-slate-100 hover:border-amber-400 hover:text-amber-300" href="/club">
+            My Club
+          </Link>
+          {isAdmin && (
+            <Link className="inline-flex min-h-12 items-center rounded-xl bg-amber-400 px-4 font-bold text-slate-950" href="/admin/attendance">
+              Admin attendance
             </Link>
-            {isAdmin && (
-              <Link className="inline-flex min-h-12 items-center rounded-xl bg-amber-400 px-4 font-bold text-slate-950" href="/admin/attendance">
-                Admin attendance
-              </Link>
-            )}
-          </div>
-        )}
+          )}
+          <LogoutButton />
+        </div>
 
-        {profile && !profile.is_disabled && !profile.starter_claimed_at && <StarterClaimForm />}
+        {!profile.starter_claimed_at && <StarterClaimForm />}
         {query.starter === "1" && (
           <p className="rounded-xl bg-emerald-950 p-4 font-semibold text-emerald-200">
-            Starter pack claimed: 250 TF Coins and three Live Cards are now yours. <Link className="underline" href="/club">View My Club</Link>.
+            Starter pack claimed: 250 KUT Coins and three Live Cards are now yours. <Link className="underline" href="/club">View My Club</Link>.
           </p>
         )}
 

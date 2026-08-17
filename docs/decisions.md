@@ -472,3 +472,21 @@ Consequences: Members can read and mark only their own messages. Browser
 clients have no direct notification write policy. Existing sales are backfilled
 once; future notification categories can reuse the table without weakening the
 economy transaction boundary.
+
+## ADR-020 - Member-only Live Ratings
+
+Date: 2026-08-17
+
+Status: Accepted
+
+Decision: The Live Ratings homepage and `kut.public_live_ratings` view are
+available only to authenticated KUT members. Unauthenticated visits to `/`
+redirect to `/login`, and `anon` no longer has `SELECT` access to the view.
+
+Reason: KUT is an invite-only private group. The group decided that even the
+roster's narrow in-game card projection should not be publicly browsable.
+
+Consequences: Sign-out leaves a member at the login page rather than a public
+ratings page. Server and database tests must verify the authentication boundary
+for `/` and deny anonymous view access. The view name remains unchanged to
+avoid a needless migration of member-facing code.

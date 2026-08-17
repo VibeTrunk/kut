@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LogoutButton } from "@/components/logout-button";
 import { requireAdmin } from "@/lib/auth/admin";
 import { createClient } from "@/lib/supabase/server";
 import { AttendanceForm } from "./attendance-form";
@@ -39,6 +40,7 @@ export default async function AttendancePage({ searchParams }: AttendancePagePro
   return (
     <main className="min-h-screen bg-slate-950 p-6 text-slate-50 sm:p-10">
       <section className="mx-auto max-w-xl space-y-8">
+        <div className="flex justify-end"><LogoutButton /></div>
         <div className="flex items-center justify-between gap-4 text-sm font-semibold">
           <Link className="text-amber-400" href="/">← Player ratings</Link>
           <div className="flex gap-4">

@@ -1,21 +1,18 @@
 import { expect, test } from "@playwright/test";
 
-test("renders the published Live Ratings page", async ({ page }) => {
+test("requires sign-in before showing Live Ratings", async ({ page }) => {
   await page.goto("/");
 
-  await expect(
-    page.getByRole("heading", { name: "KUT Player Ratings" }),
-  ).toBeVisible();
-  await expect(page.getByText("Published attendance updates these Live Ratings automatically.")).toBeVisible();
-  await expect(page.getByRole("link", { name: "Admin attendance" })).not.toBeVisible();
+  await expect(page).toHaveURL(/\/login$/);
+  await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
 });
 
-test("keeps the public ratings page usable at a phone viewport", async ({ page }) => {
+test("keeps the sign-in page usable at a phone viewport", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
 
-  await expect(page.getByRole("heading", { name: "KUT Player Ratings" })).toBeVisible();
-  await expect(page.getByText("Published attendance updates these Live Ratings automatically.")).toBeVisible();
+  await expect(page).toHaveURL(/\/login$/);
+  await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
   expect(await page.locator("body").evaluate((body) => body.scrollWidth <= window.innerWidth)).toBeTruthy();
 });
 

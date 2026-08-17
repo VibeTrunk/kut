@@ -15,7 +15,7 @@ export async function buyListing(_state: BuyState, formData: FormData): Promise<
   if (!uuidPattern.test(listingId) || !uuidPattern.test(idempotencyKey)) return { error: "This purchase request was invalid." };
   const supabase = await createClient();
   const { data, error } = await supabase.schema("kut").rpc("buy_listing", { p_listing_id: listingId, p_idempotency_key: idempotencyKey });
-  if (error || !data || typeof data !== "object" || !("price" in data)) return { error: "This listing could not be bought. It may have sold or you may need more TF Coins." };
+  if (error || !data || typeof data !== "object" || !("price" in data)) return { error: "This listing could not be bought. It may have sold or you may need more KUT Coins." };
   const price = Number(data.price);
   if (!Number.isSafeInteger(price) || price < 1) return { error: "This listing could not be bought." };
   revalidatePath("/club"); revalidatePath("/market"); revalidatePath("/messages");

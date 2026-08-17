@@ -897,9 +897,11 @@ select throws_ok(
 );
 
 set local role anon;
-select lives_ok(
+select throws_ok(
   $$ select * from kut.public_live_ratings; $$,
-  'anonymous users can read the narrow public ratings view'
+  '42501',
+  'permission denied for view public_live_ratings',
+  'anonymous users cannot read Live Ratings'
 );
 select throws_ok(
   $$ select * from kut.players; $$,

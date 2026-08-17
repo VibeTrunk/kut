@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LogoutButton } from "@/components/logout-button";
 import { requireAdmin } from "@/lib/auth/admin";
 import { createClient } from "@/lib/supabase/server";
 
@@ -29,6 +30,7 @@ export default async function EconomyPage() {
   return (
     <main className="min-h-screen bg-slate-950 p-5 text-slate-50 sm:p-10">
       <section className="mx-auto max-w-5xl space-y-8">
+        <div className="flex justify-end"><LogoutButton /></div>
         <nav className="flex flex-wrap items-center justify-between gap-3 text-sm font-bold">
           <Link className="text-amber-400 hover:text-amber-300" href="/admin/attendance">← Admin attendance</Link>
           <Link className="text-slate-400 hover:text-slate-200" href="/">Live ratings</Link>
@@ -49,7 +51,7 @@ export default async function EconomyPage() {
             const ratio = Number(pack.expected_discard_return_ratio);
             const status = healthStatus(ratio);
             return <article className="rounded-3xl border border-slate-700 bg-slate-900 p-6" key={pack.slug}>
-              <div className="flex items-start justify-between gap-4"><div><p className="text-xs font-black uppercase tracking-[0.16em] text-amber-400">{pack.cards_per_pack} cards · {pack.price} TF Coins</p><h2 className="mt-1 text-2xl font-black">{pack.title}</h2></div><span className={`rounded-full border px-3 py-1 text-sm font-black ${status.className}`}>{status.label}</span></div>
+              <div className="flex items-start justify-between gap-4"><div><p className="text-xs font-black uppercase tracking-[0.16em] text-amber-400">{pack.cards_per_pack} cards · {pack.price} KUT Coins</p><h2 className="mt-1 text-2xl font-black">{pack.title}</h2></div><span className={`rounded-full border px-3 py-1 text-sm font-black ${status.className}`}>{status.label}</span></div>
               <dl className="mt-6 grid grid-cols-3 gap-3 text-center"><div className="rounded-xl bg-slate-950/60 p-3"><dt className="text-xs font-bold uppercase text-slate-400">Per slot</dt><dd className="mt-1 text-xl font-black">{Number(pack.expected_discard_per_slot).toFixed(2)}</dd></div><div className="rounded-xl bg-slate-950/60 p-3"><dt className="text-xs font-bold uppercase text-slate-400">Per pack</dt><dd className="mt-1 text-xl font-black">{Number(pack.expected_discard_per_pack).toFixed(2)}</dd></div><div className="rounded-xl bg-slate-950/60 p-3"><dt className="text-xs font-bold uppercase text-slate-400">Return</dt><dd className="mt-1 text-xl font-black">{(ratio * 100).toFixed(1)}%</dd></div></dl>
               <p className="mt-4 text-sm text-slate-400">{pack.eligible_live_count} eligible Live editions. Target expected discard return is 75% or lower; warning begins above 80%.</p>
             </article>;

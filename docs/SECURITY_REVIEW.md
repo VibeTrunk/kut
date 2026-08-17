@@ -28,14 +28,15 @@ The local pgTAP suite covers direct wallet-mint denial, own-vs-other member
 reads, admin-only operations, listing/card locks, double-buy idempotency,
 market ledger reconciliation, and message ownership/read-state boundaries.
 
-## Remaining pre-alpha check
+## Two-client purchase-race coverage
 
-A true two-client simultaneous-purchase test is still recommended before a
-hosted alpha. The current tests prove one sale cannot be completed twice and
-the function uses deterministic locking, but do not yet open two independent
-authenticated database connections at the same instant. Run that test against
-the local stack before adding real members; do not test the race against the
-shared hosted project.
+`npm run test:market-race` opens two separate local PostgreSQL sessions,
+impersonates two fictional authenticated buyers, and starts the same protected
+`buy_listing` RPC concurrently. It proves that exactly one buyer succeeds, the
+listing/sale/card ownership change once, the loser keeps their full balance,
+and the completed sale produces exactly three ledger entries. The harness
+creates and removes only fixed fictional local fixtures; never run it against
+the shared hosted project.
 
 ## Out of scope
 

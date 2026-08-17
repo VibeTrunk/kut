@@ -63,6 +63,13 @@ local tests only.
   buyer. Existing local market sales were backfilled into the inbox.
 - Safe route-level loading, error, and not-found screens.
 
+## Next operational step
+
+Set up KUT's first real playing context in the protected admin UI: create the
+real TFH player roster, create and mark the current season active, then issue
+member invitations. Do not use fictional local/CI seed data for the hosted
+roster.
+
 ## Last verification
 
 The final command run was:

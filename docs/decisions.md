@@ -548,3 +548,26 @@ card redraws addressing "the no-photo jersey doesn't read as a jersey" and
 "stats don't pop") were shown to the user as throwaway HTML artifacts before
 any code changed; the user picked Clubblad for the base card and declined all
 three redraws, keeping the shipped card as-is.
+
+## ADR-023 - Connect the Vercel project to its GitHub repository
+
+Date: 2026-08-17
+
+Status: Accepted
+
+Decision: The `kut` Vercel project was linked to `VibeTrunk/kut` via
+`vercel git connect`, so pushes to `main` build and deploy automatically.
+
+Reason: The project had been deployed only by manual `vercel --prod` runs
+at initial setup; it had no Git integration. ADR-022's chrome redesign was
+merged to `main` and passed CI (`database`, `e2e`, `fast`, `scan`) but was
+never actually deployed - `kut.vibetrunk.com` kept serving the pre-redesign
+build for hours with no error or signal anywhere in GitHub or Vercel that a
+deploy hadn't happened. A manual `vercel --prod` was run once to ship the
+already-merged redesign immediately.
+
+Consequences: Future pushes to `main` should deploy without a manual CLI
+step. This was not yet confirmed end-to-end with a real push at the time of
+writing - worth a sanity check (e.g. a GitHub deployment/check entry
+appearing) on the next commit. If it silently doesn't trigger, fall back to
+manual `vercel --prod` and re-investigate the Git connection.

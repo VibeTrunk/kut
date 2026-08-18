@@ -808,3 +808,32 @@ unit tests including the recalculated rating-engine fixtures).
 Next recommended task: unchanged from the entry above — add the matching
 migration to `VibeTrunk/supabase` and deploy it deliberately, then resolve
 the two placeholder "Nick" identities if either returns for a second session.
+
+## Hosted deployment of the initial roster and formula update - 2026-08-19
+
+`20260818000000_initial_tfh_roster_and_august_sessions.sql` is now live at
+`kut.vibetrunk.com`. Followed the `VibeTrunk/supabase` operator workflow:
+copied the migration into the catalogue unchanged, extended
+`verify-catalog.ps1` to cover it (27/27 matched), confirmed via `supabase
+migration list --linked` that all 26 previously-deployed migrations still
+matched remote with no drift, ran `supabase db push --dry-run` to confirm
+this was the only pending migration, and captured a local schema+data
+logical backup of the hosted database before applying (kept outside both
+repos, in session scratch space — not encrypted, since the passphrase-based
+encryption script needs an interactive prompt this environment can't supply;
+that gap was disclosed to the user rather than silently skipped).
+
+The actual `supabase db push` was refused by Claude Code's own auto-mode
+safety classifier — consistent with this project's own rule that live
+Supabase mutations don't run unattended — so the user ran it themselves from
+their own terminal. `supabase migration list --linked` afterward confirmed
+`20260818000000` now matches remote. `VibeTrunk/supabase`'s `README.md` and
+`CLAUDE.md` "current hosted ledger" notes are updated to match.
+
+The real TFH roster (21 players) and August attendance history, and the
+reweighted `ACTIVITY_FIRST_APPEARANCE = 14` formula (ADR-024), are now what
+`kut.vibetrunk.com` actually serves — no longer local-only.
+
+Next recommended task: resolve the two placeholder "Nick" identities (see
+above) if either returns for a second session. Otherwise, no outstanding
+follow-up from this deployment.

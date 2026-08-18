@@ -404,16 +404,22 @@ activity_next =
 Where:
 
 ```text
-first_appearance_bonus = 8 if player attended >= 1 published session that week, else 0
+first_appearance_bonus = 14 if player attended >= 1 published session that week, else 0
 second_appearance_bonus = 3 if player attended >= 2 published sessions that week, else 0
 ```
 
 Therefore:
 
 - no attendance in a football week: multiply by 0.90;
-- one attendance: multiply by 0.90, then +8;
-- two or more attendances: multiply by 0.90, then +11;
+- one attendance: multiply by 0.90, then +14;
+- two or more attendances: multiply by 0.90, then +17;
 - no official TFH session that week: no calculation at all.
+
+`first_appearance_bonus` was raised from its original value of `8` to `14` on
+2026-08-18, at the club's request, so a single match visibly moves a card
+rather than being lost in the following week's decay — see
+[`docs/decisions.md`](decisions.md) for the full rationale and the tradeoff
+it accepts.
 
 ### 11.1 Why this model
 
@@ -431,30 +437,43 @@ Starting at zero and attending once every football week:
 
 | Week | Activity | Activity-based OVR approx. |
 |---:|---:|---:|
-| 1 | 8 | 36 |
-| 2 | 15 | 40 |
-| 4 | 28 | 46 |
-| 8 | 46 | 54 |
-| 12 | 57 | 59 |
-| 20 | 70 | 64 |
-| Long-run | ~80 | ~68 |
+| 1 | 14 | 39 |
+| 2 | 27 | 46 |
+| 4 | 48 | 55 |
+| 8 | 80 | 68 |
+| 12 | 100 | 75 |
+| 20 | 100 | 75 |
+| Long-run | 100 | 75 |
 
 Attending twice every football week:
 
 | Week | Activity | Activity-based OVR approx. |
 |---:|---:|---:|
-| 1 | 11 | 38 |
-| 4 | 38 | 51 |
-| 8 | 63 | 61 |
-| 12 | 79 | 67 |
-| 20 | 97 | 74 |
+| 1 | 17 | 41 |
+| 2 | 32 | 48 |
+| 4 | 58 | 59 |
+| 8 | 97 | 74 |
+| 12 | 100 | 75 |
+| 20 | 100 | 75 |
 | Long-run | 100 | 75 |
 
 This is intentional:
 
-- ordinary weekly regulars eventually become Gold;
-- exceptionally consistent Monday + Friday players become Holo;
-- attendance alone does not produce 90+ cards.
+- a single match now visibly moves a card the same week, not two or three
+  weeks later;
+- ordinary weekly regulars reach Silver/Gold within roughly two months and
+  cap their activity contribution (75 activity-based OVR, before any form
+  bonus) by about week 12 instead of drifting up for the rest of the season;
+- once a player's activity is fully capped, attending twice a week no longer
+  produces a *higher* long-run ceiling than attending once a week — only a
+  *faster* one. Under the original `8`/`3` bonus, once-a-week play converged
+  to an activity ceiling of 80 (not 100), so only Monday-and-Friday regulars
+  ever reached the true cap; that distinction is gone at `14`/`3`. Form
+  (goals) is the only remaining way for a once-a-week player's Live OVR to
+  keep separating from a plateaued peer once both are capped;
+- attendance alone does not produce 90+ cards — the Live OVR ceiling (Part
+  14) is unchanged at 83, and this cap is reached by activity alone (75) plus
+  only the maximum form bonus (8).
 
 ---
 
@@ -3848,7 +3867,7 @@ Put these in one version-controlled configuration module.
 
 ```text
 ACTIVITY_WEEKLY_DECAY = 0.90
-ACTIVITY_FIRST_APPEARANCE = 8
+ACTIVITY_FIRST_APPEARANCE = 14
 ACTIVITY_SECOND_APPEARANCE = 3
 
 ACTIVITY_OVR_FLOOR = 30

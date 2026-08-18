@@ -9,7 +9,7 @@
     "name": "attends first football week",
     "archetype": "finisher",
     "weeks": [{ "weekStart": "2026-08-03", "hasPublishedSession": true, "appearances": 1, "goals": 0 }],
-    "expected": { "activityScore": 8, "formScore": 0, "liveOvr": 36, "rarityTier": "common" }
+    "expected": { "activityScore": 14, "formScore": 0, "liveOvr": 39, "rarityTier": "common" }
   },
   {
     "name": "weekly regular for twenty football weeks",
@@ -36,13 +36,13 @@
       { "weekStart": "2026-05-11", "hasPublishedSession": true, "appearances": 1, "goals": 0 },
       { "weekStart": "2026-05-18", "hasPublishedSession": true, "appearances": 1, "goals": 0 }
     ],
-    "expected": { "activityScore": 70.2739, "formScore": 0, "liveOvr": 64, "rarityTier": "gold" }
+    "expected": { "activityScore": 100, "formScore": 0, "liveOvr": 75, "rarityTier": "holo" }
   },
   {
     "name": "hat trick creates temporary form",
     "archetype": "finisher",
     "weeks": [{ "weekStart": "2026-08-03", "hasPublishedSession": true, "appearances": 1, "goals": 3 }],
-    "expected": { "activityScore": 8, "formScore": 4.75, "liveOvr": 41, "rarityTier": "bronze" }
+    "expected": { "activityScore": 14, "formScore": 4.75, "liveOvr": 44, "rarityTier": "bronze" }
   },
   {
     "name": "no-game week does not decay",
@@ -51,12 +51,12 @@
       { "weekStart": "2026-08-03", "hasPublishedSession": true, "appearances": 1, "goals": 0 },
       { "weekStart": "2026-08-10", "hasPublishedSession": false, "appearances": 0, "goals": 0 }
     ],
-    "expected": { "activityScore": 8, "formScore": 0, "liveOvr": 36, "rarityTier": "common" }
+    "expected": { "activityScore": 14, "formScore": 0, "liveOvr": 39, "rarityTier": "common" }
   },
   {
     "name": "two sessions in one football week",
     "archetype": "speedster",
     "weeks": [{ "weekStart": "2026-08-03", "hasPublishedSession": true, "appearances": 2, "goals": 1 }],
-    "expected": { "activityScore": 11, "formScore": 1.25, "liveOvr": 39, "rarityTier": "common" }
+    "expected": { "activityScore": 17, "formScore": 1.25, "liveOvr": 42, "rarityTier": "bronze" }
   }
 ]

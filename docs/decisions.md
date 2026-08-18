@@ -42,6 +42,46 @@ CSP `connect-src` placeholder was replaced with the real project ref and
 moved to a per-request nonce in `src/proxy.ts` (see the "Fix login hydration
 under strict CSP" commit).
 
+## Speculative idea — weekly 5-card squad knockout (not decided)
+
+Status: Half-baked — brainstormed only, not scoped, not an ADR.
+
+Idea raised while discussing whether KUT's collect/trade loop is fun enough
+on its own: give members a lightweight competitive use *for* the cards they
+own, without adding any new admin/attendance data entry and without
+attendance-guessing ("will they show up this week?") as the object of play.
+
+Rough shape discussed, none of it committed:
+
+- Each member may assemble a squad of 5 owned cards, one slot per distinct
+  real Player (no duplicate-player stacking within a squad — though owning
+  duplicates stays fine and is even encouraged as collecting flavor, per
+  Part 3.4's "why do you own eleven copies of Dennis" story goal).
+- Squad power derives entirely from existing Live OVR — no new stats and no
+  admin entry beyond what `publish_attendance_session` already records
+  (attendance + optional goals).
+- Sunday night, gated on the same "was a session published this football
+  week" rule Part 9 already defines (skip cleanly if not, same as activity/
+  form decay already does), squads feed into a single-elimination knockout
+  bracket, seeded by power, with byes for non-power-of-two fields.
+- Each matchup resolves via a power-weighted probability rather than a coin
+  flip or a certainty — exact formula not chosen, and it needs the same
+  deterministic, testable, pure-function treatment `pack_economy_health` got
+  in ADR-015 before it's allowed to affect real people's squads. Odds would
+  be published per round, not just once, so Sunday night has several reveal
+  moments instead of one static percentage.
+- Reward starts as bragging rights / a badge only, deliberately avoiding any
+  currency or pack payout until the mechanic is validated as fun — a payout
+  version would need the same ledger-backed, security-definer treatment as
+  `open_pack` / `buy_listing` (ADR-010, ADR-014, ADR-016), which is real
+  scope, not a UI afterthought.
+
+Open questions nobody has answered: minimum-entrant threshold before a
+week's tournament runs at all; whether a currency reward gets added later
+and if so how; the exact power-weighting formula; whether seeding uses total
+or average XI OVR. This is recorded here only so the brainstorm isn't lost —
+it is not scoped, not prioritized, and not a plan to build.
+
 ## ADR-001 — Phase 0 local development foundation
 
 Date: 2026-08-16
@@ -580,3 +620,52 @@ the same list. The GitHub commit status API independently shows a matching
 `Vercel` / `success` status on that sha. Auto-deploy on push to `main` is
 confirmed working end-to-end; no further manual `vercel --prod` step is
 needed for ordinary merges.
+
+## ADR-024 - Raise the weekly first-appearance activity bonus from 8 to 14
+
+Date: 2026-08-18
+
+Status: Accepted
+
+Decision: `ACTIVITY_FIRST_APPEARANCE` (BUILD_SPEC.md Part 11 / Part 145) is
+raised from `8` to `14`. `ACTIVITY_SECOND_APPEARANCE` (`3`), the weekly decay
+(`0.90`), the activity-OVR curve (floor `30`, range `45`, exponent `0.80`),
+and the Live OVR ceiling (`83`) are all unchanged. Updated in three places
+that must stay in sync: `docs/BUILD_SPEC.md` Parts 11, 11.2, and 145;
+`src/game/config.ts`; and the SQL rebuild formula (currently only in
+`supabase/migrations/20260818000000_initial_tfh_roster_and_august_sessions.sql`'s
+`kut._rebuild_season_core`, since that migration was still unapplied to
+hosted at the time of this change — see that migration and ADR "Initial TFH
+roster" entry in `docs/PROGRESS.md`). `tests/fixtures/rating-scenarios.json`
+was recalculated for the five affected scenarios.
+
+Reason: After importing real August 2026 attendance (`docs/PROGRESS.md`,
+"Initial TFH roster and August 2026 attendance backfill"), the user felt a
+single match had too small an effect on a card's rating — the most active
+player in five weeks of real data was only 45 OVR (Bronze). Four candidate
+tweaks were simulated and shown to the user (bigger bonus, slower decay, a
+blend, and a moderate bonus); the user picked the most aggressive option: the
+single-match jolt, at its exact previewed value of `14` (keeping `+3` for a
+second same-week appearance unchanged).
+
+Consequences: A single match is now visibly worth more immediately (week-1
+activity-based OVR rises from 36 to 39; see BUILD_SPEC.md Part 11.2 for the
+full before/after tables). The more significant, less obvious effect: with
+the original `8`/`3`
+bonus, a once-a-week regular's activity score converged to a long-run ceiling
+of 80 (not 100), while a twice-a-week (Monday+Friday) regular converged to
+the true cap of 100 — that gap was the spec's stated mechanism for "ordinary
+weekly regulars eventually become Gold; exceptionally consistent Monday +
+Friday players become Holo" (Part 11.2, as originally written). At `14`/`3`,
+a once-a-week regular's steady state is also 100 (140 uncapped, clamped to
+100) — the same ceiling as a twice-a-week regular, reached in about 12 weeks
+instead of about 8. Once both are capped, activity alone no longer separates
+a once-a-week player from a twice-a-week peer; only form (goals) can. This
+was explained to the user as a tradeoff of the chosen option before they
+picked it, and BUILD_SPEC.md Part 11.2 now documents it directly rather than
+carrying the old, now-inaccurate "Gold vs Holo" narrative. If this
+plateauing-together effect turns out to be undesirable once the real
+attendance data has grown for a full season, revisit toward one of the other
+three simulated options (moderate bonus, slower decay, or a blend) instead of
+raising `ACTIVITY_FIRST_APPEARANCE` further, since higher values compress the
+time-to-cap even more without restoring the once/twice-per-week distinction.

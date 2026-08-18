@@ -724,3 +724,87 @@ this entry (`git status` shows 42 modified files). Commit it before starting
 unrelated work, and manually click through Collection, Market, Packs, and an
 admin screen in a signed-in session to confirm the token migration reads
 correctly on real data, not just the seed fixtures used in `/design-preview`.
+
+## Initial TFH roster and August 2026 attendance backfill - 2026-08-18
+
+The first real content: `20260818000000_initial_tfh_roster_and_august_sessions.sql`
+imports 21 real TFH members with 2+ appearances across the five published
+August 2026 attendance sheets (03, 07, 10, 14, 17 Aug), creates their Live
+Card editions, opens the `TFH 2026` season, and backfills all five sessions
+as already-published with zero recorded goals (none were on the source
+sheets). This follows BUILD_SPEC.md Part 137, which explicitly allows a
+one-time migration/seed script for the initial roster instead of a polished
+admin import UI — that UI still does not exist.
+
+By the user's request, the 12 people who only appear once across the five
+sheets (Bader, Souhail, Meral, Maikel, both "Nick"s, Xander, Zak, Jurie,
+Steffen, Serhat, Stephen) are deliberately left out of the roster rather than
+getting a Live Card from a single appearance; the migration comment explains
+the exclusion and how to re-add someone (with their full attendance history)
+once they attend a second session.
+
+`kut.rebuild_season` requires an authenticated admin session (`kut.is_admin()`
+reads `auth.uid()`), which a migration does not have. Its computation was
+extracted into an internal, ungated `kut._rebuild_season_core`, which
+`kut.rebuild_season` now delegates to after its admin check; the migration
+calls the core directly. This keeps a single canonical rating formula
+(BUILD_SPEC.md Part 10) instead of duplicating the loop by hand.
+
+`supabase/seed.sql`'s fictional local season now computes `is_active` instead
+of hardcoding `true`, so it no longer collides with a real active season
+already inserted by a migration — `kut.seasons_one_active_idx` allows only
+one active season at a time.
+
+Known data gap: Friday 07.08.2026's sheet listed "Nick" twice at different
+positions and was confirmed with the user to be two different people, but
+both were single-appearance and are excluded per the note above; if either
+returns for a second session, their real name (or a distinguishing display
+name) will be needed since two roster entries would otherwise both read
+"Nick". There is still no admin UI to rename a player or edit archetypes —
+only a migration/Studio SQL can do that today.
+
+Verified locally: `npm run test:db` (145 pgTAP tests, unchanged), `npm run
+verify:fast` (20 unit tests, lint, typecheck), and a manual query of the
+rebuilt `player_season_state` confirming per-session attendee counts (9, 22,
+8, 17, 9) match the source sheets before the roster trim, and that the
+highest Live OVR produced is 45 (Bronze) — consistent with the "no strong
+cards yet" goal. Not yet applied
+anywhere else: this repository's migrations are local-only:
+`VibeTrunk/supabase` remains the sole hosted deployment point per the
+"Hosted alpha deployment" entry above, and this migration has not been added
+there yet.
+
+Next recommended task: add the matching migration file to
+`VibeTrunk/supabase` and run its backup/dry-run/parity-check workflow before
+the real roster and August history go live at `kut.vibetrunk.com`. After
+that, resolve the two placeholder "Nick" records with their real names or
+distinguishing display names.
+
+## Roster trimmed to 2+ appearances; activity formula reweighted - 2026-08-18
+
+Two follow-up changes to the same still-unapplied migration, both by
+explicit user request:
+
+The 12 players with exactly one appearance across the five source sessions
+(Bader, Souhail, Meral, Maikel, both "Nick"s, Xander, Zak, Jurie, Steffen,
+Serhat, Stephen) were removed from the roster, card editions, and attendance
+— confirmed to have no profiles, invitations, or cards attached first. 21
+real players remain, each with 2-4 matches attended.
+
+`ACTIVITY_FIRST_APPEARANCE` was raised from `8` to `14` after the user felt a
+single match should move a card's rating more; see ADR-024 in
+`docs/decisions.md` for the four options simulated, why this one was chosen,
+and its main tradeoff (a once-a-week regular's activity now caps at the same
+long-run ceiling as a twice-a-week regular, just slower to reach — it no
+longer caps lower). Changed in `docs/BUILD_SPEC.md` (Parts 11, 11.2, 145),
+`src/game/config.ts`, `tests/fixtures/rating-scenarios.json`, and the SQL
+formula inside `20260818000000_initial_tfh_roster_and_august_sessions.sql`.
+
+With the new formula, the season's top cards are now Aram and Teize at 52
+(Silver, 4 matches each), down to Derk at 39 (Common, 2 matches). Verified
+locally: `npm run test:db` (145 pgTAP tests) and `npm run verify:fast` (20
+unit tests including the recalculated rating-engine fixtures).
+
+Next recommended task: unchanged from the entry above — add the matching
+migration to `VibeTrunk/supabase` and deploy it deliberately, then resolve
+the two placeholder "Nick" identities if either returns for a second session.

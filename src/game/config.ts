@@ -1,6 +1,6 @@
 export const GAME_CONFIG = {
   activityWeeklyDecay: 0.9,
-  activityFirstAppearance: 8,
+  activityFirstAppearance: 14,
   activitySecondAppearance: 3,
   activityOvrFloor: 30,
   activityOvrRange: 45,

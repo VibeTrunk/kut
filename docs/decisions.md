@@ -571,3 +571,12 @@ step. This was not yet confirmed end-to-end with a real push at the time of
 writing - worth a sanity check (e.g. a GitHub deployment/check entry
 appearing) on the next commit. If it silently doesn't trigger, fall back to
 manual `vercel --prod` and re-investigate the Git connection.
+
+**Confirmed 2026-08-18:** the push of this very ADR's commit
+(`98f06b3`) produced a `Production` deployment (Vercel dashboard
+`id 5952002745`) tagged with the Git-commit source icon, distinct from the
+`>_` CLI-source icon shown on every earlier manual `vercel --prod` deploy in
+the same list. The GitHub commit status API independently shows a matching
+`Vercel` / `success` status on that sha. Auto-deploy on push to `main` is
+confirmed working end-to-end; no further manual `vercel --prod` step is
+needed for ordinary merges.

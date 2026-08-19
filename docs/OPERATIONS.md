@@ -53,6 +53,17 @@ wallets, cards, sessions, or market history.
    opening, discard, market buy/sell, messages, and mobile navigation using
    fictional accounts before inviting real members.
 
+## Follow-ups
+
+- Confirmed 2026-08-19: hosted Supabase Auth has public self-sign-up disabled
+  and the Site URL is `https://kut.vibetrunk.com`. The redirect URL allow-list
+  includes `https://*-vibetrunk.vercel.app/**`, which is scoped to the whole
+  `vibetrunk` Vercel team rather than just KUT's own previews — any preview
+  deployment under that team is currently a valid auth-redirect target for
+  KUT sessions. Not a blocker for inviting real members to the production
+  URL, but narrow it to KUT's own preview pattern (e.g.
+  `https://kut-*-vibetrunk.vercel.app/**`) when convenient.
+
 ## Alpha operations
 
 - Start with 5–10 trusted members and one or two weeks of sessions.

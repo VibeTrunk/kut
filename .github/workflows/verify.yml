@@ -34,15 +34,11 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      - name: Skip the flaky azure.archive.ubuntu.com mirror
+        run: echo "http://archive.ubuntu.com/ubuntu" | sudo tee /etc/apt/apt-mirrors.txt
       - name: Install Playwright browsers
-        timeout-minutes: 10
-        run: |
-          for attempt in 1 2 3; do
-            timeout 180 npx playwright install --with-deps chromium && exit 0
-            echo "Attempt $attempt timed out or failed, retrying..."
-            sleep 5
-          done
-          exit 1
+        timeout-minutes: 5
+        run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
 
   database:

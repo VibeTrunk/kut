@@ -15,6 +15,11 @@ substitute.
 ## Status so far
 - **Repo:** feature-complete MVP built and committed; see "Current hosted
   deployment" below for what's live.
+- **Branch workflow:** GitHub branch protection on `main` is enabled
+  (2026-08-23) — direct pushes are rejected, even for admins. All changes
+  go through a feature branch and PR, squash-merged, branch auto-deleted on
+  merge. See the global CLAUDE.md's "Branch workflow" section for the
+  session-level conventions (branch naming, who merges).
 - **Vercel:** connected as project `kut` at `kut.vibetrunk.com`.
 - **Supabase:** uses the shared VibeTrunk Supabase project, schema `kut`
   (not `public`); the hosted schema is created and migrated — see below.

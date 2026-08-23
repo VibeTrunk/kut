@@ -167,11 +167,21 @@ unexplained currency. The existing ledger is the correct foundation.
    private authenticated uploads, image type/size limits, consent, deletion
    path, crop/position metadata, RLS-protected Supabase Storage, and a safe
    fallback. Show the approved cropped round image on cards.
+4. Build out the **Player directory** (`src/app/(app)/players/page.tsx`) into
+   the real searchable full roster it was always meant to be (its own
+   placeholder text already says "browse published players from Home" as a
+   stand-in). Once it exists, stop using Home as the de facto full roster
+   list and instead show a small curated set there (e.g. 5 most-improved or
+   most-popular cards this week) linking out to the full directory.
+   Noted 2026-08-19 from user feedback during the alpha mobile click-through;
+   not scoped or built yet.
 
 Assessment: album/duplicate stacking is recommended and largely reuses the
 existing Card Copy data. Better graphics are recommended if they remain
 CSS/data-driven. User photo upload is feasible but should not be rushed: it
-creates privacy, storage, moderation, and mobile-upload responsibilities.
+creates privacy, storage, moderation, and mobile-upload responsibilities. The
+directory/Home split is a natural fit once the directory is built, since Home
+already leans on the "browse from Home" workaround as a crutch.
 
 ### Phase E — Community contribution mechanics (design before build)
 

@@ -1240,3 +1240,26 @@ invite-claim fixtures (pre-existing, unrelated to this change).
 Migration is local-only; it joins the pending ADR-021 batch (`20260830` /
 `20260831` / `20260901` / `20260902`; `verify-catalog.ps1` then expects
 "matches 32"). Rollback DDL is in the migration header.
+## ADR-027..030 alpha-readiness batch deployed to hosted - 2026-08-30
+
+The three migrations (`20260830000000`, `20260831000000`, `20260901000000`)
+were catalogued into `VibeTrunk/supabase` (PR #7, "matches 33"), a verified
+GPG-encrypted `kut`-schema backup was taken, and `supabase db push` was run
+from `VibeTrunk/supabase` &mdash; `migration list --linked` now shows 33/33
+applied. KUT PR #8 merged and Vercel redeployed (the updated `src/proxy.ts`
+CSP with `img-src` `blob:` + the Supabase origin ships with it).
+
+Verified on the hosted project: the private `player-photos` bucket (5 MiB,
+webp/jpeg/png) and its four `storage.objects` policies; the five new `kut`
+functions; `photo_path` on `public_live_ratings` / `my_collection_cards`;
+`profiles.username`; `kut.player_directory` (25 rows); and
+`club_value_leaderboard` filtering `role = 'user'`. Post-deploy smoke test
+(signed-in) of `/how-it-works`, `/players`, `/players/[slug]`, `/admin/links`,
+`/settings/card` passed. `VibeTrunk/supabase` PR #8 flips the ledger to
+"applied 2026-08-30".
+
+Housekeeping in the same follow-up: the pre-existing duplicate `superadmin`
+account (`m.f.vanoostrom@gmail.com`, never used past 2026-08-15) was deleted
+from hosted; and the two nav pennant glyphs in `app-nav.tsx` moved from an
+inline `style={{ clipPath }}` (blocked by the prod nonce-only `style-src`) to
+a `.clip-pennant` stylesheet class.

@@ -931,3 +931,92 @@ Next recommended task: resolve the two placeholder "Nick" identities from the
 initial import if either returns for a second session; otherwise no
 outstanding follow-up. Consider adding a `.gitattributes` to this repo to
 harden the catalogue parity check against fresh Windows clones.
+
+## Admin "Add Player" — roster growth without a migration - 2026-08-29
+
+Admins can now register a new TFH member from `/admin/roster` (new "Roster"
+tab in the admin strip): display name + archetype + optional full name. On
+submit the server action calls the new `kut.admin_add_player` RPC
+(`20260829120000_admin_add_player.sql`), which in one transaction inserts the
+`kut.players` row with a collision-suffixed slug, mints the player's `live`
+`card_editions` row, and runs `kut._rebuild_season_core` so the player has a
+baseline `player_season_state` row (30 OVR / `common`) and shows in Live
+Ratings immediately. A later attendance publish moves the rating normally.
+See ADR-025 for the rationale; BUILD_SPEC.md Part 137 is amended.
+
+The RPC is `security definer`, executable by any authenticated caller but
+gated internally by `kut.is_admin()` (same shape as the other admin RPCs);
+`requireAdmin()` is re-checked at the route and again in the server action.
+Duplicate display names are allowed (only `slug` is unique →
+`steffen` / `steffen-2`) — the deliberate "two Nicks" escape hatch; the form
+shows a soft, non-blocking warning when the typed name already exists.
+
+Also in this branch: a repo-root `.gitattributes` (`* text=auto eol=lf`) plus
+a `git add --renormalize` commit, closing the open loose end from the
+2026-08-29 hosted-deployment entry above — `core.autocrlf=true` on Windows
+had twice re-smudged `supabase/migrations/*.sql` to CRLF and tripped
+`VibeTrunk/supabase`'s `verify-catalog.ps1` SHA-256 drift check.
+
+Tests passing locally: `npm run verify:fast` (lint, typecheck, 20 unit
+tests). `npm run test:db` extends `phase_1a_roster.test.sql` to `plan(152)`
+with eight `admin_add_player` assertions (admin add, archetype stored, Live
+edition minted, baseline season-state row, duplicate name allowed, slug
+collision suffixed, blank name rejected `22023`, non-admin rejected `42501`).
+
+Deviation from the feature brief's literal test block: the "blank display
+name is rejected" assertion is run under the admin JWT claim, not as an
+anonymous authenticated caller. `admin_add_player` checks `is_admin()` before
+it validates the name, so a non-admin caller gets `42501`, never the `22023`
+the test expects — the assertion only isolates the name check when the caller
+is already an admin.
+
+Next: deploy `20260829120000_admin_add_player.sql` to hosted via the
+`VibeTrunk/supabase` ADR-021 workflow (catalogue the file unchanged, extend
+`scripts/verify-catalog.ps1` — expect "matches 29", PR; then backup →
+`supabase migration list --linked` (one pending, no drift) →
+`supabase db push --dry-run` → `supabase db push`; flip the ledger notes and
+add the deployed entry here). After that, every future roster add is just the
+form.
+
+## Admin roster: deactivate / reactivate / delete a player - 2026-08-29
+
+Follow-up to the add-player entry above, by user request ("also allow me to
+remove players"). `/admin/roster`'s table now has per-row **Deactivate /
+Reactivate** and **Delete** controls, backed by two new RPCs in
+`20260829130000_admin_manage_roster.sql` (both `security definer`, gated by
+`kut.is_admin()`):
+
+- `kut.admin_set_player_active(p_player_id, p_is_active)` — soft, reversible.
+  Flips `players.is_active`; the player leaves `public_live_ratings` and the
+  `open_pack` pool (both filter that flag) but keeps their row, history,
+  season-state, and any owned card copies. This is the primary "remove"
+  action.
+- `kut.admin_delete_player(p_player_id)` — hard `DELETE`, allowed only when
+  the player has no attendance, no linked profile, no invitation, and no
+  owned `user_cards` copy of their editions. Also removes the auto-minted
+  Live edition and baseline season-state row. Otherwise raises `P0001`
+  "deactivate instead"; a `foreign_key_violation` handler is the backstop.
+
+See ADR-026 for why removal is soft-by-default (consistent with
+cancel-don't-delete sessions and soft card burns) with the hard delete
+scoped to genuine never-used typos. The Delete button is disabled in the UI
+when the page can see attendance or a linked account; the RPC is the final
+arbiter for the invite / owned-card cases. Delete asks for a
+`window.confirm` first.
+
+Tests: `phase_1a_roster.test.sql` → `plan(165)` (+13): deactivate clears
+`is_active` and drops the player from `public_live_ratings`; reactivate
+restores it; a never-used added player hard-deletes cleanly (row, Live
+edition, and season-state all gone, no orphans); a player with attendance is
+refused with `P0001`; non-admins get `42501` for both RPCs.
+
+Verified locally: `npm run verify:fast` (lint, typecheck, 20 unit tests),
+`npx supabase migration up --local`, `npm run test:db` (166 tests: 1 phase0 +
+165), `npm run build`, and a real signed-in browser pass (Playwright): added
+a player, deactivated it (gone from `/` ratings), reactivated it (back),
+hard-deleted a fresh throwaway player, and confirmed Delete is greyed out for
+a player with attendance.
+
+Deploy note: `20260829130000_admin_manage_roster.sql` ships in the same
+`VibeTrunk/supabase` ADR-021 batch as `20260829120000_admin_add_player.sql`
+(two pending migrations; `verify-catalog.ps1` then expects "matches 30").

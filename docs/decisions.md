@@ -669,3 +669,84 @@ attendance data has grown for a full season, revisit toward one of the other
 three simulated options (moderate bonus, slower decay, or a blend) instead of
 raising `ACTIVITY_FIRST_APPEARANCE` further, since higher values compress the
 time-to-cap even more without restoring the once/twice-per-week distinction.
+
+## ADR-025 — Server-authoritative admin add-player RPC
+
+Date: 2026-08-29
+
+Status: Accepted
+
+Decision: `kut.admin_add_player(p_display_name, p_archetype, p_full_name)` is
+the sole roster-add path. It is a `security definer` function, executable by
+any authenticated caller but gated internally by `kut.is_admin()` (the same
+shape as `correct_published_attendance_session` and the other admin RPCs). In
+one transaction it inserts the `kut.players` row (deriving a unique slug from
+the display name, suffixing `-2`, `-3`, … on collision), mints the player's
+`live` `card_editions` row, and — if a season is active — runs
+`kut._rebuild_season_core` so the new player has a baseline
+`player_season_state` row immediately. A matching `/admin/roster` UI (route +
+server action, both re-checking `requireAdmin()`) lists the roster and hosts
+the add form. This replaces the migration-per-roster-change workflow for
+incremental additions.
+
+Reason: Weekly roster growth (a new TFH member turns up twice) should not
+require a shared-database migration, a `VibeTrunk/supabase` PR, and the
+ADR-021 hosted-push ceremony every time. Edition minting plus the rating
+rebuild must stay atomic and must use the one canonical formula
+(BUILD_SPEC.md Part 10) — hence a single RPC that does all three steps rather
+than a direct browser insert against `kut.players` (which RLS would actually
+permit for an admin, but which would skip the edition and the rebuild).
+
+Consequences: A new Live edition enters the pack pool the moment the player is
+added — expected, and identical to what the roster migrations already did. A
+brand-new player sits at 30 OVR / `common` until their first published
+attendance moves the rating normally. Duplicate display names are allowed
+(only `slug` is unique → `steffen`, `steffen-2`); this is the deliberate "two
+Nicks" escape hatch, and the UI warns but does not block. Out of scope as
+explicit follow-ups: editing a player (rename, change archetype, set
+`photo_path`), the `is_active` toggle, and merging duplicates — there is still
+no UI for any of those. Bulk historical import stays a migration (BUILD_SPEC.md
+Part 137).
+
+## ADR-026 — Removing a player is a soft deactivate, with a narrow hard delete for never-used entries
+
+Date: 2026-08-29
+
+Status: Accepted
+
+Decision: `/admin/roster` gets two more server-authoritative paths, both
+`security definer` and gated by `kut.is_admin()` like `admin_add_player`:
+
+- `kut.admin_set_player_active(p_player_id, p_is_active)` — flips
+  `kut.players.is_active`. This is the normal "remove from the roster"
+  action. A deactivated player leaves `kut.public_live_ratings` and the
+  `kut.open_pack` candidate pool (both already filter `players.is_active`)
+  but keeps their row, attendance history, `player_season_state`, and every
+  card copy people already own. It is fully reversible from the same UI.
+- `kut.admin_delete_player(p_player_id)` — a true `DELETE`, allowed only when
+  the player has no `attendance`, no linked `profiles` row, no `invitations`
+  row, and no `user_cards` copy of any of their `card_editions`. It also
+  deletes the auto-minted Live edition and the baseline season-state row. Any
+  linked record → `P0001` "deactivate instead"; a `foreign_key_violation`
+  backstop catches anything the explicit checks miss.
+
+Reason: The user asked to "remove players." The whole codebase already
+treats destructive deletes as a last resort (ADR-008/009 cancel-don't-delete
+sessions, ADR-013 soft card burns, `on delete restrict` on `attendance`,
+`card_editions`, `invitations`). Deactivation covers the real case — someone
+left the club, or was added by mistake but has since attended — without
+risking economy state: their Live edition stops minting new copies, existing
+copies keep working. The hard delete exists purely so a genuine typo (a
+player added seconds ago, never used) can be cleaned up instead of sitting
+deactivated forever; its eligibility rules make it impossible to run against
+a player who is part of any history.
+
+Consequences: "Deactivate" is the primary control and the safe default;
+"Delete" is offered per-row but is disabled in the UI when the page can see
+attendance or a linked account, and the RPC is the final arbiter for the
+invite/owned-card cases. Deactivation does not touch existing card copies,
+market listings, or pending invitations for that player — an admin resolves
+those separately if needed. No rebuild runs on deactivate/reactivate (the
+rating maths is unaffected; the player is simply filtered out of public
+projections). Still out of scope: rename, archetype edit, `photo_path`,
+`is_collectible`, and merging duplicates.

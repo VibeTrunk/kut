@@ -3705,6 +3705,16 @@ Import must:
 
 For a one-time initial setup, a migration/seed script is acceptable instead of building a polished import UI.
 
+**Update (2026-08-29, ADR-025):** incremental additions now have a UI —
+`/admin/roster` calls the server-authoritative `kut.admin_add_player` RPC,
+which inserts the player, mints their Live edition, and runs the canonical
+rebuild in one transaction. Bulk backfill (a whole historical roster or
+attendance sheet at once) stays a migration. This partly delivers the
+"player directory" / roster-management item of Phase 1A (Part 114): admins
+can now add Players from the app, and (ADR-026) deactivate/reactivate or —
+for a never-used entry — hard-delete them. A read-only member-facing
+`/players` directory and rename / archetype / photo editing remain to build.
+
 ---
 
 # PART XLI — DESIGN SYSTEM

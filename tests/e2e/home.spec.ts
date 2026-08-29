@@ -30,6 +30,13 @@ test("requires sign-in before showing a published-session correction", async ({ 
   await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
 });
 
+test("requires sign-in before showing the admin roster form", async ({ page }) => {
+  await page.goto("/admin/roster");
+
+  await expect(page).toHaveURL(/\/login$/);
+  await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
+});
+
 test("requires sign-in before showing account recovery", async ({ page }) => {
   await page.goto("/admin/accounts");
 

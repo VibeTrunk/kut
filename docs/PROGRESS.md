@@ -894,18 +894,23 @@ squash-merged), extended `verify-catalog.ps1` to 28 entries (all matched),
 confirmed via `supabase migration list --linked` that the 27 previously
 deployed migrations still matched remote with no drift and `20260829000000`
 was the only pending one, and ran `supabase db push --dry-run` (one pending
-migration, no seeds/roles). A logical backup of the hosted database was
-captured before applying, kept outside both repos.
+migration, no seeds/roles). Backups before applying: a hosted-project backup
+from the Supabase dashboard, plus a `kut`-schema logical export via `supabase
+db dump --linked` (data + schema); the data dump was AES-256 encrypted and
+kept under `%USERPROFILE%\backups`, outside both repos.
 
 `VibeTrunk/supabase#3` also added a repo `.gitattributes` (`* text=auto
 eol=lf`): `core.autocrlf=true` on Windows had been checking the catalogued
 SQL out as CRLF, so `verify-catalog.ps1`'s SHA-256 comparison against the LF
 sources in this repo could never pass — it was already silently failing on
-`20260818000000`. Committed blobs were LF throughout; only the working-tree
-endings were pinned. The KUT repo still has the same `autocrlf` setup and no
-`.gitattributes`, so a fresh Windows clone of KUT could reintroduce the drift
-on its side of the parity check; adding a matching `.gitattributes` here is a
-loose end.
+`20260818000000`. That fix pins the *catalogue* side; the KUT repo still has
+`autocrlf=true` and no `.gitattributes`, and this deployment hit the other
+half of it: `git pull` on `main` after `VibeTrunk/kut#4` merged re-smudged
+this repo's copy of `20260829000000` to CRLF, so the parity check then failed
+on *that* file. Worked around by normalising both working copies to LF for
+the run; the committed blobs were byte-identical throughout (same git object
+`05745b27`). Adding a matching `.gitattributes` to this repo is the real fix
+and remains an open loose end.
 
 The real `supabase db push` was run by the user from their own terminal —
 live shared-Supabase mutations are not run unattended in this project, same
@@ -915,8 +920,12 @@ as the 2026-08-19 initial-roster deployment. `supabase migration list
 (`VibeTrunk/supabase#4`).
 
 The 25-player TFH roster and the complete seven-session August attendance
-history are now what `kut.vibetrunk.com` serves. Highest Live OVR is 57
-(Oussama, Teize — Silver).
+history are now what `kut.vibetrunk.com` serves. Verified against the hosted
+database after the push: `supabase migration list --linked` shows
+`20260829000000` matched Local/Remote; per-session stored attendee counts are
+8 / 15 / 8 / 16 / 9 / 14 / 11 for 03–28 Aug; `kut.players` holds 25 rows; the
+top Live OVRs are Oussama and Teize at 57 (Silver), with nothing above
+Silver.
 
 Next recommended task: resolve the two placeholder "Nick" identities from the
 initial import if either returns for a second session; otherwise no

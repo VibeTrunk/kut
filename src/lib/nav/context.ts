@@ -24,7 +24,12 @@ export const getNavContext = cache(async (): Promise<NavContext> => {
   }
 
   const [profileResponse, walletResponse, notificationsResponse] = await Promise.all([
-    supabase.schema("kut").from("profiles").select("display_name, role, is_disabled").eq("id", userId).maybeSingle(),
+    supabase
+      .schema("kut")
+      .from("profiles")
+      .select("display_name, role, is_disabled, starter_claimed_at, starter_opened_at")
+      .eq("id", userId)
+      .maybeSingle(),
     supabase.schema("kut").from("wallets").select("balance").eq("user_id", userId).maybeSingle(),
     supabase.schema("kut").from("user_notifications").select("id", { count: "exact", head: true }).is("read_at", null),
   ]);
@@ -32,6 +37,12 @@ export const getNavContext = cache(async (): Promise<NavContext> => {
   const profile = profileResponse.data;
   if (profileResponse.error || !profile || profile.is_disabled) {
     redirect("/login");
+  }
+
+  // First-login gate: a member whose starter pack was granted but never opened
+  // is held at the full-screen /welcome reveal (see ADR-031).
+  if (profile.starter_claimed_at && !profile.starter_opened_at) {
+    redirect("/welcome");
   }
 
   return {

@@ -78,18 +78,14 @@ The final command run was:
 npm run verify:full
 ```
 
-It passed:
+It passed (2026-08-29, ahead of the ADR-027/028/029/030 deploy):
 
 - lint and TypeScript checks;
-- 20 unit tests;
-- 145 local database/pgTAP tests;
-- 11 Chromium browser tests, including two 390px phone-viewport checks;
-- production build.
-
-The only build interruption was a stale `next dev` process holding `.next`
-files. It was stopped, the build then passed, and generated `.next` artifacts
-were safely rebuilt. OneDrive's delete prompt concerned those generated files,
-not source code or local database data.
+- 28 unit tests;
+- 217 local database/pgTAP tests (4 files);
+- 17 Chromium browser tests, including two 390px phone-viewport checks;
+- production build (24 routes, incl. `/how-it-works`, `/players`,
+  `/players/[slug]`, `/settings/card`, `/admin/links`).
 
 ## Documentation to read first
 
@@ -107,9 +103,10 @@ not reset, clean, or overwrite the working tree.
 
 ## Known gaps before a real alpha
 
-1. **Manual signed-in mobile review:** automated phone checks cover public and
-   auth-boundary pages. Manually check My Club, Market, Messages, and admin
-   attendance at a narrow viewport while signed in.
+1. **Manual signed-in mobile review:** _done (2026-08-29)._ `npm run verify:full`
+   and a signed-in narrow-viewport click-through of Home, Collection, Market,
+   Messages, the admin tab strip, and the new `/how-it-works`, `/players`, and
+   `/settings/card` pages were completed.
 2. **Hosted setup:** backup, Supabase migration dry-run, hosted Auth settings,
    Vercel environment variables, CSP host replacement, and preview deployment
    are intentionally not done. Follow `docs/OPERATIONS.md` only with explicit
@@ -166,15 +163,25 @@ unexplained currency. The existing ledger is the correct foundation.
 3. Add a **My Card profile photo** feature only after a privacy/storage design:
    private authenticated uploads, image type/size limits, consent, deletion
    path, crop/position metadata, RLS-protected Supabase Storage, and a safe
-   fallback. Show the approved cropped round image on cards.
+   fallback.
+   _Built 2026-08-29 (ADR-027):_ `/settings/card` — square pan/zoom crop, a
+   private `player-photos` bucket with folder-scoped `storage.objects` RLS,
+   5 MiB / raster-only limits, a remove path, and the initials/jersey
+   fallback. Consent is implicit for the invite-only group; a formal consent
+   toggle and admin photo moderation are still open. Local-only until the
+   `20260830000000` / `20260831000000` / `20260901000000` migrations are
+   deployed together as one ADR-021 batch (`verify-catalog.ps1` then expects
+   "matches 33"; the batch touches the `storage` schema and widens
+   `public_live_ratings` / `my_collection_cards` / `club_value_leaderboard` —
+   rollback DDL is in each migration header).
 4. Build out the **Player directory** (`src/app/(app)/players/page.tsx`) into
-   the real searchable full roster it was always meant to be (its own
-   placeholder text already says "browse published players from Home" as a
-   stand-in). Once it exists, stop using Home as the de facto full roster
-   list and instead show a small curated set there (e.g. 5 most-improved or
-   most-popular cards this week) linking out to the full directory.
-   Noted 2026-08-19 from user feedback during the alpha mobile click-through;
-   not scoped or built yet.
+   the real searchable full roster it was always meant to be.
+   _Built 2026-08-29 (ADR-027):_ `/players` is now a query / rarity /
+   archetype / sort roster over the new `kut.player_directory` view, and
+   `/players/[slug]` is a per-player profile. **Still to do:** stop using Home
+   as the de facto full roster and show a small curated set there (e.g. 5
+   most-improved cards this week) linking out to the directory.
+   Noted 2026-08-19 from user feedback during the alpha mobile click-through.
 
 Assessment: album/duplicate stacking is recommended and largely reuses the
 existing Card Copy data. Better graphics are recommended if they remain

@@ -1,16 +1,8 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import { ARCHETYPES, ARCHETYPE_LABELS } from "@/game/archetypes";
 import { addPlayer, type AddPlayerState } from "./actions";
-
-const ARCHETYPE_OPTIONS: { value: string; label: string }[] = [
-  { value: "all_rounder", label: "All-rounder" },
-  { value: "speedster", label: "Speedster" },
-  { value: "finisher", label: "Finisher" },
-  { value: "playmaker", label: "Playmaker" },
-  { value: "defender", label: "Defender" },
-  { value: "tank", label: "Tank" },
-];
 
 export function AddPlayerForm({ existingNames }: { existingNames: string[] }) {
   const [state, formAction, isPending] = useActionState(addPlayer, null);
@@ -55,9 +47,9 @@ export function AddPlayerForm({ existingNames }: { existingNames: string[] }) {
             defaultValue="all_rounder"
             name="archetype"
           >
-            {ARCHETYPE_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
+            {ARCHETYPES.map((value) => (
+              <option key={value} value={value}>
+                {ARCHETYPE_LABELS[value]}
               </option>
             ))}
           </select>

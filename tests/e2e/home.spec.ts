@@ -81,10 +81,45 @@ test("requires sign-in before showing a saved pack result", async ({ page }) => 
   await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
 });
 
+test("requires sign-in before showing the how-it-works page", async ({ page }) => {
+  await page.goto("/how-it-works");
+
+  await expect(page).toHaveURL(/\/login$/);
+  await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
+});
+
+test("requires sign-in before showing the player directory", async ({ page }) => {
+  await page.goto("/players");
+
+  await expect(page).toHaveURL(/\/login$/);
+  await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
+});
+
+test("requires sign-in before showing a player profile", async ({ page }) => {
+  await page.goto("/players/alex-example");
+
+  await expect(page).toHaveURL(/\/login$/);
+  await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
+});
+
+test("requires sign-in before showing the card editor", async ({ page }) => {
+  await page.goto("/settings/card");
+
+  await expect(page).toHaveURL(/\/login$/);
+  await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
+});
+
+test("requires sign-in before showing admin account links", async ({ page }) => {
+  await page.goto("/admin/links");
+
+  await expect(page).toHaveURL(/\/login$/);
+  await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
+});
+
 test("rejects a malformed invite token without exposing an account flow", async ({ page }) => {
   await page.goto("/invite/not-a-valid-token");
 
-  await page.getByLabel("Email").fill("person@example.test");
+  await page.getByLabel("Choose a username").fill("persontest");
   await page.getByLabel("Choose a password").fill("valid-password-123");
   await page.getByRole("button", { name: "Create KUT account" }).click();
 

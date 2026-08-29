@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { LiveCard, type LiveCardPlayer } from "@/components/live-card";
 import { StarterClaimForm } from "@/components/starter-claim-form";
+import { resolvePhotoUrls } from "@/lib/player-photos";
 import { createClient } from "@/lib/supabase/server";
 
 type LiveRating = {
@@ -17,6 +18,7 @@ type LiveRating = {
   def: number;
   phy: number;
   rarity_tier: string;
+  photo_path: string | null;
 };
 
 type HomePageProps = {
@@ -42,7 +44,7 @@ export default async function Home({ searchParams }: HomePageProps) {
     supabase
       .schema("kut")
       .from("public_live_ratings")
-      .select("id, slug, display_name, archetype, live_ovr, pac, sho, pas, dri, def, phy, rarity_tier")
+      .select("id, slug, display_name, archetype, live_ovr, pac, sho, pas, dri, def, phy, rarity_tier, photo_path")
       .order("live_ovr", { ascending: false })
       .order("display_name"),
     supabase.schema("kut").from("wallets").select("balance").eq("user_id", userId).maybeSingle(),
@@ -65,6 +67,7 @@ export default async function Home({ searchParams }: HomePageProps) {
   }
 
   const ratings = (data ?? []) as LiveRating[];
+  const photoUrls = await resolvePhotoUrls(supabase, ratings.map((player) => player.photo_path));
   const balance = walletResponse.data?.balance ?? 0;
   const clubValue = clubValueResponse.data?.club_value ?? balance;
   const rank = rankResponse.data?.rank ?? null;
@@ -81,6 +84,11 @@ export default async function Home({ searchParams }: HomePageProps) {
           </h1>
           <p className="max-w-2xl text-lg leading-8 text-ink-dim">
             Published attendance updates these Live Ratings automatically. Only signed-in KUT members can view them.
+          </p>
+          <p className="text-sm">
+            <Link className="font-semibold text-brass underline" href="/how-it-works">
+              New here? How KUT works &rarr;
+            </Link>
           </p>
         </header>
 
@@ -112,7 +120,9 @@ export default async function Home({ searchParams }: HomePageProps) {
         {!profile.starter_claimed_at && <StarterClaimForm />}
         {query.starter === "1" && (
           <p className="rounded-xl bg-moss-bg p-4 font-semibold text-moss">
-            Starter pack claimed: 250 KUT Coins and three Live Cards are now yours. <Link className="underline" href="/club/collection">View My Collection</Link>.
+            Starter pack claimed: 250 KUT Coins and three Live Cards are now yours.{" "}
+            <Link className="underline" href="/club/collection">View My Collection</Link> or read{" "}
+            <Link className="underline" href="/how-it-works">how KUT works</Link>.
           </p>
         )}
 
@@ -137,6 +147,7 @@ export default async function Home({ searchParams }: HomePageProps) {
                   def: player.def,
                   phy: player.phy,
                   rarityTier: player.rarity_tier as LiveCardPlayer["rarityTier"],
+                  photoUrl: player.photo_path ? photoUrls.get(player.photo_path) ?? null : null,
                 }}
               />
             ))}

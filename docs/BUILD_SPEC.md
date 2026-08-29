@@ -823,6 +823,14 @@ Untradeable cards:
 
 ## 21. Invite-only membership
 
+> **Implemented (2026-08-29, ADR-028):** step 6 asks for a **self-chosen
+> username**, not an email. The app maps the username to a synthetic
+> non-routable address (`users.kut.local`) for Supabase Auth; no mail is sent.
+> Login accepts the username (or, for accounts created before this change, a
+> raw email). The username is a login handle only — the display name is still
+> the linked Player's name. Admins can also link/unlink an account to a Player
+> after the fact from `/admin/links` (`kut.admin_set_profile_player`).
+
 Do not allow unrestricted public account creation.
 
 The game is for TFH members.
@@ -897,7 +905,16 @@ Every balance change must be produced server-side and recorded in an immutable l
 
 A game User linked to the real Player receives:
 
-`+75 TF Coins` per published session they attended.
+`+250 TF Coins` per published session they attended.
+
+> **Note (2026-08-29):** raised from `75` to `250` (ADR-029), **not** applied
+> retroactively — already-granted rewards keep their original amount. Granting
+> the reward now also writes a dated `attendance_reward` message to the User's
+> inbox ("You received N KUT Coins for attending the session on DD Mon YYYY."),
+> keyed on the session so it is idempotent alongside the coins (ADR-028). The
+> value is a single `v_amount` constant in `kut.grant_attendance_rewards`,
+> mirrored by `ECONOMY.attendanceCoinReward` (`src/game/economy.ts`) and
+> Part 145 below.
 
 This connects participation in real TFH football to participation in the card economy.
 
@@ -1312,6 +1329,11 @@ Leaderboard displays:
 - Club Value;
 - card count;
 - unique-player count.
+
+> **Note (2026-08-29, ADR-030):** the leaderboard lists `role = 'user'`
+> accounts only — admin / superadmin accounts are excluded from the public
+> rank (they still see their own summary on `/club`). Admins can also
+> disable (reversible) or permanently delete an account from `/admin/links`.
 
 Refresh on page request is acceptable at MVP scale.
 
@@ -2558,6 +2580,14 @@ Do not pretend password reset works if SMTP was never configured.
 # PART XXVI — STORAGE
 
 ## 90. Player photos
+
+> **Implemented (2026-08-29, ADR-027):** the `player-photos` bucket is
+> private with folder-scoped `storage.objects` RLS. Upload is
+> **member self-service** (a member edits only their own linked player's
+> photo from `/settings/card`, square-cropped client-side), not admin-only.
+> Access is via short-lived server-minted signed URLs. Path is
+> `players/<player-uuid>/profile.webp` as below. Fallback is the CSS
+> initials/jersey treatment in `LiveCard`.
 
 Supabase Storage bucket:
 
@@ -3893,7 +3923,7 @@ FORM_CAP = 8
 LIVE_OVR_MIN = 30
 LIVE_OVR_MAX = 83
 
-ATTENDANCE_COIN_REWARD = 75
+ATTENDANCE_COIN_REWARD = 250  # raised from 75 on 2026-08-29, ADR-029
 STARTER_COIN_GRANT = 250
 STARTER_CARD_COUNT = 3
 

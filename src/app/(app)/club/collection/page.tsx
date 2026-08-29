@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { LiveCard, type LiveCardPlayer } from "@/components/live-card";
 import { requireUser } from "@/lib/auth/user";
+import { resolvePhotoUrls } from "@/lib/player-photos";
 import { createClient } from "@/lib/supabase/server";
 
 type CollectionCard = {
@@ -24,6 +25,7 @@ type CollectionCard = {
   phy: number;
   rarity_tier: LiveCardPlayer["rarityTier"];
   active_listing_id: string | null;
+  photo_path: string | null;
 };
 
 type CollectionPageProps = {
@@ -37,7 +39,7 @@ export default async function CollectionPage({ searchParams }: CollectionPagePro
     supabase
       .schema("kut")
       .from("my_collection_cards")
-      .select("card_id, edition_id, edition_title, edition_type, is_live, is_tradeable, source, player_id, player_slug, display_name, archetype, ovr, pac, sho, pas, dri, def, phy, rarity_tier, active_listing_id")
+      .select("card_id, edition_id, edition_title, edition_type, is_live, is_tradeable, source, player_id, player_slug, display_name, archetype, ovr, pac, sho, pas, dri, def, phy, rarity_tier, active_listing_id, photo_path")
       .order("ovr", { ascending: false })
       .order("display_name"),
     searchParams,
@@ -48,6 +50,7 @@ export default async function CollectionPage({ searchParams }: CollectionPagePro
   }
 
   const cards = (data ?? []) as CollectionCard[];
+  const photoUrls = await resolvePhotoUrls(supabase, cards.map((card) => card.photo_path));
   const tradeableCount = cards.filter((card) => card.is_tradeable).length;
 
   return (
@@ -99,6 +102,7 @@ export default async function CollectionPage({ searchParams }: CollectionPagePro
                     def: card.def,
                     phy: card.phy,
                     rarityTier: card.rarity_tier,
+                    photoUrl: card.photo_path ? photoUrls.get(card.photo_path) ?? null : null,
                   }}
                 />
                 <span className="mt-2 flex items-center justify-between px-1 text-xs font-bold uppercase tracking-[0.1em] text-ink-faint group-hover:text-brass">

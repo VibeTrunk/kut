@@ -10,7 +10,9 @@ export async function proxy(request: NextRequest) {
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDevelopment ? " 'unsafe-eval'" : ""}`,
     `style-src 'self'${isDevelopment ? " 'unsafe-inline'" : ` 'nonce-${nonce}'`}`,
     `connect-src 'self' ${supabaseUrl}`,
-    "img-src 'self' data:",
+    // `blob:` for the client-side photo crop preview; `${supabaseUrl}` for the
+    // signed player-photo URLs served from Supabase Storage.
+    `img-src 'self' data: blob: ${supabaseUrl}`,
     "font-src 'self'",
     "object-src 'none'",
     "base-uri 'self'",

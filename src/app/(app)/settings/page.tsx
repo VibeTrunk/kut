@@ -1,9 +1,17 @@
-import { IconSettings } from "@/components/icons";
+import Link from "next/link";
 import { LogoutButton } from "@/components/logout-button";
 import { requireUser } from "@/lib/auth/user";
+import { createClient } from "@/lib/supabase/server";
 
 export default async function SettingsPage() {
   const user = await requireUser();
+  const supabase = await createClient();
+  const { data: profile } = await supabase
+    .schema("kut")
+    .from("profiles")
+    .select("username")
+    .eq("id", user.id)
+    .maybeSingle();
 
   return (
     <main className="min-h-screen bg-board p-5 text-ink sm:p-10">
@@ -15,11 +23,28 @@ export default async function SettingsPage() {
         <div className="rounded-3xl border border-line bg-panel/60 p-6">
           <p className="text-xs font-black uppercase tracking-[0.13em] text-ink-faint">Signed in as</p>
           <p className="mt-1 text-xl font-black">{user.displayName}</p>
+          {profile?.username && (
+            <p className="mt-1 text-sm text-ink-faint">
+              Username: <span className="font-semibold text-ink-dim">{profile.username}</span>
+            </p>
+          )}
         </div>
-        <div className="flex flex-col items-center gap-4 rounded-3xl border border-dashed border-line bg-panel/60 p-10 text-center">
-          <IconSettings className="h-10 w-10 text-ink-faint" />
-          <h2 className="text-xl font-black">More settings coming soon</h2>
-          <p className="max-w-md text-ink-faint">Notification preferences and profile photo uploads are planned for a later polish pass.</p>
+        <Link
+          className="flex items-center justify-between rounded-3xl border border-line bg-panel/60 p-6 hover:border-brass"
+          href="/settings/card"
+        >
+          <span>
+            <span className="block text-lg font-black">My card</span>
+            <span className="mt-1 block text-sm text-ink-faint">
+              Upload your player photo and choose your archetype.
+            </span>
+          </span>
+          <span className="text-2xl text-brass" aria-hidden="true">
+            &rarr;
+          </span>
+        </Link>
+        <div className="rounded-3xl border border-dashed border-line bg-panel/60 p-6 text-center text-ink-faint">
+          Notification preferences are planned for a later polish pass.
         </div>
         <LogoutButton />
       </section>

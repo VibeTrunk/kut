@@ -750,3 +750,196 @@ those separately if needed. No rebuild runs on deactivate/reactivate (the
 rating maths is unaffected; the player is simply filtered out of public
 projections). Still out of scope: rename, archetype edit, `photo_path`,
 `is_collectible`, and merging duplicates.
+
+## ADR-027 — Member self-service player-card photo and archetype
+
+Date: 2026-08-29
+
+Status: Accepted
+
+Decision: A signed-in member can now edit their own linked player's card from
+`/settings/card`:
+
+- `kut.set_own_player_photo(p_photo_path text)` and
+  `kut.set_own_player_archetype(p_archetype text)` — both `security definer`,
+  `set search_path = kut, pg_catalog`, `revoke execute from public, anon`,
+  `grant execute to authenticated`; same shape as `kut.admin_add_player`
+  (ADR-025) except gated on **ownership** (`kut.profiles.player_id =
+  the row for `auth.uid()`, not disabled) instead of `kut.is_admin()`. A
+  non-null photo path must equal exactly `players/<own-player-id>/profile.webp`.
+  `set_own_player_archetype` re-runs `kut._rebuild_season_core` for the active
+  season, because `player_season_state.pac..phy` are materialised at rebuild
+  time (same reason `admin_add_player` rebuilds — BUILD_SPEC Part 10). These
+  are the **first member write path into `kut.players`**; RLS still grants no
+  direct member write on that table.
+- A **private** Supabase Storage bucket `player-photos` (5 MiB;
+  `image/webp`, `image/jpeg`, `image/png`) with folder-scoped RLS on
+  `storage.objects`: a member may INSERT/UPDATE/DELETE only under
+  `players/<their-own-linked-player-id>/*`; any enabled member may SELECT
+  (the whole app is member-only, ADR-020). Object path per BUILD_SPEC §90:
+  `players/<player-uuid>/profile.webp`. Private + short-lived signed URLs
+  (1 h) minted server-side through one helper
+  (`src/lib/player-photos.ts`) — the single place to change if the bucket is
+  ever made public.
+- `players.photo_path` is added to `kut.public_live_ratings` and
+  `kut.my_collection_cards` (append-only via `create or replace view`), and a
+  new `kut.player_directory` view (`security_invoker`, LEFT JOIN season state
+  so a brand-new 30-OVR player still lists) backs the member-facing Player
+  Directory at `/players` + `/players/[slug]`.
+- `src/components/live-card.tsx` renders `photoUrl` as an `<img>` (was an
+  inline `style={{ backgroundImage }}` that production CSP would refuse);
+  `img-src` in `src/proxy.ts` gains `blob:` (crop preview) and the Supabase
+  origin (signed URL).
+- The six archetype slugs, previously duplicated in four places, now come from
+  one module, `src/game/archetypes.ts` (`ARCHETYPES`, `ARCHETYPE_LABELS`,
+  `isArchetype`); `src/game/rating-engine.ts` re-exports them and keeps
+  `ARCHETYPE_OFFSETS`. No formula or `src/game/config.ts` value changed.
+
+Reason: These are the HANDOFF "archetype / photo editing" and "member-facing
+`/players` directory" follow-ups, plus the readiness-review "no in-app
+explanation" gap (`/how-it-works`, shipped in the same branch). `/settings`
+already promised photo uploads. Keeping members off direct `kut.players`
+writes preserves ADR-002/010's server-authoritative posture.
+
+Consequences: The hosted deploy (`20260830000000_member_self_service_and_player_directory.sql`)
+is the first KUT migration that touches the `storage` schema — the ADR-021
+dry-run must review the bucket insert and the four `storage.objects`
+policies, and the migration role must be able to create policies on
+`storage.objects` on the shared project. The member-only Live Ratings
+projection now carries `photo_path` (still member-only). A member can trigger
+a full-season rebuild by toggling their archetype; trivially cheap at ~25
+players, but a per-member cooldown is the noted lever if it is ever abused.
+Rollback DDL is captured verbatim in the migration header. Still out of
+scope: player rename, `is_collectible`, merging duplicates, and the
+directory does not show which member claimed a player.
+
+## ADR-028 — Username sign-up, admin account⇄player linking, attendance-reward inbox messages
+
+Date: 2026-08-29
+
+Status: Accepted
+
+Decision: three related changes, migration
+`20260831000000_admin_links_username_and_attendance_messages.sql`.
+
+**1. Members sign up with a username, not an email.** `kut.profiles` gains a
+`username text unique` column (`^[a-z0-9_]{3,30}$`, stored lower case). Supabase
+Auth still needs an address, so `src/lib/auth/username.ts` maps a username 1:1
+to a synthetic address on the non-routable domain `users.kut.local`
+(`usernameToEmail`). No mail is ever sent there — accounts are created with
+`email_confirm`, and recovery stays admin-assisted (ADR-011). `claim_invitation`
+gains a required `p_username` argument (the old 2-arg function is dropped) and
+stores it on the profile. The **login form accepts either** a username or, for
+accounts created before this change, a raw email (`loginIdentifierToEmail`:
+contains `@` → use as-is, else synthesize). The username is a **login handle
+only** — the public display name stays the linked player's real name, so the
+leaderboard / market / directory are unchanged.
+
+**2. An admin links / unlinks an account to a player from the UI.**
+`/admin/links` (new admin tab) calls
+`kut.admin_set_profile_player(p_user_id uuid, p_player_id uuid)` — `security
+definer`, gated by `kut.is_admin()` (same shape as `admin_add_player`). It
+validates the player exists and is not already linked to a different account
+(`profiles.player_id` is unique), then sets `profiles.player_id` (null =
+unlink). Linking is **forward-only**: it does **not** back-pay attendance
+rewards for the player's sessions before the link. Invite-claim still
+auto-links from the invitation; this is for corrections.
+
+**3. Attendance rewards write a dated inbox message.**
+`kut.grant_attendance_rewards` now also inserts a `user_notifications` row
+(`event_type = 'attendance_reward'`, `reference_id = session_id`, so the
+existing once-per-(user,event,ref) unique index makes it idempotent like the
+reward itself) reading *"You received N KUT Coins for attending the session on
+DD Mon YYYY."* The migration backfills one message per already-granted reward
+using the amount actually credited. The reward amount was **raised from 75 to
+250 in the same migration** (see ADR-029) — it lives as a single `v_amount`
+constant in the SQL and mirrors `ECONOMY.attendanceCoinReward` in
+`src/game/economy.ts` (BUILD_SPEC Part 145).
+
+Reason: the group wants members to pick their own handle rather than share an
+email, wants a way to fix a wrong or missing account↔player link without a
+migration, and wants attendance coins to be visible in the inbox the same way
+market events already are (ADR-019).
+
+Consequences: `users.kut.local` addresses are non-routable by design; if a
+real mail path is ever wanted, migrate usernames to real addresses rather than
+relying on that domain. The login field now says "Username" with a hint for
+legacy email accounts. `claim_invitation`'s signature changed, so its one
+pgTAP call and the invite server action were updated. The attendance-reward
+message is idempotent and safe across publish / correct / reactivate.
+
+## ADR-029 — Attendance reward raised from 75 to 250 KUT Coins
+
+Date: 2026-08-29
+
+Status: Accepted
+
+Decision: `ATTENDANCE_COIN_REWARD` goes from `75` to `250`. Changed in three
+places that must stay in sync: `kut.grant_attendance_rewards`'s `v_amount`
+constant (in migration
+`20260831000000_admin_links_username_and_attendance_messages.sql`, alongside
+the inbox-message change from ADR-028), `ECONOMY.attendanceCoinReward` in
+`src/game/economy.ts`, and `docs/BUILD_SPEC.md` Parts 24 and 145. The
+`/how-it-works` page reads the constant, so its copy updates automatically.
+
+Reason: at 75, a match was worth less than a third of a pack (250) and the
+economy leaned almost entirely on discard + market churn; the club wanted
+showing up to be the clearly dominant coin source. 250 makes one attended
+session fund one pack.
+
+Consequences: **not retroactive.** The migration only redefines the function;
+it does not re-run the reward loop, and already-granted rewards keep the
+amount they were credited (backfilled inbox messages report that historical
+amount via `wallet_ledger.amount`). So on hosted, past August sessions stay at
+whatever was granted then (0 for accounts that weren't linked yet, since
+linking is forward-only per ADR-028); every session published or corrected
+after this deploys pays 250. This roughly triples the main coin faucet — watch
+the admin economy dashboard's coin-supply and pack-purchase numbers over the
+first few weeks and revisit (pack price, tax, or this value) if wallets
+inflate faster than packs and market tax drain them. Starter grant (250) and
+pack price (250) are unchanged.
+
+## ADR-030 — Admin account management (disable / delete) and a members-only leaderboard
+
+Date: 2026-08-29
+
+Status: Accepted
+
+Decision: migration `20260901000000_admin_manage_accounts_and_leaderboard.sql`.
+
+- **`kut.club_value_leaderboard` shows `role = 'user'` accounts only.** Admin /
+  superadmin accounts no longer appear in the public rank (an admin still sees
+  their own numbers on `/club` — `my_club_value` is unchanged). `rank` comes
+  back null for an admin, and Home / `/club` already hide the rank chip when
+  it is null.
+- **`kut.admin_set_account_disabled(uuid, boolean)`** — soft, reversible.
+  `security definer`, `is_admin()`-gated. A disabled account cannot sign in
+  (`requireUser`/`requireAdmin` already check `is_disabled`) and drops out of
+  the leaderboard. Cannot target yourself or a superadmin; only a superadmin
+  may disable another admin (mirrors ADR-011's password-reset rules).
+- **`kut.admin_prepare_account_deletion(uuid)` + `service.auth.admin.deleteUser`**
+  — permanent. The RPC authorizes (same self / role rules), **refuses if the
+  account has any completed `market_sales`** (irreversible cross-member
+  history — disable those instead, `P0001`), then deletes the `ON DELETE
+  RESTRICT` rows that would block removal (`market_listings`,
+  `pack_opening_cards`, `pack_openings`, `attendance_rewards`,
+  `password_reset_events`, and the consumed `invitations` row). The server
+  action then calls the Auth admin API to delete `auth.users`, which cascades
+  `profiles` → `wallets`, `wallet_ledger`, `user_cards`, `user_notifications`.
+  If the Auth delete fails after cleanup, the action falls back to disabling
+  the account.
+- **`/admin/links` redesigned** from a `<table>` (which overflowed
+  horizontally) into a wrapping card list, and now also carries the
+  disable/enable and delete controls. It loads all profiles including
+  disabled ones. Moderation buttons are hidden client-side for ineligible
+  targets; the RPCs are the final arbiter.
+
+Reason: the club wants a hard-delete for abandoned / test / mistaken
+accounts, a reversible disable for real accounts that misbehave, and doesn't
+want admin accounts cluttering the competitive leaderboard.
+
+Consequences: hard delete is deliberately narrow — most real members will
+have traded and can only be disabled, which is the safer outcome anyway
+(their economy history stays intact). The delete cleanup is not atomic with
+the Auth API call (same shape as the password-reset flow); a mid-failure
+leaves a cleaned-but-still-present account that the fallback disables.

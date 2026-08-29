@@ -42,9 +42,13 @@ wallets, cards, sessions, or market history.
    `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`,
    `SUPABASE_SERVICE_ROLE_KEY`, and `APP_URL`. The service-role key is server
    only and must never use a `NEXT_PUBLIC_` prefix.
-5. Replace the placeholder Supabase host in `vercel.json`'s CSP
-   `connect-src` directive with the exact hosted project hostname before
-   deployment.
+5. _Stale._ The CSP now lives in `src/proxy.ts`, not `vercel.json`
+   (`vercel.json` no longer has a `Content-Security-Policy` header at all).
+   `src/proxy.ts` derives `connect-src` / `img-src` from
+   `NEXT_PUBLIC_SUPABASE_URL` at request time, with a hosted-project fallback,
+   so no manual host substitution is needed — just make sure the updated
+   `src/proxy.ts` ships with any change that adds a new CSP source (e.g. the
+   `img-src blob: <supabase>` addition for player-card photos).
 6. Confirm hosted Supabase Auth disables public self-sign-up and configure
    approved redirect URLs for the preview and production domains.
 7. Deploy a preview only after explicit authorization. Do not make preview

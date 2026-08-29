@@ -2,6 +2,7 @@ import scenarios from "../fixtures/rating-scenarios.json";
 import { describe, expect, it } from "vitest";
 import {
   ARCHETYPES,
+  RARITY_BANDS,
   calculateActivityOvr,
   calculateAttributes,
   calculateLiveDiscardValue,
@@ -80,6 +81,16 @@ describe("rating engine invariants", () => {
     expect(getRarityTier(60)).toBe("gold");
     expect(getRarityTier(70)).toBe("holo");
     expect(getRarityTier(80)).toBe("elite");
+  });
+
+  it("RARITY_BANDS covers every Live OVR exactly once and agrees with getRarityTier", () => {
+    for (let ovr = 30; ovr <= 83; ovr += 1) {
+      const matches = RARITY_BANDS.filter((band) => ovr >= band.min && ovr <= band.max);
+      expect(matches).toHaveLength(1);
+      expect(matches[0].tier).toBe(getRarityTier(ovr));
+    }
+    expect(RARITY_BANDS[0].min).toBe(30);
+    expect(RARITY_BANDS[RARITY_BANDS.length - 1].max).toBe(83);
   });
 
   it("caps weekly goal points and gives the hat-trick bonus", () => {

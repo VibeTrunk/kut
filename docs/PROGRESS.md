@@ -1060,3 +1060,132 @@ Roster growth and pruning no longer need a migration or a `VibeTrunk/supabase`
 PR. Remaining follow-ups are unchanged: rename / archetype / photo editing,
 `is_collectible`, merging duplicates, the two placeholder "Nick" identities,
 and the read-only member-facing `/players` directory.
+
+## Alpha-readiness batch: explainer, Player Directory, member card self-service - 2026-08-29
+
+Three first-tester gaps closed on one branch (see ADR-027 for the schema
+rationale). `npm run verify:full` was run and the signed-in narrow-viewport
+mobile click-through was done this session — both were previously listed as
+pending in `docs/HANDOFF.md`.
+
+- **`/how-it-works`** — a member-gated static explainer covering
+  attendance &rarr; Activity &rarr; OVR, Form/goals, the six rarity tiers,
+  archetypes (with the offset table), packs, discard, the 5% burned market
+  tax, Club Value, and the Message Center. Every number is pulled from
+  `src/game/config.ts` / `src/game/rating-engine.ts` so the copy cannot drift.
+  Linked from the "More" nav menu (new `IconInfo`), the Home header, and the
+  starter-claim banner.
+- **Player Directory** — `/players` (was a stub) is now a searchable,
+  filterable roster (query / rarity / archetype / sort), and
+  `/players/[slug]` is a per-player profile with the detail card and stats.
+  Backed by the new `kut.player_directory` view (`security_invoker`, LEFT JOIN
+  season state so a 30-OVR newcomer still lists; does not expose claimant).
+- **Member card self-service** — `/settings/card`: a signed-in member linked
+  to a player can change their own archetype and upload a card photo with a
+  square pan/zoom crop (canvas &rarr; 512&times;512 WebP/JPEG, uploaded
+  browser-side to the private `player-photos` bucket, then recorded via RPC).
+  Unlinked members get an "ask an admin" panel. Both writes go through
+  ownership-gated `security definer` RPCs (`kut.set_own_player_photo`,
+  `kut.set_own_player_archetype`); archetype changes re-run
+  `kut._rebuild_season_core`.
+- `players.photo_path` added to `kut.public_live_ratings` and
+  `kut.my_collection_cards`; `photoUrl` wired into Home, the directory, and
+  the collection views. `LiveCard` now renders the photo as an `<img>` (the
+  old inline `background-image` would fail production CSP); `img-src` in
+  `src/proxy.ts` gains `blob:` + the Supabase origin. Photo URLs are
+  short-lived signed URLs from `src/lib/player-photos.ts`.
+- Shared `src/game/archetypes.ts` replaces the four duplicated archetype slug
+  lists. No formula or `GAME_CONFIG` value changed.
+
+Migration added: `20260830000000_member_self_service_and_player_directory.sql`
+(2 widened views, `kut.player_directory`, 2 RPCs, the `player-photos` bucket,
+4 `storage.objects` policies; rollback DDL in the header).
+
+Tests: `npm run verify:full` passes — lint, typecheck, **24 unit tests**
+(new `tests/unit/archetypes.test.ts`, `RARITY_BANDS` coverage), **191 pgTAP
+tests** (new `supabase/tests/database/member_self_service.test.sql`, `plan(25)`
+covering the RPCs' ownership gating, the rebuild, path validation, anon
+rejection, `player_directory` LEFT JOIN, and `storage.objects` RLS),
+**16 Playwright** gate specs (`/how-it-works`, `/players`, `/players/[slug]`,
+`/settings/card`), and `next build`. Also verified with a real signed-in
+local browser pass: archetype change recalculates the six stats, a photo
+upload round-trips (browser upload &rarr; RPC &rarr; signed URL) and appears
+on Home / directory / collection, and the console shows zero CSP violations.
+
+Not yet deployed: this migration is local-only until it goes through the
+`VibeTrunk/supabase` ADR-021 workflow (catalogue byte-identical, extend
+`scripts/verify-catalog.ps1` &rarr; expect "matches 31", backup,
+`migration list --linked`, `db push --dry-run` reviewing the `storage.*`
+statements, user-run `db push`). It is the first KUT migration that touches
+the `storage` schema. `docs/OPERATIONS.md` step 5 is now stale — the CSP
+lives in `src/proxy.ts`, not `vercel.json`.
+
+## Username sign-up, admin account links, attendance-reward inbox messages - 2026-08-29
+
+Follow-up batch on the same branch (see ADR-028). Migration
+`20260831000000_admin_links_username_and_attendance_messages.sql`.
+
+- **Sign up with a username, not an email.** `kut.profiles.username` (unique,
+  `^[a-z0-9_]{3,30}$`, lower-cased). `src/lib/auth/username.ts` maps a username
+  to a synthetic `users.kut.local` address for Supabase Auth (no mail is ever
+  sent there). The invite-claim form asks for a username; `claim_invitation`
+  takes a required `p_username` (old 2-arg dropped) and stores it. The login
+  form takes "Username" but still accepts a raw email for accounts created
+  before this change. Username is a login handle only — public display name is
+  unchanged. `/settings` shows the member's username.
+- **Admin links / unlinks an account to a player.** New `/admin/links` tab →
+  `kut.admin_set_profile_player(uuid, uuid)` (`security definer`, `is_admin()`
+  gated). Validates one-account-per-player; null unlinks. Forward-only: no
+  back-pay of attendance rewards for the player's earlier sessions.
+- **Attendance rewards write a dated inbox message.**
+  `kut.grant_attendance_rewards` now inserts a `user_notifications` row
+  (`event_type='attendance_reward'`, keyed on the session, idempotent like the
+  reward) &mdash; "You received N KUT Coins for attending the session on
+  DD Mon YYYY." Existing rewards are backfilled with one message each. The
+  `/how-it-works` page gains a "showing up also pays" callout.
+- **Attendance reward raised 75 &rarr; 250** (ADR-029), in the same migration.
+  Not retroactive: the function is only redefined, past rewards keep their
+  amount, and every session published/corrected after deploy pays 250. Value
+  is one `v_amount` constant in the migration, mirrored by
+  `ECONOMY.attendanceCoinReward` (`src/game/economy.ts`) and BUILD_SPEC
+  Parts 24 / 145.
+
+Tests: lint, typecheck, **28 unit** (new `tests/unit/username.test.ts`),
+**202 pgTAP** (new `member_admin_links.test.sql` `plan(10)`;
+`phase_1a_roster.test.sql` updated for the 3-arg `claim_invitation` &rarr;
+`plan(166)`), **17 Playwright** (gate spec for `/admin/links`; invite spec
+updated to the username field), `next build`. Verified with a signed-in local
+browser pass: admin creates an invite &rarr; new member signs up with a
+username &rarr; signs in with that username; email-identifier login still
+works; `/admin/links` unlink + re-link both work; zero CSP violations.
+
+Both `2026083*` migrations are local-only until the ADR-021 deploy.
+
+## Admin account disable / delete + members-only leaderboard - 2026-08-29
+
+Migration `20260901000000_admin_manage_accounts_and_leaderboard.sql` (see
+ADR-030).
+
+- **`/admin/links` no longer overflows horizontally** — the `<table>` is now a
+  wrapping card list (verified no horizontal scroll at 1280px and 390px).
+- **Disable / enable an account** — `kut.admin_set_account_disabled(uuid, bool)`.
+  Reversible; a disabled account can't sign in and leaves the leaderboard.
+- **Permanently delete an account** — `kut.admin_prepare_account_deletion(uuid)`
+  clears the `ON DELETE RESTRICT` blockers, then the server action calls the
+  Auth admin API to remove `auth.users` (cascades wallet / ledger / cards /
+  notifications). Refused for an account with any completed `market_sales`
+  ("disable it instead"); can't target yourself, and only a superadmin can
+  touch another admin. Verified end-to-end in the browser: a trade-free test
+  account hard-deleted cleanly (profile + `auth.users` + cards gone); a
+  traded account was correctly blocked.
+- **Leaderboard is members-only** — `kut.club_value_leaderboard` filters
+  `role = 'user'`, so admin/superadmin accounts don't appear in the public
+  rank. `my_club_value` is unchanged (an admin still sees their own club
+  summary on `/club`).
+
+Tests: lint, typecheck, 28 unit, **217 pgTAP** (`member_admin_links.test.sql`
+&rarr; `plan(25)`; `phase_1a_roster.test.sql`'s leaderboard assertion flipped
+to expect an admin is excluded), 17 Playwright, `next build`.
+
+All three `2026083*` / `20260901000000` migrations are local-only until the
+ADR-021 deploy.

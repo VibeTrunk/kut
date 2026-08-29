@@ -837,3 +837,50 @@ reweighted `ACTIVITY_FIRST_APPEARANCE = 14` formula (ADR-024), are now what
 Next recommended task: resolve the two placeholder "Nick" identities (see
 above) if either returns for a second session. Otherwise, no outstanding
 follow-up from this deployment.
+
+## Full August 2026 month — sessions 21.08 / 28.08 and four new qualifiers - 2026-08-29
+
+`20260829000000_august_2026_full_month_roster_and_sessions.sql` completes the
+month the initial import started. The source was the full "TFH Attendance
+August" sheet (seven sessions: 03, 07, 10, 14, 17, 21, 28 Aug). The first
+five were already imported and unchanged; this migration adds the two
+remaining Fridays as already-published, zero-goal sessions (ids
+`a0…0006` = 21.08, `a0…0007` = 28.08) and re-runs `kut._rebuild_season_core`
+over the complete history.
+
+By the user's standing rule (2+ appearances to earn a roster spot), four
+people join, taking the roster from 21 to **25**:
+
+- **Steffen**, **Serhat** — one appearance on 17.08 (both were on the initial
+  import's exclusion list), second on 21.08.
+- **Stephen** — 17.08 then 28.08.
+- **Maarten** — new to the sheets entirely, 21.08 + 28.08.
+
+Their 17.08 attendance (Steffen, Serhat, Stephen), dropped as
+single-appearance in the initial import, is backfilled here against the
+existing 17.08 session, so their history is complete.
+
+Still excluded as exactly one appearance across the whole month: Bader
+(03.08); Souhail, Meral, Maikel, Nick, Xander, Zak (07.08); Jurie (14.08);
+**Cormac** and **Peter** (both new, 28.08 only). The migration comment lists
+them and how to re-add anyone who returns.
+
+No game rule, invariant, or public projection changed — this is data entry
+following the established pattern, so no ADR. `ACTIVITY_FIRST_APPEARANCE`
+stays at 14 (ADR-024); OVRs shifted on apply because the rebuild now sees
+seven published sessions instead of five, which is the intended effect.
+
+Verified locally: `npm run verify:fast` (lint, typecheck, 20 unit tests),
+`npx supabase migration up --local` (applies cleanly), and `npm run test:db`
+(145 pgTAP tests, unchanged). Post-apply query confirmed per-session stored
+attendee counts of 8 / 15 / 8 / 16 / 9 / 14 / 11 for 03–28 Aug (17.08 rose
+from 6 to 9 with the three backfilled players; Cormac and Peter correctly
+absent from 28.08), a 25-player real roster, and the four new players present
+with two appearances each (Maarten and Stephen at 46 Bronze, Serhat and
+Steffen at 40 Bronze). Highest Live OVR is now 57 (Oussama, Teize — Silver),
+up from 52 at the initial import; still nothing above Silver.
+
+Next recommended task: add the matching migration file to `VibeTrunk/supabase`
+and run its backup / parity-check / dry-run / explicit-approval workflow
+before this goes live at `kut.vibetrunk.com` (ADR-021). This repo's copy is
+local-only until then.

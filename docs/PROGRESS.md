@@ -884,3 +884,41 @@ Next recommended task: add the matching migration file to `VibeTrunk/supabase`
 and run its backup / parity-check / dry-run / explicit-approval workflow
 before this goes live at `kut.vibetrunk.com` (ADR-021). This repo's copy is
 local-only until then.
+
+## Hosted deployment of the full-August-2026 roster - 2026-08-29
+
+`20260829000000_august_2026_full_month_roster_and_sessions.sql` is now live at
+`kut.vibetrunk.com`. Followed the `VibeTrunk/supabase` operator workflow
+(ADR-021): catalogued the migration unchanged (`VibeTrunk/supabase#3`,
+squash-merged), extended `verify-catalog.ps1` to 28 entries (all matched),
+confirmed via `supabase migration list --linked` that the 27 previously
+deployed migrations still matched remote with no drift and `20260829000000`
+was the only pending one, and ran `supabase db push --dry-run` (one pending
+migration, no seeds/roles). A logical backup of the hosted database was
+captured before applying, kept outside both repos.
+
+`VibeTrunk/supabase#3` also added a repo `.gitattributes` (`* text=auto
+eol=lf`): `core.autocrlf=true` on Windows had been checking the catalogued
+SQL out as CRLF, so `verify-catalog.ps1`'s SHA-256 comparison against the LF
+sources in this repo could never pass — it was already silently failing on
+`20260818000000`. Committed blobs were LF throughout; only the working-tree
+endings were pinned. The KUT repo still has the same `autocrlf` setup and no
+`.gitattributes`, so a fresh Windows clone of KUT could reintroduce the drift
+on its side of the parity check; adding a matching `.gitattributes` here is a
+loose end.
+
+The real `supabase db push` was run by the user from their own terminal —
+live shared-Supabase mutations are not run unattended in this project, same
+as the 2026-08-19 initial-roster deployment. `supabase migration list
+--linked` afterward confirmed `20260829000000` matches remote.
+`VibeTrunk/supabase`'s `README.md` / `CLAUDE.md` ledger notes were updated
+(`VibeTrunk/supabase#4`).
+
+The 25-player TFH roster and the complete seven-session August attendance
+history are now what `kut.vibetrunk.com` serves. Highest Live OVR is 57
+(Oussama, Teize — Silver).
+
+Next recommended task: resolve the two placeholder "Nick" identities from the
+initial import if either returns for a second session; otherwise no
+outstanding follow-up. Consider adding a `.gitattributes` to this repo to
+harden the catalogue parity check against fresh Windows clones.

@@ -1020,3 +1020,43 @@ a player with attendance.
 Deploy note: `20260829130000_admin_manage_roster.sql` ships in the same
 `VibeTrunk/supabase` ADR-021 batch as `20260829120000_admin_add_player.sql`
 (two pending migrations; `verify-catalog.ps1` then expects "matches 30").
+
+## Hosted deployment of the admin roster RPCs - 2026-08-29
+
+`20260829120000_admin_add_player.sql` and `20260829130000_admin_manage_roster.sql`
+are now live at `kut.vibetrunk.com`. Followed the `VibeTrunk/supabase` ADR-021
+workflow: both files catalogued unchanged (`VibeTrunk/supabase#5`,
+squash-merged), `verify-catalog.ps1` extended to 30 entries ("matches 30").
+That PR also resolved the long-standing CRLF loose end — kut's working copy
+of `20260829000000` had been re-smudged to CRLF and was failing the
+catalogue SHA-256 check; kut now carries `.gitattributes` (`* text=auto
+eol=lf`, from `VibeTrunk/kut#6`) so it re-normalises to LF and stays that
+way.
+
+Pre-push checks from `VibeTrunk/supabase`: `supabase migration list --linked`
+showed the 28 previously-deployed migrations matching remote with no drift
+and these two pending; `supabase db push --dry-run` confirmed exactly the two
+(no seeds, no roles). Backup: a `kut`-schema logical export (schema + data)
+via `supabase db dump --linked`, kept under `%USERPROFILE%\backups`, outside
+both repos — **not encrypted** (the passphrase script needs an interactive
+prompt this environment can't supply; disclosed rather than skipped silently,
+same as the 2026-08-18/29 roster deploys). Supabase's Free plan has no
+managed/on-demand backup or PITR, so the logical dump is the backup
+mechanism; the migrations are `create or replace function` only (no schema or
+data mutation), so rollback is a `drop function` with nothing to restore.
+
+The real `supabase db push` was run by the user from their own terminal —
+live shared-Supabase mutations are not run unattended in this project.
+`supabase migration list --linked` afterward showed all 30 migrations with
+matching Local/Remote (`20260829120000` at 12:00 UTC, `20260829130000` at
+13:00 UTC), no drift. `VibeTrunk/supabase`'s README / CLAUDE ledger notes
+were updated to run through `20260829130000` (`VibeTrunk/supabase#6`).
+
+Verified against prod: signed in as an admin at `kut.vibetrunk.com/admin/roster`,
+added a player ("test"), then deactivated and hard-deleted them — all three
+RPCs work live.
+
+Roster growth and pruning no longer need a migration or a `VibeTrunk/supabase`
+PR. Remaining follow-ups are unchanged: rename / archetype / photo editing,
+`is_collectible`, merging duplicates, the two placeholder "Nick" identities,
+and the read-only member-facing `/players` directory.

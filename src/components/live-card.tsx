@@ -1,3 +1,5 @@
+import { archetypeLabel } from "@/game/archetypes";
+
 export type LiveCardPlayer = {
   id: string;
   displayName: string;
@@ -55,7 +57,11 @@ export function LiveCard({ player, size = "grid" }: LiveCardProps) {
       </header>
 
       {player.photoUrl ? (
-        <div className="live-card__frame" style={{ backgroundImage: `url("${player.photoUrl}")` }}>
+        <div className="live-card__frame">
+          {/* Plain <img>, not next/image: photos are already cropped to 512px on
+              upload, and avoiding the /_next/image loader keeps the CSP simple. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img alt="" className="live-card__photo" decoding="async" loading="lazy" src={player.photoUrl} />
           <span aria-hidden="true" className="live-card__tape" />
         </div>
       ) : (
@@ -67,7 +73,7 @@ export function LiveCard({ player, size = "grid" }: LiveCardProps) {
 
       <div className="live-card__identity">
         <h2>{player.displayName}</h2>
-        <p>{player.archetype.replaceAll("_", " ")}</p>
+        <p>{archetypeLabel(player.archetype)}</p>
       </div>
 
       <dl className="live-card__stats">

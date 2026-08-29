@@ -133,6 +133,17 @@ export function IconCoin(props: IconProps) {
   );
 }
 
+export function IconInfo(props: IconProps) {
+  return base(
+    <>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M12 11v5" />
+      <path d="M12 8h0" />
+    </>,
+    props,
+  );
+}
+
 export function IconChevronDown(props: IconProps) {
   return base(<path d="M7 10l5 5 5-5" />, { strokeWidth: 2, ...props });
 }

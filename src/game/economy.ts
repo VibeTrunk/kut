@@ -1,5 +1,20 @@
 import { calculateLiveDiscardValue, type RarityTier } from "@/game/rating-engine";
 
+/**
+ * Canonical economy constants (BUILD_SPEC.md Part 145). Server-side SQL keeps
+ * its own literals for the values it enforces; these mirror them so display
+ * copy (e.g. the "How KUT works" page) stays in sync. If a value changes here
+ * it must also change in the relevant migration and BUILD_SPEC Part 145.
+ */
+export const ECONOMY = {
+  attendanceCoinReward: 250,
+  starterCoinGrant: 250,
+  basicPackPrice: 250,
+  basicPackCardCount: 3,
+  marketTaxPercent: 5,
+  listingDurationHours: 24,
+} as const;
+
 export const LIVE_PACK_WEIGHTS: Record<RarityTier, number> = {
   common: 100, bronze: 60, silver: 30, gold: 12, holo: 4, elite: 1,
 };

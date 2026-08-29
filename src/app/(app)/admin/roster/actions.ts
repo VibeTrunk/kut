@@ -1,10 +1,10 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { isArchetype } from "@/game/archetypes";
 import { requireAdmin } from "@/lib/auth/admin";
 import { createClient } from "@/lib/supabase/server";
 
-const ARCHETYPES = ["all_rounder", "speedster", "finisher", "playmaker", "defender", "tank"];
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export type AddPlayerState =
@@ -30,7 +30,7 @@ export async function addPlayer(_prev: AddPlayerState, formData: FormData): Prom
   if (!displayName || displayName.length > 80) {
     return { ok: false, error: "Display name must be 1–80 characters." };
   }
-  if (!ARCHETYPES.includes(archetype)) {
+  if (!isArchetype(archetype)) {
     return { ok: false, error: "Pick a valid archetype." };
   }
 

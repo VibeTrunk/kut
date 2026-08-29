@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { LiveCard, type LiveCardPlayer } from "@/components/live-card";
 import { requireUser } from "@/lib/auth/user";
+import { resolvePhotoUrls } from "@/lib/player-photos";
 import { createClient } from "@/lib/supabase/server";
 import { DiscardCardForm } from "../discard-card-form";
 import { CreateListingForm } from "../create-listing-form";
@@ -32,6 +33,7 @@ type CollectionCard = {
   discard_value: number;
   active_listing_id: string | null;
   active_listing_price: number | null;
+  photo_path: string | null;
 };
 
 function readable(value: string) {
@@ -45,7 +47,7 @@ export default async function CardDetailPage({ params, searchParams }: CardPageP
   const { data, error } = await supabase
     .schema("kut")
     .from("my_collection_cards")
-    .select("card_id, edition_id, edition_title, edition_type, is_live, is_tradeable, source, display_name, archetype, ovr, pac, sho, pas, dri, def, phy, rarity_tier, discard_value, active_listing_id, active_listing_price")
+    .select("card_id, edition_id, edition_title, edition_type, is_live, is_tradeable, source, display_name, archetype, ovr, pac, sho, pas, dri, def, phy, rarity_tier, discard_value, active_listing_id, active_listing_price, photo_path")
     .eq("card_id", cardId)
     .maybeSingle();
 
@@ -58,6 +60,7 @@ export default async function CardDetailPage({ params, searchParams }: CardPageP
   }
 
   const card = data as CollectionCard;
+  const photoUrls = await resolvePhotoUrls(supabase, [card.photo_path]);
   const [query, boundsResponse] = await Promise.all([
     searchParams,
     card.is_tradeable && !card.active_listing_id
@@ -88,6 +91,7 @@ export default async function CardDetailPage({ params, searchParams }: CardPageP
               def: card.def,
               phy: card.phy,
               rarityTier: card.rarity_tier,
+              photoUrl: card.photo_path ? photoUrls.get(card.photo_path) ?? null : null,
             }}
           />
 

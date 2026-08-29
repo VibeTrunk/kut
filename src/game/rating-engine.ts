@@ -1,15 +1,8 @@
 import { GAME_CONFIG } from "@/game/config";
+import { ARCHETYPES, type Archetype } from "@/game/archetypes";
 
-export const ARCHETYPES = [
-  "all_rounder",
-  "speedster",
-  "finisher",
-  "playmaker",
-  "defender",
-  "tank",
-] as const;
+export { ARCHETYPES, type Archetype };
 
-export type Archetype = (typeof ARCHETYPES)[number];
 export type RarityTier =
   | "common"
   | "bronze"
@@ -17,6 +10,20 @@ export type RarityTier =
   | "gold"
   | "holo"
   | "elite";
+
+/**
+ * Live OVR range for each rarity tier. Derived from `getRarityTier` below and
+ * the Live OVR bounds (30..83); kept as data so the "How KUT works" page can
+ * render the tiers without re-deriving the boundaries.
+ */
+export const RARITY_BANDS: { tier: RarityTier; min: number; max: number }[] = [
+  { tier: "common", min: 30, max: 39 },
+  { tier: "bronze", min: 40, max: 49 },
+  { tier: "silver", min: 50, max: 59 },
+  { tier: "gold", min: 60, max: 69 },
+  { tier: "holo", min: 70, max: 79 },
+  { tier: "elite", min: 80, max: 83 },
+];
 
 export type Attributes = {
   pac: number;
@@ -44,7 +51,7 @@ export type RatingState = {
   goalsInMostRecentFootballWeek: number;
 };
 
-const ARCHETYPE_OFFSETS: Record<Archetype, Attributes> = {
+export const ARCHETYPE_OFFSETS: Record<Archetype, Attributes> = {
   all_rounder: { pac: 0, sho: 0, pas: 0, dri: 0, def: 0, phy: 0 },
   speedster: { pac: 10, sho: -1, pas: -2, dri: 4, def: -6, phy: -5 },
   finisher: { pac: 2, sho: 10, pas: -3, dri: 3, def: -8, phy: -4 },

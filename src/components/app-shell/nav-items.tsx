@@ -4,6 +4,7 @@ import {
   IconCollection,
   IconDirectory,
   IconHome,
+  IconInfo,
   IconLeaderboard,
   IconMarket,
   IconMessages,
@@ -37,6 +38,7 @@ export function buildMoreNavItems(unreadCount: number): NavItem[] {
     { href: "/leaderboard", label: "Leaderboard", Icon: IconLeaderboard, isActive: prefixed("/leaderboard") },
     { href: "/players", label: "Player directory", Icon: IconDirectory, isActive: prefixed("/players") },
     { href: "/messages", label: "Messages", Icon: IconMessages, isActive: prefixed("/messages"), badgeCount: unreadCount },
+    { href: "/how-it-works", label: "How KUT works", Icon: IconInfo, isActive: prefixed("/how-it-works") },
     { href: "/settings", label: "Settings", Icon: IconSettings, isActive: prefixed("/settings") },
     { href: "/admin/attendance", label: "Admin", Icon: IconAdmin, isActive: prefixed("/admin"), adminOnly: true },
   ];

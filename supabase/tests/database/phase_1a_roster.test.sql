@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path to extensions, kut, public;
 
-select plan(165);
+select plan(166);
 
 select has_table('kut', 'players', 'players table exists');
 select has_table('kut', 'match_sessions', 'match sessions table exists');
@@ -35,7 +35,7 @@ select has_view('kut', 'club_value_leaderboard', 'club value leaderboard view ex
 select has_function(
   'kut',
   'claim_invitation',
-  array['text', 'uuid'],
+  array['text', 'uuid', 'text'],
   'invite claim function exists'
 );
 select has_function(
@@ -305,7 +305,7 @@ select is(
 
 set local role authenticated;
 select throws_ok(
-  $$ select kut.claim_invitation(repeat('a', 64), '00000000-0000-4000-8000-000000000099'); $$,
+  $$ select kut.claim_invitation(repeat('a', 64), '00000000-0000-4000-8000-000000000099', 'claimtester'); $$,
   '42501',
   'permission denied for function claim_invitation',
   'an authenticated browser caller cannot claim an invitation directly'
@@ -365,7 +365,7 @@ values ('00000000-0000-4000-8000-000000000003', repeat('c', 64));
 
 set local role service_role;
 select lives_ok(
-  $$ select kut.claim_invitation(repeat('c', 64), '00000000-0000-4000-8000-000000000099'); $$,
+  $$ select kut.claim_invitation(repeat('c', 64), '00000000-0000-4000-8000-000000000099', 'ClaimUser_1'); $$,
   'the server-only claim function accepts a valid invitation'
 );
 reset role;
@@ -374,6 +374,11 @@ select is(
   (select player_id from kut.profiles where id = '00000000-0000-4000-8000-000000000099'),
   '00000000-0000-4000-8000-000000000003'::uuid,
   'claim links the new user profile to the invited player'
+);
+select is(
+  (select username from kut.profiles where id = '00000000-0000-4000-8000-000000000099'),
+  'claimuser_1',
+  'claim stores the chosen username in lower case'
 );
 select is(
   (select consumed_by from kut.invitations where token_hash = repeat('c', 64)),
@@ -668,7 +673,7 @@ set local role authenticated;
 set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000000098';
 select is((select card_count from kut.my_club_value), 1, 'club value includes the buyer''s active card copy');
 select ok((select club_value > wallet_balance from kut.my_club_value), 'club value includes card reference value in addition to wallet coins');
-select ok((select exists (select 1 from kut.club_value_leaderboard where is_current_user and display_name = 'Correction Admin')), 'the signed-in member appears in the club value leaderboard');
+select ok((select not exists (select 1 from kut.club_value_leaderboard where display_name = 'Correction Admin')), 'an account with admin privileges is excluded from the club value leaderboard');
 reset role;
 select set_config('request.jwt.claim.sub', '', true);
 
@@ -808,8 +813,8 @@ select set_config('request.jwt.claim.sub', '', true);
 
 select is(
   (select balance from kut.wallets where user_id = '00000000-0000-4000-8000-000000000098'),
-  75::bigint,
-  'attendance reward credits exactly 75 coins'
+  250::bigint,
+  'attendance reward credits exactly 250 coins'
 );
 select is(
   (select count(*) from kut.attendance_rewards where session_id = '00000000-0000-4000-8000-000000000040' and player_id = '00000000-0000-4000-8000-000000000004'),
@@ -827,7 +832,7 @@ select is(
 );
 select is(
   (select balance from kut.wallets where user_id = '00000000-0000-4000-8000-000000000098'),
-  75::bigint,
+  250::bigint,
   'reprocessing published attendance does not duplicate wallet coins'
 );
 

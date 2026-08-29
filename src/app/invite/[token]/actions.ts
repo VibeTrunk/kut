@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { hashInviteToken, isValidInviteToken } from "@/lib/invites/token";
+import { isValidUsername, normalizeUsername, usernameToEmail } from "@/lib/auth/username";
 import { createServiceClient } from "@/lib/supabase/service";
 
 export type ClaimInviteState = { error: string | null };
@@ -15,28 +16,32 @@ export async function claimInvite(
   formData: FormData,
 ): Promise<ClaimInviteState> {
   const token = String(formData.get("token") ?? "");
-  const email = String(formData.get("email") ?? "").trim();
+  const username = String(formData.get("username") ?? "");
   const password = String(formData.get("password") ?? "");
 
   if (!isValidInviteToken(token)) return invalidInvite;
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || password.length < 12) {
-    return { error: "Enter a valid email address and a password of at least 12 characters." };
+  if (!isValidUsername(username) || password.length < 12) {
+    return {
+      error:
+        "Choose a username of 3–30 characters (letters, numbers, underscore) and a password of at least 12 characters.",
+    };
   }
 
   const supabase = createServiceClient();
   const { data: createdUser, error: createUserError } = await supabase.auth.admin.createUser({
-    email,
+    email: usernameToEmail(username),
     password,
     email_confirm: true,
   });
 
   if (createUserError || !createdUser.user) {
-    return { error: "Unable to create an account with those details." };
+    return { error: "That username is taken, or the details were not accepted." };
   }
 
   const { error: claimError } = await supabase.schema("kut").rpc("claim_invitation", {
     p_token_hash: hashInviteToken(token),
     p_user_id: createdUser.user.id,
+    p_username: normalizeUsername(username),
   });
 
   if (claimError) {

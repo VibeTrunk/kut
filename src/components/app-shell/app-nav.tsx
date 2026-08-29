@@ -94,7 +94,7 @@ export function AppNav({ displayName, isAdmin, balance, unreadCount }: AppNavPro
       <header className="sticky top-0 z-30 hidden border-b border-panel-2 bg-board/95 backdrop-blur sm:block">
         <div className="mx-auto flex h-16 max-w-6xl items-center gap-6 px-6">
           <Link className={`flex items-center gap-2 rounded-lg text-lg font-black tracking-tight text-brass ${focusRing}`} href="/">
-            <span aria-hidden="true" className="h-3 w-3 shrink-0 bg-brass" style={{ clipPath: "polygon(50% 0%,100% 38%,82% 100%,18% 100%,0% 38%)" }} />
+            <span aria-hidden="true" className="clip-pennant h-3 w-3 shrink-0 bg-brass" />
             KUT
           </Link>
           <nav aria-label="Primary" className="flex flex-1 items-center gap-1">
@@ -144,7 +144,7 @@ export function AppNav({ displayName, isAdmin, balance, unreadCount }: AppNavPro
       {/* Mobile top bar */}
       <header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-3 border-b border-panel-2 bg-board/95 px-4 backdrop-blur sm:hidden">
         <Link className={`flex items-center gap-1.5 rounded-lg text-base font-black text-brass ${focusRing}`} href="/">
-          <span aria-hidden="true" className="h-2.5 w-2.5 shrink-0 bg-brass" style={{ clipPath: "polygon(50% 0%,100% 38%,82% 100%,18% 100%,0% 38%)" }} />
+          <span aria-hidden="true" className="clip-pennant h-2.5 w-2.5 shrink-0 bg-brass" />
           KUT
         </Link>
         <div className="flex items-center gap-2">

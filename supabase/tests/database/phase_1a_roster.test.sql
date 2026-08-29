@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path to extensions, kut, public;
 
-select plan(144);
+select plan(165);
 
 select has_table('kut', 'players', 'players table exists');
 select has_table('kut', 'match_sessions', 'match sessions table exists');
@@ -925,6 +925,79 @@ select throws_ok(
   'admin access required',
   'a non-admin cannot publish attendance'
 );
+reset role;
+
+-- admin_add_player
+set local role authenticated;
+set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000000098';
+select lives_ok($$ select kut.admin_add_player('Test Newbie', 'speedster') $$,
+  'an admin can add a player');
+select is((select archetype from kut.players where slug = 'test-newbie'),
+  'speedster', 'archetype is stored');
+select is((select count(*) from kut.card_editions ce
+           join kut.players p on p.id = ce.player_id
+           where p.slug = 'test-newbie' and ce.is_live), 1::bigint,
+  'a Live edition is created for the new player');
+select is((select count(*) from kut.player_season_state pss
+           join kut.players p on p.id = pss.player_id
+           where p.slug = 'test-newbie'), 1::bigint,
+  'a baseline season-state row exists after add');
+select lives_ok($$ select kut.admin_add_player('Test Newbie', 'defender') $$,
+  'a duplicate display name is allowed');
+select is((select count(*) from kut.players where slug in ('test-newbie','test-newbie-2')),
+  2::bigint, 'slug collision is suffixed');
+select throws_ok($$ select kut.admin_add_player('   ', 'all_rounder') $$,
+  '22023', null, 'blank display name is rejected');
+reset role;
+select set_config('request.jwt.claim.sub', '', true);
+
+set local role authenticated;
+select throws_ok($$ select kut.admin_add_player('Nope', 'all_rounder') $$,
+  '42501', 'admin access required',
+  'a non-admin cannot add a player');
+reset role;
+
+-- admin_set_player_active / admin_delete_player
+set local role authenticated;
+set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000000098';
+
+select lives_ok($$ select kut.admin_set_player_active(
+    (select id from kut.players where slug = 'test-newbie'), false) $$,
+  'an admin can deactivate a player');
+select is((select is_active from kut.players where slug = 'test-newbie'), false,
+  'deactivation clears is_active');
+select is((select count(*) from kut.public_live_ratings where slug = 'test-newbie'), 0::bigint,
+  'a deactivated player drops out of Live Ratings');
+select lives_ok($$ select kut.admin_set_player_active(
+    (select id from kut.players where slug = 'test-newbie'), true) $$,
+  'an admin can reactivate a player');
+select is((select is_active from kut.players where slug = 'test-newbie'), true,
+  'reactivation restores is_active');
+
+select kut.admin_add_player('Delete Me Please', 'tank');
+select lives_ok($$ select kut.admin_delete_player(
+    (select id from kut.players where slug = 'delete-me-please')) $$,
+  'an admin can hard-delete a never-used player');
+select is((select count(*) from kut.players where slug = 'delete-me-please'), 0::bigint,
+  'the deleted player row is gone');
+select is((select count(*) from kut.card_editions where title = 'Delete Me Please Live'), 0::bigint,
+  'the deleted player Live edition is gone too');
+select is((select count(*) from kut.player_season_state pss
+           where pss.player_id not in (select id from kut.players)), 0::bigint,
+  'no orphan season-state row survives the delete');
+
+select throws_ok($$ select kut.admin_delete_player('00000000-0000-4000-8000-000000000001') $$,
+  'P0001', null, 'a player with attendance cannot be hard-deleted');
+select is((select count(*) from kut.players where id = '00000000-0000-4000-8000-000000000001'),
+  1::bigint, 'the blocked delete leaves the player in place');
+reset role;
+select set_config('request.jwt.claim.sub', '', true);
+
+set local role authenticated;
+select throws_ok($$ select kut.admin_set_player_active('00000000-0000-4000-8000-000000000001', false) $$,
+  '42501', 'admin access required', 'a non-admin cannot deactivate a player');
+select throws_ok($$ select kut.admin_delete_player('00000000-0000-4000-8000-000000000001') $$,
+  '42501', 'admin access required', 'a non-admin cannot delete a player');
 reset role;
 
 select * from finish();

@@ -440,6 +440,8 @@ body {
   .pack-reveal__summary-card {
     animation: none;
   }
+}
+
 /* App-chrome pennant glyph (nav wordmark + active tab marker). A stylesheet
    rule, not an inline style attribute — production CSP is style-src nonce-only,
    which strips inline `style`. Shape matches the Gold tier pennant. */

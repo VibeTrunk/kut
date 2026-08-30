@@ -22,7 +22,7 @@ export function LoginForm() {
     });
 
     if (error) {
-      setErrorMessage("Sign-in failed. Check your email and password.");
+      setErrorMessage("Sign-in failed. Check your username and password.");
       setIsSubmitting(false);
       return;
     }
@@ -45,7 +45,7 @@ export function LoginForm() {
           type="text"
         />
         <span className="block text-sm text-ink-faint">
-          Members from before usernames existed: enter your email address here.
+          Members from before usernames existed can still sign in with their email address here.
         </span>
       </label>
       <label className="block space-y-2">

@@ -106,7 +106,7 @@ export default async function CollectionPage({ searchParams }: CollectionPagePro
                   }}
                 />
                 <span className="mt-2 flex items-center justify-between px-1 text-xs font-bold uppercase tracking-[0.1em] text-ink-faint group-hover:text-brass">
-                  <span>{card.is_live ? "Live edition" : card.edition_title}</span>
+                  <span>{card.is_live ? null : card.edition_title}</span>
                   <span>{card.active_listing_id ? "Listed" : card.is_tradeable ? "Tradeable" : "Locked"}</span>
                 </span>
               </Link>

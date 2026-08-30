@@ -37,7 +37,7 @@ export function StarterReveal({ cards }: { cards: LiveCardPlayer[] }) {
         </div>
       </div>
       <p className="mx-auto max-w-md leading-7 text-ink-dim">
-        250 KUT Coins and three untradeable Live Cards are already yours &mdash; open the pack to meet them.
+        250 KUT Coins and three Live Cards are already yours &mdash; open the pack to meet them.
       </p>
       {error && <p className="rounded-xl bg-brick-bg p-3 text-sm text-brick">{error}</p>}
       <button

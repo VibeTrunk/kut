@@ -25,7 +25,7 @@ export function OpenPackForm({ packSlug, title, price, cardsPerPack, balance, ca
   }
 
   function confirmOpen(event: React.FormEvent<HTMLFormElement>) {
-    if (!window.confirm(`Open ${title} for ${price} KUT Coins? You will receive ${cardsPerPack} tradeable Live Cards.`)) {
+    if (!window.confirm(`Open ${title} for ${price} KUT Coins? You will receive ${cardsPerPack} Live Cards.`)) {
       event.preventDefault();
     }
   }
@@ -36,7 +36,7 @@ export function OpenPackForm({ packSlug, title, price, cardsPerPack, balance, ca
         <input name="packSlug" type="hidden" value={packSlug} />
         <p className="text-xs font-black uppercase tracking-[0.2em] text-brass">Pack store</p>
         <h2 className="mt-2 text-2xl font-black">{title}</h2>
-        <p className="mt-2 text-sm leading-6 text-ink-dim">Three server-selected, tradeable Live Cards. Duplicates can happen.</p>
+        <p className="mt-2 text-sm leading-6 text-ink-dim">Three server-selected Live Cards. Duplicates can happen.</p>
         {state.error && <p className="mt-3 rounded-xl bg-brick-bg p-3 text-sm text-brick">{state.error}</p>}
         <button
           className="mt-5 min-h-12 w-full rounded-xl bg-brass px-4 py-3 font-black text-ink-on-accent disabled:cursor-not-allowed disabled:bg-line disabled:text-ink-faint"

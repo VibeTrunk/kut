@@ -25,7 +25,7 @@ export default async function PacksPage() {
         <header>
           <p className="text-sm font-semibold uppercase tracking-[0.24em] text-brass">Pack store</p>
           <h1 className="mt-2 text-4xl font-black tracking-tight sm:text-5xl">Packs</h1>
-          <p className="mt-3 max-w-2xl text-ink-dim">Spend KUT Coins on server-selected, tradeable Live Cards. You have {balance.toLocaleString()} KUT Coins.</p>
+          <p className="mt-3 max-w-2xl text-ink-dim">Spend KUT Coins on server-selected Live Cards. You have {balance.toLocaleString()} KUT Coins.</p>
         </header>
 
         {packs.length === 0 ? (

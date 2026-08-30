@@ -177,8 +177,8 @@ select set_config('request.jwt.claim.sub', '', true);
 -- Give member B a card, a sold listing and a completed sale.
 insert into kut.card_editions (id, player_id, edition_type, title, is_live)
 values ('00000000-0000-4000-8000-00000009f001', '00000000-0000-4000-8000-00000009c002', 'live', 'Links Fixture Two Live', true);
-insert into kut.user_cards (id, edition_id, owner_id, is_tradeable, source)
-values ('00000000-0000-4000-8000-00000009f101', '00000000-0000-4000-8000-00000009f001', '00000000-0000-4000-8000-00000009d003', true, 'admin');
+insert into kut.user_cards (id, edition_id, owner_id, source)
+values ('00000000-0000-4000-8000-00000009f101', '00000000-0000-4000-8000-00000009f001', '00000000-0000-4000-8000-00000009d003', 'admin');
 insert into kut.market_listings (id, card_id, seller_id, price, status, listed_at, expires_at, sold_at, buyer_id)
 values ('00000000-0000-4000-8000-00000009f201', '00000000-0000-4000-8000-00000009f101', '00000000-0000-4000-8000-00000009d003', 10, 'sold', now(), now() + interval '1 day', now(), '00000000-0000-4000-8000-00000009d002');
 insert into kut.market_sales (listing_id, card_id, edition_id, seller_id, buyer_id, sale_price, tax_amount, seller_receipt, buyer_idempotency_key)

@@ -799,6 +799,26 @@ Special attributes are similarly frozen and capped at 99.
 
 ## 20. Tradeability
 
+> **Superseded (2026-08-30, ADR-033):** the untradeable concept was removed
+> entirely. There is no `is_tradeable` flag on `user_cards` any more. **Every
+> Card Copy is tradeable and discardable**, starter cards included. The
+> original design below is kept for history.
+>
+> The only remaining eligibility rules, applied uniformly to every card
+> regardless of source:
+>
+> - a copy with an **active market listing** cannot be discarded (enforced by
+>   the `user_cards_prevent_burning_listed_card` trigger);
+> - discard and listing both require a **resolvable rating** for the copy
+>   (a Live edition needs current season state; a Special uses its snapshot).
+>
+> Consequence accepted at the time: a brand-new player can immediately sell or
+> discard all three starter cards. See ADR-033.
+
+---
+
+_Original design (no longer in force):_
+
 Each Card Copy has an explicit tradeability flag.
 
 Types:
@@ -870,7 +890,7 @@ On successful first onboarding, atomically grant:
 
 - `250` TF Coins;
 - `3` random Live Card copies;
-- all three starter cards are untradeable;
+- the three starter cards are ordinary tradeable copies (ADR-033);
 - no duplicate editions within the three-card starter pack.
 
 The starter grant may occur exactly once per user.
@@ -1168,7 +1188,7 @@ No auctions in MVP.
 
 User can:
 
-- select an owned tradeable card;
+- select an owned card that is not already listed;
 - enter a price;
 - create a 24-hour listing;
 - cancel an unsold listing;
@@ -1326,7 +1346,7 @@ club_value =
   + sum(reference_value of every owned Card Copy)
 ```
 
-Include untradeable cards.
+Include every unburned Card Copy (ADR-033 removed the untradeable class).
 
 Do not include cards that have been permanently burned/discarded.
 
@@ -1470,7 +1490,10 @@ Every minted copy gets an immutable Card Copy ID.
 
 Potential later fun rule:
 
-> A Player receiving a Special Card is automatically granted one untradeable copy of their own Special edition.
+> A Player receiving a Special Card is automatically granted one copy of their
+> own Special edition. (ADR-033 removed the untradeable flag; if this copy
+> should be non-liquid, a hold rule would need to be designed rather than
+> reusing the retired flag.)
 
 ---
 
@@ -2129,7 +2152,6 @@ Individual Card Copies.
 id uuid PK
 edition_id uuid references card_editions
 owner_id uuid references profiles
-is_tradeable boolean not null
 source text not null
 acquired_at timestamptz not null
 burned_at timestamptz nullable
@@ -2408,7 +2430,7 @@ Atomically:
 - set starter claimed;
 - grant +250 ledger/balance;
 - choose 3 distinct eligible Live editions;
-- mint 3 untradeable Card Copies;
+- mint 3 Card Copies;
 - return cards.
 
 Postcondition:
@@ -2442,7 +2464,7 @@ Atomically:
 
 - card belongs to caller;
 - card not burned;
-- card tradeable/eligible;
+- card has a resolvable rating;
 - no active listing;
 - calculate current server discard value;
 - mark burned;
@@ -2927,7 +2949,7 @@ Required flows:
 
 1. create user from invite;
 2. claim starter;
-3. validate 250 balance and 3 untradeable cards;
+3. validate 250 balance and 3 starter cards;
 4. publish attendance;
 5. validate linked user attendance reward;
 6. validate rating changes;
@@ -3315,7 +3337,7 @@ Build:
 ### Acceptance criteria
 
 - first User gets exactly 250 coins once;
-- first User gets exactly 3 distinct untradeable starter cards once;
+- first User gets exactly 3 distinct starter cards once;
 - starter endpoint is idempotent;
 - card copies belong to one owner;
 - users cannot inspect private wallet ledgers of others;
@@ -3341,7 +3363,6 @@ Build:
 - refresh does not reroll;
 - insufficient balance fails without card creation;
 - discard cannot occur twice;
-- starter cards cannot be discarded;
 - expected pack-discard calculation is shown to admin;
 - simulation tests pass;
 - pack UI works on mobile.
@@ -3372,7 +3393,6 @@ Build:
 - two buyers cannot both buy one card;
 - seller/buyer balances reconcile with ledger;
 - 5% tax burns correct integer amount;
-- market cannot transfer untradeable card;
 - club-value calculation follows spec;
 - mobile market works;
 - full test suite passes.
@@ -3413,7 +3433,7 @@ Build:
 - pack availability windows;
 - optional supply cap;
 - special artwork;
-- own-special untradeable grant;
+- own-special grant;
 - Collection Album;
 - milestones;
 - season history.
@@ -4037,7 +4057,7 @@ They should remain configurable decisions rather than questions that stop develo
 5. Whether custom SMTP is configured before alpha.
 6. Whether attendance reward remains 75 after economy testing.
 7. Whether Pack price remains 250 after simulation/playtest.
-8. Whether a Player automatically receives an untradeable copy of their own future Special.
+8. Whether a Player automatically receives a copy of their own future Special.
 9. Exact season length.
 10. Exact collection subgroups.
 11. Final Special Card terminology.
@@ -4246,7 +4266,7 @@ Tasks:
 17. Normal user cannot edit attendance.
 18. Service-role secret never reaches browser.
 19. Invite token can be claimed at most once.
-20. Untradeable card cannot enter the market.
+20. Card ownership changes only through a server-authoritative `buy_listing` transaction (ADR-033 retired the former "untradeable card cannot enter the market" invariant).
 
 Every coding agent should treat this section as a regression checklist.
 

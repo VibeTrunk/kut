@@ -46,7 +46,7 @@ describe("local two-client market race", () => {
     await admin.query("insert into kut.profiles (id, display_name, role) values ($1, 'Race Seller', 'user'), ($2, 'Race Buyer A', 'user'), ($3, 'Race Buyer B', 'user')", [fixture.seller, fixture.buyerA, fixture.buyerB]);
     await admin.query("insert into kut.wallets (user_id, balance) values ($1, 0), ($2, 500), ($3, 500)", [fixture.seller, fixture.buyerA, fixture.buyerB]);
     await admin.query("insert into kut.card_editions (id, player_id, edition_type, title, is_live, snapshot_ovr, snapshot_pac, snapshot_sho, snapshot_pas, snapshot_dri, snapshot_def, snapshot_phy, special_discard_multiplier) values ($1, $2, 'other', 'Two-client race fixture', false, 50, 50, 50, 50, 50, 50, 50, 1)", [fixture.edition, fixture.player]);
-    await admin.query("insert into kut.user_cards (id, edition_id, owner_id, is_tradeable, source) values ($1, $2, $3, true, 'pack')", [fixture.card, fixture.edition, fixture.seller]);
+    await admin.query("insert into kut.user_cards (id, edition_id, owner_id, source) values ($1, $2, $3, 'pack')", [fixture.card, fixture.edition, fixture.seller]);
     await admin.query("insert into kut.market_listings (id, card_id, seller_id, price) values ($1, $2, $3, 100)", [fixture.listing, fixture.card, fixture.seller]);
   });
 

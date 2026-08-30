@@ -44,7 +44,7 @@ Finding 3 was withdrawn by the tester (no entry).
 | Batch | Contents | Migration tier (ADR-032) | Status |
 |-------|----------|--------------------------|--------|
 | **A — copy & labels** | #1, #2, #7 front-end strings, #9 "Live edition" label | none | merged (PR #14) |
-| **B — tradability** | #9 model change (every card tradable, delete the untradable concept), drop guards, spec + tests | data-changing (`update user_cards`, market RPC semantics) | not started |
+| **B — tradability** | #9 model change (every card tradable, delete the untradable concept), drop guards, spec + tests | data-changing (drop `user_cards.is_tradeable`, market RPC semantics) | in progress — branch `feat/all-cards-tradable`, ADR-033, migration `20260903000000`; local gate pending, hosted deploy pending |
 | **C — coin-name sweep** | #7 SQL function bodies + backfill of existing messages + spec realignment | data-changing (backfill `update` on `user_notifications`) | not started |
 | **D — admin economy tools** | #8 assign coins, #6 soft account reset | additive (new RPC + admin form; the reset *operation* mutates rows at run time, not the migration) | not started |
 | **E — content features** | #4 Goalkeeper, #5 bibs bonus, #10 newsfeed (may split further) | mixed — newsfeed view + bibs storage + GK enum value are additive; reassigning existing players to GK is data-changing | not started |
@@ -56,7 +56,9 @@ Finding 3 was withdrawn by the tester (no entry).
 - **#5** — bibs bonus is coins only, or also a rating/OVR effect? Coin amount?
 - **#6** — define "reset" as the soft reset described above?
 - **#7** — confirm canonical name is "KUT Coins" and the spec is realigned.
-- **#9** — confirm every card becomes tradable, including starter cards, and the
-  concept is deleted (not just hidden).
+- **#9** — ~~confirm every card becomes tradable, including starter cards, and the
+  concept is deleted (not just hidden).~~ **Decided 2026-08-30:** full removal
+  (starter cards included, no softer hold rule); drop the `is_tradeable`
+  column outright. ADR-033.
 - **#10** — newsfeed shows sales + new listings only, or also discards? Retention
   window?

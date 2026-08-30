@@ -20,7 +20,7 @@ type Row = {
   photo_path: string | null;
 };
 
-/** The three untradeable `source = 'starter'` copies for the current member. */
+/** The three `source = 'starter'` copies for the current member. */
 export async function loadStarterCards(supabase: SupabaseServerClient): Promise<StarterCard[]> {
   const { data, error } = await supabase
     .schema("kut")

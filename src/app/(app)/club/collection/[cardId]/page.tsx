@@ -18,7 +18,6 @@ type CollectionCard = {
   edition_title: string;
   edition_type: string;
   is_live: boolean;
-  is_tradeable: boolean;
   source: string;
   display_name: string;
   archetype: string;
@@ -47,7 +46,7 @@ export default async function CardDetailPage({ params, searchParams }: CardPageP
   const { data, error } = await supabase
     .schema("kut")
     .from("my_collection_cards")
-    .select("card_id, edition_id, edition_title, edition_type, is_live, is_tradeable, source, display_name, archetype, ovr, pac, sho, pas, dri, def, phy, rarity_tier, discard_value, active_listing_id, active_listing_price, photo_path")
+    .select("card_id, edition_id, edition_title, edition_type, is_live, source, display_name, archetype, ovr, pac, sho, pas, dri, def, phy, rarity_tier, discard_value, active_listing_id, active_listing_price, photo_path")
     .eq("card_id", cardId)
     .maybeSingle();
 
@@ -63,7 +62,7 @@ export default async function CardDetailPage({ params, searchParams }: CardPageP
   const photoUrls = await resolvePhotoUrls(supabase, [card.photo_path]);
   const [query, boundsResponse] = await Promise.all([
     searchParams,
-    card.is_tradeable && !card.active_listing_id
+    !card.active_listing_id
       ? supabase.schema("kut").rpc("get_listing_bounds", { p_card_id: card.card_id })
       : Promise.resolve({ data: null, error: null }),
   ]);
@@ -108,10 +107,6 @@ export default async function CardDetailPage({ params, searchParams }: CardPageP
                 <dd className="mt-1 text-lg font-black">{readable(card.edition_type)}</dd>
               </div>
               <div className="rounded-2xl bg-board/60 p-4">
-                <dt className="font-bold uppercase tracking-[0.12em] text-ink-faint">Ownership</dt>
-                <dd className="mt-1 text-lg font-black text-brass">{card.is_tradeable ? "Tradeable" : "Locked"}</dd>
-              </div>
-              <div className="rounded-2xl bg-board/60 p-4">
                 <dt className="font-bold uppercase tracking-[0.12em] text-ink-faint">Source</dt>
                 <dd className="mt-1 text-lg font-black">{readable(card.source)}</dd>
               </div>
@@ -128,11 +123,8 @@ export default async function CardDetailPage({ params, searchParams }: CardPageP
             {query.listed === "1" && <p className="rounded-2xl bg-moss-bg p-4 text-sm font-bold text-moss">Listed successfully. This card is now locked for 24 hours or until you cancel it.</p>}
             {query.listingCancelled === "1" && <p className="rounded-2xl bg-moss-bg p-4 text-sm font-bold text-moss">Listing cancelled. This card is available again.</p>}
 
-            {!card.is_tradeable && (
-              <p className="rounded-2xl border border-brass/30 bg-brass/10 p-4 text-sm text-brass">Starter cards are locked so every new club begins with a meaningful personal collection. Future pack and market cards can be tradeable.</p>
-            )}
-            {card.is_tradeable && card.active_listing_id && card.active_listing_price && <CancelListingForm cardId={card.card_id} listingId={card.active_listing_id} price={card.active_listing_price} />}
-            {card.is_tradeable && !card.active_listing_id && <>
+            {card.active_listing_id && card.active_listing_price && <CancelListingForm cardId={card.card_id} listingId={card.active_listing_id} price={card.active_listing_price} />}
+            {!card.active_listing_id && <>
               {minimumPrice !== null && maximumPrice !== null && <CreateListingForm cardId={card.card_id} maximumPrice={maximumPrice} minimumPrice={minimumPrice} />}
               <DiscardCardForm cardId={card.card_id} discardValue={card.discard_value} />
             </>}

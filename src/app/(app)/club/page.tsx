@@ -58,7 +58,7 @@ export default async function ClubPage() {
           </Link>
           <Link className="group rounded-3xl border border-line bg-panel/70 p-6 hover:border-brass" href="/club/packs">
             <h2 className="text-xl font-black group-hover:text-brass">Open Packs →</h2>
-            <p className="mt-2 text-sm text-ink-faint">Spend KUT Coins on new tradeable Live Cards.</p>
+            <p className="mt-2 text-sm text-ink-faint">Spend KUT Coins on new Live Cards.</p>
           </Link>
         </div>
 

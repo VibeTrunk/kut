@@ -1089,3 +1089,67 @@ scheduled backup, losing anything since — bounded small as long as the backup
 cadence stays tight (at least weekly once members trade, per `docs/BACKUP.md`).
 No code or schema change; `docs/OPERATIONS.md` and `docs/BACKUP.md` updated to
 match.
+
+## ADR-033 — Retire the untradeable concept; every card is tradeable and discardable
+
+Date: 2026-08-30
+
+Status: Accepted
+
+Decision: the `is_tradeable` distinction is removed entirely (tester feedback
+#9, Batch B in `docs/TESTER_FEEDBACK_BATCHES.md`). Migration
+`20260903000000_drop_is_tradeable.sql` drops `kut.user_cards.is_tradeable` and
+recreates every object that referenced it with the guard/field gone:
+`grant_starter_pack` and `open_pack` mint plain copies; `discard_card` loses
+its `if not v_card.is_tradeable` gate; `get_listing_bounds`, `create_listing`,
+and `buy_listing` lose the `and is_tradeable` predicate on their owned-card
+lookups; the `kut.my_collection_cards` view drops the column (a `drop view` +
+`create view`, since `create or replace view` cannot remove a column). Nothing
+in the schema reads that view, so the drop/recreate is contained.
+
+The product question — a brand-new player can now immediately sell or discard
+all three starter cards (starter wallet 250 + 3× discard value, instantly
+liquid), which the starter lock existed to prevent — was put to the user, who
+chose **full removal** with no softer rule (no starter hold, no
+discardable-but-not-tradable middle state). The user also chose the **drop the
+column** option over the smaller "keep it, force it true" change.
+
+Card copies are still protected from a burn while they carry an active market
+listing (the `user_cards_prevent_burning_listed_card` trigger, ADR-016) and a
+copy still needs a resolvable rating to be discarded or listed — those are the
+only remaining eligibility rules, and they apply uniformly to every source.
+
+Reason: testers read "Locked" / "Tradeable" badges, a collection subheader
+counting "N tradeable · N locked", a card-detail "Ownership" tile, and a
+"Starter cards are locked" explainer as a bug or an unexplained restriction.
+The "Live edition" label half of finding #9 was already handled in Batch A
+(PR #14). The economy team accepts the starter-liquidation consequence: the
+starter grant is a one-time 250 + 3 cards regardless, and a player who dumps
+it immediately simply starts from ~250–300 coins and an empty collection,
+which self-corrects through packs and attendance rewards (250/session,
+ADR-029).
+
+Consequences:
+
+- **Spec changes** (required by CLAUDE.md for a game-rule / invariant change):
+  `docs/BUILD_SPEC.md` §20 "Tradeability" is rewritten to record the removal;
+  the `is_tradeable` line is struck from the `user_cards` schema block; the
+  "mint 3 untradeable Card Copies", "card tradeable/eligible", "3 untradeable
+  cards", "3 distinct untradeable starter cards", "own-special untradeable
+  grant" phrasings are de-flagged; the acceptance criteria "starter cards
+  cannot be discarded" and "market cannot transfer untradeable card" are
+  removed; the Part L regression-checklist invariant #20 "Untradeable card
+  cannot enter the market" becomes "Card ownership changes only through a
+  server-authoritative `buy_listing` transaction."
+- **Tests**: `phase_1a_roster.test.sql` loses the three now-obsolete negative
+  starter assertions (`plan(166)` → `plan(163)`) and the `is_tradeable`
+  column refs in its fixtures; `member_admin_links.test.sql`,
+  `starter_reveal_and_movers.test.sql`, and `tests/integration/market-race.test.ts`
+  drop `is_tradeable` from their `user_cards` inserts.
+- **Rollback**: data-changing tier (ADR-032) — a fresh backup is taken
+  immediately before the hosted push. The migration header carries the
+  reverse DDL; every surviving row was `is_tradeable = true`, so re-adding the
+  column `boolean not null default true` and re-applying the prior function
+  bodies is lossless.
+- Hosted deploy is a separate step via `VibeTrunk/supabase` (ADR-021); never
+  `supabase db push` from this repo.

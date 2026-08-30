@@ -13,6 +13,10 @@ the hosted schema. Do not run a hosted `supabase db push` from this repository.
 
 ## Backup before any hosted schema change
 
+See [`docs/BACKUP.md`](BACKUP.md) for the `kut`-schema backup script
+(`scripts/backup-kut-hosted.ps1`), the restore drill, and the cadence. The
+steps below are the schema-change-specific checklist.
+
 1. Confirm which shared Supabase project and database branch are in scope.
    KUT uses the `kut` schema and must not affect other VibeTrunk schemas.
 2. Create or confirm a database backup using the hosted project's supported
@@ -76,5 +80,7 @@ wallets, cards, sessions, or market history.
 - Keep the local migration/test workflow working. Every hosted schema change
   must first exist as matching reviewed files in KUT and the central catalogue,
   and pass locally before central deployment.
-- Review and perform a backup/export on a regular schedule appropriate to the
-  group’s activity and before any material change.
+- Run `scripts/backup-kut-hosted.ps1` on a regular schedule appropriate to the
+  group’s activity and before any material change. Take a fresh backup and run
+  the [`docs/BACKUP.md`](BACKUP.md) restore drill once before the first real
+  invite.

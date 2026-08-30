@@ -1287,3 +1287,51 @@ The hosted "Top risers" widget shows its empty state until the first session
 published after this deploy creates a second week of snapshots. Every existing
 member's `starter_opened_at` was backfilled `= starter_claimed_at`, so only
 members onboarded from here on hit the `/welcome` gate.
+
+## Backup tooling for the hosted `kut` schema - 2026-08-30
+
+Prep for inviting the first real members. The shared Supabase project has no
+managed backup or PITR, so a logical dump is the backup mechanism; the only
+prior one is `.private-backups/BACKUP_LOG.md`'s 2026-08-19 pre-invite export,
+now stale by the ADR-027..031 batch and never test-restored.
+
+- `scripts/backup-kut-hosted.ps1` (new) — one command: `supabase db dump
+  --linked -s kut` (schema DDL) + `--data-only --use-copy` (data),
+  concatenated into one replayable `.sql`, encrypted to
+  `%USERPROFILE%\backups\kut\kut-backup-<ts>.sql.enc` via the existing
+  `scripts/protect-kut-backup.ps1` (AES-256-CBC + HMAC-SHA256, PBKDF2 600k),
+  then **decrypted back and SHA-256-compared** before the plaintext is
+  shredded. Appends a metadata line to the gitignored
+  `.private-backups/BACKUP_LOG.md`. Read-only against prod — no `db push`.
+  Non-interactive-capable (`-Passphrase` / `-DbPassword` SecureStrings), which
+  closes the "encryption needs an interactive prompt" gap noted in earlier
+  deploy entries.
+- `docs/BACKUP.md` (new) — coverage table (`kut` schema yes; `auth.users` via
+  Supabase platform backup; `player-photos` bucket still an open gap), the
+  take-a-backup steps, a **restore drill** (decrypt → replay into a scratch
+  local DB with `session_replication_role = replica` so the kut-only dump
+  loads without `auth.users` → sanity row counts), cadence, and an optional
+  DPAPI-based scheduled-task setup.
+- `docs/OPERATIONS.md` — the vague "perform a backup/export on a regular
+  schedule" bullet now points at the script and `docs/BACKUP.md`.
+
+No schema, game rule, invariant, or public projection changed — ops tooling
+only, so no ADR.
+
+Run and verified 2026-08-30 by the user:
+
+- `scripts/backup-kut-hosted.ps1` produced
+  `%USERPROFILE%\backups\kut\kut-backup-20260830-104303.sql.enc` (173,664 B
+  plaintext), round-trip integrity check passed.
+- Restore drill (docs/BACKUP.md) against that file **passed**: replayed into a
+  throwaway DB in the local `supabase_db_kut` container — full schema
+  (functions, tables, views, indexes, triggers, RLS, grants) with no errors,
+  then every `COPY` block. Post-restore counts: 25 players, 1 profile, 0
+  wallets/ledger/cards/sales — consistent with the pre-alpha state. The drill
+  needs a stub `auth` schema and `session_replication_role = replica` because
+  the dump is `kut`-only; both are now baked into docs/BACKUP.md and recorded
+  in `.private-backups/BACKUP_LOG.md`.
+
+The pre-invite backup blocker is cleared. Open gaps: the `player-photos`
+storage bucket is still not in the dump; a scheduled/automated run is
+documented (DPAPI) but not set up.

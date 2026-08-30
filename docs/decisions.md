@@ -1046,7 +1046,7 @@ logs in still has their starter; `/welcome` only marks that they have seen it.
 shows anything; the migration cannot backfill prior weeks (the fold is not
 re-run), so on hosted deploy the widget is empty until the first post-deploy
 session publish. The snapshot trigger adds one lightweight upsert per player
-per rebuild (~25 rows). Migration is local-only until the ADR-021
-`VibeTrunk/supabase` batch deploy (it joins the pending `20260830` /
-`20260831` / `20260901` set; `verify-catalog.ps1` then expects "matches 32").
-Rollback DDL is in the migration header.
+per rebuild (~25 rows). Deployed to hosted 2026-08-30 via the ADR-021
+`VibeTrunk/supabase` workflow (`VibeTrunk/supabase` PR #9 catalogued it,
+`verify-catalog.ps1` "matches 34"; PR #10 flipped the ledger to applied) —
+see `docs/PROGRESS.md`. Rollback DDL is in the migration header.

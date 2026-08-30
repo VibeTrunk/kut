@@ -1335,3 +1335,28 @@ Run and verified 2026-08-30 by the user:
 The pre-invite backup blocker is cleared. Open gaps: the `player-photos`
 storage bucket is still not in the dump; a scheduled/automated run is
 documented (DPAPI) but not set up.
+
+## Pre-alpha invite gate cleared - 2026-08-30
+
+All three must-do checks before inviting real members are verified against the
+hosted project:
+
+1. **Backup + restore** — see the entry above (`scripts/backup-kut-hosted.ps1`
+   run + passing `docs/BACKUP.md` restore drill).
+2. **Account recovery** — a throwaway hosted account was locked out and reset
+   via `/admin/accounts`. There is no email on file for any account, so this
+   admin-assisted path is the entire recovery story; it works on prod.
+3. **Invite claim end-to-end on prod** — issued an invite at
+   `kut.vibetrunk.com`, claimed it with a fresh username, signed in. The
+   one-time token, the username → `users.kut.local` synthetic-email mapping,
+   and the Auth redirect allow-list all behave on the real domain.
+
+`docs/HANDOFF.md`'s "Known gaps before a real alpha" section is updated to
+reflect this (hosted setup done; gate cleared; early-alpha follow-ups listed).
+No code or schema change — documentation only.
+
+First invites can go out. Early-alpha follow-ups (not blockers): backup before
+each Friday session; skim Vercel + Supabase logs post-session (no alerting);
+add a second admin (single operator / single recovery path today); hold
+economy formulas steady through short-term noise; `/settings/card` photo
+uploads are unmoderated.

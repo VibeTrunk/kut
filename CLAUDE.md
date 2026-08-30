@@ -36,9 +36,14 @@ don't add cross-repo coupling beyond the shared Supabase project.
 
 KUT is live at `https://kut.vibetrunk.com` as Vercel project `kut`. The
 hosted `kut` schema is applied through
-`20260902000000_starter_reveal_and_rating_snapshots.sql` (ADR-031 &mdash;
-weekly rating snapshots, Home "Top risers", the `/welcome` starter reveal;
-deployed 2026-08-30, right after the ADR-027..030 alpha-readiness batch).
+`20260904000000_canonical_coin_name.sql` (ADR-034 &mdash; "KUT Coins" is the
+one currency name: `open_pack` / `buy_listing` error strings + the two market
+notification bodies, plus a backfill of existing `user_notifications` rows;
+tester feedback batch C; deployed 2026-08-31). The two migrations before it,
+both deployed 2026-08-31: `20260903000000_drop_is_tradeable.sql` (ADR-033,
+batch B &mdash; every card tradeable, `is_tradeable` dropped) and, before
+that, `20260902000000_starter_reveal_and_rating_snapshots.sql` (ADR-031,
+deployed 2026-08-30).
 
 Supabase records migration history globally for the shared database, not per
 schema. Hosted migrations are therefore catalogued and deployed only from

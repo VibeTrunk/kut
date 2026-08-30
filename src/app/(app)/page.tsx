@@ -65,6 +65,7 @@ export default async function Home() {
         <header className="space-y-3">
           <p className="text-sm font-semibold uppercase tracking-[0.24em] text-brass">Terrible Football Haarlem</p>
           <h1 className="text-4xl font-black tracking-tight sm:text-5xl">This week in KUT</h1>
+          <p className="text-sm font-semibold text-ink-faint">Kelderklasse Ultimate Team</p>
           <p className="max-w-2xl text-lg leading-8 text-ink-dim">
             The five cards that rose most since the last published football week. Published attendance updates Live Ratings automatically.
           </p>

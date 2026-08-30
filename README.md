@@ -163,7 +163,7 @@ earned, per the MVP correction policy.
 
 Any signed-in, enabled member can open **My Club** from Live Ratings at
 `http://localhost:3000/club`. It shows only their own active card copies and
-their own TF Coin balance. Selecting a card opens its detail page, including
+their own KUT Coin balance. Selecting a card opens its detail page, including
 its current Live rating and source. These are read-only views; no browser
 route can alter a card or coins.
 

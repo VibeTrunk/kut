@@ -2,7 +2,8 @@
 
 Date raised: 2026-08-30
 
-A round of tester feedback (10 findings + 2 future ideas). The intent is to
+A round of tester feedback (10 findings + 2 future ideas; finding #11 was
+added later, while cutting Batch C). The intent is to
 deliver **all of it eventually**, in the ordered batches below rather than one
 large change — several items change a game rule, an economy faucet, or a DB
 invariant and so need their own migration, `docs/decisions.md` entry, and test
@@ -25,6 +26,7 @@ and an SQL-reversible shape.
 | 8 | Admin can assign coins to a player | Medium-low | Mirror the attendance-reward pattern: `kut.admin_adjust_wallet(user_id, amount, reason)` (security definer, `is_admin()` gate, ledger reason + audit) + a small admin form. Migration + hosted deploy. ADR line (coin faucet, Part L). |
 | 9 | Remove the untradable concept; drop Locked/Tradeable and "Live edition" labels | Trivial / Medium | "Live edition" text removal is Trivial (done in Batch A). Retiring `is_tradeable` is Medium — threaded through the starter grant, discard RPC guard, marketplace list/buy RPCs, both projections, the card detail page ("Ownership", "Starter cards are locked" explainer), plus a Phase-1B acceptance criterion and a Part L invariant. Also update/remove the db-tests asserting "3 untradeable starter cards". "Non-live edition as an icon" is a later concern — `is_live` already exists in the data. |
 | 10 | Newsfeed of recent actions | Medium | No new write paths — sales (`market_sales`), listings (`market_listings`), discards (`wallet_ledger`), pack opens (`pack_openings`), attendance already persisted. Work is a unioned read-only view + member-wide RLS + pagination + a page + nav entry + copy. Migration + hosted deploy. Decide which events are public and how far back. |
+| 11 | Home never expands the "KUT" acronym | Trivial | `src/app/(app)/page.tsx` header was kicker "Terrible Football Haarlem" + h1 "This week in KUT"; the full name "Kelderklasse Ultimate Team" appeared only in `layout.tsx` metadata and `login/page.tsx`. Added once as a subtitle under the h1 on the authenticated Home. Front-end only, no migration. Bundled into Batch C. |
 
 Finding 3 was withdrawn by the tester (no entry).
 
@@ -45,7 +47,7 @@ Finding 3 was withdrawn by the tester (no entry).
 |-------|----------|--------------------------|--------|
 | **A — copy & labels** | #1, #2, #7 front-end strings, #9 "Live edition" label | none | merged (PR #14) |
 | **B — tradability** | #9 model change (every card tradable, delete the untradable concept), drop guards, spec + tests | data-changing (drop `user_cards.is_tradeable`, market RPC semantics) | **done** — KUT PR #17, ADR-033, migration `20260903000000`; deployed to hosted 2026-08-31 (VibeTrunk/supabase PR #11 + #12) |
-| **C — coin-name sweep** | #7 SQL function bodies + backfill of existing messages + spec realignment | data-changing (backfill `update` on `user_notifications`) | not started |
+| **C — coin-name sweep** | #7 SQL function bodies (`open_pack` / `buy_listing` error strings + market notification bodies) + backfill of existing `user_notifications` rows + leaderboard `TF`→`KUT` ticker + spec/README/ADR realignment; #11 expand "KUT" on Home | data-changing (backfill `update` on `user_notifications`) | branch `feat/canonical-coin-name` off `main`; ADR-034, migration `20260904000000` — local gate passed, hosted deploy pending |
 | **D — admin economy tools** | #8 assign coins, #6 soft account reset | additive (new RPC + admin form; the reset *operation* mutates rows at run time, not the migration) | not started |
 | **E — content features** | #4 Goalkeeper, #5 bibs bonus, #10 newsfeed (may split further) | mixed — newsfeed view + bibs storage + GK enum value are additive; reassigning existing players to GK is data-changing | not started |
 
@@ -55,7 +57,10 @@ Finding 3 was withdrawn by the tester (no entry).
   distinct GK stat set?
 - **#5** — bibs bonus is coins only, or also a rating/OVR effect? Coin amount?
 - **#6** — define "reset" as the soft reset described above?
-- **#7** — confirm canonical name is "KUT Coins" and the spec is realigned.
+- **#7** — ~~confirm canonical name is "KUT Coins" and the spec is realigned.~~
+  **Decided 2026-08-31:** canonical name is exactly "KUT Coins" (singular "KUT
+  Coin"); the leaderboard's narrow value column uses a short "KUT" ticker.
+  ADR-034.
 - **#9** — ~~confirm every card becomes tradable, including starter cards, and the
   concept is deleted (not just hidden).~~ **Decided 2026-08-30:** full removal
   (starter cards included, no softer hold rule); drop the `is_tradeable`

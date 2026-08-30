@@ -421,7 +421,7 @@ Date: 2026-08-16
 
 Status: Accepted
 
-Decision: KUT has one active MVP pack definition, TFH Pack (250 TF Coins,
+Decision: KUT has one active MVP pack definition, TFH Pack (250 KUT Coins,
 three cards). `kut.open_pack(pack_slug, idempotency_key)` performs the wallet
 debit, ledger entry, weighted Live-edition selection, Card Copy minting, and
 opening/result persistence in one security-definer transaction. A result page
@@ -1153,3 +1153,58 @@ Consequences:
   bodies is lossless.
 - Hosted deploy is a separate step via `VibeTrunk/supabase` (ADR-021); never
   `supabase db push` from this repo.
+
+## ADR-034 — "KUT Coins" is the canonical currency name
+
+Date: 2026-08-31
+
+Status: Accepted
+
+Decision: the game currency is **"KUT Coins"** everywhere — UI, SQL (error
+strings and notification bodies), spec, and docs. Singular is **"KUT Coin"**.
+The build spec's old working name "TF Coins" is retired (tester feedback #7,
+Batch C in `docs/TESTER_FEEDBACK_BATCHES.md`). The user confirmed the exact
+name and chose a short **"KUT"** ticker (not the full "KUT Coins") for the one
+narrow unit label on the leaderboard's value column.
+
+The visible front-end had already been swept to "KUT Coins" (the 2026-08-17
+alpha-readiness entry + Batch A / PR #14). Batch C closes the three remaining
+server-side leaks and realigns the half-migrated spec:
+
+- **`kut.user_notifications.body`** for `market_purchase` / `market_sale` rows
+  read "… for N TF Coins." / "… You received N TF Coins after tax." and render
+  verbatim on `/messages`. Migration `20260904000000_canonical_coin_name.sql`
+  `create or replace`s `open_pack` + `buy_listing` (latest bodies from
+  `20260903000000`) with "TF Coins" → "KUT Coins" in the two `format()` bodies,
+  then a one-shot `update kut.user_notifications set body = replace(body, 'TF
+  Coins', 'KUT Coins') where event_type in ('market_purchase','market_sale')
+  and body like '%TF Coins%'` to fix the rows already on hosted (backfilled
+  once each by `20260817020000` / `…020100`).
+- **RPC error strings** — `raise exception 'insufficient TF Coins for this
+  pack'` (`open_pack`) and `'… for this listing'` (`buy_listing`). Not
+  user-visible today (`actions.ts` catches and rewrites to a "KUT Coins"
+  message) but wrong; fixed in the same `create or replace`.
+- **Leaderboard** — `leaderboard/page.tsx` rendered `{value} TF`; now `{value}
+  KUT`.
+- **Spec** — the `**TF Coins**` glossary entry is reframed to `**KUT Coins**`;
+  `docs/BUILD_SPEC.md` L891 / L919 / L937 / L3556 and `docs/decisions.md`'s
+  ADR-014 pack-definition line and `README.md`'s My Club paragraph updated.
+  Dated historical `docs/PROGRESS.md` lines are left as written.
+
+Reason: a tester saw "TF Coins" in their Message Center inbox while every other
+surface said "KUT Coins". ADR-028/029 had already put "KUT Coins" into spec
+Parts 24 / 145 / 942, so the doc was internally inconsistent.
+
+Consequences: **display-only.** No economy value, ledger `reason` value, column
+name, price, or formula changes — the Part L invariants are untouched, so this
+is not a game-rule change beyond the naming realignment recorded here and in
+the spec. Tier: **data-changing** (ADR-032) purely because of the one backfill
+`UPDATE`; a fresh backup is taken immediately before the hosted push, the
+catalogue's `verify-catalog.ps1` is extended for the new file, and the
+migration is trivially SQL-reversible (`replace()` back, scoped to the same
+`event_type`s — `attendance_reward` bodies already said "KUT Coins" and are
+excluded both ways). Hosted deploy is the separate `VibeTrunk/supabase`
+ADR-021 step; never `supabase db push` from this repo. Bundled with tester
+feedback finding #11 (the authenticated Home now shows the expanded name
+"Kelderklasse Ultimate Team" once, under the "This week in KUT" heading) —
+front-end only, no migration.

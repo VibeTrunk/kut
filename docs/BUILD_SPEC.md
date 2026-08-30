@@ -278,8 +278,9 @@ System estimate used for club value and market context.
 **Club Value**  
 Wallet coins plus reference value of all owned card copies.
 
-**TF Coins**  
-Working name for game currency. Final name can change.
+**KUT Coins**  
+Game currency. Was "TF Coins" (ADR-034); "KUT Coins" is now canonical everywhere
+(UI, SQL notification bodies and error strings, spec). Singular: "KUT Coin".
 
 ---
 
@@ -888,7 +889,7 @@ Do not hardwire game identity to a specific email provider.
 
 On successful first onboarding, atomically grant:
 
-- `250` TF Coins;
+- `250` KUT Coins;
 - `3` random Live Card copies;
 - the three starter cards are ordinary tradeable copies (ADR-033);
 - no duplicate editions within the three-card starter pack.
@@ -916,7 +917,7 @@ The user may receive their own card.
 
 Use integer currency only.
 
-No decimal TF Coins.
+No decimal KUT Coins.
 
 Never trust a client-provided balance.
 
@@ -934,7 +935,7 @@ Every balance change must be produced server-side and recorded in an immutable l
 
 A game User linked to the real Player receives:
 
-`+250 TF Coins` per published session they attended.
+`+250 KUT Coins` per published session they attended.
 
 > **Note (2026-08-29):** raised from `75` to `250` (ADR-029), **not** applied
 > retroactively — already-granted rewards keep their original amount. Granting
@@ -3553,7 +3554,7 @@ Admin should be able to see:
 
 - total Users;
 - active Users last 30 days if available;
-- total TF Coins in wallets;
+- total KUT Coins in wallets;
 - coins created from starter;
 - coins created from attendance;
 - coins created from discard;

@@ -3,7 +3,18 @@ name: verify
 on:
   push:
     branches: [main]
+    # Docs-only changes skip CI entirely (the `database` job alone is ~5 min).
+    # Safe today because no status check is required to merge to main
+    # (branch protection: required_status_checks is null). If checks are ever
+    # made required, remove this filter or add an always-succeeds shim job —
+    # a required check that never runs leaves the PR stuck pending.
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
   pull_request:
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
 
 permissions:
   contents: read

@@ -1208,3 +1208,93 @@ ADR-021 step; never `supabase db push` from this repo. Bundled with tester
 feedback finding #11 (the authenticated Home now shows the expanded name
 "Kelderklasse Ultimate Team" once, under the "This week in KUT" heading) —
 front-end only, no migration.
+
+## ADR-035 — Admin coin faucet + soft account reset
+
+Date: 2026-08-31
+
+Status: Accepted
+
+Decision: two `is_admin()`-gated, `security definer` economy tools for `/admin`,
+plus one audit table and one widened check constraint. Migration
+`20260905000000_admin_economy_tools.sql` (tester feedback #8 + #6, Batch D in
+`docs/TESTER_FEEDBACK_BATCHES.md`).
+
+**1. `kut.admin_adjust_wallet(p_user_id uuid, p_amount bigint, p_reason text)`
+— an audited coin faucet.** Before this, an admin could only mint coins by
+publishing attendance. It credits (`+`) or claws back (`-`) KUT Coins in one
+transaction: a `wallet_ledger` row (new `reason` value `'admin_grant'`), the
+wallet update, a `kut.admin_account_events` audit row, and an `admin_notice`
+inbox message ("An admin adjusted your wallet by ±N KUT Coins. Reason: …").
+Guards: both directions allowed; `abs(p_amount)` capped at `100000` (raises
+`22023`, mirrored by `ECONOMY.adminWalletAdjustMax` in `src/game/economy.ts`);
+a result below zero raises `P0001` (invariant #4 never violated); a typed
+`p_reason` of 1–200 chars is required; not self, not a superadmin target, and
+only a superadmin may adjust an admin's wallet (mirrors
+`admin_set_account_disabled`, ADR-030).
+
+**2. `kut.admin_reset_account(p_user_id uuid, p_idempotency_key uuid)` — a soft
+club reset that works even after the member has traded.** `admin_prepare_account_deletion`
+refuses any account with `market_sales` rows (ADR-030) and hard delete is the
+only other "start over" path; this wipes the member's economy state while
+keeping their login and the cross-member trade history. In one transaction it:
+cancels the member's active listings; **burns** (soft `burned_at`, not deletes)
+every owned Card Copy — `ON DELETE RESTRICT` from `pack_opening_cards` /
+`market_listings` / `market_sales` makes delete impossible for any card ever
+listed or sold, and burn is uniform and keeps history; deletes the member's
+`pack_opening_cards` + `pack_openings` and all their `user_notifications`;
+zeroes the wallet **without deleting ledger rows** (immutable, invariant #5 /
+ADR-010) — one compensating `-(balance)` entry then a fresh `+250`, both
+`reason 'admin_reset'`, net balance `250`; re-grants the standard starter
+inline (250 + 3 random Live editions, no dup — the same select
+`grant_starter_pack` uses; **not** a call to it, which would raise `P0001` on
+the retained `starter_claimed_at`); nulls `starter_opened_at` (keeps
+`starter_claimed_at`) so `getNavContext` replays the cosmetic `/welcome`
+reveal over the fresh cards (ADR-031); and writes an `account_reset` audit row
++ an `admin_notice` ("Your KUT club was reset by an admin…"). Idempotent: the
+audit row's `detail->>'idempotency_key'` (with a partial unique index) plus the
+`profiles` row `FOR UPDATE` lock make a repeat key return the first result with
+no second burn/grant (same pattern as `open_pack` / `discard_card`). Same
+guardrails as #1 (not self, not superadmin, only-superadmin-resets-admin).
+
+**`attendance_rewards` guard rows are kept, not deleted.** Deleting them would
+let a later correction/reactivation of a past session re-pay the member,
+violating invariant #9. The coins are already removed by zeroing the wallet;
+the `(session_id, player_id)` rows must stay. `market_sales` and the market
+`wallet_ledger` entries are likewise kept — they are cross-member history.
+
+**Invariant #8 carve-out.** Part L §162 #8 "Starter grant happens at most once"
+is reworded to "…at most once per account, **except an explicit audited admin
+reset (ADR-035)**". Invariants #4, #5, #9 stay literally true — that is exactly
+why the reward rows are kept and the ledger is append-only here.
+
+**3. `kut.admin_account_events`** `(id, target_user_id, actor_id, action check
+in ('wallet_adjust','account_reset'), amount bigint, reason text, detail jsonb,
+created_at)` — admin-read RLS like `kut.password_reset_events`; rows written
+only by the two RPCs (security definer, bypassing RLS).
+
+**4. `wallet_ledger.reason` check widened** with `'admin_grant'` and
+`'admin_reset'` — a new allowed check value, so **additive** per
+`docs/OPERATIONS.md`. `user_notifications.event_type` already allows
+`'admin_notice'` — unchanged. `docs/BUILD_SPEC.md` §58's illustrative
+`ledger_reason` list gains both values; Part 24 §928 gains an "Admin
+adjustment" coin source; Part 125's (spec'd-but-unbuilt) per-reason breakdown
+note gains the two reasons — `kut.pack_economy_health` has no per-reason split
+today, so the faucet flows into `total_coin_supply` automatically.
+
+Reason: testers asked for an admin to be able to hand out / correct coins, and
+to be able to reset a member's club after they had traded (the existing hard
+delete refuses traded accounts and throws away the login too).
+
+Consequences: tier is **additive** (ADR-032) — the migration is all `create
+table` / `create or replace function` / one widened check; it mutates no
+member rows (the reset does that at run time). Rides the last scheduled backup;
+no fresh pre-push backup. SQL-reversible: `drop function` / `drop table` /
+restore the narrower check (the migration is inert on hosted until the separate
+`VibeTrunk/supabase` push, so no `admin_grant` / `admin_reset` rows exist at
+rollback time). UI: both controls are per-account rows on `/admin/links` (tab
+relabelled "Account links" → "Accounts", and the old "Accounts" password tab →
+"Recovery"). Between the KUT merge and the hosted push the two new buttons
+return an RPC-not-found error if used — do the push promptly. Hosted deploy is
+the additive path in `docs/OPERATIONS.md` via `VibeTrunk/supabase` (ADR-021);
+never `supabase db push` from this repo.

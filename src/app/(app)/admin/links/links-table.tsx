@@ -11,6 +11,8 @@ export type LinkAccount = {
   is_disabled: boolean;
   linked_player_id: string | null;
   linked_player_name: string | null;
+  wallet_balance: number;
+  reset_idempotency_key: string;
 };
 
 export type LinkablePlayer = { id: string; display_name: string; slug: string };
@@ -58,7 +60,8 @@ export function LinksTable({
                 {isSelf && <span className="text-xs text-ink-faint">(you)</span>}
               </div>
               <p className="mt-1 text-sm text-ink-dim">
-                Username: {account.username ?? "—"} · Linked player: {account.linked_player_name ?? "not linked"}
+                Username: {account.username ?? "—"} · Linked player: {account.linked_player_name ?? "not linked"} ·
+                Wallet: {account.wallet_balance.toLocaleString("en-GB")} KUT Coins
               </p>
 
               <div className="mt-3 flex flex-wrap gap-2">
@@ -121,6 +124,32 @@ export function LinksTable({
                     onSubmit={(event) => {
                       if (
                         !window.confirm(
+                          `Reset ${account.display_name}'s club? Their wallet, cards, pack history and messages are wiped and a fresh 250-coin starter is granted. Their login and trade history stay. This cannot be undone.`,
+                        )
+                      ) {
+                        event.preventDefault();
+                      }
+                    }}
+                  >
+                    <input name="intent" type="hidden" value="reset_account" />
+                    <input name="user_id" type="hidden" value={account.id} />
+                    <input name="idempotency_key" type="hidden" value={account.reset_idempotency_key} />
+                    <button
+                      className="rounded-lg border border-brick-line/60 px-3 py-1.5 text-xs font-bold text-brick hover:bg-brick-bg disabled:cursor-not-allowed disabled:opacity-40"
+                      disabled={isPending}
+                      type="submit"
+                    >
+                      Reset club
+                    </button>
+                  </form>
+                )}
+
+                {canModerate && (
+                  <form
+                    action={formAction}
+                    onSubmit={(event) => {
+                      if (
+                        !window.confirm(
                           `Permanently delete ${account.display_name}? Their wallet, cards and account are removed. This cannot be undone.`,
                         )
                       ) {
@@ -140,6 +169,38 @@ export function LinksTable({
                   </form>
                 )}
               </div>
+
+              {canModerate && (
+                <form action={formAction} className="mt-2 flex flex-wrap items-center gap-2">
+                  <input name="intent" type="hidden" value="adjust_coins" />
+                  <input name="user_id" type="hidden" value={account.id} />
+                  <input
+                    aria-label={`Coin adjustment for ${account.display_name}`}
+                    className="min-h-9 w-24 rounded-lg border border-line bg-board px-2 text-xs"
+                    inputMode="numeric"
+                    name="amount"
+                    placeholder="+/- coins"
+                    required
+                    type="number"
+                  />
+                  <input
+                    aria-label={`Reason for adjusting ${account.display_name}`}
+                    className="min-h-9 flex-1 rounded-lg border border-line bg-board px-2 text-xs"
+                    maxLength={200}
+                    name="reason"
+                    placeholder="Reason (required)"
+                    required
+                    type="text"
+                  />
+                  <button
+                    className="rounded-lg border border-brass px-3 py-1.5 text-xs font-bold text-brass disabled:cursor-not-allowed disabled:opacity-50"
+                    disabled={isPending}
+                    type="submit"
+                  >
+                    Adjust coins
+                  </button>
+                </form>
+              )}
             </li>
           );
         })}
@@ -147,9 +208,13 @@ export function LinksTable({
 
       <p className="text-sm text-ink-faint">
         Linking connects a member&rsquo;s account to a player card so they earn attendance coins and can edit that
-        card; it does <strong>not</strong> back-pay coins for sessions before the link. <strong>Disable</strong> blocks
-        sign-in and removes the account from the leaderboard (reversible). <strong>Delete</strong> is permanent and
-        only goes through for an account with no completed market trades — otherwise disable it.
+        card; it does <strong>not</strong> back-pay coins for sessions before the link. <strong>Adjust coins</strong>
+        credits or claws back KUT Coins (audited, never below zero, max{" "}
+        {(100_000).toLocaleString("en-GB")} per adjustment). <strong>Reset club</strong> wipes wallet, cards, pack
+        history and messages and re-grants the starter, keeping the login and all trade history.{" "}
+        <strong>Disable</strong> blocks sign-in and removes the account from the leaderboard (reversible).{" "}
+        <strong>Delete</strong> is permanent and only goes through for an account with no completed market trades —
+        otherwise disable it.
       </p>
     </div>
   );

@@ -964,6 +964,20 @@ sale_price - market_tax
 
 The buyer's coins are transferred; these are not newly created coins.
 
+### Admin adjustment
+
+An admin may credit or debit any member's wallet through the audited
+`kut.admin_adjust_wallet` RPC (both directions; `abs(amount)` capped; never
+below zero; a typed reason required). Recorded with `wallet_ledger.reason =
+'admin_grant'` and a `kut.admin_account_events` audit row, and the member is
+told in their inbox. This is the only coin faucet other than starter and
+attendance. See ADR-035.
+
+> A soft account reset (`kut.admin_reset_account`, ADR-035) also moves coins:
+> it writes one compensating `-(balance)` entry (`reason 'admin_reset'`) and a
+> fresh `+250` starter, netting the wallet to `250`. It does not create coins
+> beyond the standard starter grant.
+
 ---
 
 ## 25. MVP coin sinks
@@ -1938,6 +1952,8 @@ ledger_reason:
   market_tax
   challenge
   admin_adjustment
+  admin_grant   # ADR-035: kut.admin_adjust_wallet
+  admin_reset   # ADR-035: kut.admin_reset_account wallet zero + starter re-grant
 ```
 
 Exact PostgreSQL enum vs constrained text is an implementation choice. Prefer migration-friendly constrained text if agents are likely to change categories frequently.
@@ -3574,6 +3590,12 @@ This does not need a sophisticated BI system.
 
 Simple queries/cards are enough.
 
+> **Note (ADR-035):** the per-reason coin bullets above are spec'd but not yet
+> built — `kut.pack_economy_health` reports `total_coin_supply` only. When a
+> per-reason breakdown is built it must include the two admin ledger reasons
+> `admin_grant` (audited faucet) and `admin_reset` (the reset's wallet zero +
+> starter re-grant); today both flow into the supply total automatically.
+
 ---
 
 ## 126. Economy warning signs
@@ -4255,7 +4277,7 @@ Tasks:
 5. Every wallet change has a ledger entry.
 6. A pack result cannot be rerolled by refreshing.
 7. A pack cannot mint cards without its matching debit.
-8. Starter grant happens at most once.
+8. Starter grant happens at most once per account, except an explicit audited admin reset (ADR-035).
 9. Attendance reward happens at most once per Player/session.
 10. Client cannot choose pack results.
 11. Client cannot choose discard payout.

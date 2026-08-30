@@ -13,6 +13,10 @@ export const ECONOMY = {
   basicPackCardCount: 3,
   marketTaxPercent: 5,
   listingDurationHours: 24,
+  // Per-call fat-finger cap on abs(amount) for the admin coin faucet
+  // (kut.admin_adjust_wallet, ADR-035). Mirrored by the SQL guard in
+  // 20260905000000_admin_economy_tools.sql.
+  adminWalletAdjustMax: 100_000,
 } as const;
 
 export const LIVE_PACK_WEIGHTS: Record<RarityTier, number> = {

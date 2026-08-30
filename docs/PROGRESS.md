@@ -1480,3 +1480,44 @@ Mixed-state window (same shape as Batch B): the leaderboard `TF`→`KUT` fix and
 the Home subtitle ship via Vercel on merge; the inbox backfill + function swap
 ship on the hosted push. Between them `/messages` still shows "TF Coins" on old
 and new rows — harmless, resolves on push.
+
+## Batch C deployed to hosted - 2026-08-31
+
+`20260904000000_canonical_coin_name.sql` is live at `kut.vibetrunk.com`.
+Followed the risk-tiered ADR-032 / ADR-021 workflow for the **data-changing**
+tier (one backfill `UPDATE` on `kut.user_notifications`):
+
+- **Catalogued** byte-identical into `VibeTrunk/supabase` (PR #13,
+  squash-merged); `scripts/verify-catalog.ps1` extended and run → "Central
+  catalogue matches 36 approved source migrations". Source/catalogue git blob
+  identical (`3a9ea223`).
+- **Fresh** encrypted `kut`-schema backup (schema DDL + data) via
+  `scripts/backup-kut-hosted.ps1` immediately before the push — the prior
+  on-file backup was the pre-Batch-B one, so a new run was required per the
+  data-changing tier. Round-trip integrity check passed; logged in
+  `.private-backups/BACKUP_LOG.md`. Restore drill not re-run (last: 2026-08-30;
+  this migration doesn't change the dump/replay mechanism).
+- Pre-push from `VibeTrunk/supabase`: `supabase migration list --linked` showed
+  the 35 previously-deployed migrations matching remote with no drift and
+  `20260904000000` pending; `supabase db push --dry-run` confirmed the one
+  migration, no seeds/roles.
+- The real `supabase db push` was run by the user from their own terminal —
+  live shared-Supabase mutations are not run unattended in this project.
+- **Verified against the hosted project**: a fresh `supabase db dump --linked
+  -s kut` contains **zero** `TF Coins` references; "KUT Coins" appears in the
+  `open_pack` and `buy_listing` insufficient-funds raises and both
+  `buy_listing` `market_purchase` / `market_sale` notification `format()`
+  bodies (the `attendance_reward` body already said "KUT Coins" and is
+  unchanged). The backfill `UPDATE` committed in the same transaction as the
+  `create or replace`s. `migration list --linked` shows `20260904000000`
+  Local = Remote.
+- `VibeTrunk/supabase` README / CLAUDE ledger notes flipped to "applied
+  2026-08-31" (PR #14).
+
+Front-end (Vercel, auto-deploy on the KUT PR #19 merge) and the hosted schema
+are now consistent: "KUT Coins" is the currency name on every surface,
+including the Message Center inbox and the leaderboard's `KUT` ticker. The Home
+header now also expands the acronym ("Kelderklasse Ultimate Team", tester
+feedback finding #11). Batch C closes tester feedback #7 + #11; Batch D (admin
+economy tools — #8 assign coins, #6 soft account reset) is the next
+tester-feedback batch.

@@ -107,12 +107,30 @@ not reset, clean, or overwrite the working tree.
    and a signed-in narrow-viewport click-through of Home, Collection, Market,
    Messages, the admin tab strip, and the new `/how-it-works`, `/players`, and
    `/settings/card` pages were completed.
-2. **Hosted setup:** backup, Supabase migration dry-run, hosted Auth settings,
-   Vercel environment variables, CSP host replacement, and preview deployment
-   are intentionally not done. Follow `docs/OPERATIONS.md` only with explicit
-   approval.
-3. **Git:** the MVP work is committed and pushed. Do not force-push or deploy
-   further changes without user authorization.
+2. **Hosted setup:** _done._ KUT is live at `kut.vibetrunk.com`; hosted Auth
+   settings, Vercel env vars, and the CSP (now in `src/proxy.ts`) are
+   configured. Migrations deploy only from `VibeTrunk/supabase` (ADR-021).
+3. **Pre-alpha invite gate:** _cleared 2026-08-30._ All three must-do checks
+   verified against prod:
+   - **Backup + restore** — `scripts/backup-kut-hosted.ps1` produced an
+     encrypted `kut`-schema dump; the `docs/BACKUP.md` restore drill replayed
+     it into a throwaway local DB with no errors (25 players, 1 profile, no
+     economy data yet). See `.private-backups/BACKUP_LOG.md`.
+   - **Account recovery** — a throwaway hosted account was locked out and
+     reset via `/admin/accounts`. This is the entire recovery path (no email
+     on file for anyone).
+   - **Invite claim** — issued and claimed an invite end-to-end on the live
+     domain with a fresh username; one-time token, synthetic-email mapping,
+     and redirect allow-list all behave.
+4. **Git:** work is committed and pushed via squash-merged PRs. Do not
+   force-push or deploy further changes without user authorization.
+
+Early-alpha follow-ups (not blockers): run the backup before each Friday
+session; skim Vercel + Supabase logs after sessions (no alerting exists);
+provision a second admin (currently a single operator / single recovery
+path); don't retune economy formulas on one odd outcome; be ready to pull a
+`/settings/card` photo (uploads are unmoderated). The `player-photos` storage
+bucket is not covered by the SQL backup.
 
 ## Recommended next phases
 

@@ -36,14 +36,19 @@ don't add cross-repo coupling beyond the shared Supabase project.
 
 KUT is live at `https://kut.vibetrunk.com` as Vercel project `kut`. The
 hosted `kut` schema is applied through
-`20260904000000_canonical_coin_name.sql` (ADR-034 &mdash; "KUT Coins" is the
-one currency name: `open_pack` / `buy_listing` error strings + the two market
-notification bodies, plus a backfill of existing `user_notifications` rows;
-tester feedback batch C; deployed 2026-08-31). The two migrations before it,
-both deployed 2026-08-31: `20260903000000_drop_is_tradeable.sql` (ADR-033,
-batch B &mdash; every card tradeable, `is_tradeable` dropped) and, before
-that, `20260902000000_starter_reveal_and_rating_snapshots.sql` (ADR-031,
-deployed 2026-08-30).
+`20260905000000_admin_economy_tools.sql` (ADR-035 &mdash; two `is_admin()`-gated
+economy RPCs: `admin_adjust_wallet` (audited coin faucet, ledger reason
+`admin_grant`) and `admin_reset_account` (soft club reset, reason
+`admin_reset`), plus the `admin_account_events` audit table and a widened
+`wallet_ledger.reason` check; tester feedback batch D, #8 + #6; additive tier;
+deployed 2026-08-31). Before it, also deployed 2026-08-31:
+`20260904000000_canonical_coin_name.sql` (ADR-034, batch C &mdash; "KUT Coins"
+is the one currency name: `open_pack` / `buy_listing` error strings + the two
+market notification bodies, plus a backfill of existing `user_notifications`
+rows) and `20260903000000_drop_is_tradeable.sql` (ADR-033, batch B &mdash;
+every card tradeable, `is_tradeable` dropped); and,
+`20260902000000_starter_reveal_and_rating_snapshots.sql` (ADR-031, deployed
+2026-08-30).
 
 Supabase records migration history globally for the shared database, not per
 schema. Hosted migrations are therefore catalogued and deployed only from

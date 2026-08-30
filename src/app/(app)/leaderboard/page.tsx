@@ -46,7 +46,7 @@ export default async function LeaderboardPage() {
                   <span className="row-span-2 text-2xl font-black text-brass sm:row-span-1">#{club.rank}</span>
                   <span className="font-black">{club.display_name}{club.is_current_user && <span className="ml-2 text-xs uppercase tracking-[0.12em] text-brass">You</span>}</span>
                   <span className="text-sm text-ink-faint">{club.club_name}</span>
-                  <span className="font-black text-brass sm:text-right">{Number(club.club_value).toLocaleString()} TF</span>
+                  <span className="font-black text-brass sm:text-right">{Number(club.club_value).toLocaleString()} KUT</span>
                   <span className="text-sm text-ink-dim sm:text-right">{club.card_count} cards</span>
                   <span className="text-sm text-ink-dim sm:text-right">{club.unique_player_count} players</span>
                 </li>

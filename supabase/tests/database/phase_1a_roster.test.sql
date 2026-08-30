@@ -543,7 +543,7 @@ set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000000099';
 select throws_ok(
   $$ select kut.open_pack('tfh-pack', '00000000-0000-4000-8000-000000000093'); $$,
   'P0001',
-  'insufficient TF Coins for this pack',
+  'insufficient KUT Coins for this pack',
   'insufficient balance cannot create a second pack opening'
 );
 reset role;

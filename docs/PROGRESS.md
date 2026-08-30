@@ -1437,3 +1437,46 @@ The front-end (Vercel, auto-deploy on the KUT PR #17 merge) and the hosted
 schema are now consistent: every Card Copy is tradeable and discardable,
 starter cards included. Batch C (coin-name SQL sweep) is the next
 tester-feedback batch.
+
+## Batch C — "KUT Coins" is the one currency name (tester feedback #7 + #11) - 2026-08-31
+
+Branch `feat/canonical-coin-name` (off `main`). See ADR-034. "KUT Coins" is now
+canonical everywhere (singular "KUT Coin"); the build spec's old working name
+"TF Coins" is retired. The user confirmed the exact name and chose a short
+**"KUT"** ticker for the leaderboard's narrow value column.
+
+- **Migration `20260904000000_canonical_coin_name.sql`** (data-changing tier,
+  ADR-032 — one backfill `UPDATE`). `create or replace`s `open_pack` +
+  `buy_listing` from their latest `20260903000000` bodies with `TF Coins` →
+  `KUT Coins` in the two insufficient-funds `raise` strings and the two
+  `market_purchase` / `market_sale` `format()` notification bodies, then a
+  one-shot `update kut.user_notifications set body = replace(body, 'TF Coins',
+  'KUT Coins') where event_type in ('market_purchase','market_sale') and body
+  like '%TF Coins%'` for the rows already on hosted (backfilled once each by
+  `20260817020000` / `…020100`). Reverse `replace()` in the header, scoped to
+  the same `event_type`s so it is lossless (`attendance_reward` bodies already
+  said "KUT Coins" and are untouched both ways). No economy value, ledger
+  `reason`, column, price, or formula changed — Part L untouched.
+- **Front-end**: `leaderboard/page.tsx` value column `{value} TF` → `{value}
+  KUT`. `src/app/(app)/page.tsx` (#11) gains a "Kelderklasse Ultimate Team"
+  subtitle under the "This week in KUT" heading — the full name previously
+  appeared only in `layout.tsx` metadata and `login/page.tsx`. Front-end only,
+  no migration.
+- **Spec / docs**: `docs/BUILD_SPEC.md` glossary entry reframed `**TF Coins**`
+  → `**KUT Coins**`; L891 / L919 / L937 / L3556 updated; `docs/decisions.md`
+  ADR-014 pack-definition line and `README.md` My Club paragraph updated;
+  ADR-034 added. Dated historical `docs/PROGRESS.md` lines left as written.
+- **Tests**: `phase_1a_roster.test.sql` — the one `throws_ok` asserting the
+  pack error string updated to `insufficient KUT Coins for this pack`. No
+  other test asserts the string (grepped). Plan count unchanged.
+
+Local gate: `npm run verify:fast` + `npm run test:db`. Hosted deploy is the
+separate `VibeTrunk/supabase` ADR-021 step for the **data-changing** tier
+(fresh backup immediately before the push; catalogue the file byte-identical
+and extend `scripts/verify-catalog.ps1`) — never `supabase db push` from this
+repo. This repo's copy is local-only until then.
+
+Mixed-state window (same shape as Batch B): the leaderboard `TF`→`KUT` fix and
+the Home subtitle ship via Vercel on merge; the inbox backfill + function swap
+ship on the hosted push. Between them `/messages` still shows "TF Coins" on old
+and new rows — harmless, resolves on push.

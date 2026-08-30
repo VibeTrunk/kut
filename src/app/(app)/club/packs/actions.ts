@@ -29,7 +29,7 @@ export async function openPack(
   });
 
   if (error || !data || typeof data !== "object" || !("opening_id" in data) || typeof data.opening_id !== "string") {
-    return { error: "The pack could not be opened. Check your TF Coin balance and try again." };
+    return { error: "The pack could not be opened. Check your KUT Coin balance and try again." };
   }
 
   revalidatePath("/club/packs", "layout");

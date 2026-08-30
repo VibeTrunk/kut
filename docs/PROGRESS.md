@@ -1573,3 +1573,39 @@ reviewed, ride the last scheduled backup, user runs `db push`, verify the
 three new objects on hosted). Never `supabase db push` from this repo.
 Mixed-state window: between the KUT merge and the hosted push the two new
 `/admin/links` buttons return an RPC-not-found error if used — push promptly.
+
+## Batch D deployed to hosted - 2026-08-31
+
+`20260905000000_admin_economy_tools.sql` is live at `kut.vibetrunk.com`.
+Followed the **additive**-tier ADR-032 / ADR-021 workflow (all `create table` /
+`create or replace function` / one widened check; no data migration):
+
+- **KUT PR #21** merged → Vercel shipped the `/admin/links` UI.
+- **Catalogued** byte-identical into `VibeTrunk/supabase` (PR #15,
+  squash-merged); source/catalogue git blob identical (`a9e84887`).
+  `scripts/verify-catalog.ps1` extended and run → "Central catalogue matches
+  37 approved source migrations".
+- **No fresh backup** — additive tier rides the last scheduled
+  `backup-kut-hosted.ps1` run; restore drill not re-run (this migration doesn't
+  change the dump/replay mechanism).
+- Pre-push from `VibeTrunk/supabase`: `supabase migration list --linked` showed
+  the 36 previously-deployed migrations matching remote with no drift and
+  `20260905000000` pending; `supabase db push --dry-run` confirmed the one
+  migration, no seeds/roles.
+- The real `supabase db push` was run by the user from their own terminal —
+  live shared-Supabase mutations are not run unattended in this project.
+- **Verified against the hosted project** (`supabase db dump --linked -s kut`):
+  `kut.admin_account_events` table + the `admin_account_events_reset_idem_idx`
+  partial unique index + the `admins read admin account events` RLS policy;
+  `kut.admin_adjust_wallet(uuid, bigint, text)` and
+  `kut.admin_reset_account(uuid, uuid)`, both `revoke all … from public` +
+  `grant … to authenticated`; `wallet_ledger_reason_check` now lists
+  `admin_grant` + `admin_reset` (the prior 8 values plus these 2).
+  `migration list --linked` shows `20260905000000` Local = Remote.
+- `VibeTrunk/supabase` README / CLAUDE ledger notes flipped to "applied
+  2026-08-31" (PR #16).
+
+Front-end (Vercel, auto-deploy on the KUT PR #21 merge) and the hosted schema
+are now consistent: `/admin/links` "Adjust coins" and "Reset club" work end to
+end. Batch D closes tester feedback #8 + #6; Batch E (content features — #4
+Goalkeeper, #5 bibs bonus, #10 newsfeed) is the last tester-feedback batch.

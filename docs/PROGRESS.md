@@ -1521,3 +1521,55 @@ header now also expands the acronym ("Kelderklasse Ultimate Team", tester
 feedback finding #11). Batch C closes tester feedback #7 + #11; Batch D (admin
 economy tools — #8 assign coins, #6 soft account reset) is the next
 tester-feedback batch.
+
+## Batch D — admin economy tools (ADR-035) - 2026-08-31
+
+Branch `feat/admin-economy-tools`. Tester feedback #8 (admin assigns coins) +
+#6 (reset a traded account). **Additive** tier (ADR-032): the migration is all
+`create table` / `create or replace function` / one widened check constraint
+and mutates no member rows; the reset *operation* mutates rows at run time,
+`is_admin()`-gated.
+
+- **Migration** `20260905000000_admin_economy_tools.sql`:
+  - `kut.admin_adjust_wallet(uuid, bigint, text)` — audited coin faucet, both
+    directions, `abs` cap 100000 (`22023`), never below zero (`P0001`), typed
+    1–200-char reason. `wallet_ledger.reason 'admin_grant'` + a
+    `kut.admin_account_events` row + an `admin_notice` inbox row. Not self, not
+    a superadmin target, only-superadmin-adjusts-admin (mirrors ADR-030).
+  - `kut.admin_reset_account(uuid, uuid)` — cancels active listings, soft-burns
+    every owned card, deletes pack history + notifications, zeroes the wallet
+    via one `-(balance)` + `+250` ledger pair (`reason 'admin_reset'`,
+    net 250), re-grants the 3-card starter inline, nulls `starter_opened_at`
+    (keeps `starter_claimed_at`) to replay `/welcome`. Keeps `market_sales`,
+    market ledger rows, and `attendance_rewards` guard rows. Idempotent on
+    `p_idempotency_key` (audit-row `detail->>'idempotency_key'` + partial
+    unique index + `profiles` `FOR UPDATE`).
+  - `kut.admin_account_events` audit table, admin-read RLS like
+    `password_reset_events`.
+  - `wallet_ledger.reason` check widened: `+ 'admin_grant', 'admin_reset'`.
+- **`src/game/economy.ts`**: `adminWalletAdjustMax: 100_000`.
+- **Front-end**: `/admin/links` — `page.tsx` now also loads each account's
+  `wallets.balance` and a per-load reset idempotency key; `links-table.tsx`
+  gains an amount+reason "Adjust coins" mini-form and a "Reset club" confirm
+  button per row (both behind the existing `canModerate` gate);
+  `actions.ts` gains `adjust_coins` / `reset_account` intents + error mapping +
+  `/admin/economy` `/messages` revalidation. `admin-tabs.tsx`: "Account links"
+  → "Accounts", old "Accounts" (password recovery) → "Recovery".
+- **Spec**: Part 24 §928 gains an "Admin adjustment" coin source; Part L §162
+  invariant #8 reworded with the ADR-035 carve-out (#4/#5/#9 stay literally
+  true); Part 125 + §58 `ledger_reason` list note the two new reasons.
+- **Tests**: `member_admin_links.test.sql` `plan(25)` → `plan(47)` — has_*
+  for both RPCs + the table, and the full guard/happy-path matrix for each
+  (non-admin `42501`, self `P0001`, over-cap `22023`, below-zero `P0001`,
+  credit writes one ledger + one notice + one audit row; reset burns the owned
+  card, nets the wallet to 250, keeps `market_sales` + `attendance_rewards`,
+  and a replayed idempotency key is a no-op).
+
+Local gate: `npm run verify:fast` + `npm run test:db` (`supabase migration up
+--local`). Hosted deploy is the separate **additive**-path `VibeTrunk/supabase`
+ADR-021 step (catalogue byte-identical, extend `verify-catalog.ps1` →
+"matches 37", `migration list --linked` no drift, `db push --dry-run`
+reviewed, ride the last scheduled backup, user runs `db push`, verify the
+three new objects on hosted). Never `supabase db push` from this repo.
+Mixed-state window: between the KUT merge and the hosted push the two new
+`/admin/links` buttons return an RPC-not-found error if used — push promptly.

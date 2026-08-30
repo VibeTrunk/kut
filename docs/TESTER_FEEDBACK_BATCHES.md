@@ -48,7 +48,7 @@ Finding 3 was withdrawn by the tester (no entry).
 | **A — copy & labels** | #1, #2, #7 front-end strings, #9 "Live edition" label | none | merged (PR #14) |
 | **B — tradability** | #9 model change (every card tradable, delete the untradable concept), drop guards, spec + tests | data-changing (drop `user_cards.is_tradeable`, market RPC semantics) | **done** — KUT PR #17, ADR-033, migration `20260903000000`; deployed to hosted 2026-08-31 (VibeTrunk/supabase PR #11 + #12) |
 | **C — coin-name sweep** | #7 SQL function bodies (`open_pack` / `buy_listing` error strings + market notification bodies) + backfill of existing `user_notifications` rows + leaderboard `TF`→`KUT` ticker + spec/README/ADR realignment; #11 expand "KUT" on Home | data-changing (backfill `update` on `user_notifications`) | **done** — KUT PR #19, ADR-034, migration `20260904000000`; deployed to hosted 2026-08-31 (VibeTrunk/supabase PR #13 + #14) |
-| **D — admin economy tools** | #8 assign coins, #6 soft account reset | additive (new RPC + admin form; the reset *operation* mutates rows at run time, not the migration) | not started |
+| **D — admin economy tools** | #8 assign coins, #6 soft account reset | additive (new RPC + admin form; the reset *operation* mutates rows at run time, not the migration) | **in progress** — branch `feat/admin-economy-tools`, ADR-035, migration `20260905000000_admin_economy_tools.sql`; local-only until the `VibeTrunk/supabase` hosted push |
 | **E — content features** | #4 Goalkeeper, #5 bibs bonus, #10 newsfeed (may split further) | mixed — newsfeed view + bibs storage + GK enum value are additive; reassigning existing players to GK is data-changing | not started |
 
 ## Open product decisions (needed before B–E)
@@ -56,7 +56,19 @@ Finding 3 was withdrawn by the tester (no entry).
 - **#4** — GK reuses the 6 existing stats with its own offset profile, or gets a
   distinct GK stat set?
 - **#5** — bibs bonus is coins only, or also a rating/OVR effect? Coin amount?
-- **#6** — define "reset" as the soft reset described above?
+- **#6** — ~~define "reset" as the soft reset described above?~~ **Decided
+  2026-08-31 (ADR-035):** yes — `kut.admin_reset_account` wipes wallet / owned
+  cards (soft burn) / pack history / notifications and re-grants the standard
+  250 + 3 starter, replays the `/welcome` reveal, and **keeps** the
+  login/username/profile/player link, every `market_sales` + market
+  `wallet_ledger` row, and every `attendance_rewards` guard row (so invariant
+  #9 holds). Idempotent on an `p_idempotency_key uuid`.
+- **#8** — ~~admin assigns coins: grant only or both directions? cap? tell the
+  member?~~ **Decided 2026-08-31 (ADR-035):** `kut.admin_adjust_wallet`, both
+  directions, `abs(amount)` capped at 100,000, never below zero, a typed
+  1–200-char reason required, `wallet_ledger.reason = 'admin_grant'`, an
+  `admin_notice` inbox row, audited in `kut.admin_account_events`. Any
+  non-superadmin target, not self; only a superadmin may adjust an admin.
 - **#7** — ~~confirm canonical name is "KUT Coins" and the spec is realigned.~~
   **Decided 2026-08-31:** canonical name is exactly "KUT Coins" (singular "KUT
   Coin"); the leaderboard's narrow value column uses a short "KUT" ticker.

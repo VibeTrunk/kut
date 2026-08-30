@@ -1395,8 +1395,45 @@ softer hold rule) and chose to **drop the column** rather than force it true.
   `tests/integration/market-race.test.ts` — `is_tradeable` dropped from
   `user_cards` inserts.
 
-Local gate: `npm run verify:fast` + `npm run test:db` (see the tests line in
-the next commit / handoff). Hosted deploy is the separate `VibeTrunk/supabase`
-ADR-021 step (fresh backup immediately before the push, since this is
-data-changing) — never `supabase db push` from this repo. This repo's copy is
-local-only until then.
+Local gate: `npm run verify:fast` (lint, typecheck, 33 unit) + `npm run
+test:db` (240 pgTAP against the migrated schema, via `supabase migration up
+--local`). Hosted deploy is the separate `VibeTrunk/supabase` ADR-021 step
+(fresh backup immediately before the push, since this is data-changing) —
+never `supabase db push` from this repo. This repo's copy is local-only until
+then.
+
+## Batch B deployed to hosted - 2026-08-31
+
+`20260903000000_drop_is_tradeable.sql` is live at `kut.vibetrunk.com`.
+Followed the risk-tiered ADR-032 / ADR-021 workflow for the **data-changing**
+tier:
+
+- **Catalogued** byte-identical into `VibeTrunk/supabase` (PR #11,
+  squash-merged); `scripts/verify-catalog.ps1` extended and run → "matches
+  35". Source/catalogue SHA-256 identical (`b0c839ef…`).
+- **Fresh** encrypted `kut`-schema backup (schema DDL + data) via
+  `scripts/backup-kut-hosted.ps1` immediately before the push — not riding the
+  last scheduled one, per the data-changing tier. Round-trip integrity check
+  passed; logged in `.private-backups/BACKUP_LOG.md`. The restore drill was
+  not re-run (last: 2026-08-30; this migration doesn't change the
+  dump/replay mechanism).
+- Pre-push from `VibeTrunk/supabase`: `supabase migration list --linked`
+  showed the 34 previously-deployed migrations matching remote with no drift
+  and `20260903000000` pending; `supabase db push --dry-run` confirmed the one
+  migration, no seeds/roles.
+- The real `supabase db push` was run by the user from their own terminal —
+  live shared-Supabase mutations are not run unattended in this project.
+- **Verified against the hosted project**: `supabase migration list --linked`
+  shows `20260903000000` matched Local/Remote (35 migrations, no drift); a
+  fresh `supabase db dump --linked -s kut` contains **zero** `is_tradeable`
+  references; `kut.user_cards` is now `id, edition_id, owner_id, source,
+  acquired_at, burned_at, created_at`; `grant_starter_pack`, `open_pack`,
+  `discard_card`, `get_listing_bounds`, `create_listing`, `buy_listing` are
+  all recreated and `discard_card` no longer carries the tradeability gate.
+- `VibeTrunk/supabase` README / CLAUDE ledger notes flipped to "applied
+  2026-08-31" (PR #12).
+
+The front-end (Vercel, auto-deploy on the KUT PR #17 merge) and the hosted
+schema are now consistent: every Card Copy is tradeable and discardable,
+starter cards included. Batch C (coin-name SQL sweep) is the next
+tester-feedback batch.

@@ -44,7 +44,7 @@ Finding 3 was withdrawn by the tester (no entry).
 | Batch | Contents | Migration tier (ADR-032) | Status |
 |-------|----------|--------------------------|--------|
 | **A — copy & labels** | #1, #2, #7 front-end strings, #9 "Live edition" label | none | merged (PR #14) |
-| **B — tradability** | #9 model change (every card tradable, delete the untradable concept), drop guards, spec + tests | data-changing (drop `user_cards.is_tradeable`, market RPC semantics) | in progress — branch `feat/all-cards-tradable`, ADR-033, migration `20260903000000`; local gate pending, hosted deploy pending |
+| **B — tradability** | #9 model change (every card tradable, delete the untradable concept), drop guards, spec + tests | data-changing (drop `user_cards.is_tradeable`, market RPC semantics) | **done** — KUT PR #17, ADR-033, migration `20260903000000`; deployed to hosted 2026-08-31 (VibeTrunk/supabase PR #11 + #12) |
 | **C — coin-name sweep** | #7 SQL function bodies + backfill of existing messages + spec realignment | data-changing (backfill `update` on `user_notifications`) | not started |
 | **D — admin economy tools** | #8 assign coins, #6 soft account reset | additive (new RPC + admin form; the reset *operation* mutates rows at run time, not the migration) | not started |
 | **E — content features** | #4 Goalkeeper, #5 bibs bonus, #10 newsfeed (may split further) | mixed — newsfeed view + bibs storage + GK enum value are additive; reassigning existing players to GK is data-changing | not started |

@@ -126,10 +126,11 @@ foreign keys are enforced.
 ## Cadence
 
 - **Now:** one fresh backup + one restore drill before the first invite.
-- **Ongoing:** before every hosted schema change (already required by
-  `docs/OPERATIONS.md`), and on a schedule matched to activity — at least
-  weekly once real members are trading, ideally right before each Friday
-  session.
+- **Ongoing:** a fresh run before every **data-changing** hosted migration
+  (see the risk-tiered checklist in `docs/OPERATIONS.md`; additive migrations
+  ride on the last scheduled backup), and on a schedule matched to activity —
+  at least weekly once real members are trading, ideally right before each
+  Friday session.
 - Re-run the restore drill roughly monthly, or any time the schema changes
   shape significantly.
 

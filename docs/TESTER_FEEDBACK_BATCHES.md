@@ -7,7 +7,10 @@ deliver **all of it eventually**, in the ordered batches below rather than one
 large change — several items change a game rule, an economy faucet, or a DB
 invariant and so need their own migration, `docs/decisions.md` entry, and test
 updates. Hosted migrations deploy from `VibeTrunk/supabase`, not this repo, so
-every DB batch has a separate hosted-deploy step.
+every DB batch has a separate hosted-deploy step, run through the risk-tiered
+checklist in `docs/OPERATIONS.md` (ADR-032): additive migrations are the light
+path (dry-run + parity + merge); data-changing ones also need a fresh backup
+and an SQL-reversible shape.
 
 ## Findings
 
@@ -38,13 +41,13 @@ Finding 3 was withdrawn by the tester (no entry).
 
 ## Delivery batches
 
-| Batch | Contents | DB migration? | Status |
-|-------|----------|---------------|--------|
-| **A — copy & labels** | #1, #2, #7 front-end strings, #9 "Live edition" label | no | in progress (branch `fix/tester-feedback-batch-a`) |
-| **B — tradability** | #9 model change (every card tradable, delete the untradable concept), drop guards, spec + tests | yes | not started |
-| **C — coin-name sweep** | #7 SQL function bodies + backfill of existing messages + spec realignment | yes | not started |
-| **D — admin economy tools** | #8 assign coins, #6 soft account reset | yes | not started |
-| **E — content features** | #4 Goalkeeper, #5 bibs bonus, #10 newsfeed (may split further) | yes | not started |
+| Batch | Contents | Migration tier (ADR-032) | Status |
+|-------|----------|--------------------------|--------|
+| **A — copy & labels** | #1, #2, #7 front-end strings, #9 "Live edition" label | none | merged (PR #14) |
+| **B — tradability** | #9 model change (every card tradable, delete the untradable concept), drop guards, spec + tests | data-changing (`update user_cards`, market RPC semantics) | not started |
+| **C — coin-name sweep** | #7 SQL function bodies + backfill of existing messages + spec realignment | data-changing (backfill `update` on `user_notifications`) | not started |
+| **D — admin economy tools** | #8 assign coins, #6 soft account reset | additive (new RPC + admin form; the reset *operation* mutates rows at run time, not the migration) | not started |
+| **E — content features** | #4 Goalkeeper, #5 bibs bonus, #10 newsfeed (may split further) | mixed — newsfeed view + bibs storage + GK enum value are additive; reassigning existing players to GK is data-changing | not started |
 
 ## Open product decisions (needed before B–E)
 

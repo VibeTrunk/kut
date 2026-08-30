@@ -11,23 +11,53 @@ from [`VibeTrunk/supabase`](https://github.com/VibeTrunk/supabase). KUT keeps
 matching migration files only so its local stack and database tests reproduce
 the hosted schema. Do not run a hosted `supabase db push` from this repository.
 
-## Backup before any hosted schema change
+## Hosted migration process (risk-tiered)
 
-See [`docs/BACKUP.md`](BACKUP.md) for the `kut`-schema backup script
-(`scripts/backup-kut-hosted.ps1`), the restore drill, and the cadence. The
-steps below are the schema-change-specific checklist.
+There is **no PITR and no managed backup** on the shared project's plan
+(`docs/BACKUP.md`), so the encrypted logical dump is the only way back to a
+known-good state. That makes a pre-migration backup load-bearing — but only
+for migrations that can actually lose data. Classify every migration first,
+then run the matching checklist. When unsure, treat it as data-changing.
 
-1. Confirm which shared Supabase project and database branch are in scope.
-   KUT uses the `kut` schema and must not affect other VibeTrunk schemas.
-2. Create or confirm a database backup using the hosted project's supported
-   backup/export facility. Store its timestamp, project reference, and restore
-   instructions in the private operator record.
-3. Create a second encrypted logical export with access restricted to the
-   project owners. Keep database connection strings and exports out of this
-   repository, issue trackers, chat logs, and browser storage.
-4. Verify a restore path in a non-production environment before relying on a
-   backup for an alpha. A restore of the shared project can affect every
-   VibeTrunk tool, so it needs explicit coordination.
+- **Additive** — new table / view / function, `create or replace` of a
+  function or view, a new column with a default or nullable, a new index, a
+  new `check`/enum value. Nothing existing is rewritten or dropped.
+- **Data-changing** — a backfill `update`/`delete`, `drop`/`rename`/retype of
+  a column, anything that triggers a rating rebuild (e.g. reassigning an
+  existing player's archetype), or any change to `wallets`, `wallet_ledger`,
+  `user_cards`, `market_listings`, or `market_sales` semantics.
+
+Always, both tiers:
+
+1. Confirm the shared Supabase project and database branch in scope. KUT uses
+   the `kut` schema and must not affect other VibeTrunk schemas.
+2. Matching reviewed migration files exist in **this** repo and in the
+   `VibeTrunk/supabase` catalogue (ADR-021); catalogue parity check passes.
+3. `npx supabase db push --dry-run` reviewed line by line.
+4. Local `npm run verify:fast && npm run test:db` passes. CI's `verify`
+   workflow runs the rest on every PR (`build`, `test:e2e`, and `test:db`
+   against a fresh local stack) — running `verify:full` locally per migration
+   is not required.
+5. Explicit sign-off, then the real push from `VibeTrunk/supabase` only.
+
+Data-changing tier also requires, before the push:
+
+6. A **fresh** `scripts/backup-kut-hosted.ps1` run (not just the last
+   scheduled one), its timestamp recorded in `.private-backups/BACKUP_LOG.md`.
+7. Write the migration to be reversible in SQL where practical — add a column
+   instead of mutating one, or snapshot pre-state into a scratch table in the
+   same migration — so a bad outcome is a one-line rollback, not a restore.
+
+Additive tier relies on the most recent **scheduled** backup instead of a
+fresh one. Keep that cadence tight (see `docs/BACKUP.md` — at least weekly
+once members trade, ideally right before each session) so "most recent
+scheduled backup" is never stale. Residual risk accepted: an additive
+migration that breaks in a way a follow-up migration cannot cleanly fix would
+fall back to that scheduled backup, losing whatever happened since.
+
+The restore drill (`docs/BACKUP.md`) is **periodic, not per-migration** — run
+it before the first real invite, then roughly monthly or whenever the schema
+changes shape significantly.
 
 Git migrations are necessary but are **not** a backup of user accounts,
 wallets, cards, sessions, or market history.
@@ -79,8 +109,11 @@ wallets, cards, sessions, or market history.
   member feedback; do not change formulas after a single unusual outcome.
 - Keep the local migration/test workflow working. Every hosted schema change
   must first exist as matching reviewed files in KUT and the central catalogue,
-  and pass locally before central deployment.
+  and pass locally before central deployment. Run it through the risk-tiered
+  checklist above.
 - Run `scripts/backup-kut-hosted.ps1` on a regular schedule appropriate to the
-  group’s activity and before any material change. Take a fresh backup and run
-  the [`docs/BACKUP.md`](BACKUP.md) restore drill once before the first real
-  invite.
+  group’s activity (at least weekly once members trade). A **fresh** run is
+  additionally required before a data-changing migration; an additive
+  migration rides on the last scheduled backup. Run the
+  [`docs/BACKUP.md`](BACKUP.md) restore drill once before the first real
+  invite, then periodically — not per migration.

@@ -1050,3 +1050,42 @@ per rebuild (~25 rows). Deployed to hosted 2026-08-30 via the ADR-021
 `VibeTrunk/supabase` workflow (`VibeTrunk/supabase` PR #9 catalogued it,
 `verify-catalog.ps1` "matches 34"; PR #10 flipped the ledger to applied) —
 see `docs/PROGRESS.md`. Rollback DDL is in the migration header.
+
+## ADR-032 — Risk-tiered hosted migration process
+
+The pre-ADR-021 / early-`docs/OPERATIONS.md` process treated every hosted
+migration identically: fresh encrypted backup, restore-drill verification,
+full `verify:full`, catalogue parity, dry-run, sign-off. On the shared
+project's plan there is no PITR and no managed backup (`docs/BACKUP.md`), so
+some of that is genuinely load-bearing — but applied to every migration it
+made even a one-line `create or replace` a ~1-hour ritual, which is a real
+disincentive to shipping small fixes during the alpha.
+
+Decision: classify each migration as **additive** (new object, `create or
+replace`, new nullable/defaulted column, new index/enum value — nothing
+existing rewritten) or **data-changing** (backfill, drop/retype, rating
+rebuild, or any change to wallet/ledger/card/market semantics), and run the
+matching checklist in `docs/OPERATIONS.md`. Both tiers keep the cheap
+high-value steps: catalogue parity, line-by-line `db push --dry-run`,
+`verify:fast` + `test:db` locally (full `verify:full` moves to CI-before-merge
+only), and explicit sign-off. Only the data-changing tier requires a **fresh**
+backup immediately before the push and a best-effort SQL-reversible migration
+shape; the additive tier rides on the most recent **scheduled** backup. The
+restore drill becomes periodic (before first invite, then ~monthly or on
+significant schema-shape change) rather than per-migration.
+
+Reason: process-design review during the tester-feedback batching
+(`docs/TESTER_FEEDBACK_BATCHES.md`). The user declined Supabase Pro (which
+would have added PITR and made most of this moot), so the trim keeps the steps
+that actually protect irreplaceable small-scale user data and drops the ones
+that were re-doing one-time work (restore drills) or running slow suites
+(e2e + build) locally on every change.
+
+Consequences: additive migrations go from a ~1-hour ritual to ~10–15 min
+(parity + dry-run + the two-repo PR hop + merge). Data-changing migrations
+stay ~25–35 min. Accepted residual risk: an additive migration that breaks in
+a way a follow-up migration cannot cleanly fix falls back to the last
+scheduled backup, losing anything since — bounded small as long as the backup
+cadence stays tight (at least weekly once members trade, per `docs/BACKUP.md`).
+No code or schema change; `docs/OPERATIONS.md` and `docs/BACKUP.md` updated to
+match.

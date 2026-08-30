@@ -36,8 +36,9 @@ don't add cross-repo coupling beyond the shared Supabase project.
 
 KUT is live at `https://kut.vibetrunk.com` as Vercel project `kut`. The
 hosted `kut` schema is applied through
-`20260901000000_admin_manage_accounts_and_leaderboard.sql` (the ADR-027..030
-alpha-readiness batch, deployed 2026-08-30).
+`20260902000000_starter_reveal_and_rating_snapshots.sql` (ADR-031 &mdash;
+weekly rating snapshots, Home "Top risers", the `/welcome` starter reveal;
+deployed 2026-08-30, right after the ADR-027..030 alpha-readiness batch).
 
 Supabase records migration history globally for the shared database, not per
 schema. Hosted migrations are therefore catalogued and deployed only from

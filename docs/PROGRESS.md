@@ -1237,9 +1237,8 @@ this dev DB has leftover member profiles linked to seed players and
 `Test Season 2026` left active, which trips `phase_1a_roster.test.sql`'s
 invite-claim fixtures (pre-existing, unrelated to this change).
 
-Migration is local-only; it joins the pending ADR-021 batch (`20260830` /
-`20260831` / `20260901` / `20260902`; `verify-catalog.ps1` then expects
-"matches 32"). Rollback DDL is in the migration header.
+Migration deployed to hosted 2026-08-30 (see the entry below). Rollback DDL
+is in the migration header.
 ## ADR-027..030 alpha-readiness batch deployed to hosted - 2026-08-30
 
 The three migrations (`20260830000000`, `20260831000000`, `20260901000000`)
@@ -1263,3 +1262,28 @@ account (`m.f.vanoostrom@gmail.com`, never used past 2026-08-15) was deleted
 from hosted; and the two nav pennant glyphs in `app-nav.tsx` moved from an
 inline `style={{ clipPath }}` (blocked by the prod nonce-only `style-src`) to
 a `.clip-pennant` stylesheet class.
+
+## ADR-031 (movers / starter reveal / pack animation) deployed to hosted - 2026-08-30
+
+`20260902000000_starter_reveal_and_rating_snapshots.sql` is live at
+`kut.vibetrunk.com`. Followed the ADR-021 workflow: catalogued byte-identical
+into `VibeTrunk/supabase` (PR #9), `verify-catalog.ps1` extended and run
+("matches 34" &mdash; not "32" as the entry above originally guessed); a
+`kut`-schema + data logical backup taken via `supabase db dump --linked`
+(`%USERPROFILE%\backups\kut_{schema,data}_pre_20260902_*.sql`, unencrypted &mdash;
+the passphrase script needs an interactive prompt); `migration list --linked`
+confirmed one pending migration, no drift; `db push --dry-run` showed the one
+migration, no seeds/roles. The user ran `supabase db push` from
+`VibeTrunk/supabase`.
+
+Verified against the hosted project (fresh `supabase db dump --linked --schema
+kut`): `kut.player_rating_snapshots`, the `player_season_state_capture_snapshot`
+trigger, `kut.top_risers`, `kut.profiles.starter_opened_at`,
+`kut.mark_starter_opened`, and `photo_path` on `kut.my_pack_opening_results`.
+`kut.vibetrunk.com/login` and `/` return 200. `VibeTrunk/supabase` PR #10
+flips the ledger to "applied 2026-08-30".
+
+The hosted "Top risers" widget shows its empty state until the first session
+published after this deploy creates a second week of snapshots. Every existing
+member's `starter_opened_at` was backfilled `= starter_claimed_at`, so only
+members onboarded from here on hit the `/welcome` gate.

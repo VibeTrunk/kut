@@ -168,12 +168,11 @@ unexplained currency. The existing ledger is the correct foundation.
    private `player-photos` bucket with folder-scoped `storage.objects` RLS,
    5 MiB / raster-only limits, a remove path, and the initials/jersey
    fallback. Consent is implicit for the invite-only group; a formal consent
-   toggle and admin photo moderation are still open. Local-only until the
-   `20260830000000` / `20260831000000` / `20260901000000` migrations are
-   deployed together as one ADR-021 batch (`verify-catalog.ps1` then expects
-   "matches 33"; the batch touches the `storage` schema and widens
-   `public_live_ratings` / `my_collection_cards` / `club_value_leaderboard` —
-   rollback DDL is in each migration header).
+   toggle and admin photo moderation are still open. The
+   `20260830000000` / `20260831000000` / `20260901000000` batch (touches the
+   `storage` schema; private `player-photos` bucket) was deployed to hosted
+   2026-08-30, followed by `20260902000000` (ADR-031) the same day — see
+   `docs/PROGRESS.md`.
 4. Build out the **Player directory** (`src/app/(app)/players/page.tsx`) into
    the real searchable full roster it was always meant to be.
    _Built 2026-08-29 (ADR-027):_ `/players` is now a query / rarity /

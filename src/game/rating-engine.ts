@@ -58,6 +58,9 @@ export const ARCHETYPE_OFFSETS: Record<Archetype, Attributes> = {
   playmaker: { pac: -2, sho: -2, pas: 10, dri: 5, def: -6, phy: -5 },
   defender: { pac: -2, sho: -7, pas: -1, dri: -4, def: 10, phy: 4 },
   tank: { pac: -8, sho: -2, pas: -2, dri: -4, def: 4, phy: 12 },
+  // Shot-stopper: strong DEF/PHY, weak SHO/DRI. Sums to 0 like the other six
+  // (BUILD_SPEC §589 — no large hidden OVR advantage). See ADR-036.
+  goalkeeper: { pac: -6, sho: -12, pas: 0, dri: -8, def: 14, phy: 12 },
 };
 
 function clamp(value: number, min: number, max: number): number {

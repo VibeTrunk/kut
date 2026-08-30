@@ -58,5 +58,15 @@
     "archetype": "speedster",
     "weeks": [{ "weekStart": "2026-08-03", "hasPublishedSession": true, "appearances": 2, "goals": 1 }],
     "expected": { "activityScore": 17, "formScore": 1.25, "liveOvr": 42, "rarityTier": "bronze" }
+  },
+  {
+    "name": "goalkeeper card is driven by turning up, not scoring",
+    "archetype": "goalkeeper",
+    "weeks": [
+      { "weekStart": "2026-08-03", "hasPublishedSession": true, "appearances": 2, "goals": 0 },
+      { "weekStart": "2026-08-10", "hasPublishedSession": true, "appearances": 1, "goals": 0 },
+      { "weekStart": "2026-08-17", "hasPublishedSession": true, "appearances": 2, "goals": 0 }
+    ],
+    "expected": { "activityScore": 43.37, "formScore": 0, "liveOvr": 53, "rarityTier": "silver" }
   }
 ]

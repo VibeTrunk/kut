@@ -1,8 +1,10 @@
-// Single source of truth for the six card archetypes. The slug list was
+// Single source of truth for the card archetypes. The slug list was
 // previously duplicated in the rating engine, the admin roster server action,
 // the admin add-player form, and the SQL RPCs; import from here instead.
 // The attribute offsets themselves stay in `rating-engine.ts` (ARCHETYPE_OFFSETS)
 // so the pure formula module keeps everything it needs in one place.
+// `goalkeeper` (ADR-036) is a seventh offset profile over the same six
+// attributes, not a distinct stat set.
 
 export const ARCHETYPES = [
   "all_rounder",
@@ -11,6 +13,7 @@ export const ARCHETYPES = [
   "playmaker",
   "defender",
   "tank",
+  "goalkeeper",
 ] as const;
 
 export type Archetype = (typeof ARCHETYPES)[number];
@@ -22,6 +25,7 @@ export const ARCHETYPE_LABELS: Record<Archetype, string> = {
   playmaker: "Playmaker",
   defender: "Defender",
   tank: "Tank",
+  goalkeeper: "Goalkeeper",
 };
 
 export function isArchetype(value: string): value is Archetype {

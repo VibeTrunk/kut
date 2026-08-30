@@ -1360,3 +1360,43 @@ each Friday session; skim Vercel + Supabase logs post-session (no alerting);
 add a second admin (single operator / single recovery path today); hold
 economy formulas steady through short-term noise; `/settings/card` photo
 uploads are unmoderated.
+
+## Batch B — retire the untradeable concept (tester feedback #9) - 2026-08-30
+
+Branch `feat/all-cards-tradable` (off `main`). See ADR-033. Every Card Copy is
+now tradeable and discardable; the `is_tradeable` distinction and all its UI
+are gone. The user confirmed **full removal** (starter cards included, no
+softer hold rule) and chose to **drop the column** rather than force it true.
+
+- **Migration `20260903000000_drop_is_tradeable.sql`** (data-changing tier,
+  ADR-032). Drops `kut.user_cards.is_tradeable`. Rebuilds `kut.my_collection_cards`
+  (a `drop view` + `create view` — `create or replace view` can't drop a
+  column; nothing in the schema reads that view). Recreates
+  `grant_starter_pack`, `open_pack` (mint plain copies), `discard_card` (no
+  `is_tradeable` gate), `get_listing_bounds`, `create_listing`, `buy_listing`
+  (no `and is_tradeable` predicate) from their latest prior bodies. An active
+  market listing still blocks a burn (`user_cards_prevent_burning_listed_card`
+  trigger); discard/list still need a resolvable rating. Reverse DDL in the
+  migration header (lossless — every surviving row was `true`).
+- **Front-end**: collection subheader (`N tradeable · N locked` → card count),
+  card badge (`Tradeable`/`Locked` → only `Listed`), card-detail "Ownership"
+  tile removed, "Starter cards are locked" explainer removed, discard/list
+  gating no longer checks tradeability. Copy sweeps in `how-it-works`, `club`,
+  `packs`, `market`, `starter-reveal`, `starter-cards.ts`, `README.md`.
+- **Spec**: `docs/BUILD_SPEC.md` §20 rewritten (historical design kept
+  below a superseded banner); `is_tradeable` struck from the `user_cards`
+  schema block; ~11 scattered "untradeable" phrasings de-flagged; acceptance
+  criteria "starter cards cannot be discarded" and "market cannot transfer
+  untradeable card" removed; Part L regression invariant #20 reworded to the
+  server-authoritative-`buy_listing` rule.
+- **Tests**: `phase_1a_roster.test.sql` — three obsolete negative starter
+  assertions removed (`plan(166)` → `plan(163)`), `is_tradeable` dropped from
+  fixtures. `member_admin_links.test.sql`, `starter_reveal_and_movers.test.sql`,
+  `tests/integration/market-race.test.ts` — `is_tradeable` dropped from
+  `user_cards` inserts.
+
+Local gate: `npm run verify:fast` + `npm run test:db` (see the tests line in
+the next commit / handoff). Hosted deploy is the separate `VibeTrunk/supabase`
+ADR-021 step (fresh backup immediately before the push, since this is
+data-changing) — never `supabase db push` from this repo. This repo's copy is
+local-only until then.

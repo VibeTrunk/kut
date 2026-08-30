@@ -28,7 +28,7 @@ export async function discardCard(
   });
 
   if (error || !data || typeof data !== "object" || !("coins" in data)) {
-    return { error: "This card could not be discarded. It may be locked or no longer available." };
+    return { error: "This card could not be discarded. It may be listed on the market or no longer available." };
   }
 
   const coins = Number(data.coins);

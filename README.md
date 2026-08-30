@@ -148,8 +148,8 @@ their own password through this tool.
 
 ## Economy foundation
 
-New invite claims automatically receive 250 KUT Coins and three distinct,
-untradeable Live Cards. An existing local account created before this feature
+New invite claims automatically receive 250 KUT Coins and three distinct
+Live Cards. An existing local account created before this feature
 will see a **Claim starter pack** button after signing in. This is a one-time,
 server-authoritative operation.
 
@@ -164,22 +164,21 @@ earned, per the MVP correction policy.
 Any signed-in, enabled member can open **My Club** from Live Ratings at
 `http://localhost:3000/club`. It shows only their own active card copies and
 their own TF Coin balance. Selecting a card opens its detail page, including
-its current Live rating, source, and ownership status. These are read-only
-views; no browser route can alter a card, coins, or tradeability.
+its current Live rating and source. These are read-only views; no browser
+route can alter a card or coins.
 
 ## Card discard
 
-Only an eligible, tradeable card copy can be discarded. Its detail page shows
-the current server-calculated value and requires confirmation before the card
-is permanently burned. The atomic database operation records a positive
-`discard` ledger entry and credits the same amount to the owner’s wallet.
-Starter cards are locked and cannot be discarded. The button will first be
-visible once an account owns a future tradeable pack or market card.
+Any owned card copy can be discarded unless it has an active market listing.
+Its detail page shows the current server-calculated value and requires
+confirmation before the card is permanently burned. The atomic database
+operation records a positive `discard` ledger entry and credits the same
+amount to the owner’s wallet.
 
 ## Basic pack opening
 
 **My Club** offers one TFH Pack for 250 KUT Coins. It contains three
-server-selected, tradeable Live Card copies; duplicate players are possible.
+server-selected Live Card copies; duplicate players are possible.
 The purchase, wallet debit, card minting, and saved opening record are one
 database transaction. Reloading a saved result page never rerolls the pack.
 
@@ -193,7 +192,7 @@ changing pack price or odds remains a deliberate future configuration change.
 
 ## Transfer market
 
-Tradeable card copies can be listed from their detail page for 24 hours at a
+Any card copy can be listed from its detail page for 24 hours at a
 server-validated buy-now price. The card is locked while listed and may be
 cancelled by its seller. Signed-in members browse `/market` and buy listings
 with KUT Coins. A purchase atomically transfers the card, debits the buyer,

@@ -136,8 +136,8 @@ values
 insert into kut.profiles (id, display_name, role, player_id, starter_claimed_at)
 values ('00000000-0000-4000-8000-0000000c0b01', 'Starter Claimed', 'user', null, now());
 insert into kut.wallets (user_id, balance) values ('00000000-0000-4000-8000-0000000c0b01', 250);
-insert into kut.user_cards (edition_id, owner_id, is_tradeable, source)
-select id, '00000000-0000-4000-8000-0000000c0b01', false, 'starter'
+insert into kut.user_cards (edition_id, owner_id, source)
+select id, '00000000-0000-4000-8000-0000000c0b01', 'starter'
 from kut.card_editions where is_live limit 3;
 
 -- Legacy member who never claimed (no wallet, no cards).

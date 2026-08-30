@@ -179,7 +179,7 @@ export default async function HowItWorksPage() {
         <Section title="6. Packs">
           <p>
             A <strong>TFH Pack</strong> costs {ECONOMY.basicPackPrice} KUT Coins and gives{" "}
-            {ECONOMY.basicPackCardCount} tradeable Live Cards. Draws are weighted by rarity, so Common players
+            {ECONOMY.basicPackCardCount} Live Cards. Draws are weighted by rarity, so Common players
             come up far more often than Gold or better. The result is fixed the moment you open &mdash;
             refreshing never rerolls it.
           </p>
@@ -191,8 +191,8 @@ export default async function HowItWorksPage() {
         <Section title="7. Discard">
           <p>
             Discarding permanently burns a card for a guaranteed payout based on its current OVR
-            (<code>round(10 &times; 1.08 <sup>OVR&minus;30</sup>)</code>). Starter cards are locked and cannot be
-            discarded.
+            (<code>round(10 &times; 1.08 <sup>OVR&minus;30</sup>)</code>). Every card you own can be discarded,
+            unless it has an active market listing.
           </p>
           <table className="w-full max-w-xs text-left text-sm">
             <thead className="text-ink-faint">
@@ -214,7 +214,7 @@ export default async function HowItWorksPage() {
 
         <Section title="8. Transfer market">
           <p>
-            List a tradeable card at a buy-now price (within server-set bounds) for{" "}
+            List any card at a buy-now price (within server-set bounds) for{" "}
             {ECONOMY.listingDurationHours} hours. When it sells, a {ECONOMY.marketTaxPercent}% tax (minimum 1
             coin) is <strong>burned</strong> &mdash; it doesn&rsquo;t go to anyone &mdash; and the seller gets
             the rest. A listed card is locked until it sells, is cancelled, or expires.
@@ -226,8 +226,8 @@ export default async function HowItWorksPage() {
 
         <Section title="9. Club Value & the leaderboard">
           <p>
-            Your Club Value is your wallet balance plus the reference value of every card you own (including
-            locked starter cards). The <Link className="font-semibold text-brass underline" href="/leaderboard">leaderboard</Link>{" "}
+            Your Club Value is your wallet balance plus the reference value of every card you own. The{" "}
+            <Link className="font-semibold text-brass underline" href="/leaderboard">leaderboard</Link>{" "}
             ranks every club by that number.
           </p>
         </Section>

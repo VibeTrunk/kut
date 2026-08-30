@@ -10,7 +10,6 @@ type CollectionCard = {
   edition_title: string;
   edition_type: string;
   is_live: boolean;
-  is_tradeable: boolean;
   source: string;
   player_id: string;
   player_slug: string;
@@ -39,7 +38,7 @@ export default async function CollectionPage({ searchParams }: CollectionPagePro
     supabase
       .schema("kut")
       .from("my_collection_cards")
-      .select("card_id, edition_id, edition_title, edition_type, is_live, is_tradeable, source, player_id, player_slug, display_name, archetype, ovr, pac, sho, pas, dri, def, phy, rarity_tier, active_listing_id, photo_path")
+      .select("card_id, edition_id, edition_title, edition_type, is_live, source, player_id, player_slug, display_name, archetype, ovr, pac, sho, pas, dri, def, phy, rarity_tier, active_listing_id, photo_path")
       .order("ovr", { ascending: false })
       .order("display_name"),
     searchParams,
@@ -51,7 +50,6 @@ export default async function CollectionPage({ searchParams }: CollectionPagePro
 
   const cards = (data ?? []) as CollectionCard[];
   const photoUrls = await resolvePhotoUrls(supabase, cards.map((card) => card.photo_path));
-  const tradeableCount = cards.filter((card) => card.is_tradeable).length;
 
   return (
     <main className="min-h-screen bg-board p-5 text-ink sm:p-10">
@@ -60,7 +58,7 @@ export default async function CollectionPage({ searchParams }: CollectionPagePro
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.24em] text-brass">My club</p>
             <h1 className="mt-2 text-4xl font-black tracking-tight sm:text-5xl">Collection</h1>
-            <p className="mt-2 text-sm text-ink-faint">{tradeableCount} tradeable · {cards.length - tradeableCount} locked</p>
+            <p className="mt-2 text-sm text-ink-faint">{cards.length} {cards.length === 1 ? "card" : "cards"}</p>
           </div>
           <p className="rounded-full border border-line px-3 py-1 text-sm font-semibold text-ink-dim">Live cards update automatically</p>
         </header>
@@ -77,7 +75,7 @@ export default async function CollectionPage({ searchParams }: CollectionPagePro
         {cards.length === 0 ? (
           <div className="rounded-3xl border border-dashed border-line bg-panel/60 p-8 text-center">
             <h2 className="text-xl font-black">Your collection is empty</h2>
-            <p className="mt-2 text-ink-dim">Open a pack to receive your first tradeable Live Cards.</p>
+            <p className="mt-2 text-ink-dim">Open a pack to receive your first Live Cards.</p>
             <Link className="mt-5 inline-flex min-h-11 items-center rounded-xl bg-brass px-4 font-bold text-ink-on-accent" href="/club/packs">Open a pack</Link>
           </div>
         ) : (
@@ -107,7 +105,7 @@ export default async function CollectionPage({ searchParams }: CollectionPagePro
                 />
                 <span className="mt-2 flex items-center justify-between px-1 text-xs font-bold uppercase tracking-[0.1em] text-ink-faint group-hover:text-brass">
                   <span>{card.is_live ? null : card.edition_title}</span>
-                  <span>{card.active_listing_id ? "Listed" : card.is_tradeable ? "Tradeable" : "Locked"}</span>
+                  <span>{card.active_listing_id ? "Listed" : null}</span>
                 </span>
               </Link>
             ))}

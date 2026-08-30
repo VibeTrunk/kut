@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path to extensions, kut, public;
 
-select plan(166);
+select plan(163);
 
 select has_table('kut', 'players', 'players table exists');
 select has_table('kut', 'match_sessions', 'match sessions table exists');
@@ -409,25 +409,11 @@ select is(
   3::bigint,
   'starter cards are distinct editions'
 );
-select is(
-  (select count(*) from kut.user_cards where owner_id = '00000000-0000-4000-8000-000000000099' and source = 'starter' and is_tradeable),
-  0::bigint,
-  'starter cards are untradeable'
-);
-
-set local role authenticated;
-set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000000099';
-select throws_ok(
-  $$ select kut.discard_card(
-    (select id from kut.user_cards where owner_id = '00000000-0000-4000-8000-000000000099' and source = 'starter' limit 1),
-    '00000000-0000-4000-8000-000000000090'
-  ); $$,
-  'P0001',
-  'card is not eligible for discard',
-  'starter cards cannot be discarded'
-);
-reset role;
-select set_config('request.jwt.claim.sub', '', true);
+-- ADR-033 retired the untradeable concept: starter cards are ordinary copies.
+-- The former "starter cards cannot be discarded / listed" assertions are gone;
+-- discard/list eligibility now depends only on the universal rules (owned,
+-- unburned, has a rating, no active listing), covered by the pack/special
+-- fixtures below.
 
 insert into kut.card_editions (
   id, player_id, edition_type, title, is_live,
@@ -441,12 +427,11 @@ values (
   40, 40, 40, 40, 40, 40, 40,
   1.5
 );
-insert into kut.user_cards (id, edition_id, owner_id, is_tradeable, source)
+insert into kut.user_cards (id, edition_id, owner_id, source)
 values (
   '00000000-0000-4000-8000-000000000051',
   '00000000-0000-4000-8000-000000000050',
   '00000000-0000-4000-8000-000000000099',
-  true,
   'pack'
 );
 
@@ -522,9 +507,9 @@ select is(
   'a TFH Pack creates exactly three persisted result cards'
 );
 select is(
-  (select count(*) from kut.user_cards card join kut.pack_opening_cards result on result.card_id = card.id where card.owner_id = '00000000-0000-4000-8000-000000000099' and card.is_tradeable and card.source = 'pack'),
+  (select count(*) from kut.user_cards card join kut.pack_opening_cards result on result.card_id = card.id where card.owner_id = '00000000-0000-4000-8000-000000000099' and card.source = 'pack'),
   3::bigint,
-  'pack result cards are tradeable copies owned by the opener'
+  'pack result cards are copies owned by the opener'
 );
 select is(
   (select balance from kut.wallets where user_id = '00000000-0000-4000-8000-000000000099'),
@@ -579,8 +564,8 @@ insert into kut.card_editions (
   '00000000-0000-4000-8000-000000000001', 'totw', 'Market Fixture', false,
   40, 40, 40, 40, 40, 40, 40, 1
 );
-insert into kut.user_cards (id, edition_id, owner_id, is_tradeable, source)
-values ('00000000-0000-4000-8000-000000000061', '00000000-0000-4000-8000-000000000060', '00000000-0000-4000-8000-000000000099', true, 'pack');
+insert into kut.user_cards (id, edition_id, owner_id, source)
+values ('00000000-0000-4000-8000-000000000061', '00000000-0000-4000-8000-000000000060', '00000000-0000-4000-8000-000000000099', 'pack');
 
 set local role authenticated;
 set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000000099';
@@ -590,18 +575,12 @@ select is(
   'listing bounds use the current server-calculated discard value'
 );
 select throws_ok(
-  $$ select kut.create_listing(
-    (select id from kut.user_cards where owner_id = auth.uid() and source = 'starter' limit 1), 100
-  ); $$,
-  'P0001', 'card is not eligible for listing', 'starter cards cannot be listed'
-);
-select throws_ok(
   $$ select kut.create_listing('00000000-0000-4000-8000-000000000061', 166); $$,
   '22023', 'listing price is outside the current allowed range', 'listing price cannot exceed the server maximum'
 );
 select lives_ok(
   $$ select kut.create_listing('00000000-0000-4000-8000-000000000061', 100); $$,
-  'an owner can create an in-range listing for a tradeable card'
+  'an owner can create an in-range listing for an owned card'
 );
 select throws_ok(
   $$ select kut.discard_card('00000000-0000-4000-8000-000000000061', '00000000-0000-4000-8000-000000000094'); $$,

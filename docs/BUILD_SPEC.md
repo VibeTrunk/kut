@@ -879,6 +879,15 @@ This must be protected by a unique database constraint and server-side transacti
 
 The user may receive their own card.
 
+> **Implemented (2026-08-30, ADR-031):** the grant still happens automatically
+> inside `claim_invitation`, but a member's **first sign-in is gated** to a
+> full-screen `/welcome` step (`kut.profiles.starter_opened_at` null →
+> `getNavContext` redirects there). "Open your starter pack" calls
+> `kut.mark_starter_opened()` — which stamps `starter_opened_at`, and grants
+> the starter as a legacy fallback if `starter_claimed_at` was still null —
+> then plays the §49 reveal animation over the granted cards. The reveal is
+> cosmetic: the coins and cards exist before `/welcome` renders.
+
 ---
 
 # PART VIII — GAME CURRENCY
@@ -1552,6 +1561,17 @@ Desktop may use side/top navigation.
 
 Home should answer "what changed?" quickly.
 
+> **Implemented (2026-08-30, ADR-031):** Home leads with wallet balance, Club
+> Value, rank, an "Open a pack" CTA, and the **top 5 weekly risers** —
+> `kut.top_risers` diffs the two most recent `kut.player_rating_snapshots`
+> weeks of the active season and returns only positive `ovr_delta`, rendered as
+> `LiveCard`s with a "▲ +N" trend pill. Snapshots are captured by an
+> `after`-trigger on `kut.player_season_state` (keyed on `last_week_start`), so
+> the widget needs two published football weeks before it shows anything
+> (explanatory empty state until then). Home links out to `/players` for the
+> full roster rather than listing it. Recent acquisitions / market activity /
+> latest-session widgets are still not built.
+
 MVP widgets:
 
 - wallet balance;
@@ -1607,6 +1627,15 @@ Requirements:
 ---
 
 ## 49. Pack reveal UX
+
+> **Implemented (2026-08-30, ADR-031):** `src/components/pack-reveal.tsx`
+> (pure state machine in `pack-reveal-state.ts`) animates the sequence below —
+> rarity clue → OVR → identity, card by card, then a summary of all three with
+> Collection / Open-another actions. Tap advances, "Skip all" jumps to the
+> summary, and `prefers-reduced-motion` mounts straight to the summary. The DB
+> transaction is untouched — the component only animates the already-persisted
+> `kut.my_pack_opening_results`. Used by the bought-pack reveal at
+> `/club/packs/[openingId]` and by the one-time starter reveal at `/welcome`.
 
 Sequence:
 

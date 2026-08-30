@@ -1190,6 +1190,56 @@ to expect an admin is excluded), 17 Playwright, `next build`.
 All three `2026083*` / `20260901000000` migrations are local-only until the
 ADR-021 deploy.
 
+## Home "Top risers", starter-pack reveal, pack animation - 2026-08-30
+
+Migration `20260902000000_starter_reveal_and_rating_snapshots.sql` (see
+ADR-031). Three related pieces:
+
+- **Weekly rating snapshots.** New `kut.player_rating_snapshots`
+  `(player_id, season_id, week_start)` written by an `after insert or update`
+  row trigger on `kut.player_season_state` (`kut.capture_rating_snapshot`,
+  keyed on `last_week_start`). Fires on every rebuild path without touching
+  `kut._rebuild_season_core`; same-week rebuilds overwrite in place so the
+  previous week's row is stable. Migration seeds the current week only — prior
+  weeks are not reconstructed.
+- **`kut.top_risers`** (`security_invoker`) diffs the two most recent snapshot
+  weeks of the active season, returns `ovr_delta > 0` ordered by delta.
+- **Home** (`src/app/(app)/page.tsx`) now shows the top 5 risers (each a
+  `LiveCard` with the new optional `trend` prop &rarr; a "▲ +N" pill) and a
+  "See the full player directory" link, instead of the whole
+  `public_live_ratings` grid. Empty state until a second football week is
+  published. Closes HANDOFF Phase D item 4.
+- **`/welcome`** — a top-level route (no `AppNav` chrome). `getNavContext`
+  redirects any member with `starter_claimed_at` set and the new
+  `kut.profiles.starter_opened_at` null to it. "Open your starter pack" calls
+  `kut.mark_starter_opened()` (stamps `starter_opened_at`; legacy fallback
+  grants the starter if `starter_claimed_at` was still null &mdash; replaces
+  the deleted homepage `StarterClaimForm`), then plays the reveal over the
+  already-granted cards. Backfill sets `starter_opened_at = starter_claimed_at`
+  for existing members, so only brand-new accounts see the gate.
+- **`src/components/pack-reveal.tsx`** (pure state machine in
+  `pack-reveal-state.ts`) &mdash; rarity clue &rarr; OVR &rarr; identity
+  &rarr; next &rarr; summary, with tap-to-skip, "Skip all", and a
+  reduced-motion instant summary. Used by `/welcome` and the bought-pack
+  reveal at `/club/packs/[openingId]` (was a static grid).
+  `kut.my_pack_opening_results` gained `players.photo_path`.
+
+Tests: `npm run lint`, `npm run typecheck`, **33 unit** (new
+`tests/unit/pack-reveal-state.test.ts`), **18 Playwright** (new `/welcome`
+sign-in-boundary spec), `next build` (24 routes incl. `/welcome`). New
+`supabase/tests/database/starter_reveal_and_movers.test.sql` `plan(26)` covers
+the snapshot trigger (weekly capture, same-week overwrite, earlier-week
+preservation), `top_risers` (riser included, faller excluded, no non-positive
+delta), and `mark_starter_opened` (stamps, idempotent, legacy-grant fallback,
+anon rejected). It passes 26/26 (verified via direct `psql`); a full
+`npm run test:db` run needs a clean `supabase db reset --local` first &mdash;
+this dev DB has leftover member profiles linked to seed players and
+`Test Season 2026` left active, which trips `phase_1a_roster.test.sql`'s
+invite-claim fixtures (pre-existing, unrelated to this change).
+
+Migration is local-only; it joins the pending ADR-021 batch (`20260830` /
+`20260831` / `20260901` / `20260902`; `verify-catalog.ps1` then expects
+"matches 32"). Rollback DDL is in the migration header.
 ## ADR-027..030 alpha-readiness batch deployed to hosted - 2026-08-30
 
 The three migrations (`20260830000000`, `20260831000000`, `20260901000000`)

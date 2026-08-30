@@ -18,6 +18,8 @@ export type LiveCardPlayer = {
 type LiveCardProps = {
   player: LiveCardPlayer;
   size?: "grid" | "detail";
+  /** Optional week-over-week OVR change. A positive value renders a small "▲ +N" pill. */
+  trend?: number | null;
 };
 
 const attributes = (player: LiveCardPlayer) => [
@@ -38,11 +40,17 @@ function initials(name: string) {
     .toUpperCase();
 }
 
-export function LiveCard({ player, size = "grid" }: LiveCardProps) {
+export function LiveCard({ player, size = "grid", trend }: LiveCardProps) {
   return (
     <article className="live-card" data-rarity={player.rarityTier} data-size={size}>
       <div aria-hidden="true" className="live-card__texture" />
       <div aria-hidden="true" className="live-card__shine" />
+
+      {typeof trend === "number" && trend > 0 && (
+        <p className="live-card__trend">
+          <span aria-hidden="true">&#9650;</span> +{trend} <span className="live-card__trend-unit">OVR this week</span>
+        </p>
+      )}
 
       <div aria-hidden="true" className="live-card__pennant">
         <span className={`live-card__tier-icon live-card__tier-icon--${player.rarityTier}`} />

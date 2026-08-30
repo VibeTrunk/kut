@@ -178,9 +178,10 @@ unexplained currency. The existing ledger is the correct foundation.
    the real searchable full roster it was always meant to be.
    _Built 2026-08-29 (ADR-027):_ `/players` is now a query / rarity /
    archetype / sort roster over the new `kut.player_directory` view, and
-   `/players/[slug]` is a per-player profile. **Still to do:** stop using Home
-   as the de facto full roster and show a small curated set there (e.g. 5
-   most-improved cards this week) linking out to the directory.
+   `/players/[slug]` is a per-player profile.
+   _Done 2026-08-30 (ADR-031):_ Home now shows the top 5 weekly risers
+   (`kut.top_risers` over the new `kut.player_rating_snapshots`) and links out
+   to `/players`, instead of the full roster grid.
    Noted 2026-08-19 from user feedback during the alpha mobile click-through.
 
 Assessment: album/duplicate stacking is recommended and largely reuses the

@@ -82,6 +82,43 @@ and if so how; the exact power-weighting formula; whether seeding uses total
 or average XI OVR. This is recorded here only so the brainstorm isn't lost —
 it is not scoped, not prioritized, and not a plan to build.
 
+## Speculative idea — player of the week vote (not decided)
+
+Status: Half-baked — brainstormed only, not scoped, not an ADR.
+
+Another route for a player's cards to improve, alongside attendance and Live
+OVR: a weekly peer vote for the top 3 players of the week, giving members a
+say in the card economy without any new admin data entry.
+
+Rough shape discussed, none of it committed:
+
+- Voting window opens Friday 21:00 and closes Sunday 23:59 (same football-week
+  framing Part 9 already uses; skip cleanly on weeks with no published
+  session, like activity/form decay does).
+- Each member picks 3 distinct players for the week and cannot vote for
+  themselves.
+- Voting pays a small coin reward — a currency payout, so it needs the same
+  ledger-backed, security-definer treatment as `open_pack` / `buy_listing`
+  (ADR-010, ADR-014, ADR-016), plus an anti-abuse rule so voting isn't a
+  free coin faucet (e.g. only counts once the ballot has 3 valid picks,
+  one reward per member per week).
+- After close, the 3 players with the most votes get an extra boost to their
+  cards — magnitude, stacking with Live OVR, and decay all unspecified, and
+  it needs the deterministic, testable, pure-function treatment
+  `pack_economy_health` got in ADR-015 before it touches real cards.
+
+Optional extra: the single top-voted player gets an "In Form" special-edition
+card. Mechanics unworked — would lean on the frozen-snapshot Special card
+model (ADR referenced around card snapshots / Part 3.4), one per week,
+supersedes the previous week's In Form card or coexists as a collectible.
+
+Open questions nobody has answered: the boost formula and how long it lasts;
+tie-breaking for 3rd place; minimum-turnout threshold before the boost
+applies at all; whether votes are public or secret; how the "In Form" card is
+minted, owned, and expired; abuse vectors (collusion, vote-trading).
+Recorded here so the brainstorm isn't lost — not scoped, not prioritized,
+not a plan to build.
+
 ## ADR-001 — Phase 0 local development foundation
 
 Date: 2026-08-16
@@ -943,3 +980,73 @@ have traded and can only be disabled, which is the safer outcome anyway
 (their economy history stays intact). The delete cleanup is not atomic with
 the Auth API call (same shape as the password-reset flow); a mid-failure
 leaves a cleaned-but-still-present account that the fallback disables.
+
+## ADR-031 — Weekly rating snapshots, Home "Top risers", and a cosmetic starter-pack reveal
+
+Date: 2026-08-30
+
+Status: Accepted
+
+Decision: migration `20260902000000_starter_reveal_and_rating_snapshots.sql`,
+plus front-end changes. Three related pieces:
+
+**1. Weekly rating snapshots + `kut.top_risers`.** `kut.player_rating_snapshots`
+`(player_id, season_id, week_start)` stores one `live_ovr` / `rarity_tier` row
+per player per published football week. It is populated by an `after insert or
+update` row trigger on `kut.player_season_state`
+(`kut.capture_rating_snapshot`), keyed on `new.last_week_start` — so **every**
+rebuild path (publish / correct / cancel-reactivate / `admin_add_player` /
+`set_own_player_archetype`) captures a snapshot without editing
+`kut._rebuild_season_core` and re-stating the ADR-024 rating formula. Multiple
+rebuilds inside the same football week overwrite the same row, so the prior
+week's row — and the delta Home shows all week — is stable even when a member
+self-serves an archetype change. `kut.top_risers` (`security_invoker`) diffs
+the two most recent snapshot weeks of the active season and returns only
+`ovr_delta > 0`, ordered by delta. The migration seeds the current week from
+`player_season_state`; deltas therefore only appear after the **next** publish
+creates a second snapshot week (Home shows an explanatory empty state until
+then). This is the BUILD_SPEC §47 "biggest current player movers if historical
+snapshots exist" widget.
+
+**2. Home stops being the de-facto full roster.** `src/app/(app)/page.tsx` now
+renders the top 5 `top_risers` (each a `LiveCard` with a new optional
+`trend` prop → a "▲ +N OVR this week" pill, per BUILD_SPEC §48's "optional
+trend arrow") and links to `/players` for the full directory, instead of the
+entire `public_live_ratings` grid. Closes the HANDOFF Phase D item 4 follow-up.
+
+**3. Cosmetic starter-pack reveal at `/welcome`.** The starter grant stays
+automatic inside `claim_invitation` (unchanged). A new
+`kut.profiles.starter_opened_at` (backfilled `= starter_claimed_at` for
+existing members, so only brand-new accounts are affected) gates a member:
+`getNavContext` redirects any member with `starter_claimed_at` set and
+`starter_opened_at` null to a full-screen `/welcome` (a top-level route,
+outside the `(app)` nav chrome). Pressing "Open your starter pack" calls
+`kut.mark_starter_opened()` — which stamps `starter_opened_at`, and as a
+legacy safety-net grants the starter first if `starter_claimed_at` was somehow
+still null (this replaces the deleted homepage `StarterClaimForm`) — then plays
+the reveal animation over the already-granted cards.
+
+**4. Shared pack-opening animation.** `src/components/pack-reveal.tsx` (pure
+state machine in `pack-reveal-state.ts`) animates the BUILD_SPEC §49 sequence
+(rarity clue → OVR → identity → next → summary) with tap-to-skip, "Skip all",
+and a `prefers-reduced-motion` instant summary. Used by both `/welcome` and the
+bought-pack reveal at `/club/packs/[openingId]` (previously a static grid).
+`kut.my_pack_opening_results` gained `players.photo_path` so revealed cards
+show photos.
+
+Reason: first-tester feedback — Home was an undifferentiated wall of ~25 cards
+with no "what changed?", new members got their starter silently with no
+moment, and there was no pack-open animation at all despite the spec
+describing one in detail.
+
+Consequences: the reveal is deliberately **theatre** — the coins and cards are
+real and already granted before `/welcome` renders, so a member who never
+logs in still has their starter; `/welcome` only marks that they have seen it.
+`top_risers` needs two published football weeks of snapshot history before it
+shows anything; the migration cannot backfill prior weeks (the fold is not
+re-run), so on hosted deploy the widget is empty until the first post-deploy
+session publish. The snapshot trigger adds one lightweight upsert per player
+per rebuild (~25 rows). Migration is local-only until the ADR-021
+`VibeTrunk/supabase` batch deploy (it joins the pending `20260830` /
+`20260831` / `20260901` set; `verify-catalog.ps1` then expects "matches 32").
+Rollback DDL is in the migration header.

@@ -1609,3 +1609,61 @@ Front-end (Vercel, auto-deploy on the KUT PR #21 merge) and the hosted schema
 are now consistent: `/admin/links` "Adjust coins" and "Reset club" work end to
 end. Batch D closes tester feedback #8 + #6; Batch E (content features — #4
 Goalkeeper, #5 bibs bonus, #10 newsfeed) is the last tester-feedback batch.
+
+## Batch E3 — activity newsfeed (ADR-038) - 2026-08-31
+
+Last piece of Batch E. Finding #10 — a **club-wide activity newsfeed** at
+`/feed`, on branch `feat/activity-feed`, migration
+`20260908000000_activity_feed.sql`. Additive: one `create view` + one grant.
+
+- **SQL**: `kut.activity_feed` — `with (security_invoker = false,
+  security_barrier = true)`, `grant select to authenticated` (the
+  `kut.club_value_leaderboard` controlled-projection pattern). `union all` of
+  four already-persisted sources:
+  - `sale` — `kut.market_sales` (`sold_at`): seller name, **buyer name**, card
+    (player) name, `sale_price`.
+  - `listing` — `kut.market_listings` where `status='active' and expires_at >
+    now()` (`listed_at`): seller name, card name, `price`.
+  - `pack` — `kut.pack_openings` (`opened_at`): opener name, `price_paid`
+    (count only, no card reveal).
+  - `session` — `kut.match_sessions` where `status='published'`
+    (`published_at`): `session_date`, `session_type`.
+  Not discards, not coin-grant / attendance rows. Underlying tables keep their
+  own RLS for every other path.
+- **Disclosure change** (the ADR call): a completed-sale row now shows the
+  seller, card, price **and buyer name** club-wide — `kut.market_sales` was
+  otherwise buyer+seller-only. The buyer was already visible to the seller via
+  the ADR-019 sale notification. Listings already exposed the seller
+  club-wide (ADR-017).
+- **Retention**: none. `/feed` fetches `order by ts desc limit 200` with an
+  optional `?before=<ts>` cursor ("Older activity →" / "← Latest").
+- **Front-end**: new `src/app/(app)/feed/page.tsx`; a `/feed` "Newsfeed" entry
+  in the More menu (`components/app-shell/nav-items.tsx`), new `IconFeed`
+  (`components/icons.tsx`, 15 icons now). Per-type copy: "A sold Card to B for
+  N KUT Coins", "A listed Card for N KUT Coins", "A opened a pack (N KUT
+  Coins)", "A new session was published — DD Mon YYYY · type".
+- **Spec**: §47 (Home screen) gains an "Implemented (ADR-038)" note + a widget
+  bullet, recording the sale-name disclosure. **Docs**: ADR-038;
+  `docs/TESTER_FEEDBACK_BATCHES.md` finding #10 decided + Batch E row split.
+
+Local gate (green): `npm run verify:fast` (lint, typecheck, 33 unit tests) and
+`npm run test:db` (`supabase migration up --local` clean; new
+`activity_feed.test.sql` `plan(9)` — an uninvolved member reads a completed
+sale with both seller and buyer names, an active listing, and a published
+session from the view; `kind = 'discard'` never appears; every row has a sort
+`ts`). Note: run against a local Postgres that also carried the E1 + E2
+migrations (sequential branch testing without a `db reset`, which is not
+auto-allowed); with the E2 `has_function` signature edit applied the full
+suite is 271/271. E1/E2/E3 all merge to `main` in order, so `main` will be
+self-consistent.
+
+Hosted deploy is the separate **additive**-path `VibeTrunk/supabase` ADR-021
+step (catalogue byte-identical, extend `verify-catalog.ps1`, `migration list
+--linked` no drift, `db push --dry-run` reviewed, ride the last scheduled
+backup, user runs `db push`, verify `kut.activity_feed` on hosted). Never
+`supabase db push` from this repo. Mixed-state window: the `/feed` nav entry
+ships on the KUT merge but the page errors until the view is on hosted — push
+promptly.
+
+Batch E (and with it the 2026-08-30 tester-feedback round) is complete once
+E1 + E2 + E3 are merged and deployed.

@@ -144,6 +144,17 @@ export function IconInfo(props: IconProps) {
   );
 }
 
+export function IconFeed(props: IconProps) {
+  return base(
+    <>
+      <circle cx="6" cy="18" r="1.6" />
+      <path d="M5 12a7 7 0 0 1 7 7" />
+      <path d="M5 6a13 13 0 0 1 13 13" />
+    </>,
+    props,
+  );
+}
+
 export function IconChevronDown(props: IconProps) {
   return base(<path d="M7 10l5 5 5-5" />, { strokeWidth: 2, ...props });
 }

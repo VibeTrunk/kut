@@ -3,6 +3,7 @@ import {
   IconClub,
   IconCollection,
   IconDirectory,
+  IconFeed,
   IconHome,
   IconInfo,
   IconLeaderboard,
@@ -35,6 +36,7 @@ export const primaryNavItems: Omit<NavItem, "badgeCount">[] = [
 
 export function buildMoreNavItems(unreadCount: number): NavItem[] {
   return [
+    { href: "/feed", label: "Newsfeed", Icon: IconFeed, isActive: prefixed("/feed") },
     { href: "/leaderboard", label: "Leaderboard", Icon: IconLeaderboard, isActive: prefixed("/leaderboard") },
     { href: "/players", label: "Player directory", Icon: IconDirectory, isActive: prefixed("/players") },
     { href: "/messages", label: "Messages", Icon: IconMessages, isActive: prefixed("/messages"), badgeCount: unreadCount },

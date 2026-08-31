@@ -49,13 +49,27 @@ Finding 3 was withdrawn by the tester (no entry).
 | **B — tradability** | #9 model change (every card tradable, delete the untradable concept), drop guards, spec + tests | data-changing (drop `user_cards.is_tradeable`, market RPC semantics) | **done** — KUT PR #17, ADR-033, migration `20260903000000`; deployed to hosted 2026-08-31 (VibeTrunk/supabase PR #11 + #12) |
 | **C — coin-name sweep** | #7 SQL function bodies (`open_pack` / `buy_listing` error strings + market notification bodies) + backfill of existing `user_notifications` rows + leaderboard `TF`→`KUT` ticker + spec/README/ADR realignment; #11 expand "KUT" on Home | data-changing (backfill `update` on `user_notifications`) | **done** — KUT PR #19, ADR-034, migration `20260904000000`; deployed to hosted 2026-08-31 (VibeTrunk/supabase PR #13 + #14) |
 | **D — admin economy tools** | #8 assign coins, #6 soft account reset | additive (new RPC + admin form; the reset *operation* mutates rows at run time, not the migration) | **done** — KUT PR #21, ADR-035, migration `20260905000000`; deployed to hosted 2026-08-31 (VibeTrunk/supabase PR #15 + #16) |
-| **E — content features** | #4 Goalkeeper, #5 bibs bonus, #10 newsfeed (may split further) | mixed — newsfeed view + bibs storage + GK enum value are additive; reassigning existing players to GK is data-changing | not started |
+| **E1 — Goalkeeper archetype** | #4 — a seventh archetype reusing the six stats with its own offset row (pac -6, sho -12, pas 0, dri -8, def +14, phy +12; sums to 0), opt-in, no player pre-assigned | additive (widened `check` + `create or replace` RPCs; no member rows touched) | **done** — KUT PR #23, ADR-036, migration `20260906000000`; hosted deploy pending |
+| **E2 — bibs-washing coin bonus** | #5 — coins-only (+100), `match_sessions.bibs_washed_by` column + `grant_bibs_reward` + `bibs_rewards` guard table, forward-only on corrections | additive (new column/table + two widened checks + `create or replace` RPCs) | **done** — KUT PR #24, ADR-037, migration `20260907000000`; hosted deploy pending |
+| **E3 — activity newsfeed** | #10 — member-wide `activity_feed` view (completed sales + new listings + pack opens + published sessions; no discards), ~200-event window, sale seller+buyer names shown club-wide | additive (one `create view` + grant) | **done** — KUT branch `feat/activity-feed`, ADR-038, migration `20260908000000`; hosted deploy pending |
 
 ## Open product decisions (needed before B–E)
 
-- **#4** — GK reuses the 6 existing stats with its own offset profile, or gets a
-  distinct GK stat set?
-- **#5** — bibs bonus is coins only, or also a rating/OVR effect? Coin amount?
+- **#4** — ~~GK reuses the 6 existing stats with its own offset profile, or gets a
+  distinct GK stat set?~~ **Decided 2026-08-31 (ADR-036):** a seventh offset
+  profile over the same six stats (pac -6, sho -12, pas 0, dri -8, def +14,
+  phy +12; sums to 0), opt-in via the existing self-service / admin RPCs, no
+  player pre-assigned (keeps the migration additive).
+- **#5** — ~~bibs bonus is coins only, or also a rating/OVR effect? Coin
+  amount?~~ **Decided 2026-08-31 (ADR-037):** coins-only, `+100`, stored as
+  `match_sessions.bibs_washed_by`, paid via `grant_bibs_reward` + a
+  `bibs_rewards` guard table, forward-only on corrections.
+- **#10** — ~~newsfeed shows sales + new listings only, or also discards?
+  Retention window?~~ **Decided 2026-08-31 (ADR-038):** completed sales + new
+  listings + pack opens + published sessions; **not** discards. No retention
+  job — `order by ts desc limit 200` + a `?before=` cursor (~last 200 events).
+  A completed-sale row shows the seller, card, price **and buyer name**
+  club-wide.
 - **#6** — ~~define "reset" as the soft reset described above?~~ **Decided
   2026-08-31 (ADR-035):** yes — `kut.admin_reset_account` wipes wallet / owned
   cards (soft burn) / pack history / notifications and re-grants the standard
@@ -77,5 +91,7 @@ Finding 3 was withdrawn by the tester (no entry).
   concept is deleted (not just hidden).~~ **Decided 2026-08-30:** full removal
   (starter cards included, no softer hold rule); drop the `is_tradeable`
   column outright. ADR-033.
-- **#10** — newsfeed shows sales + new listings only, or also discards? Retention
-  window?
+- **#10** — ~~newsfeed shows sales + new listings only, or also discards?
+  Retention window?~~ **Decided 2026-08-31 (ADR-038):** completed sales + new
+  listings + pack opens + published sessions; not discards. No retention job
+  (`limit 200` + a `?before=` cursor). Sale rows show the buyer name club-wide.

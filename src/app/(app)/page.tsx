@@ -1,6 +1,13 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { LiveCard, type LiveCardPlayer } from "@/components/live-card";
+import {
+  ACTIVITY_FLOOR_ISO,
+  ACTIVITY_KIND_LABEL,
+  describeActivity,
+  type ActivityRow,
+} from "@/lib/activity";
+import { formatDate } from "@/lib/format";
 import { resolvePhotoUrls } from "@/lib/player-photos";
 import { createClient } from "@/lib/supabase/server";
 
@@ -30,18 +37,31 @@ export default async function Home() {
     redirect("/login");
   }
 
-  const [{ data: profile, error: profileError }, risersResponse, walletResponse, clubValueResponse, rankResponse] =
-    await Promise.all([
-      supabase.schema("kut").from("profiles").select("is_disabled").eq("id", userId).maybeSingle(),
-      supabase
-        .schema("kut")
-        .from("top_risers")
-        .select("id, slug, display_name, archetype, live_ovr, pac, sho, pas, dri, def, phy, rarity_tier, photo_path, ovr_delta")
-        .limit(5),
-      supabase.schema("kut").from("wallets").select("balance").eq("user_id", userId).maybeSingle(),
-      supabase.schema("kut").from("my_club_value").select("club_value").maybeSingle(),
-      supabase.schema("kut").from("club_value_leaderboard").select("rank").eq("is_current_user", true).maybeSingle(),
-    ]);
+  const [
+    { data: profile, error: profileError },
+    risersResponse,
+    walletResponse,
+    clubValueResponse,
+    rankResponse,
+    activityResponse,
+  ] = await Promise.all([
+    supabase.schema("kut").from("profiles").select("is_disabled").eq("id", userId).maybeSingle(),
+    supabase
+      .schema("kut")
+      .from("top_risers")
+      .select("id, slug, display_name, archetype, live_ovr, pac, sho, pas, dri, def, phy, rarity_tier, photo_path, ovr_delta")
+      .limit(5),
+    supabase.schema("kut").from("wallets").select("balance").eq("user_id", userId).maybeSingle(),
+    supabase.schema("kut").from("my_club_value").select("club_value").maybeSingle(),
+    supabase.schema("kut").from("club_value_leaderboard").select("rank").eq("is_current_user", true).maybeSingle(),
+    supabase
+      .schema("kut")
+      .from("activity_feed")
+      .select("kind, ts, actor_name, counterparty_name, card_name, amount, session_date, session_type")
+      .gte("ts", ACTIVITY_FLOOR_ISO)
+      .order("ts", { ascending: false })
+      .limit(12),
+  ]);
 
   if (profileError) {
     throw new Error("Could not verify your KUT membership.");
@@ -58,6 +78,8 @@ export default async function Home() {
   const balance = walletResponse.data?.balance ?? 0;
   const clubValue = clubValueResponse.data?.club_value ?? balance;
   const rank = rankResponse.data?.rank ?? null;
+  // The activity feed is a non-critical widget — never fail the Home page over it.
+  const activity = (activityResponse.data ?? []) as ActivityRow[];
 
   return (
     <main className="min-h-screen bg-board p-6 text-ink sm:p-10">
@@ -144,6 +166,34 @@ export default async function Home() {
                 </Link>
               ))}
             </div>
+          )}
+        </section>
+
+        <section className="space-y-4">
+          <h2 className="text-2xl font-black tracking-tight">Club activity</h2>
+          {activity.length === 0 ? (
+            <p className="rounded-2xl border border-line bg-panel p-5 text-ink-dim">
+              Recent sales, listings, pack openings, and published sessions will show up here.
+            </p>
+          ) : (
+            <ol className="space-y-3">
+              {activity.map((row, index) => (
+                <li
+                  className="rounded-2xl border border-panel-2 bg-panel/50 p-4"
+                  key={`${row.kind}-${row.ts}-${index}`}
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <p className="text-xs font-black uppercase tracking-[0.14em] text-brass">
+                      {ACTIVITY_KIND_LABEL[row.kind]}
+                    </p>
+                    <time className="text-xs font-semibold text-ink-faint" dateTime={row.ts}>
+                      {formatDate(row.ts)}
+                    </time>
+                  </div>
+                  <p className="mt-2 text-ink-dim">{describeActivity(row)}</p>
+                </li>
+              ))}
+            </ol>
           )}
         </section>
       </section>

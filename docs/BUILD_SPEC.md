@@ -1640,21 +1640,24 @@ Home should answer "what changed?" quickly.
 > full roster rather than listing it. Recent acquisitions / market activity /
 > latest-session widgets are still not built.
 
-> **Implemented (2026-08-31, ADR-038):** a club-wide **activity newsfeed** at
-> `/feed` (More menu → "Newsfeed"). `kut.activity_feed` is one read-only
-> `security_invoker = false` view (granted to `authenticated`, the
-> `kut.club_value_leaderboard` pattern) unioning four already-persisted
-> sources: completed sales (`market_sales`), active listings
+> **Implemented (2026-08-31, ADR-038):** a club-wide **activity newsfeed**.
+> `kut.activity_feed` is one read-only `security_invoker = false` view (granted
+> to `authenticated`, the `kut.club_value_leaderboard` pattern) unioning four
+> already-persisted sources: completed sales (`market_sales`), active listings
 > (`market_listings`), pack openings (`pack_openings`, count only — no card
 > reveal), and published sessions (`match_sessions`). **Not** discards
 > (private inventory management) and **not** coin-grant / attendance rows
-> (noise). No retention job — the page fetches `order by ts desc limit 200`
-> with an optional `?before=<ts>` cursor, so the effective window is ~the last
-> 200 events. **Disclosure change:** a completed-sale row now shows the seller,
-> the card, the price **and the buyer name** club-wide (previously
+> (noise). No retention job. **Disclosure change:** a completed-sale row shows
+> the seller, the card, the price **and the buyer name** club-wide (previously
 > `market_sales` was buyer+seller-only; the buyer was already visible to the
 > seller via the ADR-019 sale notification). Listings already exposed the
 > seller club-wide (ADR-017).
+>
+> **Amended (ADR-039):** the feed is a **"Club activity" section at the bottom
+> of Home**, not a standalone `/feed` route — the route and its "Newsfeed" nav
+> entry were removed. Home reads `order by ts desc limit 12` with a fixed
+> `ts >= 2026-08-30` floor (no pager, no `?before=` cursor); dates render
+> date-only. The `kut.activity_feed` view is unchanged.
 
 MVP widgets:
 
@@ -1666,7 +1669,7 @@ MVP widgets:
 - latest market activity;
 - latest published TFH session;
 - biggest current player movers if historical snapshots exist;
-- club-wide activity newsfeed at `/feed` (ADR-038).
+- club-wide activity feed as a Home section (ADR-038; ADR-039 moved it from `/feed` into Home).
 
 Phase 2 adds a Matchday Update hero:
 

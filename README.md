@@ -5,24 +5,22 @@ Haarlem (TFH): real attendance and match performance drive a card economy
 players collect, open packs of, and trade. Part of the
 [VibeTrunk](https://vibetrunk.com) hub.
 
-This repo currently holds only the agent-safety/security scaffold — no
-application code yet. Start with [`CLAUDE.md`](CLAUDE.md) for project
-context, then [`docs/BUILD_SPEC.md`](docs/BUILD_SPEC.md) for the full
-product and technical specification, and [`docs/decisions.md`](docs/decisions.md)
-for why this repo looks the way it does (including open items still to be
-resolved before implementation starts).
+Start with [`CLAUDE.md`](CLAUDE.md) for project context, then
+[`docs/BUILD_SPEC.md`](docs/BUILD_SPEC.md) for the full product and technical
+specification, [`docs/PROGRESS.md`](docs/PROGRESS.md) for delivery history, and
+[`docs/decisions.md`](docs/decisions.md) for why the code looks the way it does.
 
 ## Status
 
-The local MVP is feature-complete through attendance, Live Cards, invite-only
-accounts, starter assets, packs, discard, market, Club Value, and private
-market messages. KUT is live at [kut.vibetrunk.com](https://kut.vibetrunk.com),
-deployed from its own Vercel project using the shared VibeTrunk Supabase
-project's `kut` schema. Hosted migrations are catalogued and deployed only
-from the central [VibeTrunk/supabase](https://github.com/VibeTrunk/supabase)
-repository. Historical target:
-`kut.vibetrunk.com`, deployed as its own Vercel project, using the shared
-VibeTrunk Supabase project's `kut` schema.
+The MVP is feature-complete: attendance rewards, Live Cards, invite-only
+accounts, starter assets, packs, discard, the transfer market, Club Value, a
+private message inbox, and a club-wide activity feed on the home page. Later
+tester-feedback batches added the "KUT Coins" currency name, a Goalkeeper
+archetype, a bibs-washing coin bonus, and admin economy tools. KUT is live at
+[kut.vibetrunk.com](https://kut.vibetrunk.com), deployed from its own Vercel
+project using the shared VibeTrunk Supabase project's `kut` schema. Hosted
+migrations are catalogued and deployed only from the central
+[VibeTrunk/supabase](https://github.com/VibeTrunk/supabase) repository.
 
 ## Current foundation
 
@@ -153,11 +151,12 @@ Live Cards. An existing local account created before this feature
 will see a **Claim starter pack** button after signing in. This is a one-time,
 server-authoritative operation.
 
-Publishing attendance automatically awards 75 KUT Coins to each enabled user
+Publishing attendance automatically awards 250 KUT Coins to each enabled user
 linked to an attending Player. Rewards are recorded once per Player/session in
 an immutable ledger, so publishing, correcting, or reactivating a session
 cannot duplicate coins. A cancelled session does not claw back coins already
-earned, per the MVP correction policy.
+earned, per the MVP correction policy. If the admin records who washed the bibs
+on the attendance form, that member also receives a one-off 100 KUT Coins.
 
 ## My Club and card details
 
@@ -184,7 +183,7 @@ database transaction. Reloading a saved result page never rerolls the pack.
 
 ## Admin economy health
 
-An admin can open **Admin attendance → Economy** to inspect the current pack
+An admin can open **Admin → Economy** to inspect the current pack
 pool, expected discard value per slot and pack, expected return percentage,
 and compact coin/card totals. The calculation uses the active Live-card pool
 and the server-defined rarity weights. It is a read-only warning screen;

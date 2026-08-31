@@ -77,8 +77,9 @@ export default async function HowItWorksPage() {
           <p className="rounded-xl bg-moss-bg/50 p-3 text-sm font-semibold text-moss">
             Showing up also pays: every published session you attend credits{" "}
             {ECONOMY.attendanceCoinReward} KUT Coins straight to your wallet, with a dated note in your{" "}
-            <Link className="underline" href="/messages">Message Center</Link>. It lands once the admin
-            publishes that session&rsquo;s attendance.
+            <Link className="underline" href="/messages">Messages</Link>. It lands once the admin
+            publishes that session&rsquo;s attendance. Whoever washes the bibs afterwards gets a
+            one-off +{ECONOMY.bibsCoinBonus} KUT Coins on top.
           </p>
         </Section>
 
@@ -143,7 +144,8 @@ export default async function HowItWorksPage() {
         <Section title="5. Archetypes reshape the six stats">
           <p>
             Your archetype doesn&rsquo;t change your OVR &mdash; it redistributes it across the six attributes.
-            You can pick your own from <Link className="font-semibold text-brass underline" href="/settings/card">your card settings</Link>.
+            There&rsquo;s one for each style of player, including a Goalkeeper profile. You can pick your own from{" "}
+            <Link className="font-semibold text-brass underline" href="/settings/card">your card settings</Link>.
           </p>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[26rem] text-left text-sm">
@@ -234,8 +236,9 @@ export default async function HowItWorksPage() {
 
         <Section title="10. Messages">
           <p>
-            Your <Link className="font-semibold text-brass underline" href="/messages">Message Center</Link> keeps a
-            private record of your market sales and purchases. Only you can read your inbox.
+            Your <Link className="font-semibold text-brass underline" href="/messages">Messages</Link> inbox keeps a
+            private record of your club and market activity &mdash; sales, purchases, and coin rewards. Only you
+            can read it.
           </p>
         </Section>
       </section>

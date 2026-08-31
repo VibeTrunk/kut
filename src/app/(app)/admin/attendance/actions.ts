@@ -11,17 +11,22 @@ const INVALID_REQUEST: PublishAttendanceState = {
   error: "The attendance details were invalid. Please review them and try again.",
 };
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 function readAttendanceForm(formData: FormData) {
   const sessionDate = String(formData.get("sessionDate") ?? "");
   const sessionType = String(formData.get("sessionType") ?? "");
   const rawAttendance = String(formData.get("attendance") ?? "");
+  const rawBibsWashedBy = String(formData.get("bibsWashedBy") ?? "").trim();
 
   if (!/^\d{4}-\d{2}-\d{2}$/.test(sessionDate)) return null;
+  if (rawBibsWashedBy !== "" && !UUID_RE.test(rawBibsWashedBy)) return null;
+  const bibsWashedBy = rawBibsWashedBy === "" ? null : rawBibsWashedBy;
 
   try {
     const attendance: unknown = JSON.parse(rawAttendance);
     if (!Array.isArray(attendance) || attendance.length === 0) return null;
-    return { attendance, sessionDate, sessionType };
+    return { attendance, sessionDate, sessionType, bibsWashedBy };
   } catch {
     return null;
   }
@@ -50,6 +55,7 @@ export async function publishAttendanceSession(
 
   const { error } = await supabase.schema("kut").rpc("publish_attendance_session", {
     p_attendance: input.attendance,
+    p_bibs_washed_by: input.bibsWashedBy,
     p_season_id: activeSeason.id,
     p_session_date: input.sessionDate,
     p_session_type: input.sessionType,
@@ -88,6 +94,7 @@ export async function correctPublishedAttendanceSession(
   const supabase = await createClient();
   const { error } = await supabase.schema("kut").rpc("correct_published_attendance_session", {
     p_attendance: input.attendance,
+    p_bibs_washed_by: input.bibsWashedBy,
     p_reason: reason,
     p_session_date: input.sessionDate,
     p_session_id: sessionId,

@@ -13,6 +13,7 @@ type CorrectionSession = {
   sessionDate: string;
   sessionType: string;
   status: "published" | "cancelled";
+  bibsWashedBy: string | null;
   attendance: Array<{ player_id: string; goals: number }>;
 };
 
@@ -34,6 +35,7 @@ export function AttendanceForm({
   const [step, setStep] = useState<"attendance" | "goals" | "review">("attendance");
   const [sessionDate, setSessionDate] = useState(() => correctionSession?.sessionDate ?? new Date().toISOString().slice(0, 10));
   const [sessionType, setSessionType] = useState(() => correctionSession?.sessionType ?? "friday");
+  const [bibsWashedBy, setBibsWashedBy] = useState<string>(() => correctionSession?.bibsWashedBy ?? "");
   const [state, formAction, isPending] = useActionState(
     isCorrection ? correctPublishedAttendanceSession : publishAttendanceSession,
     initialState,
@@ -47,6 +49,10 @@ export function AttendanceForm({
     () => selectedPlayers.map((player) => ({ player_id: player.id, goals: goals[player.id] ?? 0 })),
     [goals, selectedPlayers],
   );
+
+  // A washer who was removed from attendance falls back to "Nobody" without
+  // touching state (the raw pick is kept in case they are re-added).
+  const effectiveBibsWashedBy = bibsWashedBy && selected.includes(bibsWashedBy) ? bibsWashedBy : "";
 
   function togglePlayer(playerId: string) {
     setSelected((current) =>
@@ -65,6 +71,7 @@ export function AttendanceForm({
       <input name="attendance" type="hidden" value={JSON.stringify(attendance)} />
       <input name="sessionDate" type="hidden" value={sessionDate} />
       <input name="sessionType" type="hidden" value={sessionType} />
+      <input name="bibsWashedBy" type="hidden" value={effectiveBibsWashedBy} />
       {correctionSession && <input name="sessionId" type="hidden" value={correctionSession.id} />}
 
       <div className="flex gap-2 text-sm font-semibold">
@@ -173,6 +180,25 @@ export function AttendanceForm({
               ? "Saving this correction preserves the revised record until it is reactivated."
               : `${isCorrection ? "Saving this correction" : "Publishing"} will recalculate every Live Card from the season history.`}
           </p>
+          <label className="block space-y-2">
+            <span className="font-semibold">Who washed the bibs?</span>
+            <select
+              className="min-h-12 w-full rounded-xl border border-line bg-panel px-4"
+              onChange={(event) => setBibsWashedBy(event.target.value)}
+              value={effectiveBibsWashedBy}
+            >
+              <option value="">Nobody</option>
+              {selectedPlayers.map((player) => (
+                <option key={player.id} value={player.id}>
+                  {player.display_name}
+                </option>
+              ))}
+            </select>
+            <span className="block text-sm text-brass">
+              The bibs washer gets a one-off bonus in KUT Coins. Changing this on a
+              correction pays a new washer; the previous one keeps their bonus.
+            </span>
+          </label>
           {isCorrection ? (
             <label className="block space-y-2">
               <span className="font-semibold">Why is this being corrected?</span>

@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path to extensions, kut, public;
 
-select plan(163);
+select plan(166);
 
 select has_table('kut', 'players', 'players table exists');
 select has_table('kut', 'match_sessions', 'match sessions table exists');
@@ -41,13 +41,13 @@ select has_function(
 select has_function(
   'kut',
   'publish_attendance_session',
-  array['uuid', 'date', 'text', 'jsonb'],
+  array['uuid', 'date', 'text', 'jsonb', 'uuid'],
   'atomic attendance publication function exists'
 );
 select has_function(
   'kut',
   'correct_published_attendance_session',
-  array['uuid', 'date', 'text', 'jsonb', 'text'],
+  array['uuid', 'date', 'text', 'jsonb', 'text', 'uuid'],
   'published attendance correction function exists'
 );
 select has_function(
@@ -932,6 +932,20 @@ select is((select count(*) from kut.players where slug in ('test-newbie','test-n
   2::bigint, 'slug collision is suffixed');
 select throws_ok($$ select kut.admin_add_player('   ', 'all_rounder') $$,
   '22023', null, 'blank display name is rejected');
+
+-- ADR-036: the Goalkeeper archetype is accepted and rebuilds with its offsets.
+select lives_ok($$ select kut.admin_add_player('Keeper Test', 'goalkeeper') $$,
+  'the goalkeeper archetype is accepted by admin_add_player');
+select is((select archetype from kut.players where slug = 'keeper-test'),
+  'goalkeeper', 'the goalkeeper archetype is stored');
+select is(
+  (select array[pac, sho, pas, dri, def, phy]
+     from kut.player_season_state pss
+     join kut.players p on p.id = pss.player_id
+    where p.slug = 'keeper-test'),
+  array[24, 18, 30, 22, 44, 42],
+  'a fresh goalkeeper rebuilds as live_ovr 30 + {pac -6, sho -12, pas 0, dri -8, def +14, phy +12}');
+
 reset role;
 select set_config('request.jwt.claim.sub', '', true);
 

@@ -1299,6 +1299,134 @@ return an RPC-not-found error if used — do the push promptly. Hosted deploy is
 the additive path in `docs/OPERATIONS.md` via `VibeTrunk/supabase` (ADR-021);
 never `supabase db push` from this repo.
 
+## ADR-036 — Goalkeeper archetype (seventh offset profile)
+
+Date: 2026-08-31
+
+Status: Accepted
+
+Decision: KUT gains a seventh archetype, **Goalkeeper** (slug `goalkeeper`,
+label "Goalkeeper"). It **reuses the six shared attributes**
+(PAC/SHO/PAS/DRI/DEF/PHY) with its own offset row — it is **not** a distinct
+DIV/HAN/REF stat set (BUILD_SPEC §585 already said "MVP does not need separate
+goalkeeper statistics"; a distinct set would rewrite `live-card.tsx` and every
+attribute projection). The offsets are a shot-stopper — strong DEF/PHY, weak
+SHO/DRI — and **sum to exactly 0** like the other six (§589, "no large hidden
+OVR advantage"):
+
+```text
+PAC -6   SHO -12   PAS 0   DRI -8   DEF +14   PHY +12     (sum 0)
+```
+
+Changed in the places that must stay in sync: `src/game/archetypes.ts`
+(`ARCHETYPES`, `ARCHETYPE_LABELS`), `src/game/rating-engine.ts`
+(`ARCHETYPE_OFFSETS.goalkeeper`), `docs/BUILD_SPEC.md` §585 + §15.1, and
+migration `20260906000000_goalkeeper_archetype.sql`, which widens the
+`kut.players` archetype `check`, `create or replace`s `kut.admin_add_player`
+and `kut.set_own_player_archetype` with `goalkeeper` in their allow-lists, and
+`create or replace`s `kut._rebuild_season_core` with a
+`when 'goalkeeper' then <n>` arm on each of the six attribute `CASE`
+expressions (the six `<n>` equal `ARCHETYPE_OFFSETS.goalkeeper`). The slug is
+`goalkeeper`, not `keeper` — `tests/unit/archetypes.test.ts` and
+`member_self_service.test.sql` both keep `"keeper"` as a bogus negative case.
+Every archetype picker and validator already derives from `ARCHETYPES` /
+`isArchetype`, so the admin add-player form, the `/settings/card` editor, and
+the `/how-it-works` offsets table (now seven rows) pick Goalkeeper up with no
+UI change.
+
+**No player is pre-assigned Goalkeeper.** It is opt-in via the existing
+self-service (`set_own_player_archetype`) and admin (`admin_add_player`) RPCs,
+both of which already run `_rebuild_season_core`. Pre-assigning real keepers
+would make the migration data-changing; leaving it opt-in keeps it **additive**
+(ADR-032). A goalkeeper card is still driven by attendance + goals like every
+other card — keepers rarely score, so their Form stays low, and that is
+accepted: the card reflects turning up.
+
+Reason: tester feedback #4 ("add a Goalkeeper archetype"). The Medium path (a
+seventh offset row) was chosen over the Hard path (a separate GK stat set).
+
+Consequences: tier is **additive** — a widened check constraint plus three
+`create or replace function`s; nothing existing is rewritten and the migration
+touches no member rows (the new `_rebuild_season_core` arm is inert until a
+player has `archetype = 'goalkeeper'`). Rides the last scheduled backup; no
+fresh pre-push backup. Rollback is only safe while no player is a goalkeeper —
+DDL is in the migration header. `_rebuild_season_core` now restates the
+ADR-024 rating formula for the third time (SQL, TS, and this migration's
+copy); the pgTAP `phase_1a_roster.test.sql` asserts a fresh goalkeeper
+rebuilds to `live_ovr 30 + {pac -6, sho -12, pas 0, dri -8, def +14, phy +12}`
+and `tests/fixtures/rating-scenarios.json` carries a goalkeeper scenario for
+the SQL↔TS parity suite. Hosted deploy is the additive path in
+`docs/OPERATIONS.md` via `VibeTrunk/supabase` (ADR-021); never `supabase db
+push` from this repo. Between the KUT merge and the hosted push, picking
+"Goalkeeper" in the UI returns the RPC's "invalid archetype" error — do the
+push promptly.
+
+## ADR-037 — Bibs bonus is coins-only (100), stored on the session, forward-only
+
+Date: 2026-08-31
+
+Status: Accepted
+
+Decision: the member linked to the Player who washed the bibs after a session
+gets a one-off **`+100` KUT Coins** (`ECONOMY.bibsCoinBonus` /
+`BIBS_COIN_BONUS`, Part 145 — meaningful, well under a session's 250 attendance
+reward). **Coins only** — no rating/OVR effect (that would add a new input to
+`_rebuild_season_core`, the fixtures, and Part L; punted). Batch E2, migration
+`20260907000000_bibs_bonus.sql`, all additive.
+
+**Storage.** One washer per session → a nullable column
+`kut.match_sessions.bibs_washed_by uuid references kut.players(id) on delete
+restrict`, not a table. Validated as null-or-(a distinct attendee of that
+session) inside `kut.publish_attendance_session` /
+`kut.correct_published_attendance_session` (a CHECK can't reference other
+tables).
+
+**Reward path** mirrors `kut.grant_attendance_rewards` exactly:
+`kut.grant_bibs_reward(p_session_id)` (security definer) is called from
+`kut.process_published_session_rewards` next to `grant_attendance_rewards`, so
+it fires on publish and on the attendance churn of a correction. A
+`kut.bibs_rewards` guard table — `(session_id, player_id, user_id, ledger_id,
+created_at)`, PK `(session_id, player_id)`, member-reads-own / admin-reads-all
+RLS — plus the unique ledger key `'bibs:' || session || ':' || washer` make it
+idempotent: **at most once per `(session, washer)`**. `wallet_ledger.reason`
+gains `'bibs_bonus'`; `user_notifications.event_type` gains `'bibs_bonus'` (a
+distinct type, so the `(user, event_type, ref_type, ref_id)` unique key does
+not collide with the washer's own `attendance_reward` row for the same
+session). Inbox body: "You received 100 KUT Coins for washing the bibs after
+the session on DD Mon YYYY."
+
+**Forward-only on corrections.** If a correction names a different washer, the
+new washer is paid (a fresh guard row); the previous washer **keeps** their
+100 — no claw-back (Part L §162 #21, invariant #9-style). The
+`correct_published_attendance_session` body sets `bibs_washed_by` *before* it
+replaces the attendance, so the reward trigger sees the corrected washer.
+
+**Signatures change.** `kut.publish_attendance_session` and
+`kut.correct_published_attendance_session` each gain a trailing
+`p_bibs_washed_by uuid default null`. A `create or replace` cannot widen the
+argument list, so each old signature is dropped and recreated; existing
+4-/5-arg callers are unaffected by the new defaulted parameter. The two pgTAP
+`has_function` assertions were updated for the new arg lists.
+
+Reason: tester feedback #5 ("bonus coins for washing the bibs, recorded with
+weekly attendance"). Medium path (a coin bonus) chosen over the Hard path (a
+rating/OVR effect).
+
+Consequences: tier is **additive** (ADR-032) — new nullable column, new table,
+two widened check constraints, `create or replace` / drop+recreate of
+functions; no member row is rewritten and the migration grants no coins
+(`grant_bibs_reward` does that at run time, only for sessions that name a
+washer). Rides the last scheduled backup; no fresh pre-push backup. Rollback
+DDL is in the migration header (safe only while no `bibs_bonus` rows exist; on
+hosted the migration is inert until the `VibeTrunk/supabase` push). Front-end:
+a "Who washed the bibs?" select on the attendance form's review step (options =
+the checked-in players + "Nobody"), threaded through
+`admin/attendance/actions.ts` to both RPCs; `messages/page.tsx` gains a "Bibs
+bonus" kicker label. Between the KUT merge and the hosted push, choosing a
+washer returns the RPC's "invalid argument" error — push promptly. Hosted
+deploy is the additive path in `docs/OPERATIONS.md` via `VibeTrunk/supabase`
+(ADR-021); never `supabase db push` from this repo.
+
 ## ADR-038 — Member-wide activity newsfeed view
 
 Date: 2026-08-31

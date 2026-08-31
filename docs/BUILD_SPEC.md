@@ -582,7 +582,11 @@ Use six familiar but generic football attributes:
 - `DEF` — Defending
 - `PHY` — Physical
 
-MVP does not need separate goalkeeper statistics.
+MVP does not use separate goalkeeper statistics. The Goalkeeper archetype
+(ADR-036) is a seventh offset profile over these same six attributes — a
+shot-stopper (strong DEF/PHY, weak SHO/DRI) — not a distinct DIV/HAN/REF stat
+set. A goalkeeper card is still driven by attendance and goals like any other;
+keepers rarely score, so their Form stays low, and that is intended.
 
 Every player chooses or is assigned an archetype.
 
@@ -655,6 +659,17 @@ SHO  -2
 PAS  -2
 DRI  -4
 DEF  +4
+PHY +12
+```
+
+**Goalkeeper** (ADR-036 — reuses these six attributes, no distinct GK stat set)
+
+```text
+PAC  -6
+SHO -12
+PAS   0
+DRI  -8
+DEF +14
 PHY +12
 ```
 
@@ -977,6 +992,21 @@ attendance. See ADR-035.
 > it writes one compensating `-(balance)` entry (`reason 'admin_reset'`) and a
 > fresh `+250` starter, netting the wallet to `250`. It does not create coins
 > beyond the standard starter grant.
+
+### Bibs bonus
+
+The member linked to the Player who washed the bibs after a session receives a
+one-off `+100 KUT Coins` (`BIBS_COIN_BONUS`, Part 145). The admin records the
+washer on the attendance form; `kut.match_sessions.bibs_washed_by` stores it
+(null = nobody). Paid by the audited `kut.grant_bibs_reward`, alongside
+`grant_attendance_rewards`, with `wallet_ledger.reason = 'bibs_bonus'` and a
+dated `bibs_bonus` inbox message ("You received 100 KUT Coins for washing the
+bibs after the session on DD Mon YYYY."). A `kut.bibs_rewards` guard table,
+PK `(session_id, player_id)`, plus a unique ledger key make it idempotent: at
+most once per `(session, washer)`, never re-paid for the same washer on a
+correction. Reassigning the washer on a correction pays the new washer; the
+previous one keeps their bonus (forward-only). Coins only — no rating/OVR
+effect. See ADR-037.
 
 ---
 
@@ -1443,7 +1473,7 @@ Possible subcollections:
 - Friday regulars;
 - Gold players;
 - 2026 debutants;
-- goalkeepers;
+- goalkeepers (players with the Goalkeeper archetype, ADR-036);
 - season-specific groups.
 
 Completion rewards are later features.
@@ -4013,6 +4043,7 @@ LIVE_OVR_MIN = 30
 LIVE_OVR_MAX = 83
 
 ATTENDANCE_COIN_REWARD = 250  # raised from 75 on 2026-08-29, ADR-029
+BIBS_COIN_BONUS = 100  # one-off, for the session's bibs washer, ADR-037
 STARTER_COIN_GRANT = 250
 STARTER_CARD_COUNT = 3
 
@@ -4307,6 +4338,7 @@ Tasks:
 18. Service-role secret never reaches browser.
 19. Invite token can be claimed at most once.
 20. Card ownership changes only through a server-authoritative `buy_listing` transaction (ADR-033 retired the former "untradeable card cannot enter the market" invariant).
+21. Bibs bonus is a bounded faucet: at most once per `(session, Player)`, never re-paid on a correction of the same washer (ADR-037).
 
 Every coding agent should treat this section as a regression checklist.
 

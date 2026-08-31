@@ -64,12 +64,6 @@ Finding 3 was withdrawn by the tester (no entry).
   amount?~~ **Decided 2026-08-31 (ADR-037):** coins-only, `+100`, stored as
   `match_sessions.bibs_washed_by`, paid via `grant_bibs_reward` + a
   `bibs_rewards` guard table, forward-only on corrections.
-- **#10** — ~~newsfeed shows sales + new listings only, or also discards?
-  Retention window?~~ **Decided 2026-08-31 (ADR-038):** completed sales + new
-  listings + pack opens + published sessions; **not** discards. No retention
-  job — `order by ts desc limit 200` + a `?before=` cursor (~last 200 events).
-  A completed-sale row shows the seller, card, price **and buyer name**
-  club-wide.
 - **#6** — ~~define "reset" as the soft reset described above?~~ **Decided
   2026-08-31 (ADR-035):** yes — `kut.admin_reset_account` wipes wallet / owned
   cards (soft burn) / pack history / notifications and re-grants the standard

@@ -36,17 +36,33 @@ don't add cross-repo coupling beyond the shared Supabase project.
 
 KUT is live at `https://kut.vibetrunk.com` as Vercel project `kut`. The
 hosted `kut` schema is applied through
-`20260905000000_admin_economy_tools.sql` (ADR-035 &mdash; two `is_admin()`-gated
-economy RPCs: `admin_adjust_wallet` (audited coin faucet, ledger reason
-`admin_grant`) and `admin_reset_account` (soft club reset, reason
-`admin_reset`), plus the `admin_account_events` audit table and a widened
-`wallet_ledger.reason` check; tester feedback batch D, #8 + #6; additive tier;
-deployed 2026-08-31). Before it, also deployed 2026-08-31:
-`20260904000000_canonical_coin_name.sql` (ADR-034, batch C &mdash; "KUT Coins"
-is the one currency name: `open_pack` / `buy_listing` error strings + the two
-market notification bodies, plus a backfill of existing `user_notifications`
-rows) and `20260903000000_drop_is_tradeable.sql` (ADR-033, batch B &mdash;
-every card tradeable, `is_tradeable` dropped); and,
+`20260908000000_activity_feed.sql` &mdash; the last of tester-feedback
+**Batch E** (three additive migrations, all deployed 2026-08-31 in one
+`db push`):
+
+- `20260906000000_goalkeeper_archetype.sql` (ADR-036, E1 / #4) &mdash; a
+  seventh `goalkeeper` archetype reusing the six shared attributes with its
+  own offset row (sums to 0); widens the `kut.players` archetype `check` and
+  `create or replace`s `admin_add_player` / `set_own_player_archetype` /
+  `_rebuild_season_core`. No player pre-assigned.
+- `20260907000000_bibs_bonus.sql` (ADR-037, E2 / #5) &mdash; a `+100` KUT
+  Coins bonus for the session's bibs washer (coins only). Adds
+  `kut.match_sessions.bibs_washed_by`, the `kut.bibs_rewards` guard table,
+  `kut.grant_bibs_reward`, `bibs_bonus` in the `wallet_ledger.reason` and
+  `user_notifications.event_type` checks, and a trailing `p_bibs_washed_by`
+  on `publish_attendance_session` / `correct_published_attendance_session`
+  (old signatures dropped + recreated).
+- `20260908000000_activity_feed.sql` (ADR-038, E3 / #10) &mdash; a read-only
+  member-wide `kut.activity_feed` view (sales + listings + pack opens +
+  published sessions; sale rows expose the buyer name club-wide).
+
+Before Batch E, also deployed 2026-08-31:
+`20260905000000_admin_economy_tools.sql` (ADR-035, batch D &mdash;
+`admin_adjust_wallet` audited coin faucet + `admin_reset_account` soft club
+reset + the `admin_account_events` audit table),
+`20260904000000_canonical_coin_name.sql` (ADR-034, batch C &mdash; "KUT
+Coins" is the one currency name) and `20260903000000_drop_is_tradeable.sql`
+(ADR-033, batch B &mdash; every card tradeable, `is_tradeable` dropped); and,
 `20260902000000_starter_reveal_and_rating_snapshots.sql` (ADR-031, deployed
 2026-08-30).
 

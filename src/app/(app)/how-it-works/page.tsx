@@ -194,7 +194,7 @@ export default async function HowItWorksPage() {
           <p>
             Discarding permanently burns a card for a guaranteed payout based on its current OVR
             (<code>round(10 &times; 1.08 <sup>OVR&minus;30</sup>)</code>). Every card you own can be discarded,
-            unless it has an active market listing.
+            unless it has an active market listing or is committed to a pending trade offer.
           </p>
           <table className="w-full max-w-xs text-left text-sm">
             <thead className="text-ink-faint">
@@ -214,12 +214,21 @@ export default async function HowItWorksPage() {
           </table>
         </Section>
 
-        <Section title="8. Transfer market">
+        <Section title="8. Transfer market & trade offers">
           <p>
             List any card at a buy-now price (within server-set bounds) for{" "}
             {ECONOMY.listingDurationHours} hours. When it sells, a {ECONOMY.marketTaxPercent}% tax (minimum 1
             coin) is <strong>burned</strong> &mdash; it doesn&rsquo;t go to anyone &mdash; and the seller gets
             the rest. A listed card is locked until it sells, is cancelled, or expires.
+          </p>
+          <p>
+            Instead of paying the buy-now price, you can <strong>make an offer</strong>: some KUT Coins and/or
+            up to {ECONOMY.tradeOfferMaxCards} of your own cards. Everything you offer is held in escrow until
+            the seller accepts or declines, or the offer expires after {ECONOMY.tradeOfferExpiryHours} hours.
+            Accepting an offer pays the seller the coins (minus the same {ECONOMY.marketTaxPercent}% burn),
+            swaps the cards, and cancels every other offer on that listing. Your{" "}
+            <Link className="font-semibold text-brass underline" href="/market/offers">Trade offers</Link>{" "}
+            page tracks both sides.
           </p>
           <Link className="inline-block font-semibold text-brass underline" href="/market">
             Browse the market &rarr;
@@ -228,9 +237,25 @@ export default async function HowItWorksPage() {
 
         <Section title="9. Club Value & the leaderboard">
           <p>
-            Your Club Value is your wallet balance plus the reference value of every card you own. The{" "}
-            <Link className="font-semibold text-brass underline" href="/leaderboard">leaderboard</Link>{" "}
-            ranks every club by that number.
+            Your Club Value is a plain sum of three numbers:
+          </p>
+          <ul className="ml-5 list-disc space-y-1">
+            <li>your wallet balance in KUT Coins;</li>
+            <li>
+              plus the <strong>discard value</strong> of every unburned card you own (
+              <code>round(10 &times; 1.08 <sup>OVR&minus;30</sup>)</code>);
+            </li>
+            <li>
+              plus your linked player&rsquo;s own Live-card discard value, counted{" "}
+              <strong>{ECONOMY.personalCardClubWeight}&times;</strong> &mdash; showing up to football is the
+              fastest way to grow your club.
+            </li>
+          </ul>
+          <p>
+            The <Link className="font-semibold text-brass underline" href="/leaderboard">leaderboard</Link>{" "}
+            ranks every club by that total, and{" "}
+            <Link className="font-semibold text-brass underline" href="/club/value">your Club Value page</Link>{" "}
+            shows the full breakdown card by card.
           </p>
         </Section>
 

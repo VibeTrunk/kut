@@ -2,14 +2,14 @@ import Link from "next/link";
 import { requireUser } from "@/lib/auth/user";
 import { createClient } from "@/lib/supabase/server";
 
-type ClubValue = { card_value: number; club_value: number; unique_player_count: number };
+type ClubValue = { owned_cards_value: number; personal_card_bonus: number; club_value: number; unique_player_count: number };
 
 export default async function ClubPage() {
   const user = await requireUser();
   const supabase = await createClient();
   const [walletResponse, clubValueResponse, cardCountResponse] = await Promise.all([
     supabase.schema("kut").from("wallets").select("balance").eq("user_id", user.id).maybeSingle(),
-    supabase.schema("kut").from("my_club_value").select("card_value, club_value, unique_player_count").maybeSingle(),
+    supabase.schema("kut").from("my_club_value").select("owned_cards_value, personal_card_bonus, club_value, unique_player_count").maybeSingle(),
     supabase.schema("kut").from("my_collection_cards").select("card_id", { count: "exact", head: true }),
   ]);
 
@@ -35,10 +35,11 @@ export default async function ClubPage() {
             <dt className="text-xs font-black uppercase tracking-[0.13em]">KUT Coins</dt>
             <dd className="mt-1 text-2xl font-black">{balance.toLocaleString()}</dd>
           </div>
-          <div className="rounded-2xl border border-steel-line/40 bg-steel-bg/30 px-4 py-4">
+          <Link className="group rounded-2xl border border-steel-line/40 bg-steel-bg/30 px-4 py-4 hover:border-steel" href="/club/value">
             <dt className="text-xs font-black uppercase tracking-[0.13em] text-steel">Club Value</dt>
             <dd className="mt-1 text-2xl font-black text-steel">{Number(clubValue?.club_value ?? balance).toLocaleString()}</dd>
-          </div>
+            <span className="mt-1 block text-[0.7rem] font-bold uppercase tracking-[0.12em] text-steel/70 group-hover:text-steel">See the maths →</span>
+          </Link>
           <div className="rounded-2xl border border-line bg-board/60 px-4 py-4">
             <dt className="text-xs font-black uppercase tracking-[0.13em] text-ink-faint">Cards</dt>
             <dd className="mt-1 text-2xl font-black">{cardCount}</dd>
@@ -49,7 +50,7 @@ export default async function ClubPage() {
           </div>
         </dl>
 
-        <p className="text-sm text-ink-faint">{Number(clubValue?.card_value ?? 0).toLocaleString()} KUT Coins in card reference value across {clubValue?.unique_player_count ?? 0} unique players.</p>
+        <p className="text-sm text-ink-faint">{Number(clubValue?.owned_cards_value ?? 0).toLocaleString()} KUT Coins of owned-card discard value across {clubValue?.unique_player_count ?? 0} unique players, plus a {Number(clubValue?.personal_card_bonus ?? 0).toLocaleString()} personal-card bonus. <Link className="text-brass underline" href="/club/value">See the full breakdown</Link>.</p>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <Link className="group rounded-3xl border border-line bg-panel/70 p-6 hover:border-brass" href="/club/collection">

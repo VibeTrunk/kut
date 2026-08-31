@@ -7,7 +7,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
 
   return (
     <>
-      <AppNav balance={nav.balance} displayName={nav.displayName} isAdmin={nav.isAdmin} unreadCount={nav.unreadCount} />
+      <AppNav balance={nav.balance} displayName={nav.displayName} incomingOfferCount={nav.incomingOfferCount} isAdmin={nav.isAdmin} unreadCount={nav.unreadCount} />
       <div className="pb-16 sm:pb-0">{children}</div>
     </>
   );

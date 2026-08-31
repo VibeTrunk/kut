@@ -144,6 +144,30 @@ export function IconInfo(props: IconProps) {
   );
 }
 
+export function IconScale(props: IconProps) {
+  return base(
+    <>
+      <path d="M12 4v16" />
+      <path d="M7 20h10" />
+      <path d="M5 7h14l-2.5-3h-9z" />
+      <path d="M5 7 2.5 13a3 3 0 0 0 5 0z" />
+      <path d="M19 7l-2.5 6a3 3 0 0 0 5 0z" />
+    </>,
+    props,
+  );
+}
+
+export function IconOffer(props: IconProps) {
+  return base(
+    <>
+      <path d="M3 7h11l4 4-6 6-4-4" />
+      <path d="M7 11h0" />
+      <path d="M14 14l3 3 4-4-4-4" />
+    </>,
+    props,
+  );
+}
+
 export function IconChevronDown(props: IconProps) {
   return base(<path d="M7 10l5 5 5-5" />, { strokeWidth: 2, ...props });
 }

@@ -65,6 +65,20 @@ test("requires sign-in before browsing the transfer market", async ({ page }) =>
   await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
 });
 
+test("requires sign-in before showing trade offers", async ({ page }) => {
+  await page.goto("/market/offers");
+
+  await expect(page).toHaveURL(/\/login$/);
+  await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
+});
+
+test("requires sign-in before showing the Club Value breakdown", async ({ page }) => {
+  await page.goto("/club/value");
+
+  await expect(page).toHaveURL(/\/login$/);
+  await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
+});
+
 test("keeps a protected route usable at a phone viewport", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/messages");

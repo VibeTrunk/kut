@@ -38,7 +38,20 @@ KUT is live at `https://kut.vibetrunk.com` as Vercel project `kut`. The
 hosted `kut` schema is applied through
 `20260908000000_activity_feed.sql` &mdash; the last of tester-feedback
 **Batch E** (three additive migrations, all deployed 2026-08-31 in one
-`db push`):
+`db push`).
+
+> **Pending hosted push (2026-09-01, branch
+> `feat/market-art-club-value-trade-offers`):** three migrations catalogued
+> for `VibeTrunk/supabase` but **not yet deployed** &mdash;
+> `20260909000000_market_listing_card_art.sql` (ADR-040, additive: market
+> view gains `photo_path` + `seller_id`),
+> `20260910000000_club_value_v2.sql` (ADR-041, data-changing: Club Value =
+> coins + owned-card discard value + 4&times; personal card) and
+> `20260911000000_trade_offers.sql` (ADR-042, data-changing: coin+card
+> escrow trade offers on listings). Flip this note to "deployed" after the
+> `VibeTrunk/supabase` push.
+
+Batch E migrations:
 
 - `20260906000000_goalkeeper_archetype.sql` (ADR-036, E1 / #4) &mdash; a
   seventh `goalkeeper` archetype reusing the six shared attributes with its

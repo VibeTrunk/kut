@@ -32,6 +32,7 @@ type CollectionCard = {
   discard_value: number;
   active_listing_id: string | null;
   active_listing_price: number | null;
+  held_by_offer_id: string | null;
   photo_path: string | null;
 };
 
@@ -46,7 +47,7 @@ export default async function CardDetailPage({ params, searchParams }: CardPageP
   const { data, error } = await supabase
     .schema("kut")
     .from("my_collection_cards")
-    .select("card_id, edition_id, edition_title, edition_type, is_live, source, display_name, archetype, ovr, pac, sho, pas, dri, def, phy, rarity_tier, discard_value, active_listing_id, active_listing_price, photo_path")
+    .select("card_id, edition_id, edition_title, edition_type, is_live, source, display_name, archetype, ovr, pac, sho, pas, dri, def, phy, rarity_tier, discard_value, active_listing_id, active_listing_price, held_by_offer_id, photo_path")
     .eq("card_id", cardId)
     .maybeSingle();
 
@@ -123,8 +124,14 @@ export default async function CardDetailPage({ params, searchParams }: CardPageP
             {query.listed === "1" && <p className="rounded-2xl bg-moss-bg p-4 text-sm font-bold text-moss">Listed successfully. This card is now locked for 24 hours or until you cancel it.</p>}
             {query.listingCancelled === "1" && <p className="rounded-2xl bg-moss-bg p-4 text-sm font-bold text-moss">Listing cancelled. This card is available again.</p>}
 
-            {card.active_listing_id && card.active_listing_price && <CancelListingForm cardId={card.card_id} listingId={card.active_listing_id} price={card.active_listing_price} />}
-            {!card.active_listing_id && <>
+            {card.held_by_offer_id && (
+              <p className="rounded-2xl border border-brass/40 bg-brass/10 p-4 text-sm font-bold text-brass">
+                This card is committed to a pending trade offer. It can&rsquo;t be listed or discarded until that
+                offer is accepted, declined, or expires.
+              </p>
+            )}
+            {!card.held_by_offer_id && card.active_listing_id && card.active_listing_price && <CancelListingForm cardId={card.card_id} listingId={card.active_listing_id} price={card.active_listing_price} />}
+            {!card.held_by_offer_id && !card.active_listing_id && <>
               {minimumPrice !== null && maximumPrice !== null && <CreateListingForm cardId={card.card_id} maximumPrice={maximumPrice} minimumPrice={minimumPrice} />}
               <DiscardCardForm cardId={card.card_id} discardValue={card.discard_value} />
             </>}

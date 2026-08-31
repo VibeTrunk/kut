@@ -1381,15 +1381,41 @@ At MVP, any completed market sale inside the enforced listing bounds qualifies.
 
 Later anti-manipulation rules may require unique buyer/seller counts.
 
+Accepted **trade offers** (§39a / ADR-042) are **not** qualifying sales — they
+are private negotiations, not price signals, and are never written to
+`market_sales`.
+
+> **Note (2026-09-01, ADR-041):** Reference Value is now used **only** for
+> `get_listing_bounds` (market listing price bands). It is no longer part of
+> Club Value — see the revised §39 below.
+
 ---
 
 ## 39. Club Value
 
+> **Revised 2026-09-01 (ADR-041).** The former model — `wallet_balance +
+> sum(reference_value of every owned Card Copy)` — was replaced because
+> Reference Value depends on invisible sale history and a piecewise clamp, so
+> members could not audit their own number.
+
 ```text
 club_value =
   wallet_balance
-  + sum(reference_value of every owned Card Copy)
+  + owned_cards_value        -- sum(discard_value of every unburned owned Card Copy)
+  + personal_card_bonus      -- 4 × personal_card_base_value
+
+discard_value(card)      = round(10 × 1.08^(OVR − 30) × special_discard_multiplier)
+personal_card_base_value = round(10 × 1.08^(linked_player.live_ovr − 30))
 ```
+
+- Every term is an individually-visible number; `/club/value` shows the
+  arithmetic card by card.
+- `personal_card_bonus` uses the member's linked Player (`profiles.player_id`).
+  No linked Player → `0`. A linked Player with no active-season rating row yet
+  → the 30-OVR floor (base value 10, bonus 40).
+- Weight **W = 4** — mirrored as `ECONOMY.personalCardClubWeight` and the `4`
+  literals in `20260910000000_club_value_v2.sql`. Changing it is a spec + ADR
+  change.
 
 Include every unburned Card Copy (ADR-033 removed the untradeable class).
 
@@ -1412,6 +1438,38 @@ Leaderboard displays:
 Refresh on page request is acceptable at MVP scale.
 
 Cache only if measurement shows it is needed.
+
+---
+
+## 39a. Trade offers (2026-09-01, ADR-042)
+
+Instead of paying a listing's buy-now price, a member may **offer** KUT Coins
+and/or up to **3** of their own Card Copies for it.
+
+Lifecycle: `active → accepted | rejected | withdrawn | expired`.
+
+- **Propose** (`propose_trade`): the listing must be active and not the
+  caller's own. Offered coins are `0` or `1..get_listing_bounds.maximum_price`
+  (a coin offer *below* the asking price is allowed — that is the point of an
+  offer). Each offered card must be owned, unburned, not listed, and not
+  already committed to another offer. Max 10 active outgoing offers per member.
+  On propose, the coins leave the proposer's wallet (`wallet_ledger` reason
+  `trade_escrow`) and each offered card is locked
+  (`user_cards.held_by_offer_id`).
+- **Accept** (`respond_to_trade`, seller only): runs the same atomic swap as
+  `buy_listing` at the offered price — 5% burn on the coin component,
+  `trade_sale` receipt to the seller — moves the listed card to the proposer
+  and the offered cards to the seller, marks the listing `sold`, and
+  auto-rejects + refunds every other active offer on that listing.
+- **Reject / withdraw / expire**: release the card locks and refund the
+  escrowed coins (`trade_unescrow`). Offers **expire 12h** after they are
+  made; `expire_trade_offers()` runs lazily on the market pages (a cron is a
+  future addition).
+- A held card cannot be listed, discarded, burned, or re-offered.
+  `cancel_listing` and `buy_listing` unwind a listing's pending offers;
+  `admin_reset_account` / `admin_prepare_account_deletion` unwind a member's.
+- Accepted offers appear in `activity_feed` as a `trade` row and are **not**
+  written to `market_sales` (see §38 qualifying-sale note).
 
 ---
 
@@ -3540,7 +3598,7 @@ Potential:
 - achievements;
 - notifications;
 - friend activity;
-- trading offers;
+- ~~trading offers~~ — **shipped 2026-09-01, ADR-042** (see §39a);
 - auctions;
 - card wishlists;
 - watched prices.
@@ -4340,8 +4398,10 @@ Tasks:
 17. Normal user cannot edit attendance.
 18. Service-role secret never reaches browser.
 19. Invite token can be claimed at most once.
-20. Card ownership changes only through a server-authoritative `buy_listing` transaction (ADR-033 retired the former "untradeable card cannot enter the market" invariant).
+20. Card ownership changes only through a server-authoritative transaction — `buy_listing` or `respond_to_trade` (accept). ADR-033 retired the former "untradeable card cannot enter the market" invariant; ADR-042 added the trade-offer accept path.
 21. Bibs bonus is a bounded faucet: at most once per `(session, Player)`, never re-paid on a correction of the same washer (ADR-037).
+22. Trade-offer escrow is conserved (ADR-042): coins/cards offered are removed from the proposer at propose time and are either returned in full (reject / withdraw / expire / listing gone) or transferred atomically on accept — never both, never neither. A `held_by_offer_id` card cannot be listed, discarded, burned, or re-offered.
+23. An accepted trade offer is never written to `market_sales`, so it never affects Reference Value (ADR-042).
 
 Every coding agent should treat this section as a regression checklist.
 
@@ -4476,23 +4536,33 @@ Do not create a system wallet unless there is a real reason. Tax can simply be r
 
 # APPENDIX C — EXAMPLE CLUB VALUE
 
-User owns:
+> Revised 2026-09-01 (ADR-041) for the Club Value v2 formula.
+
+Member's linked Player: **Bas**, current Live OVR 62 →
+`personal_card_base_value = round(10 × 1.08^32) ≈ 117`.
+
+Member owns:
 
 ```text
-Wallet: 420
-Live Bas ref value: 180
-Live Bas second copy: 180
-Live Richard: 95
-Special Joost: 600
+Wallet:                                        420
+Live Bas          discard value  (OVR 62)      117
+Live Bas 2nd copy discard value  (OVR 62)      117
+Live Richard      discard value  (OVR 45)       32
+Special Joost     frozen discard value          80
 ```
 
 Club Value:
 
 ```text
-420 + 180 + 180 + 95 + 600 = 1,475
+  wallet             420
++ owned_cards_value   117 + 117 + 32 + 80  = 346
++ personal_card_bonus 117 × 4              = 468
+= 1,234
 ```
 
-Duplicates count independently.
+Duplicates count independently. The personal-card bonus is added even though
+the member also happens to own two Bas copies — the bonus is the *linked
+Player's* card value, not a card the member holds.
 
 ---
 

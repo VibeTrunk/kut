@@ -7,6 +7,7 @@ export type NavContext = {
   isAdmin: boolean;
   balance: number;
   unreadCount: number;
+  incomingOfferCount: number;
 };
 
 /**
@@ -23,7 +24,7 @@ export const getNavContext = cache(async (): Promise<NavContext> => {
     redirect("/login");
   }
 
-  const [profileResponse, walletResponse, notificationsResponse] = await Promise.all([
+  const [profileResponse, walletResponse, notificationsResponse, offersResponse] = await Promise.all([
     supabase
       .schema("kut")
       .from("profiles")
@@ -32,6 +33,12 @@ export const getNavContext = cache(async (): Promise<NavContext> => {
       .maybeSingle(),
     supabase.schema("kut").from("wallets").select("balance").eq("user_id", userId).maybeSingle(),
     supabase.schema("kut").from("user_notifications").select("id", { count: "exact", head: true }).is("read_at", null),
+    supabase
+      .schema("kut")
+      .from("my_trade_offers")
+      .select("offer_id", { count: "exact", head: true })
+      .eq("is_outgoing", false)
+      .eq("status", "active"),
   ]);
 
   const profile = profileResponse.data;
@@ -50,5 +57,6 @@ export const getNavContext = cache(async (): Promise<NavContext> => {
     isAdmin: profile.role === "admin" || profile.role === "superadmin",
     balance: walletResponse.data?.balance ?? 0,
     unreadCount: notificationsResponse.count ?? 0,
+    incomingOfferCount: offersResponse.count ?? 0,
   };
 });

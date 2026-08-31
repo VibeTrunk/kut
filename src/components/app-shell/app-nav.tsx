@@ -12,6 +12,7 @@ type AppNavProps = {
   isAdmin: boolean;
   balance: number;
   unreadCount: number;
+  incomingOfferCount: number;
 };
 
 const focusRing = "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brass";
@@ -51,7 +52,7 @@ function MoreMenu({ items, displayName }: { items: NavItem[]; displayName: strin
   );
 }
 
-export function AppNav({ displayName, isAdmin, balance, unreadCount }: AppNavProps) {
+export function AppNav({ displayName, isAdmin, balance, unreadCount, incomingOfferCount }: AppNavProps) {
   const pathname = usePathname();
   const [moreOpen, setMoreOpen] = useState(false);
   const [lastPathname, setLastPathname] = useState(pathname);
@@ -84,7 +85,7 @@ export function AppNav({ displayName, isAdmin, balance, unreadCount }: AppNavPro
     };
   }, [moreOpen]);
 
-  const moreItems = buildMoreNavItems(unreadCount).filter((item) => !item.adminOnly || isAdmin);
+  const moreItems = buildMoreNavItems(unreadCount, incomingOfferCount).filter((item) => !item.adminOnly || isAdmin);
   const moreHasUnread = moreItems.some((item) => (item.badgeCount ?? 0) > 0);
   const initials = displayName.split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
 

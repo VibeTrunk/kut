@@ -21,7 +21,42 @@ export const ECONOMY = {
   // (kut.admin_adjust_wallet, ADR-035). Mirrored by the SQL guard in
   // 20260905000000_admin_economy_tools.sql.
   adminWalletAdjustMax: 100_000,
+  // Club Value v2 (ADR-041): your linked player's Live-card discard value counts
+  // this many times, on top of the plain discard value of every card you own.
+  // Mirrored by the `4` literals in 20260910000000_club_value_v2.sql and
+  // BUILD_SPEC Part XII.
+  personalCardClubWeight: 4,
+  // Trade offers (ADR-042). Mirrored by the SQL literals / guards in
+  // 20260911000000_trade_offers.sql and BUILD_SPEC Part XXXIV.
+  tradeOfferExpiryHours: 12,
+  tradeOfferMaxCards: 3,
+  tradeOfferMaxActivePerUser: 10,
 } as const;
+
+/**
+ * Club Value v2 (ADR-041). A deliberately transparent sum so a member can
+ * reconstruct their own number by hand: wallet coins, plus the plain discard
+ * value of every card they own, plus their linked player's Live-card discard
+ * value counted `personalCardClubWeight` times. Mirrors the arithmetic in
+ * kut.my_club_value / kut.club_value_leaderboard.
+ */
+export function calculateClubValue(input: {
+  coins: number;
+  ownedCardDiscardValues: number[];
+  personalCardBaseValue: number | null;
+}): {
+  ownedCardsValue: number;
+  personalCardBonus: number;
+  clubValue: number;
+} {
+  const ownedCardsValue = input.ownedCardDiscardValues.reduce((sum, value) => sum + value, 0);
+  const personalCardBonus = (input.personalCardBaseValue ?? 0) * ECONOMY.personalCardClubWeight;
+  return {
+    ownedCardsValue,
+    personalCardBonus,
+    clubValue: input.coins + ownedCardsValue + personalCardBonus,
+  };
+}
 
 export const LIVE_PACK_WEIGHTS: Record<RarityTier, number> = {
   common: 100, bronze: 60, silver: 30, gold: 12, holo: 4, elite: 1,

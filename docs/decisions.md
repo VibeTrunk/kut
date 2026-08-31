@@ -1530,3 +1530,170 @@ Details:
 Reason: keeps the "what changed?" content in the natural landing flow (next to
 Top risers, wallet, rank) and drops a nav entry. No schema or migration impact;
 this ships on a normal KUT PR with no hosted push.
+
+## ADR-040 — Transfer-market cards render player art (and expose seller_id)
+
+Date: 2026-09-01
+
+Status: Accepted
+
+Decision: widen `kut.active_market_listings` with `player.photo_path` and
+`listing.seller_id`, and wire the photo through `/market` the same way
+`/club/collection` and `/players` already do (`resolvePhotoUrls` →
+`photoUrl` on `<LiveCard>`).
+
+Details:
+
+- Tester report: "Teize's pic was missing in the transfer market, the
+  collection / player directory does show it correctly." It was not
+  Teize-specific — the market view never selected `photo_path` and the page
+  never resolved signed URLs, so every listing fell back to the
+  jersey-initials placeholder.
+- `photo_path` is only a storage-object key; the `player-photos` bucket stays
+  private and images are still reached exclusively through short-lived signed
+  URLs minted server-side (`src/lib/player-photos.ts`). No privacy change.
+- `seller_id` is added in the same `create or replace` so `/market` can hide
+  the "Make an offer" / "Buy" controls on the viewer's own listings
+  (ADR-042). `buy_listing` already rejects self-purchase; this only removes a
+  dead control.
+- Migration `20260909000000_market_listing_card_art.sql`. Tier: additive
+  (ADR-032) — one `create or replace view`, nothing rewritten, no row
+  written; rides the last scheduled backup.
+
+Reason: a card game where half the cards show no face on the busiest trading
+screen reads as broken. Cheap, self-contained fix.
+
+## ADR-041 — Club Value v2: a transparent coins + discard + 4x personal-card sum
+
+Date: 2026-09-01
+
+Status: Accepted
+
+Supersedes: the Club Value formula in ADR-030 / BUILD_SPEC Part XII §39 (the
+wallet + `sum(market_reference_value)` model).
+
+Decision: Club Value becomes
+
+    club_value = coins
+               + owned_cards_value    -- SUM(discard_value) over every unburned owned card
+               + personal_card_bonus  -- 4 x discard-equivalent of the member's linked
+                                         player's Live card (0 when no player is linked)
+
+`discard_value` is the existing, already-documented
+`round(10 * 1.08^(OVR-30) * special_multiplier)`.
+`personal_card_base_value = round(10 * 1.08^(linked_player.live_ovr - 30))`;
+a linked player with no active-season rating row yet uses the 30-OVR floor
+(base 10), matching `kut.player_directory`.
+
+Details:
+
+- Tester feedback: the old number was impossible to explain — it depended on
+  invisible 14-day sale history and a piecewise `clamp(median, discard,
+  discard*6)` / `discard*1.5` fallback. v2 is a plain sum of three
+  individually-visible numbers.
+- `kut.market_reference_value` is kept — it still backs
+  `kut.get_listing_bounds` for listing price bands. It is simply no longer
+  part of Club Value.
+- Weight W = 4 (chosen by the product owner): at OVR 50/60/70 the
+  personal-card base value is ~47/101/217, so the bonus is ~188/404/868 — a
+  meaningful, attendance-driven personal floor that still sits below an active
+  collector's owned-card subtotal, so collecting keeps mattering. Mirrored as
+  `ECONOMY.personalCardClubWeight` and the `4` literals in the migration.
+- New page `/club/value` shows the arithmetic: the three line items, an
+  expandable per-card discard-value table, and the personal-card `base x 4`
+  line. Linked from the `/club` Club Value tile, the More nav ("Club Value"),
+  the leaderboard intro, and How-it-works §9.
+- `kut.my_club_value` gains `owned_cards_value`, `personal_card_weight`,
+  `personal_card_player_name/slug`, `personal_card_ovr`,
+  `personal_card_base_value`, `personal_card_bonus`; the old `card_value`
+  column is renamed `owned_cards_value` (one consumer, `/club`, updated).
+  `kut.club_value_leaderboard` keeps its column names; only the ranked total
+  changes.
+- Migration `20260910000000_club_value_v2.sql`. Tier: data-changing
+  (ADR-032) — it changes a published economy formula and the leaderboard
+  order. Fresh backup immediately before the hosted push. Read-only views
+  only; no row rewritten.
+
+Reason: a leaderboard nobody can audit erodes trust in the whole economy, and
+weighting the attendance-driven personal card keeps KUT about turning up to
+football rather than only about opening packs.
+
+## ADR-042 — Trade offers on market listings, with coin + card escrow
+
+Date: 2026-09-01
+
+Status: Accepted
+
+Promotes: "trading offers" from the BUILD_SPEC Part XXXIV Phase-4 "potential"
+list to a shipped feature (the spec asks for an economy/abuse review first —
+below).
+
+Decision: a member can offer KUT Coins and/or up to 3 of their own cards for
+an active listing instead of paying the buy-now price. Everything offered is
+escrowed at propose time; offers expire 12h after they are made.
+
+Details:
+
+- New tables `kut.trade_offers` and `kut.trade_offer_cards`; new
+  `kut.user_cards.held_by_offer_id` (FK, `on delete set null`) as the
+  card-escrow lock.
+- Server-authoritative RPCs (all `security definer`, mirroring the
+  marketplace):
+  - `propose_trade(listing_id, offered_coins, offered_card_ids[], idem)` —
+    validates the listing is active and not the caller's own; offered coins
+    `0` or `1..get_listing_bounds.maximum_price` (a coin offer below the
+    asking price is allowed — that is the point); each offered card owned,
+    unburned, not held, not listed; <=3 cards; <=10 active offers per proposer.
+    Debits + `trade_escrow` ledger row for the coins, sets `held_by_offer_id`
+    on the cards, notifies the seller.
+  - `respond_to_trade(offer_id, accept, idem)` — seller only. Accept re-runs
+    the `buy_listing` atomic swap at the offered price (5% burn on the coin
+    component, `trade_sale` receipt to the seller), moves the listed card to
+    the proposer and the offered cards to the seller, marks the listing
+    `sold`, and auto-rejects + refunds every other active offer on that
+    listing. Reject refunds the escrow.
+  - `withdraw_trade(offer_id)` — proposer only; refunds the escrow.
+  - `expire_trade_offers()` — sweeps offers past `expires_at`, refunding
+    each. Called lazily on `/market` and `/market/offers` loads. A Vercel
+    cron is a documented follow-up (the function is already granted to
+    `service_role`); not added now because the repo has no cron/route infra
+    yet and both trigger pages are high-traffic.
+- Escrow refund is centralised in `kut._refund_trade_offer(offer_id)` —
+  releases card holds and credits `trade_unescrow` once (ledger-key guarded).
+- Guards added to existing paths: `create_listing` and `discard_card` reject a
+  held card; the `prevent_burning_listed_card` trigger also blocks burning
+  one; `cancel_listing` and `buy_listing` auto-reject + refund a listing's
+  pending offers; `admin_reset_account` and `admin_prepare_account_deletion`
+  unwind a member's offers (the FKs are `on delete restrict`).
+- `wallet_ledger.reason` gains `trade_escrow` / `trade_unescrow` /
+  `trade_sale`; `user_notifications.event_type` gains `trade_offer` /
+  `trade_response`. `kut.activity_feed` gains a `trade` row for accepted
+  offers. New read projection `kut.my_trade_offers` powers `/market/offers`
+  and the nav badge.
+- Migration `20260911000000_trade_offers.sql`. Tier: data-changing
+  (ADR-032) — new escrow economy, new ledger reasons, four existing economy
+  functions rewritten. Fresh backup immediately before the hosted push.
+
+Economy / abuse review (per the spec requirement):
+
+- Lowball / spam offers: capped at 10 active outgoing offers per member; each
+  one escrows real coins/cards, so spamming is self-limiting. Sellers simply
+  decline.
+- Price manipulation: accepted trades are not written to `kut.market_sales`,
+  so they never count as qualifying sales for `market_reference_value` — an
+  offer is a private negotiation, not a public price signal.
+- Double-spend: coins leave the wallet and cards are `held_by_offer_id` at
+  propose time; both are released or transferred atomically on resolve. A held
+  card cannot be listed, discarded, burned, or re-offered.
+- Self-dealing via alts: identical risk profile to the existing market (no
+  worse); the 5% burn still applies to any coin component.
+- Race safety: accept re-locks the listing + both wallets in UUID order and
+  re-checks ownership, exactly like `buy_listing`; concurrent accept/accept
+  and accept/buy resolve to a single winner with the loser fully refunded
+  (covered by `tests/integration/trade-race.test.ts`).
+- Notification volume: bounded by the active-offer cap and one notification
+  per state transition.
+
+Reason: the club asked for it, and coin-only buy-now under-serves a group that
+mostly wants to swap specific cards. Escrow + a short 12h window keeps the
+economy invariants intact.

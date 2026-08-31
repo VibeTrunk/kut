@@ -8,7 +8,9 @@ import {
   IconLeaderboard,
   IconMarket,
   IconMessages,
+  IconOffer,
   IconPack,
+  IconScale,
   IconSettings,
 } from "@/components/icons";
 import type { ComponentType, SVGProps } from "react";
@@ -33,9 +35,11 @@ export const primaryNavItems: Omit<NavItem, "badgeCount">[] = [
   { href: "/club", label: "Club", Icon: IconClub, isActive: exact("/club") },
 ];
 
-export function buildMoreNavItems(unreadCount: number): NavItem[] {
+export function buildMoreNavItems(unreadCount: number, incomingOfferCount = 0): NavItem[] {
   return [
     { href: "/leaderboard", label: "Leaderboard", Icon: IconLeaderboard, isActive: prefixed("/leaderboard") },
+    { href: "/club/value", label: "Club Value", Icon: IconScale, isActive: prefixed("/club/value") },
+    { href: "/market/offers", label: "Trade offers", Icon: IconOffer, isActive: prefixed("/market/offers"), badgeCount: incomingOfferCount },
     { href: "/players", label: "Player directory", Icon: IconDirectory, isActive: prefixed("/players") },
     { href: "/messages", label: "Messages", Icon: IconMessages, isActive: prefixed("/messages"), badgeCount: unreadCount },
     { href: "/how-it-works", label: "How KUT works", Icon: IconInfo, isActive: prefixed("/how-it-works") },

@@ -9,7 +9,9 @@ type NotificationEventType =
   | "attendance_reward"
   | "bibs_bonus"
   | "pack_opened"
-  | "admin_notice";
+  | "admin_notice"
+  | "trade_offer"
+  | "trade_response";
 type UserNotification = { id: string; event_type: NotificationEventType; title: string; body: string; read_at: string | null; created_at: string };
 
 // Kicker shown above each message title. Falls back to "Club notice" for any
@@ -21,6 +23,8 @@ const EVENT_LABELS: Record<NotificationEventType, string> = {
   bibs_bonus: "Bibs bonus",
   pack_opened: "Pack opened",
   admin_notice: "Club notice",
+  trade_offer: "Trade offer",
+  trade_response: "Trade update",
 };
 
 export default async function MessagesPage() {

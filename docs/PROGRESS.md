@@ -1845,3 +1845,41 @@ migration, no hosted push — the `kut.activity_feed` view is untouched.
   BUILD_SPEC Home-widget list updated.
 
 `npm run verify:fast` green (lint + typecheck + 34 unit tests).
+
+## Tester follow-up: market card art, Club Value v2, trade offers - 2026-09-01
+
+Branch `feat/market-art-club-value-trade-offers`. Three tester items in one PR;
+three additive/data-changing local migrations mirrored for hosted catalogue in
+`VibeTrunk/supabase` (not pushed from here).
+
+- **Market card art (ADR-040, `20260909000000`).** `kut.active_market_listings`
+  gains `photo_path` + `seller_id` (appended). `/market` now resolves signed
+  photo URLs like `/club/collection` does and hides Buy/Offer on the viewer's
+  own listings. Tier: additive.
+- **Club Value v2 (ADR-041, `20260910000000`).** `club_value = coins +
+  SUM(discard_value of owned cards) + 4 x personal-card discard-equivalent`.
+  Drops `market_reference_value` from Club Value (kept for listing bounds).
+  `my_club_value` dropped + recreated (renames `card_value` ->
+  `owned_cards_value`, adds personal-card columns); `club_value_leaderboard`
+  replaced in place. New `/club/value` page shows the arithmetic; linked from
+  `/club`, the More nav, `/leaderboard`, How-it-works §9. `ECONOMY`
+  `personalCardClubWeight: 4` + `calculateClubValue()` helper. Tier:
+  data-changing.
+- **Trade offers with coin + card escrow (ADR-042, `20260911000000`).** New
+  `trade_offers` / `trade_offer_cards` tables + `user_cards.held_by_offer_id`.
+  RPCs `propose_trade` / `respond_to_trade` / `withdraw_trade` /
+  `expire_trade_offers`; guards added to `create_listing`, `discard_card`,
+  `prevent_burning_listed_card`, `cancel_listing`, `buy_listing`,
+  `admin_reset_account`, `admin_prepare_account_deletion`. Coins + cards
+  escrowed at propose time; 12h expiry (lazy sweep on the market pages; cron is
+  a future follow-up). `wallet_ledger.reason` += `trade_escrow` /
+  `trade_unescrow` / `trade_sale`; `user_notifications.event_type` +=
+  `trade_offer` / `trade_response`. New `/market/offers` hub + `my_trade_offers`
+  view + nav badge. `activity_feed` gains a `trade` row. Accepted trades are
+  NOT written to `market_sales` (invariant #23). Tier: data-changing.
+
+Verification (all green): `npm run verify:full` (lint + typecheck + 38 unit +
+`test:db` + 20 e2e + build) plus `npm run test:market-race` (market + new
+trade-race). New pgTAP: `market_listing_card_art` (5), `club_value` (16),
+`trade_offers` (34). BUILD_SPEC Part XII §38/§39/§39a, Appendix C, Part XXXIV,
+Part L invariants #20/#22/#23 updated; ADR-040/041/042 recorded.

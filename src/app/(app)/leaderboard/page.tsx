@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { requireUser } from "@/lib/auth/user";
 import { createClient } from "@/lib/supabase/server";
 
@@ -30,7 +31,7 @@ export default async function LeaderboardPage() {
         <header>
           <p className="text-sm font-semibold uppercase tracking-[0.24em] text-brass">KUT standings</p>
           <h1 className="mt-2 text-4xl font-black tracking-tight sm:text-5xl">Club Value Leaderboard</h1>
-          <p className="mt-3 max-w-2xl text-ink-dim">Club Value is KUT Coins plus the current reference value of every unburned card. References use recent completed sales when there is enough history, otherwise a safe discard-value fallback.</p>
+          <p className="mt-3 max-w-2xl text-ink-dim">Club Value is your KUT Coins, plus the discard value of every unburned card you own, plus your linked player&rsquo;s Live-card value counted 4&times;. <Link className="font-semibold text-brass underline" href="/club/value">See the full breakdown</Link>.</p>
         </header>
 
         {clubs.length === 0 ? (

@@ -1477,6 +1477,9 @@ entry in the More menu (`nav-items.tsx` `buildMoreNavItems`), with a new
 `IconFeed` (`src/components/icons.tsx`). Per-type copy: "A sold Card to B for N
 KUT Coins", "A listed Card for N KUT Coins", "A opened a pack (N KUT Coins)",
 "A new session was published — DD Mon YYYY · type".
+_Superseded by **ADR-039**: the front end moved into a "Club activity" section
+on Home; the `/feed` route, its nav entry, and `IconFeed` were removed. The
+`kut.activity_feed` view and its pgTAP coverage are unchanged._
 
 Reason: tester feedback #10 ("newsfeed of recent actions"). Part LI §163
 success criteria ("people talk about whose card rose", "people care when a
@@ -1490,3 +1493,40 @@ and a published session from the view, and that `kind = 'discard'` never
 appears. Between the KUT merge and the hosted `VibeTrunk/supabase` push (ADR-021
 additive path; never `supabase db push` from this repo), `/feed` errors on the
 missing view — the nav entry ships on the merge, so push promptly.
+
+## ADR-039 — Activity feed is a Home section, not a `/feed` route
+
+Date: 2026-08-31
+
+Status: Accepted
+
+Supersedes: the front-end half of **ADR-038** (the `kut.activity_feed` view and
+its behaviour are untouched).
+
+Decision: the club-wide activity feed renders as a **"Club activity" section at
+the bottom of Home** instead of a standalone page. `src/app/(app)/feed/` and the
+`/feed` "Newsfeed" entry in `buildMoreNavItems` are removed, along with the
+now-unused `IconFeed`.
+
+Details:
+
+- Home's server component adds one more query to its existing `Promise.all`:
+  `kut.activity_feed` `select … order by ts desc limit 12` with a fixed
+  `.gte("ts", "2026-08-30T00:00:00Z")` floor. No `?before=` pager — a Home
+  widget shows a short recent list, not a browsable archive.
+- The `2026-08-30` floor hides pre-launch test/seed rows the club never wants
+  to see.
+- A feed query error never fails Home — the section falls back to its empty
+  state (`activityResponse.data ?? []`).
+- Shared helpers: `describeActivity` / `ACTIVITY_KIND_LABEL` / `ActivityRow` in
+  `src/lib/activity.ts`; date-only `formatDate` in `src/lib/format.ts`, now used
+  by both this section and the Messages inbox (previously each formatted dates
+  inline, Messages with a redundant `timeStyle: "short"`).
+- Dates render **date-only** everywhere in member-facing history (feed +
+  Messages) — the exact minute of a sale or pack open is noise. The `session`
+  row's `session_date` goes through the same `formatDate`, so every row in the
+  list shares one format.
+
+Reason: keeps the "what changed?" content in the natural landing flow (next to
+Top risers, wallet, rank) and drops a nav entry. No schema or migration impact;
+this ships on a normal KUT PR with no hosted push.

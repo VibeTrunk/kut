@@ -1,4 +1,5 @@
 import { requireUser } from "@/lib/auth/user";
+import { formatDate } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
 import { MarkAllMessagesReadForm, MarkMessageReadForm } from "./message-read-forms";
 
@@ -21,10 +22,6 @@ const EVENT_LABELS: Record<NotificationEventType, string> = {
   pack_opened: "Pack opened",
   admin_notice: "Club notice",
 };
-
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
-}
 
 export default async function MessagesPage() {
   await requireUser();

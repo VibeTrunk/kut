@@ -1816,3 +1816,32 @@ sends `p_bibs_washed_by` and the hosted 4-arg RPC couldn't resolve it).
 
 **Batch E, and with it the entire 2026-08-30 tester-feedback round, is
 complete.** No open tester-feedback items remain.
+
+## Copy-drift sweep + newsfeed moved to Home (ADR-039) - 2026-08-31
+
+Follow-up to tester feedback: a pass over the site for stale explanations after
+Batches A–E, plus two scoped changes. Branch `fix/newsfeed-home-and-drift`. No
+migration, no hosted push — the `kut.activity_feed` view is untouched.
+
+- **Newsfeed → Home section (ADR-039).** Deleted `src/app/(app)/feed/` and the
+  `/feed` "Newsfeed" nav entry (+ unused `IconFeed`). Home's server component
+  now also queries `kut.activity_feed` (`order by ts desc limit 12`,
+  `ts >= 2026-08-30` floor, no pager) and renders a "Club activity" list at the
+  bottom of the page. A feed query error falls back to the empty state rather
+  than failing Home.
+- **Dates are date-only.** New `src/lib/format.ts` `formatDate` (no time
+  component), used by the Home feed section and the Messages inbox (which had a
+  redundant `timeStyle: "short"`). The feed's `session` row now goes through the
+  same helper, so every row shares one format. Activity copy/types live in
+  `src/lib/activity.ts`.
+- **`how-it-works` copy.** Added the bibs-washer bonus to §1 (bound to
+  `ECONOMY.bibsCoinBonus`); noted the Goalkeeper profile in §5; generalised the
+  §10 Messages description and renamed "Message Center" → "Messages" to match
+  the nav/H1.
+- **README.** Removed the "no application code yet" line; fixed the attendance
+  reward (75 → 250) and added the bibs bonus; refreshed the Status paragraph;
+  "Admin attendance → Economy" → "Admin → Economy".
+- **BUILD_SPEC / decisions.** ADR-038 spec note amended and ADR-039 recorded;
+  BUILD_SPEC Home-widget list updated.
+
+`npm run verify:fast` green (lint + typecheck + 34 unit tests).

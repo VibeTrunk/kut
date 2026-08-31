@@ -1426,3 +1426,67 @@ bonus" kicker label. Between the KUT merge and the hosted push, choosing a
 washer returns the RPC's "invalid argument" error — push promptly. Hosted
 deploy is the additive path in `docs/OPERATIONS.md` via `VibeTrunk/supabase`
 (ADR-021); never `supabase db push` from this repo.
+
+## ADR-038 — Member-wide activity newsfeed view
+
+Date: 2026-08-31
+
+Status: Accepted
+
+Decision: a club-wide **activity newsfeed** at `/feed`, backed by one read-only
+view `kut.activity_feed`. Batch E3, migration
+`20260908000000_activity_feed.sql`, additive (one `create view` + one grant,
+nothing altered, no row written).
+
+**Events shown** (`union all` of four already-persisted sources — no new write
+path):
+
+| kind | source | row |
+|------|--------|-----|
+| `sale` | `kut.market_sales` (`sold_at`) | seller name, **buyer name**, card (player) name, `sale_price` |
+| `listing` | `kut.market_listings` where `status = 'active' and expires_at > now()` (`listed_at`) | seller name, card name, `price` |
+| `pack` | `kut.pack_openings` (`opened_at`) | opener name, `price_paid` — count only, **no card reveal** (pack contents stay private) |
+| `session` | `kut.match_sessions` where `status = 'published'` (`published_at`) | `session_date`, `session_type` |
+
+**Not** discards (private inventory management, reads as negative) and **not**
+coin-grant / attendance-reward rows (noise). The plan doc's "sales + new
+listings only" was the safe floor; pack-opens + published-sessions keep the
+feed alive on quiet market days without new disclosure.
+
+**Retention: none.** No delete job. The page fetches `order by ts desc limit
+200` with an optional `?before=<ts>` cursor ("Older activity →"), so the
+effective window is ~the last 200 events.
+
+**Privacy (the real ADR call).** A completed-sale row is a **new disclosure** —
+`kut.market_sales` is otherwise readable only by buyer + seller (RLS,
+`20260816070600`). For this small private club the feed shows the **seller
+name, the card, the price and the buyer name** for a sale. The buyer is
+already visible to the seller via the ADR-019 sale notification; showing it
+club-wide is the deliberate, minimal extra. Listings already expose the seller
+club-wide (ADR-017) — no change. Pack openings show the opener and coins spent,
+never the cards drawn.
+
+**Mechanism.** `kut.activity_feed` is `with (security_invoker = false,
+security_barrier = true)` and `grant select to authenticated` — it runs as the
+view owner, bypassing the underlying tables' RLS, exactly like
+`kut.club_value_leaderboard` (ADR-030 / `20260901000000`). Every underlying
+table keeps its own RLS for all other code paths.
+
+**Front-end.** New route `src/app/(app)/feed/page.tsx`; a `/feed` "Newsfeed"
+entry in the More menu (`nav-items.tsx` `buildMoreNavItems`), with a new
+`IconFeed` (`src/components/icons.tsx`). Per-type copy: "A sold Card to B for N
+KUT Coins", "A listed Card for N KUT Coins", "A opened a pack (N KUT Coins)",
+"A new session was published — DD Mon YYYY · type".
+
+Reason: tester feedback #10 ("newsfeed of recent actions"). Part LI §163
+success criteria ("people talk about whose card rose", "people care when a
+card crosses a rarity boundary") is the rationale.
+
+Consequences: tier is **additive** (ADR-032) — one view + grant; rides the last
+scheduled backup, no fresh pre-push backup, SQL-reversible (`drop view
+kut.activity_feed`). pgTAP `activity_feed.test.sql` `plan(9)` proves an
+uninvolved member reads a completed sale (with both names), an active listing,
+and a published session from the view, and that `kind = 'discard'` never
+appears. Between the KUT merge and the hosted `VibeTrunk/supabase` push (ADR-021
+additive path; never `supabase db push` from this repo), `/feed` errors on the
+missing view — the nav entry ships on the merge, so push promptly.

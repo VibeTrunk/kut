@@ -8,6 +8,10 @@ import { calculateLiveDiscardValue, type RarityTier } from "@/game/rating-engine
  */
 export const ECONOMY = {
   attendanceCoinReward: 250,
+  // One-off bonus for the member who washed the bibs after a session
+  // (kut.grant_bibs_reward, ADR-037). Mirrored by the SQL `v_amount` constant
+  // in 20260907000000_bibs_bonus.sql and BUILD_SPEC Part 145.
+  bibsCoinBonus: 100,
   starterCoinGrant: 250,
   basicPackPrice: 250,
   basicPackCardCount: 3,

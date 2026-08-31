@@ -2,7 +2,13 @@ import { requireUser } from "@/lib/auth/user";
 import { createClient } from "@/lib/supabase/server";
 import { MarkAllMessagesReadForm, MarkMessageReadForm } from "./message-read-forms";
 
-type NotificationEventType = "market_sale" | "market_purchase" | "attendance_reward" | "pack_opened" | "admin_notice";
+type NotificationEventType =
+  | "market_sale"
+  | "market_purchase"
+  | "attendance_reward"
+  | "bibs_bonus"
+  | "pack_opened"
+  | "admin_notice";
 type UserNotification = { id: string; event_type: NotificationEventType; title: string; body: string; read_at: string | null; created_at: string };
 
 // Kicker shown above each message title. Falls back to "Club notice" for any
@@ -11,6 +17,7 @@ const EVENT_LABELS: Record<NotificationEventType, string> = {
   market_sale: "Market sale",
   market_purchase: "Market purchase",
   attendance_reward: "Attendance reward",
+  bibs_bonus: "Bibs bonus",
   pack_opened: "Pack opened",
   admin_notice: "Club notice",
 };

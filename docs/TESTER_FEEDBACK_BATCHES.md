@@ -49,8 +49,8 @@ Finding 3 was withdrawn by the tester (no entry).
 | **B — tradability** | #9 model change (every card tradable, delete the untradable concept), drop guards, spec + tests | data-changing (drop `user_cards.is_tradeable`, market RPC semantics) | **done** — KUT PR #17, ADR-033, migration `20260903000000`; deployed to hosted 2026-08-31 (VibeTrunk/supabase PR #11 + #12) |
 | **C — coin-name sweep** | #7 SQL function bodies (`open_pack` / `buy_listing` error strings + market notification bodies) + backfill of existing `user_notifications` rows + leaderboard `TF`→`KUT` ticker + spec/README/ADR realignment; #11 expand "KUT" on Home | data-changing (backfill `update` on `user_notifications`) | **done** — KUT PR #19, ADR-034, migration `20260904000000`; deployed to hosted 2026-08-31 (VibeTrunk/supabase PR #13 + #14) |
 | **D — admin economy tools** | #8 assign coins, #6 soft account reset | additive (new RPC + admin form; the reset *operation* mutates rows at run time, not the migration) | **done** — KUT PR #21, ADR-035, migration `20260905000000`; deployed to hosted 2026-08-31 (VibeTrunk/supabase PR #15 + #16) |
-| **E1 — Goalkeeper archetype** | #4 — a seventh archetype reusing the six stats with its own offset row (pac -6, sho -12, pas 0, dri -8, def +14, phy +12; sums to 0), opt-in, no player pre-assigned | additive (widened `check` + `create or replace` RPCs; no member rows touched) | **done** — KUT branch `feat/goalkeeper-archetype`, ADR-036, migration `20260906000000`; hosted deploy pending |
-| **E2 — bibs-washing coin bonus** | #5 — coins-only (+100), `match_sessions.bibs_washed_by` column + `grant_bibs_reward` + `bibs_rewards` guard table, forward-only on corrections | additive | not started |
+| **E1 — Goalkeeper archetype** | #4 — a seventh archetype reusing the six stats with its own offset row (pac -6, sho -12, pas 0, dri -8, def +14, phy +12; sums to 0), opt-in, no player pre-assigned | additive (widened `check` + `create or replace` RPCs; no member rows touched) | **done** — KUT PR #23, ADR-036, migration `20260906000000`; hosted deploy pending |
+| **E2 — bibs-washing coin bonus** | #5 — coins-only (+100), `match_sessions.bibs_washed_by` column + `grant_bibs_reward` + `bibs_rewards` guard table, forward-only on corrections | additive (new column/table + two widened checks + `create or replace` RPCs) | **done** — KUT branch `feat/bibs-bonus`, ADR-037, migration `20260907000000`; hosted deploy pending |
 | **E3 — activity newsfeed** | #10 — member-wide `activity_feed` view (completed sales + new listings + pack opens + published sessions; no discards), ~200-event window, sale seller+buyer names shown club-wide | additive (one `create view` + grant) | not started |
 
 ## Open product decisions (needed before B–E)
@@ -60,7 +60,10 @@ Finding 3 was withdrawn by the tester (no entry).
   profile over the same six stats (pac -6, sho -12, pas 0, dri -8, def +14,
   phy +12; sums to 0), opt-in via the existing self-service / admin RPCs, no
   player pre-assigned (keeps the migration additive).
-- **#5** — bibs bonus is coins only, or also a rating/OVR effect? Coin amount?
+- **#5** — ~~bibs bonus is coins only, or also a rating/OVR effect? Coin
+  amount?~~ **Decided 2026-08-31 (ADR-037):** coins-only, `+100`, stored as
+  `match_sessions.bibs_washed_by`, paid via `grant_bibs_reward` + a
+  `bibs_rewards` guard table, forward-only on corrections.
 - **#6** — ~~define "reset" as the soft reset described above?~~ **Decided
   2026-08-31 (ADR-035):** yes — `kut.admin_reset_account` wipes wallet / owned
   cards (soft burn) / pack history / notifications and re-grants the standard

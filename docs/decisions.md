@@ -1360,3 +1360,69 @@ the SQL↔TS parity suite. Hosted deploy is the additive path in
 push` from this repo. Between the KUT merge and the hosted push, picking
 "Goalkeeper" in the UI returns the RPC's "invalid archetype" error — do the
 push promptly.
+
+## ADR-037 — Bibs bonus is coins-only (100), stored on the session, forward-only
+
+Date: 2026-08-31
+
+Status: Accepted
+
+Decision: the member linked to the Player who washed the bibs after a session
+gets a one-off **`+100` KUT Coins** (`ECONOMY.bibsCoinBonus` /
+`BIBS_COIN_BONUS`, Part 145 — meaningful, well under a session's 250 attendance
+reward). **Coins only** — no rating/OVR effect (that would add a new input to
+`_rebuild_season_core`, the fixtures, and Part L; punted). Batch E2, migration
+`20260907000000_bibs_bonus.sql`, all additive.
+
+**Storage.** One washer per session → a nullable column
+`kut.match_sessions.bibs_washed_by uuid references kut.players(id) on delete
+restrict`, not a table. Validated as null-or-(a distinct attendee of that
+session) inside `kut.publish_attendance_session` /
+`kut.correct_published_attendance_session` (a CHECK can't reference other
+tables).
+
+**Reward path** mirrors `kut.grant_attendance_rewards` exactly:
+`kut.grant_bibs_reward(p_session_id)` (security definer) is called from
+`kut.process_published_session_rewards` next to `grant_attendance_rewards`, so
+it fires on publish and on the attendance churn of a correction. A
+`kut.bibs_rewards` guard table — `(session_id, player_id, user_id, ledger_id,
+created_at)`, PK `(session_id, player_id)`, member-reads-own / admin-reads-all
+RLS — plus the unique ledger key `'bibs:' || session || ':' || washer` make it
+idempotent: **at most once per `(session, washer)`**. `wallet_ledger.reason`
+gains `'bibs_bonus'`; `user_notifications.event_type` gains `'bibs_bonus'` (a
+distinct type, so the `(user, event_type, ref_type, ref_id)` unique key does
+not collide with the washer's own `attendance_reward` row for the same
+session). Inbox body: "You received 100 KUT Coins for washing the bibs after
+the session on DD Mon YYYY."
+
+**Forward-only on corrections.** If a correction names a different washer, the
+new washer is paid (a fresh guard row); the previous washer **keeps** their
+100 — no claw-back (Part L §162 #21, invariant #9-style). The
+`correct_published_attendance_session` body sets `bibs_washed_by` *before* it
+replaces the attendance, so the reward trigger sees the corrected washer.
+
+**Signatures change.** `kut.publish_attendance_session` and
+`kut.correct_published_attendance_session` each gain a trailing
+`p_bibs_washed_by uuid default null`. A `create or replace` cannot widen the
+argument list, so each old signature is dropped and recreated; existing
+4-/5-arg callers are unaffected by the new defaulted parameter. The two pgTAP
+`has_function` assertions were updated for the new arg lists.
+
+Reason: tester feedback #5 ("bonus coins for washing the bibs, recorded with
+weekly attendance"). Medium path (a coin bonus) chosen over the Hard path (a
+rating/OVR effect).
+
+Consequences: tier is **additive** (ADR-032) — new nullable column, new table,
+two widened check constraints, `create or replace` / drop+recreate of
+functions; no member row is rewritten and the migration grants no coins
+(`grant_bibs_reward` does that at run time, only for sessions that name a
+washer). Rides the last scheduled backup; no fresh pre-push backup. Rollback
+DDL is in the migration header (safe only while no `bibs_bonus` rows exist; on
+hosted the migration is inert until the `VibeTrunk/supabase` push). Front-end:
+a "Who washed the bibs?" select on the attendance form's review step (options =
+the checked-in players + "Nobody"), threaded through
+`admin/attendance/actions.ts` to both RPCs; `messages/page.tsx` gains a "Bibs
+bonus" kicker label. Between the KUT merge and the hosted push, choosing a
+washer returns the RPC's "invalid argument" error — push promptly. Hosted
+deploy is the additive path in `docs/OPERATIONS.md` via `VibeTrunk/supabase`
+(ADR-021); never `supabase db push` from this repo.

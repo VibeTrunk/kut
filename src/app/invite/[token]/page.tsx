@@ -7,12 +7,12 @@ export default async function InvitePage({ params }: InvitePageProps) {
   const { token } = await params;
 
   return (
-    <main className="min-h-screen bg-board p-6 text-ink sm:p-10">
+    <main className="board-ground min-h-screen p-6 text-ink sm:p-10">
       <section className="mx-auto max-w-md space-y-8">
-        <Link className="text-sm font-semibold text-brass" href="/">← Player ratings</Link>
+        <Link className="text-sm font-bold text-brass hover:underline" href="/">&larr; Player ratings</Link>
         <header className="space-y-3">
-          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-brass">You’re invited</p>
-          <h1 className="text-4xl font-black tracking-tight">Join KUT</h1>
+          <p className="text-[0.7rem] font-extrabold uppercase tracking-[0.26em] text-brass">You’re invited</p>
+          <h1 className="display text-5xl">Join KUT</h1>
           <p className="text-ink-dim">Create your account to follow the live ratings and build your future collection.</p>
         </header>
         <ClaimInviteForm token={token} />

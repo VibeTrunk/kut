@@ -1,4 +1,6 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
+import { AttributeBars } from "@/components/card-stats";
 import { LiveCard, type LiveCardPlayer } from "@/components/live-card";
 import { requireUser } from "@/lib/auth/user";
 import { resolvePhotoUrls } from "@/lib/player-photos";
@@ -72,11 +74,13 @@ export default async function CardDetailPage({ params, searchParams }: CardPageP
   const maximumPrice = bounds && "maximum_price" in bounds ? Number(bounds.maximum_price) : null;
 
   return (
-    <main className="min-h-screen bg-board p-5 text-ink sm:p-10">
-      <section className="mx-auto max-w-4xl space-y-8">
-        <p className="text-sm font-semibold uppercase tracking-[0.24em] text-brass">Collection</p>
+    <main className="board-ground min-h-screen p-5 text-ink sm:p-10">
+      <section className="mx-auto max-w-5xl space-y-8 py-4 sm:py-8">
+        <Link className="text-sm font-bold text-brass hover:underline" href="/club/collection">
+          &larr; Collection
+        </Link>
 
-        <div className="grid gap-8 rounded-3xl border border-line/80 bg-panel/70 p-6 sm:p-8 md:grid-cols-[minmax(280px,360px)_1fr] md:items-center">
+        <div className="grid gap-10 md:grid-cols-[minmax(240px,330px)_minmax(0,1fr)] md:items-start lg:gap-16">
           <LiveCard
             size="detail"
             player={{
@@ -95,34 +99,52 @@ export default async function CardDetailPage({ params, searchParams }: CardPageP
             }}
           />
 
-          <div className="space-y-5">
-            <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.24em] text-brass">{card.is_live ? "Live card" : "Special card"}</p>
-              <h1 className="mt-2 text-4xl font-black tracking-tight">{card.display_name}</h1>
-              <p className="mt-2 text-lg text-ink-dim">{card.is_live ? "This card’s rating is live and changes with published football sessions." : card.edition_title}</p>
+          <div className="space-y-8">
+            <div className="space-y-3">
+              <p className="text-[0.7rem] font-extrabold uppercase tracking-[0.26em] text-brass">
+                {card.is_live ? "Live card" : "Special card"} &middot; <span className="capitalize">{card.rarity_tier}</span>
+              </p>
+              <h1 className="display text-5xl sm:text-6xl">{card.display_name}</h1>
+              <p className="text-base text-ink-dim">
+                {card.is_live
+                  ? "This card’s rating is live and changes with published football sessions."
+                  : card.edition_title}
+              </p>
             </div>
 
-            <dl className="grid grid-cols-2 gap-3 text-sm">
-              <div className="rounded-2xl bg-board/60 p-4">
-                <dt className="font-bold uppercase tracking-[0.12em] text-ink-faint">Edition</dt>
-                <dd className="mt-1 text-lg font-black">{readable(card.edition_type)}</dd>
+            <AttributeBars player={card} />
+
+            <hr className="border-line/40" />
+
+            <dl className="grid grid-cols-2 gap-x-8 gap-y-5">
+              <div>
+                <dt className="text-[0.65rem] font-extrabold uppercase tracking-[0.14em] text-ink-faint">Edition</dt>
+                <dd className="mt-1.5 text-lg font-black">{readable(card.edition_type)}</dd>
               </div>
-              <div className="rounded-2xl bg-board/60 p-4">
-                <dt className="font-bold uppercase tracking-[0.12em] text-ink-faint">Source</dt>
-                <dd className="mt-1 text-lg font-black">{readable(card.source)}</dd>
+              <div>
+                <dt className="text-[0.65rem] font-extrabold uppercase tracking-[0.14em] text-ink-faint">Source</dt>
+                <dd className="mt-1.5 text-lg font-black">{readable(card.source)}</dd>
               </div>
-              <div className="rounded-2xl bg-board/60 p-4">
-                <dt className="font-bold uppercase tracking-[0.12em] text-ink-faint">Card ID</dt>
-                <dd className="mt-1 break-all font-mono text-xs text-ink-dim">{card.card_id}</dd>
+              <div>
+                <dt className="text-[0.65rem] font-extrabold uppercase tracking-[0.14em] text-ink-faint">Discard value</dt>
+                <dd className="mt-1.5 text-lg font-black tabular-nums">{card.discard_value} KUT Coins</dd>
               </div>
-              <div className="rounded-2xl bg-board/60 p-4">
-                <dt className="font-bold uppercase tracking-[0.12em] text-ink-faint">Discard value</dt>
-                <dd className="mt-1 text-lg font-black">{card.discard_value} KUT Coins</dd>
+              <div>
+                <dt className="text-[0.65rem] font-extrabold uppercase tracking-[0.14em] text-ink-faint">Card ID</dt>
+                <dd className="mt-1.5 break-all font-mono text-xs text-ink-dim">{card.card_id}</dd>
               </div>
             </dl>
 
-            {query.listed === "1" && <p className="rounded-2xl bg-moss-bg p-4 text-sm font-bold text-moss">Listed successfully. This card is now locked for 24 hours or until you cancel it.</p>}
-            {query.listingCancelled === "1" && <p className="rounded-2xl bg-moss-bg p-4 text-sm font-bold text-moss">Listing cancelled. This card is available again.</p>}
+            {query.listed === "1" && (
+              <p className="rounded-2xl border border-moss-line/40 bg-moss-bg/50 p-4 text-sm font-bold text-moss">
+                Listed successfully. This card is now locked for 24 hours or until you cancel it.
+              </p>
+            )}
+            {query.listingCancelled === "1" && (
+              <p className="rounded-2xl border border-moss-line/40 bg-moss-bg/50 p-4 text-sm font-bold text-moss">
+                Listing cancelled. This card is available again.
+              </p>
+            )}
 
             {card.held_by_offer_id && (
               <p className="rounded-2xl border border-brass/40 bg-brass/10 p-4 text-sm font-bold text-brass">
@@ -130,11 +152,17 @@ export default async function CardDetailPage({ params, searchParams }: CardPageP
                 offer is accepted, declined, or expires.
               </p>
             )}
-            {!card.held_by_offer_id && card.active_listing_id && card.active_listing_price && <CancelListingForm cardId={card.card_id} listingId={card.active_listing_id} price={card.active_listing_price} />}
-            {!card.held_by_offer_id && !card.active_listing_id && <>
-              {minimumPrice !== null && maximumPrice !== null && <CreateListingForm cardId={card.card_id} maximumPrice={maximumPrice} minimumPrice={minimumPrice} />}
-              <DiscardCardForm cardId={card.card_id} discardValue={card.discard_value} />
-            </>}
+            {!card.held_by_offer_id && card.active_listing_id && card.active_listing_price && (
+              <CancelListingForm cardId={card.card_id} listingId={card.active_listing_id} price={card.active_listing_price} />
+            )}
+            {!card.held_by_offer_id && !card.active_listing_id && (
+              <>
+                {minimumPrice !== null && maximumPrice !== null && (
+                  <CreateListingForm cardId={card.card_id} maximumPrice={maximumPrice} minimumPrice={minimumPrice} />
+                )}
+                <DiscardCardForm cardId={card.card_id} discardValue={card.discard_value} />
+              </>
+            )}
           </div>
         </div>
       </section>

@@ -96,7 +96,7 @@ export function AttendanceForm({
             <label className="space-y-2">
               <span className="font-semibold">Date</span>
               <input
-                className="min-h-12 w-full rounded-xl border border-line bg-board px-4"
+                className="min-h-12 w-full rounded-xl border border-line bg-board-deep/60 px-4"
                 onChange={(event) => setSessionDate(event.target.value)}
                 required
                 type="date"
@@ -106,7 +106,7 @@ export function AttendanceForm({
             <label className="space-y-2">
               <span className="font-semibold">Session</span>
               <select
-                className="min-h-12 w-full rounded-xl border border-line bg-board px-4"
+                className="min-h-12 w-full rounded-xl border border-line bg-board-deep/60 px-4"
                 onChange={(event) => setSessionType(event.target.value)}
                 value={sessionType}
               >
@@ -153,7 +153,7 @@ export function AttendanceForm({
             <label className="flex items-center justify-between rounded-xl bg-panel p-4" key={player.id}>
               <span className="font-semibold">{player.display_name}</span>
               <input
-                className="w-20 rounded-lg border border-line bg-board p-2 text-center"
+                className="w-20 rounded-lg border border-line bg-board-deep/60 p-2 text-center"
                 min="0"
                 onChange={(event) => setGoals((current) => ({ ...current, [player.id]: Number(event.target.value) }))}
                 type="number"
@@ -174,7 +174,7 @@ export function AttendanceForm({
 
       {step === "review" && (
         <section className="space-y-4 rounded-2xl border border-brass bg-brass/10 p-5">
-          <h2 className="text-xl font-bold">{isCorrection ? "Ready to save correction" : "Ready to publish"}</h2>
+          <h2 className="display text-2xl">{isCorrection ? "Ready to save correction" : "Ready to publish"}</h2>
           <p>
             {selected.length} attendees selected. {isCancelledSession
               ? "Saving this correction preserves the revised record until it is reactivated."

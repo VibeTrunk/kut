@@ -10,7 +10,7 @@ export default function ErrorPage({ error, reset }: { error: Error & { digest?: 
   }, [error]);
 
   return (
-    <main className="min-h-screen bg-board p-5 text-ink sm:p-10">
+    <main className="board-ground min-h-screen p-5 text-ink sm:p-10">
       <section className="mx-auto max-w-lg rounded-3xl border border-brick-line/40 bg-panel p-6 shadow-2xl shadow-board/50">
         <p className="text-sm font-black uppercase tracking-[0.24em] text-brick">KUT needs a moment</p>
         <h1 className="mt-3 text-3xl font-black">This page could not be loaded</h1>

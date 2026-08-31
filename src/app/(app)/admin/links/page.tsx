@@ -47,7 +47,7 @@ export default async function AccountLinksPage() {
     .map((player) => ({ id: player.id, display_name: player.display_name, slug: player.slug }));
 
   return (
-    <main className="min-h-screen bg-board p-6 text-ink sm:p-10">
+    <main className="board-ground min-h-screen p-6 text-ink sm:p-10">
       <section className="mx-auto max-w-2xl space-y-8">
         <header className="space-y-3">
           <h1 className="text-4xl font-black tracking-tight">Accounts</h1>

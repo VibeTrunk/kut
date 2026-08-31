@@ -37,7 +37,7 @@ export default async function AttendancePage({ searchParams }: AttendancePagePro
   const sessions = sessionsResponse.data ?? [];
 
   return (
-    <main className="min-h-screen bg-board p-6 text-ink sm:p-10">
+    <main className="board-ground min-h-screen p-6 text-ink sm:p-10">
       <section className="mx-auto max-w-xl space-y-8">
         <header className="space-y-3">
           <h1 className="text-4xl font-black tracking-tight">Record attendance</h1>
@@ -66,7 +66,7 @@ export default async function AttendancePage({ searchParams }: AttendancePagePro
         <AttendanceForm players={players} />
 
         <section className="space-y-3 border-t border-panel-2 pt-8">
-          <h2 className="text-xl font-bold">Review published and cancelled sessions</h2>
+          <h2 className="display text-2xl">Review published and cancelled sessions</h2>
           <p className="text-sm leading-6 text-ink-dim">Open a session to amend attendance, goals, date, or type. Cancelled sessions stay available for review and reactivation.</p>
           {sessions.length === 0 ? (
             <p className="rounded-xl bg-panel p-4 text-ink-dim">No published or cancelled sessions are available yet.</p>

@@ -26,17 +26,17 @@ export default async function EconomyPage() {
   const totals = packs[0];
 
   return (
-    <main className="min-h-screen bg-board p-5 text-ink sm:p-10">
+    <main className="board-ground min-h-screen p-5 text-ink sm:p-10">
       <section className="mx-auto max-w-5xl space-y-8">
         <header>
-          <h1 className="mt-2 text-4xl font-black tracking-tight sm:text-5xl">Pack health</h1>
+          <h1 className="display mt-3 text-5xl sm:text-6xl">Pack health</h1>
           <p className="mt-3 max-w-2xl text-ink-dim">Expected values use the active Live Card pool and server-defined rarity weights. They are a warning system, not a setting screen.</p>
         </header>
         {totals && <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <div className="rounded-2xl border border-line bg-panel p-4"><dt className="text-xs font-black uppercase tracking-[0.1em] text-ink-faint">Coin supply</dt><dd className="mt-2 text-2xl font-black">{Number(totals.total_coin_supply)}</dd></div>
-          <div className="rounded-2xl border border-line bg-panel p-4"><dt className="text-xs font-black uppercase tracking-[0.1em] text-ink-faint">Packs opened</dt><dd className="mt-2 text-2xl font-black">{Number(totals.total_pack_openings)}</dd></div>
-          <div className="rounded-2xl border border-line bg-panel p-4"><dt className="text-xs font-black uppercase tracking-[0.1em] text-ink-faint">Card copies</dt><dd className="mt-2 text-2xl font-black">{Number(totals.total_card_copies)}</dd></div>
-          <div className="rounded-2xl border border-line bg-panel p-4"><dt className="text-xs font-black uppercase tracking-[0.1em] text-ink-faint">Burned</dt><dd className="mt-2 text-2xl font-black">{Number(totals.total_burned_cards)}</dd></div>
+          <div className="rounded-2xl border border-line/60 bg-board-deep/40 p-4"><dt className="text-xs font-black uppercase tracking-[0.1em] text-ink-faint">Coin supply</dt><dd className="mt-2 text-2xl font-black">{Number(totals.total_coin_supply)}</dd></div>
+          <div className="rounded-2xl border border-line/60 bg-board-deep/40 p-4"><dt className="text-xs font-black uppercase tracking-[0.1em] text-ink-faint">Packs opened</dt><dd className="mt-2 text-2xl font-black">{Number(totals.total_pack_openings)}</dd></div>
+          <div className="rounded-2xl border border-line/60 bg-board-deep/40 p-4"><dt className="text-xs font-black uppercase tracking-[0.1em] text-ink-faint">Card copies</dt><dd className="mt-2 text-2xl font-black">{Number(totals.total_card_copies)}</dd></div>
+          <div className="rounded-2xl border border-line/60 bg-board-deep/40 p-4"><dt className="text-xs font-black uppercase tracking-[0.1em] text-ink-faint">Burned</dt><dd className="mt-2 text-2xl font-black">{Number(totals.total_burned_cards)}</dd></div>
         </dl>}
         {packs.length === 0 ? <p className="rounded-2xl border border-line bg-panel p-5 text-ink-dim">No active packs are configured.</p> : <div className="grid gap-5 md:grid-cols-2">
           {packs.map((pack) => {

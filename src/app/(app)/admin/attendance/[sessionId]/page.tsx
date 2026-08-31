@@ -69,10 +69,10 @@ export default async function CorrectionPage({ params }: CorrectionPageProps) {
   );
 
   return (
-    <main className="min-h-screen bg-board p-6 text-ink sm:p-10">
+    <main className="board-ground min-h-screen p-6 text-ink sm:p-10">
       <section className="mx-auto max-w-xl space-y-8">
         <header className="space-y-3">
-          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-brass">Correction</p>
+          <p className="text-[0.7rem] font-extrabold uppercase tracking-[0.26em] text-brass">Correction</p>
           <h1 className="text-4xl font-black tracking-tight">{session.status === "cancelled" ? "Review cancelled session" : "Correct published session"}</h1>
           <p className="text-ink-dim">
             {session.status === "cancelled"
@@ -95,7 +95,7 @@ export default async function CorrectionPage({ params }: CorrectionPageProps) {
 
         {corrections.length > 0 && (
           <section className="space-y-3 border-t border-panel-2 pt-8">
-            <h2 className="text-xl font-bold">Correction history</h2>
+            <h2 className="display text-2xl">Correction history</h2>
             <ul className="space-y-2">
               {corrections.map((correction) => (
                 <li className="rounded-xl bg-panel p-4 text-sm text-ink-dim" key={correction.id}>
@@ -109,7 +109,7 @@ export default async function CorrectionPage({ params }: CorrectionPageProps) {
 
         {statusEvents.length > 0 && (
           <section className="space-y-3 border-t border-panel-2 pt-8">
-            <h2 className="text-xl font-bold">Status history</h2>
+            <h2 className="display text-2xl">Status history</h2>
             <ul className="space-y-2">
               {statusEvents.map((event) => (
                 <li className="rounded-xl bg-panel p-4 text-sm text-ink-dim" key={event.id}>

@@ -32,7 +32,7 @@ export function LinksTable({
 
   return (
     <div className="space-y-3">
-      <h2 className="text-xl font-bold">Accounts ({accounts.length})</h2>
+      <h2 className="display text-2xl">Accounts ({accounts.length})</h2>
       {state && !state.ok && <p className="rounded-xl bg-brick-bg p-3 text-sm text-brick">{state.error}</p>}
       {state?.ok && <p className="rounded-xl bg-moss-bg p-3 text-sm text-moss">{state.message}</p>}
 
@@ -48,7 +48,7 @@ export function LinksTable({
             (account.role === "user" || currentUserRole === "superadmin");
 
           return (
-            <li className="rounded-2xl border border-line bg-panel p-4" key={account.id}>
+            <li className="rounded-2xl border border-line/60 bg-board-deep/40 p-4" key={account.id}>
               <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
                 <span className="font-bold">{account.display_name}</span>
                 {isPrivileged && (
@@ -82,7 +82,7 @@ export function LinksTable({
                     <input name="intent" type="hidden" value="link" />
                     <input name="user_id" type="hidden" value={account.id} />
                     <select
-                      className="min-h-9 rounded-lg border border-line bg-board px-2 text-xs"
+                      className="min-h-9 rounded-lg border border-line bg-board-deep/60 px-2 text-xs"
                       disabled={isPending || availablePlayers.length === 0}
                       name="player_id"
                       required
@@ -176,7 +176,7 @@ export function LinksTable({
                   <input name="user_id" type="hidden" value={account.id} />
                   <input
                     aria-label={`Coin adjustment for ${account.display_name}`}
-                    className="min-h-9 w-24 rounded-lg border border-line bg-board px-2 text-xs"
+                    className="min-h-9 w-24 rounded-lg border border-line bg-board-deep/60 px-2 text-xs"
                     inputMode="numeric"
                     name="amount"
                     placeholder="+/- coins"
@@ -185,7 +185,7 @@ export function LinksTable({
                   />
                   <input
                     aria-label={`Reason for adjusting ${account.display_name}`}
-                    className="min-h-9 flex-1 rounded-lg border border-line bg-board px-2 text-xs"
+                    className="min-h-9 flex-1 rounded-lg border border-line bg-board-deep/60 px-2 text-xs"
                     maxLength={200}
                     name="reason"
                     placeholder="Reason (required)"

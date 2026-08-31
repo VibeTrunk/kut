@@ -26,7 +26,7 @@ export function AddPlayerForm({ existingNames }: { existingNames: string[] }) {
         <label className="block space-y-2">
           <span className="font-semibold">Display name</span>
           <input
-            className="min-h-12 w-full rounded-xl border border-line bg-board px-4"
+            className="min-h-12 w-full rounded-xl border border-line bg-board-deep/60 px-4"
             maxLength={80}
             name="display_name"
             onChange={(event) => setName(event.target.value)}
@@ -43,7 +43,7 @@ export function AddPlayerForm({ existingNames }: { existingNames: string[] }) {
         <label className="block space-y-2">
           <span className="font-semibold">Archetype</span>
           <select
-            className="min-h-12 w-full rounded-xl border border-line bg-board px-4"
+            className="min-h-12 w-full rounded-xl border border-line bg-board-deep/60 px-4"
             defaultValue="all_rounder"
             name="archetype"
           >
@@ -56,7 +56,7 @@ export function AddPlayerForm({ existingNames }: { existingNames: string[] }) {
         </label>
         <label className="block space-y-2">
           <span className="font-semibold">Full name</span>
-          <input className="min-h-12 w-full rounded-xl border border-line bg-board px-4" maxLength={120} name="full_name" />
+          <input className="min-h-12 w-full rounded-xl border border-line bg-board-deep/60 px-4" maxLength={120} name="full_name" />
           <span className="block text-sm text-ink-faint">Optional. Kept for admin reference only.</span>
         </label>
         {state && !state.ok && <p className="rounded-xl bg-brick-bg p-3 text-sm text-brick">{state.error}</p>}

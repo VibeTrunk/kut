@@ -74,11 +74,11 @@ export default async function ClubValuePage() {
   const discardRows = [30, 40, 50, 60, 70, 80].map((ovr) => ({ ovr, value: calculateLiveDiscardValue(ovr) }));
 
   return (
-    <main className="min-h-screen bg-board p-5 text-ink sm:p-10">
+    <main className="board-ground min-h-screen p-5 text-ink sm:p-10">
       <section className="mx-auto max-w-3xl space-y-8">
         <header className="space-y-3">
-          <p className="text-sm font-black uppercase tracking-[0.24em] text-brass">My club</p>
-          <h1 className="text-4xl font-black tracking-tight sm:text-5xl">Club Value</h1>
+          <p className="text-[0.7rem] font-extrabold uppercase tracking-[0.26em] text-brass">My club</p>
+          <h1 className="display text-5xl sm:text-6xl">Club Value</h1>
           <p className="text-ink-dim">
             {user.displayName}&rsquo;s Club Value is a plain sum of three numbers you can check yourself.
             The <Link className="font-semibold text-brass underline" href="/leaderboard">leaderboard</Link>{" "}
@@ -96,18 +96,18 @@ export default async function ClubValuePage() {
         </div>
 
         {/* 1. Coins ------------------------------------------------------ */}
-        <section className="space-y-2 rounded-3xl border border-line bg-panel/60 p-6">
+        <section className="space-y-2 rounded-3xl border border-line/60 bg-panel/60 p-6">
           <div className="flex items-baseline justify-between gap-3">
-            <h2 className="text-xl font-black tracking-tight">1. KUT Coins</h2>
+            <h2 className="display text-2xl">1. KUT Coins</h2>
             <p className="text-xl font-black text-brass">{nf.format(value.wallet_balance)}</p>
           </div>
           <p className="text-sm text-ink-dim">Your current wallet balance, counted at face value.</p>
         </section>
 
         {/* 2. Owned cards --------------------------------------------------- */}
-        <section className="space-y-3 rounded-3xl border border-line bg-panel/60 p-6">
+        <section className="space-y-3 rounded-3xl border border-line/60 bg-panel/60 p-6">
           <div className="flex items-baseline justify-between gap-3">
-            <h2 className="text-xl font-black tracking-tight">2. Cards you own</h2>
+            <h2 className="display text-2xl">2. Cards you own</h2>
             <p className="text-xl font-black text-brass">{nf.format(value.owned_cards_value)}</p>
           </div>
           <p className="text-sm text-ink-dim">
@@ -163,9 +163,9 @@ export default async function ClubValuePage() {
         </section>
 
         {/* 3. Personal card ---------------------------------------------- */}
-        <section className="space-y-3 rounded-3xl border border-line bg-panel/60 p-6">
+        <section className="space-y-3 rounded-3xl border border-line/60 bg-panel/60 p-6">
           <div className="flex items-baseline justify-between gap-3">
-            <h2 className="text-xl font-black tracking-tight">3. Your personal card &times;{weight}</h2>
+            <h2 className="display text-2xl">3. Your personal card &times;{weight}</h2>
             <p className="text-xl font-black text-brass">{nf.format(value.personal_card_bonus)}</p>
           </div>
           {value.personal_card_player_name ? (

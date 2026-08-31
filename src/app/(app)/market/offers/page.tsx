@@ -37,7 +37,7 @@ const STATUS_LABEL: Record<TradeOffer["status"], string> = {
 function OfferCard({ offer }: { offer: TradeOffer }) {
   const cards = Array.isArray(offer.offered_cards) ? offer.offered_cards : [];
   return (
-    <li className="rounded-2xl border border-line bg-panel/60 p-5">
+    <li className="rounded-2xl border border-line/60 bg-panel/60 p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-xs font-black uppercase tracking-[0.14em] text-brass">
@@ -138,11 +138,11 @@ export default async function TradeOffersPage({ searchParams }: OffersPageProps)
             : null;
 
   return (
-    <main className="min-h-screen bg-board p-5 text-ink sm:p-10">
+    <main className="board-ground min-h-screen p-5 text-ink sm:p-10">
       <section className="mx-auto max-w-3xl space-y-8">
         <header>
-          <p className="text-sm font-black uppercase tracking-[0.24em] text-brass">Transfer market</p>
-          <h1 className="mt-2 text-4xl font-black tracking-tight sm:text-5xl">Trade offers</h1>
+          <p className="text-[0.7rem] font-extrabold uppercase tracking-[0.26em] text-brass">Transfer market</p>
+          <h1 className="display mt-3 text-5xl sm:text-6xl">Trade offers</h1>
           <p className="mt-3 text-ink-dim">
             Coin-and-card offers on market listings. Everything you offer is escrowed until the seller accepts or
             declines, or the offer expires. <Link className="text-brass underline" href="/market">Back to the market</Link>.
@@ -152,7 +152,7 @@ export default async function TradeOffersPage({ searchParams }: OffersPageProps)
         {flash && <p className="rounded-2xl border border-moss-line/40 bg-moss-bg/50 p-4 font-bold text-moss">{flash}</p>}
 
         <div className="space-y-4">
-          <h2 className="text-xl font-black tracking-tight">Incoming ({incoming.filter((o) => o.status === "active").length})</h2>
+          <h2 className="display text-2xl">Incoming ({incoming.filter((o) => o.status === "active").length})</h2>
           {incoming.length === 0 ? (
             <p className="rounded-2xl border border-dashed border-line p-6 text-center text-ink-dim">
               No offers on your listings yet.
@@ -163,7 +163,7 @@ export default async function TradeOffersPage({ searchParams }: OffersPageProps)
         </div>
 
         <div className="space-y-4">
-          <h2 className="text-xl font-black tracking-tight">Sent ({outgoing.filter((o) => o.status === "active").length})</h2>
+          <h2 className="display text-2xl">Sent ({outgoing.filter((o) => o.status === "active").length})</h2>
           {outgoing.length === 0 ? (
             <p className="rounded-2xl border border-dashed border-line p-6 text-center text-ink-dim">
               You haven&rsquo;t made any offers. Find a listing on the <Link className="text-brass underline" href="/market">market</Link>.

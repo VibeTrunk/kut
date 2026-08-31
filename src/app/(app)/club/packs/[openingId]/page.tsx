@@ -62,7 +62,7 @@ export default async function PackResultPage({ params }: PackResultPageProps) {
   }));
 
   return (
-    <main className="min-h-screen bg-board p-5 text-ink sm:p-10">
+    <main className="board-ground min-h-screen p-5 text-ink sm:p-10">
       <section className="mx-auto max-w-5xl space-y-4">
         <p className="text-sm font-bold text-ink-faint">Pack opening saved — the result was fixed before this reveal.</p>
         <PackReveal

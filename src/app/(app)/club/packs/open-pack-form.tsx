@@ -31,21 +31,36 @@ export function OpenPackForm({ packSlug, title, price, cardsPerPack, balance, ca
   }
 
   return (
-    <form action={action} className="rounded-3xl border border-brass/50 bg-gradient-to-br from-brass via-[#a3711d] to-[#4a2f08] p-[1px] shadow-xl shadow-brass/30" onSubmit={confirmOpen}>
-      <div className="rounded-[calc(1.5rem-1px)] bg-board/95 p-5">
+    <form
+      action={action}
+      className="relative overflow-hidden rounded-3xl border border-brass/30 bg-[radial-gradient(120%_100%_at_12%_0%,#4a2f08_0%,#1c1509_46%,#100d08_100%)] p-8 shadow-xl shadow-black/40"
+      onSubmit={confirmOpen}
+    >
+      {/* A single light source rather than a gradient border: the pack should
+          feel lit from inside, the way an Elite card is. */}
+      <span aria-hidden="true" className="pointer-events-none absolute -right-20 -top-36 h-[26rem] w-[26rem] rounded-full bg-[radial-gradient(closest-side,rgba(224,172,74,0.2),transparent_70%)]" />
+      <div className="relative">
         <input name="packSlug" type="hidden" value={packSlug} />
-        <p className="text-xs font-black uppercase tracking-[0.2em] text-brass">Pack store</p>
-        <h2 className="mt-2 text-2xl font-black">{title}</h2>
-        <p className="mt-2 text-sm leading-6 text-ink-dim">Three server-selected Live Cards. Duplicates can happen.</p>
-        {state.error && <p className="mt-3 rounded-xl bg-brick-bg p-3 text-sm text-brick">{state.error}</p>}
-        <button
-          className="mt-5 min-h-12 w-full rounded-xl bg-brass px-4 py-3 font-black text-ink-on-accent disabled:cursor-not-allowed disabled:bg-line disabled:text-ink-faint"
-          disabled={isPending || !canAfford}
-          type="submit"
-        >
-          {isPending ? "Opening..." : canAfford ? `Open for ${price} KUT Coins` : `Need ${price - balance} more KUT Coins`}
-        </button>
-        {!canAfford && <p className="mt-2 text-center text-xs font-semibold text-ink-faint">Earn coins by attending published sessions.</p>}
+        <p className="text-[0.65rem] font-extrabold uppercase tracking-[0.2em] text-brass">Pack store</p>
+        <h2 className="display mt-3 text-4xl">{title}</h2>
+        <p className="mt-3 max-w-md text-sm leading-relaxed text-ink-dim">
+          {cardsPerPack} server-selected Live Cards. Card selection is weighted by rarity, so the ladder still has a top. Duplicates can happen.
+        </p>
+        {state.error && <p className="mt-4 rounded-xl border border-brick-line/40 bg-brick-bg p-3 text-sm font-bold text-brick">{state.error}</p>}
+        <div className="mt-7 flex flex-wrap items-center gap-4">
+          <button
+            className="min-h-13 rounded-xl bg-gradient-to-b from-[#eebd63] to-[#d29a34] px-7 text-[0.95rem] font-black text-ink-on-accent shadow-lg shadow-brass/25 hover:brightness-105 disabled:cursor-not-allowed disabled:bg-none disabled:bg-line disabled:text-ink-faint disabled:shadow-none"
+            disabled={isPending || !canAfford}
+            type="submit"
+          >
+            {isPending ? "Opening..." : canAfford ? `Open for ${price} KUT Coins` : `Need ${price - balance} more KUT Coins`}
+          </button>
+          <p className="text-xs font-bold text-ink-faint">
+            {canAfford
+              ? `${cardsPerPack} cards · leaves you ${(balance - price).toLocaleString()}`
+              : "Earn coins by attending published sessions."}
+          </p>
+        </div>
       </div>
     </form>
   );

@@ -190,13 +190,13 @@ export function CardEditor({ playerId, displayName, currentArchetype, currentPho
     startPhotoSubmit(() => removeAction());
   }
 
-  const fieldClass = "min-h-12 w-full rounded-xl border border-line bg-board px-4";
+  const fieldClass = "min-h-12 w-full rounded-xl border border-line bg-board-deep/60 px-4";
 
   return (
     <div className="space-y-8">
       <section className="space-y-4 rounded-2xl border border-line bg-panel p-5">
         <div>
-          <h2 className="text-lg font-black">Archetype</h2>
+          <h2 className="text-base font-extrabold">Archetype</h2>
           <p className="mt-1 text-sm text-ink-faint">
             This reshapes the six stats on your <strong>{displayName}</strong> card. It does not change your OVR.
             Saving recalculates every stat.
@@ -223,7 +223,7 @@ export function CardEditor({ playerId, displayName, currentArchetype, currentPho
 
       <section className="space-y-4 rounded-2xl border border-line bg-panel p-5">
         <div>
-          <h2 className="text-lg font-black">Card photo</h2>
+          <h2 className="text-base font-extrabold">Card photo</h2>
           <p className="mt-1 text-sm text-ink-faint">
             Upload a photo, then drag to reposition and use the slider to zoom. It&rsquo;s saved as a square.
           </p>

@@ -1,6 +1,6 @@
 export default function AppLoading() {
   return (
-    <main aria-busy="true" className="min-h-screen bg-board p-5 text-ink sm:p-10">
+    <main aria-busy="true" className="board-ground min-h-screen p-5 text-ink sm:p-10">
       <div className="mx-auto max-w-6xl">
         <div className="animate-pulse space-y-4" role="status">
           <div className="h-11 max-w-sm rounded-xl bg-panel-2" />

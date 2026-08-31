@@ -73,7 +73,7 @@ export function PackReveal({
           })}
         </div>
         <div className="mt-8 flex flex-wrap justify-center gap-3">
-          <Link className="inline-flex min-h-12 items-center rounded-xl bg-brass px-5 font-black text-ink-on-accent" href={doneHref}>
+          <Link className="inline-flex min-h-12 items-center rounded-xl bg-gradient-to-b from-[#eebd63] to-[#d29a34] px-5 font-black text-ink-on-accent hover:brightness-105" href={doneHref}>
             {doneLabel}
           </Link>
           {secondaryHref && secondaryLabel && (

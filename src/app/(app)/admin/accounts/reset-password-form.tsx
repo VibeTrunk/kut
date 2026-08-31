@@ -18,7 +18,7 @@ export function ResetPasswordForm({ accounts }: { accounts: Account[] }) {
     <form action={formAction} className="space-y-4 rounded-2xl border border-line bg-panel p-5">
       <label className="block space-y-2">
         <span className="font-semibold">Member</span>
-        <select className="min-h-12 w-full rounded-xl border border-line bg-board px-4" defaultValue="" name="targetUserId" required>
+        <select className="min-h-12 w-full rounded-xl border border-line bg-board-deep/60 px-4" defaultValue="" name="targetUserId" required>
           <option disabled value="">Choose an account</option>
           {accounts.map((account) => (
             <option key={account.id} value={account.id}>{account.displayName} · {account.email} · {account.role}</option>
@@ -29,7 +29,7 @@ export function ResetPasswordForm({ accounts }: { accounts: Account[] }) {
         <span className="font-semibold">Temporary password</span>
         <input
           autoComplete="new-password"
-          className="min-h-12 w-full rounded-xl border border-line bg-board px-4"
+          className="min-h-12 w-full rounded-xl border border-line bg-board-deep/60 px-4"
           minLength={12}
           name="password"
           required
@@ -40,7 +40,7 @@ export function ResetPasswordForm({ accounts }: { accounts: Account[] }) {
       <label className="block space-y-2">
         <span className="font-semibold">Reason</span>
         <textarea
-          className="min-h-24 w-full rounded-xl border border-line bg-board p-3"
+          className="min-h-24 w-full rounded-xl border border-line bg-board-deep/60 p-3"
           maxLength={500}
           minLength={3}
           name="reason"

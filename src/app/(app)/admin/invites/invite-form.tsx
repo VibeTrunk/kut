@@ -30,7 +30,7 @@ export function InviteForm({ players }: { players: Player[] }) {
       <form action={formAction} className="space-y-4 rounded-2xl border border-line bg-panel p-5">
         <label className="block space-y-2">
           <span className="font-semibold">Player</span>
-          <select className="min-h-12 w-full rounded-xl border border-line bg-board px-4" defaultValue="" name="playerId" required>
+          <select className="min-h-12 w-full rounded-xl border border-line bg-board-deep/60 px-4" defaultValue="" name="playerId" required>
             <option disabled value="">Choose a player</option>
             {players.map((player) => (
               <option key={player.id} value={player.id}>{player.display_name}</option>
@@ -45,9 +45,9 @@ export function InviteForm({ players }: { players: Player[] }) {
 
       {state.inviteUrl && state.playerName && (
         <section className="space-y-3 rounded-2xl border border-moss-line bg-moss-line/10 p-5">
-          <h2 className="text-xl font-bold">Invite ready for {state.playerName}</h2>
+          <h2 className="display text-2xl">Invite ready for {state.playerName}</h2>
           <p className="text-sm text-moss">Copy and share this once. The token is not stored in readable form and cannot be shown again here.</p>
-          <input aria-label="One-time invite link" className="min-h-12 w-full rounded-xl border border-moss/50 bg-board px-3 text-sm" readOnly value={state.inviteUrl} />
+          <input aria-label="One-time invite link" className="min-h-12 w-full rounded-xl border border-moss/50 bg-board-deep/60 px-3 text-sm" readOnly value={state.inviteUrl} />
           <button className="min-h-12 w-full rounded-xl bg-moss px-4 py-3 font-bold text-ink-on-accent" onClick={copyInvite} type="button">
             {copied ? "Copied" : "Copy invite link"}
           </button>

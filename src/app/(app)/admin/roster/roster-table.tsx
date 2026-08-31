@@ -17,7 +17,7 @@ export function RosterTable({ players }: { players: RosterRow[] }) {
 
   return (
     <div className="space-y-3">
-      <h2 className="text-xl font-bold">Current roster ({players.length})</h2>
+      <h2 className="display text-2xl">Current roster ({players.length})</h2>
       {state && !state.ok && <p className="rounded-xl bg-brick-bg p-3 text-sm text-brick">{state.error}</p>}
       {state?.ok && <p className="rounded-xl bg-moss-bg p-3 text-sm text-moss">{state.message}</p>}
       <div className="overflow-x-auto rounded-2xl border border-line bg-panel">

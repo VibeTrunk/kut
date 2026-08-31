@@ -41,11 +41,11 @@ export default async function WelcomePage() {
   }));
 
   return (
-    <main className="min-h-screen bg-board p-5 text-ink sm:p-10">
+    <main className="board-ground min-h-screen p-5 text-ink sm:p-10">
       <section className="mx-auto max-w-3xl space-y-6">
         <header className="text-center">
-          <p className="text-sm font-black uppercase tracking-[0.24em] text-brass">Welcome to KUT</p>
-          <h1 className="mt-2 text-4xl font-black tracking-tight sm:text-5xl">Your starter pack is waiting</h1>
+          <p className="text-[0.7rem] font-extrabold uppercase tracking-[0.26em] text-brass">Welcome to KUT</p>
+          <h1 className="display mt-3 text-5xl sm:text-6xl">Your starter pack is waiting</h1>
         </header>
         <StarterReveal cards={players} />
       </section>

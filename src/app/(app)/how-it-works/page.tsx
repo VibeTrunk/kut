@@ -25,8 +25,8 @@ const ATTRS = ["pac", "sho", "pas", "dri", "def", "phy"] as const;
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="space-y-3 rounded-3xl border border-line bg-panel/60 p-6">
-      <h2 className="text-xl font-black tracking-tight">{title}</h2>
+    <section className="space-y-3 rounded-3xl border border-line/60 bg-panel/60 p-6">
+      <h2 className="display text-2xl">{title}</h2>
       <div className="space-y-3 text-ink-dim">{children}</div>
     </section>
   );
@@ -45,11 +45,11 @@ export default async function HowItWorksPage() {
   }));
 
   return (
-    <main className="min-h-screen bg-board p-5 text-ink sm:p-10">
+    <main className="board-ground min-h-screen p-5 text-ink sm:p-10">
       <section className="mx-auto max-w-3xl space-y-8">
         <header className="space-y-3">
-          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-brass">The rules</p>
-          <h1 className="text-4xl font-black tracking-tight sm:text-5xl">How KUT works</h1>
+          <p className="text-[0.7rem] font-extrabold uppercase tracking-[0.26em] text-brass">The rules</p>
+          <h1 className="display text-5xl sm:text-6xl">How KUT works</h1>
           <p className="text-lg leading-8 text-ink-dim">
             Real Terrible Football Haarlem attendance and goals drive every card&rsquo;s rating and rarity.
             Show up, collect your teammates, open packs, and trade.

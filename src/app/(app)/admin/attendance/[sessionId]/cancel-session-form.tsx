@@ -18,7 +18,7 @@ export function CancelSessionForm({ sessionId }: { sessionId: string }) {
       <label className="block space-y-2">
         <span className="font-semibold">Why is it being cancelled?</span>
         <textarea
-          className="min-h-24 w-full rounded-xl border border-brick-line bg-board p-3"
+          className="min-h-24 w-full rounded-xl border border-brick-line bg-board-deep/60 p-3"
           maxLength={500}
           minLength={3}
           name="cancellationReason"

@@ -28,7 +28,7 @@ export default async function AccountsPage() {
   const displayNameByUserId = new Map((profilesResponse.data ?? []).map((profile) => [profile.id, profile.display_name]));
 
   return (
-    <main className="min-h-screen bg-board p-6 text-ink sm:p-10">
+    <main className="board-ground min-h-screen p-6 text-ink sm:p-10">
       <section className="mx-auto max-w-xl space-y-8">
         <header className="space-y-3">
           <h1 className="text-4xl font-black tracking-tight">Account recovery</h1>
@@ -37,7 +37,7 @@ export default async function AccountsPage() {
         <ResetPasswordForm accounts={accounts} />
         {(eventsResponse.data ?? []).length > 0 && (
           <section className="space-y-3 border-t border-panel-2 pt-8">
-            <h2 className="text-xl font-bold">Recent reset activity</h2>
+            <h2 className="display text-2xl">Recent reset activity</h2>
             <ul className="space-y-2">
               {(eventsResponse.data ?? []).map((event) => (
                 <li className="rounded-xl bg-panel p-4 text-sm text-ink-dim" key={event.id}>

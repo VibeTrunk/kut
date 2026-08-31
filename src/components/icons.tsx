@@ -175,3 +175,23 @@ export function IconChevronDown(props: IconProps) {
 export function IconMenu(props: IconProps) {
   return base(<path d="M4 7h16M4 12h16M4 17h16" />, { strokeWidth: 2, ...props });
 }
+
+export function IconSearch(props: IconProps) {
+  return base(
+    <>
+      <circle cx="11" cy="11" r="6.5" />
+      <path d="M16 16l4 4" />
+    </>,
+    props,
+  );
+}
+
+export function IconSort(props: IconProps) {
+  return base(
+    <>
+      <path d="M7 4v16M7 20l-3-3M7 20l3-3" />
+      <path d="M17 20V4M17 4l-3 3M17 4l3 3" />
+    </>,
+    props,
+  );
+}

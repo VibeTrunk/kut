@@ -16,7 +16,7 @@ export function ClaimInviteForm({ token }: { token: string }) {
         <input
           autoCapitalize="none"
           autoComplete="username"
-          className="min-h-12 w-full rounded-xl border border-line bg-board px-4"
+          className="min-h-12 w-full rounded-xl border border-line bg-board-deep/60 px-4"
           maxLength={30}
           minLength={3}
           name="username"
@@ -28,7 +28,7 @@ export function ClaimInviteForm({ token }: { token: string }) {
       </label>
       <label className="block space-y-2">
         <span className="font-semibold">Choose a password</span>
-        <input autoComplete="new-password" className="min-h-12 w-full rounded-xl border border-line bg-board px-4" minLength={12} name="password" required type="password" />
+        <input autoComplete="new-password" className="min-h-12 w-full rounded-xl border border-line bg-board-deep/60 px-4" minLength={12} name="password" required type="password" />
       </label>
       <p className="text-sm text-ink-faint">
         Username: 3–30 letters, numbers, or underscores — you&rsquo;ll sign in with it. Password: at least 12

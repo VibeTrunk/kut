@@ -92,10 +92,10 @@ export function AppNav({ displayName, isAdmin, balance, unreadCount, incomingOff
   return (
     <>
       {/* Desktop / tablet top bar */}
-      <header className="sticky top-0 z-30 hidden border-b border-panel-2 bg-board/95 backdrop-blur sm:block">
+      <header className="sticky top-0 z-30 hidden border-b border-line/40 bg-board-deep/80 backdrop-blur sm:block">
         <div className="mx-auto flex h-16 max-w-6xl items-center gap-6 px-6">
-          <Link className={`flex items-center gap-2 rounded-lg text-lg font-black tracking-tight text-brass ${focusRing}`} href="/">
-            <span aria-hidden="true" className="clip-pennant h-3 w-3 shrink-0 bg-brass" />
+          <Link className={`flex items-center gap-2.5 rounded-lg text-xl font-black tracking-tight text-ink ${focusRing}`} href="/">
+            <span aria-hidden="true" className="clip-pennant h-4 w-3.5 shrink-0 bg-brass" />
             KUT
           </Link>
           <nav aria-label="Primary" className="flex flex-1 items-center gap-1">
@@ -117,7 +117,7 @@ export function AppNav({ displayName, isAdmin, balance, unreadCount, incomingOff
             })}
           </nav>
           <div className="flex items-center gap-3">
-            <span className="flex items-center gap-1.5 rounded-full border border-line bg-panel px-3 py-1.5 text-sm font-black tabular-nums text-brass">
+            <span className="flex items-center gap-1.5 rounded-full border border-brass/30 bg-gradient-to-b from-brass/15 to-brass/5 px-3.5 py-1.5 text-sm font-black tabular-nums text-brass">
               <IconCoin className="h-3.5 w-3.5" />
               {balance.toLocaleString()}
             </span>
@@ -143,13 +143,13 @@ export function AppNav({ displayName, isAdmin, balance, unreadCount, incomingOff
       </header>
 
       {/* Mobile top bar */}
-      <header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-3 border-b border-panel-2 bg-board/95 px-4 backdrop-blur sm:hidden">
-        <Link className={`flex items-center gap-1.5 rounded-lg text-base font-black text-brass ${focusRing}`} href="/">
-          <span aria-hidden="true" className="clip-pennant h-2.5 w-2.5 shrink-0 bg-brass" />
+      <header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-3 border-b border-line/40 bg-board-deep/85 px-4 backdrop-blur sm:hidden">
+        <Link className={`flex items-center gap-2 rounded-lg text-lg font-black text-ink ${focusRing}`} href="/">
+          <span aria-hidden="true" className="clip-pennant h-3.5 w-3 shrink-0 bg-brass" />
           KUT
         </Link>
         <div className="flex items-center gap-2">
-          <span className="flex items-center gap-1 rounded-full border border-line bg-panel px-2.5 py-1 text-xs font-black tabular-nums text-brass">
+          <span className="flex items-center gap-1 rounded-full border border-brass/30 bg-gradient-to-b from-brass/15 to-brass/5 px-3 py-1 text-xs font-black tabular-nums text-brass">
             <IconCoin className="h-3 w-3" />
             {balance.toLocaleString()}
           </span>
@@ -173,7 +173,7 @@ export function AppNav({ displayName, isAdmin, balance, unreadCount, incomingOff
       </header>
 
       {/* Mobile bottom tab bar */}
-      <nav aria-label="Primary" className="fixed inset-x-0 bottom-0 z-30 flex border-t border-panel-2 bg-board/95 backdrop-blur sm:hidden">
+      <nav aria-label="Primary" className="fixed inset-x-0 bottom-0 z-30 flex border-t border-line/40 bg-board-deep/95 pb-[env(safe-area-inset-bottom)] backdrop-blur sm:hidden">
         {primaryNavItems.map((item) => {
           const active = item.isActive(pathname);
           return (

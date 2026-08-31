@@ -1697,3 +1697,142 @@ Economy / abuse review (per the spec requirement):
 Reason: the club asked for it, and coin-only buy-now under-serves a group that
 mostly wants to swap specific cards. Escrow + a short 12h window keeps the
 economy invariants intact.
+
+## ADR-043 — The material ladder: card face, typography, and screen redesign
+
+Date: 2026-08-31
+
+Status: Accepted
+
+Decision: the Live Card face was redesigned around one rule — **each rarity
+tier adds a physical property to the tier below it and takes nothing away** —
+and the app's typography and five member-facing screens were brought in line
+with it. No database, RPC, view, economy formula, or game invariant changed;
+this is a presentation-layer change only, and no migration accompanies it.
+
+The ladder, in material terms:
+
+| Tier | OVR | Material | Motion at rest |
+| --- | --- | --- | --- |
+| common | under 40 | uncoated newsprint, open press grain | none |
+| bronze | 40–49 | coated stock | none (one 1.15s specular pass on hover) |
+| silver | 50–59 | cold-foil stamped, brushed plate | none (specular pass on hover) |
+| gold | 60–69 | hot foil, embossed rating | 9s foil cycle |
+| holo | 70–79 | refraction film, iridescent edge | two layers drifting at 17s and 23s |
+| elite | 80+ | black lacquer + gold leaf, internal light | 6.5s breath, 7.5s caustic, pointer tilt |
+
+Elite is the only inverted card in the set, which is what makes an Elite pull
+legible across a room. Only three of six tiers animate at rest and the two
+continuous ones run slower than 9s, so a full Collection grid composites a
+handful of moving layers at most. `prefers-reduced-motion` disables all of it;
+the ladder still reads, because it is material first and motion second.
+
+Card anatomy changes (the skeleton is shared by all six tiers):
+
+- Art bleeds to the card edge. The taped, 2°-rotated frame at 58% card width
+  is gone — it cropped faces and made every card sit askew.
+- The six rotated stat circles became a ruled stat table. The circles cost
+  roughly a third of the card's lower area and were the least legible element
+  at grid size; the table stays readable down to a 168px card on a phone.
+- The tier **word** moved from inside the pennant (where it was set at
+  0.42rem) onto the nameplate. The pennant keeps colour + silhouette, so
+  ADR-022's three-way rarity encoding (hue, shape, word) is preserved.
+- The no-photo card is the **shirt back**: surname across the shoulders, live
+  rating as the squad number, drawn in the tier's own material. Most of the
+  club never uploads a photo, so this is the default card face, not an error
+  state — and unlike the previous initials-on-a-jersey monogram it differs per
+  player. Surnames over 14 characters fall back to a plain drawn bust.
+
+Typography: Arial is replaced by **Instrument Serif** (page headings, the
+clubblad voice) and **Archivo** (every interface job and every number,
+tabular). Both are self-hosted via `next/font`.
+
+Reason: ADR-022 chose "Clubblad" and derived the chrome palette from the card
+tiers; that decision still holds and **the palette is unchanged here**. What
+did not hold was that all six tiers were the same card in six colours, so
+rarity was a hue swap rather than a felt difference. Tying tier to material
+makes the ladder something you can see at a glance and gives high tiers
+somewhere to go without making low tiers look broken.
+
+Consequences and constraints worth remembering:
+
+- **Production CSP is `style-src 'self' 'nonce-…'`, which strips inline
+  `style` attributes.** Everything visual therefore lives in `globals.css` or
+  Tailwind classes. Two knock-on rules: computed bars (attribute strength,
+  rating history) are drawn as **SVG geometry**, not divs with a percentage
+  width, because Tailwind cannot generate an arbitrary-value class from a
+  runtime number; and the Elite pointer tilt writes `--card-tilt-x/y` through
+  **CSSOM** (`element.style.setProperty`), which `style-src` does not govern,
+  rather than a React `style` prop.
+- **`font-src` is `'self'`**, so a webfont CDN would be blocked. `next/font`
+  self-hosts both faces under `/_next/static/media`; do not switch to a
+  `<link>` to fonts.googleapis.com.
+- The card scales from one variable: it is an inline-size container and each
+  region sets its base with `4cqi`, then uses `em` beneath that. Container
+  query units cannot address their own container, so the card's own radius and
+  shadow stay in `rem`.
+- Only Elite loads client JS (`CardTilt`); every other tier stays a pure
+  server component.
+- A holo "prism edge" built as a conic-gradient ring masked with
+  `mask-composite: exclude` was **abandoned**: Chromium never excluded the
+  interior, and the gradient's colour-stop boundaries painted as stray
+  diagonals across the whole card. Layered inset shadows split the light at
+  the four edges instead. Do not reintroduce the masked-ring approach.
+
+Screen changes, deliberately limited to low-hanging fruit — the UX and
+information architecture are otherwise untouched:
+
+- Home: "Open a pack" is a primary button rather than a fourth entry inside
+  the stats `<dl>`; the activity feed is a ruled ledger rather than a stack of
+  rounded boxes.
+- Collection: gained the search / tier / sort vocabulary Market already had,
+  plus header totals for the whole collection. The set is fetched once and
+  narrowed in the route handler — a club collection is tens of cards, and it
+  keeps the totals honest in one round trip.
+- Market and Collection: price and status ride the card instead of floating as
+  loose text beneath it, so a scanned grid reads in one pass.
+- Player profile: gained a rating-history chart from the existing
+  `kut.player_rating_snapshots` table (readable by `authenticated` since
+  ADR-031 — no schema change was needed).
+
+The design was explored on a multi-artboard canvas before any code changed;
+the shirt-back placeholder was chosen there over a crest monogram and a line
+portrait.
+
+Revisions after the first review pass:
+
+- **Holo is a periodic prismatic sweep plus a continuous shimmer**, and it
+  took four passes to land. A real holographic card only fires when the light
+  catches it, so the refraction is periodic, not continuous: a band of thin
+  coloured lines crosses the card in about 2.5s and then it rests for six
+  (`card-prism`, 9s). The lines are a `repeating-linear-gradient`; the band is
+  a single-layer `mask-image` envelope so they fade in and out at its edges
+  rather than reading as a moving rectangle, and the layer is wider than the
+  card so its own edges never enter frame. The shimmer is separate and does
+  run continuously (`card-glide`, 11s).
+
+  Three earlier attempts are worth not repeating: smooth linear-gradient
+  washes read as a flat purple tint; hard-stopped `repeating-linear-gradient`
+  bands read as far too intense; and a continuously rotating conic gradient
+  reads as restless and mechanical. Note the irony — the leaking masked conic
+  ring described below produced roughly the right *look* by accident, which is
+  why the fix was to reproduce the effect deliberately rather than abandon it.
+  Note also that single-layer `mask-image` works fine here; it was
+  specifically `mask-composite` that failed.
+
+- **Stat pairs are grouped left, not `space-between`.** Spreading each pair
+  across its grid cell put every value further from its own label than from
+  the *next* label, so the numbers appeared to belong to the wrong stat. Label
+  and value now sit together with a `min-width` on the label keeping the
+  values aligned in columns.
+- **`.live-card__topscrim`** puts a ground under the rating. Over a light
+  uploaded photo the OVR had nothing behind it and became hard to read; the
+  scrim is tinted with the card's own `--stock`, so it darkens on Elite and
+  lightens on every other tier.
+
+Screens beyond the five above (player directory, leaderboard, messages,
+settings, login, invite, welcome, Club Value, trade offers, how-it-works, and
+the admin tooling) were brought onto the same shell, eyebrow, display-serif
+heading, control and button vocabulary. Verified against the production CSP
+with `next start`: no `style-src` violations, no page errors and no 4xx across
+every route reachable without a session.

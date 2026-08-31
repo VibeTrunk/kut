@@ -978,6 +978,21 @@ attendance. See ADR-035.
 > fresh `+250` starter, netting the wallet to `250`. It does not create coins
 > beyond the standard starter grant.
 
+### Bibs bonus
+
+The member linked to the Player who washed the bibs after a session receives a
+one-off `+100 KUT Coins` (`BIBS_COIN_BONUS`, Part 145). The admin records the
+washer on the attendance form; `kut.match_sessions.bibs_washed_by` stores it
+(null = nobody). Paid by the audited `kut.grant_bibs_reward`, alongside
+`grant_attendance_rewards`, with `wallet_ledger.reason = 'bibs_bonus'` and a
+dated `bibs_bonus` inbox message ("You received 100 KUT Coins for washing the
+bibs after the session on DD Mon YYYY."). A `kut.bibs_rewards` guard table,
+PK `(session_id, player_id)`, plus a unique ledger key make it idempotent: at
+most once per `(session, washer)`, never re-paid for the same washer on a
+correction. Reassigning the washer on a correction pays the new washer; the
+previous one keeps their bonus (forward-only). Coins only — no rating/OVR
+effect. See ADR-037.
+
 ---
 
 ## 25. MVP coin sinks
@@ -3996,6 +4011,7 @@ LIVE_OVR_MIN = 30
 LIVE_OVR_MAX = 83
 
 ATTENDANCE_COIN_REWARD = 250  # raised from 75 on 2026-08-29, ADR-029
+BIBS_COIN_BONUS = 100  # one-off, for the session's bibs washer, ADR-037
 STARTER_COIN_GRANT = 250
 STARTER_CARD_COUNT = 3
 
@@ -4290,6 +4306,7 @@ Tasks:
 18. Service-role secret never reaches browser.
 19. Invite token can be claimed at most once.
 20. Card ownership changes only through a server-authoritative `buy_listing` transaction (ADR-033 retired the former "untradeable card cannot enter the market" invariant).
+21. Bibs bonus is a bounded faucet: at most once per `(session, Player)`, never re-paid on a correction of the same washer (ADR-037).
 
 Every coding agent should treat this section as a regression checklist.
 

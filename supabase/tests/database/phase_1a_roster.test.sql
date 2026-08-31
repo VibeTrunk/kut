@@ -41,13 +41,13 @@ select has_function(
 select has_function(
   'kut',
   'publish_attendance_session',
-  array['uuid', 'date', 'text', 'jsonb'],
+  array['uuid', 'date', 'text', 'jsonb', 'uuid'],
   'atomic attendance publication function exists'
 );
 select has_function(
   'kut',
   'correct_published_attendance_session',
-  array['uuid', 'date', 'text', 'jsonb', 'text'],
+  array['uuid', 'date', 'text', 'jsonb', 'text', 'uuid'],
   'published attendance correction function exists'
 );
 select has_function(

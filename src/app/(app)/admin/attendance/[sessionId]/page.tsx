@@ -14,6 +14,7 @@ type PublishedSession = {
   session_date: string;
   session_type: string;
   status: "published" | "cancelled";
+  bibs_washed_by: string | null;
   attendance: Array<{ goals: number; player_id: string }> | null;
 };
 
@@ -30,7 +31,7 @@ export default async function CorrectionPage({ params }: CorrectionPageProps) {
     supabase
       .schema("kut")
       .from("match_sessions")
-      .select("id, session_date, session_type, status, attendance(player_id, goals)")
+      .select("id, session_date, session_type, status, bibs_washed_by, attendance(player_id, goals)")
       .eq("id", sessionId)
       .in("status", ["published", "cancelled"])
       .maybeSingle(),
@@ -86,6 +87,7 @@ export default async function CorrectionPage({ params }: CorrectionPageProps) {
             sessionDate: session.session_date,
             sessionType: session.session_type,
             status: session.status,
+            bibsWashedBy: session.bibs_washed_by,
             attendance: session.attendance ?? [],
           }}
           players={correctionPlayers}

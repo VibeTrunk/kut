@@ -1609,3 +1609,64 @@ Front-end (Vercel, auto-deploy on the KUT PR #21 merge) and the hosted schema
 are now consistent: `/admin/links` "Adjust coins" and "Reset club" work end to
 end. Batch D closes tester feedback #8 + #6; Batch E (content features — #4
 Goalkeeper, #5 bibs bonus, #10 newsfeed) is the last tester-feedback batch.
+
+## Batch E2 — bibs-washing coin bonus (ADR-037) - 2026-08-31
+
+Batch E (the last tester-feedback batch) is split into three independent,
+all-additive sub-batches: **E1** Goalkeeper archetype, **E2** bibs bonus, **E3**
+activity newsfeed. See `docs/TESTER_FEEDBACK_BATCHES.md`.
+
+E2 (finding #5) adds a **one-off `+100` KUT Coins bonus for the session's bibs
+washer**, on branch `feat/bibs-bonus`, migration
+`20260907000000_bibs_bonus.sql`. **Coins only** — no rating/OVR effect. See
+ADR-037.
+
+- **SQL** (all additive):
+  - `kut.match_sessions.bibs_washed_by uuid` (nullable, `references
+    kut.players(id) on delete restrict`) — one washer per session, so a column
+    not a table.
+  - `kut.bibs_rewards` guard table — PK `(session_id, player_id)`, deferrable
+    `ledger_id` FK, member-reads-own / admin-reads-all RLS — a byte-for-byte
+    shape match to `kut.attendance_rewards`.
+  - `wallet_ledger.reason` widened with `'bibs_bonus'`;
+    `user_notifications.event_type` widened with `'bibs_bonus'` (distinct type
+    so the washer's own `attendance_reward` inbox row for the same session does
+    not collide on the `(user, event_type, ref_type, ref_id)` unique key).
+  - `kut.grant_bibs_reward(p_session_id)` — security definer, modelled on
+    `kut.grant_attendance_rewards`; called from
+    `kut.process_published_session_rewards` next to it. Idempotent on the
+    `bibs_rewards` PK + the ledger key `'bibs:'||session||':'||washer`.
+  - `kut.publish_attendance_session` / `kut.correct_published_attendance_session`
+    each gain a trailing `p_bibs_washed_by uuid default null` (old signature
+    dropped + recreated — a `create or replace` can't widen the arg list),
+    validate it is a distinct attendee, and store it on the session. The
+    correction stores the washer *before* replacing the attendance so the
+    reward trigger re-fires for a changed washer; the previous washer keeps
+    their bonus (forward-only).
+- **TypeScript**: `ECONOMY.bibsCoinBonus = 100` (`src/game/economy.ts`); a
+  "Who washed the bibs?" `<select>` on the attendance form's review step
+  (options = checked-in players + "Nobody"), threaded through
+  `admin/attendance/actions.ts` (+ `[sessionId]/page.tsx` for pre-fill on a
+  correction) to both RPCs as `p_bibs_washed_by`; `messages/page.tsx` gains a
+  "Bibs bonus" kicker label + the `bibs_bonus` event type.
+- **Spec**: Part 24 gains a "Bibs bonus" coin source; Part 145 gains
+  `BIBS_COIN_BONUS = 100`; Part L §162 gains invariant #21 (bounded faucet).
+- **Docs**: ADR-037; `docs/TESTER_FEEDBACK_BATCHES.md` finding #5 marked
+  decided and the Batch E row split into E1/E2/E3.
+
+Local gate (green): `npm run verify:fast` (lint, typecheck, 33 unit tests) and
+`npm run test:db` (`supabase migration up --local` clean; new
+`bibs_bonus.test.sql` `plan(15)` — washer credited exactly one 100-coin
+`bibs_bonus` ledger row + guard row + dated inbox message; a repeat
+`grant_bibs_reward` is a no-op; a non-attendee washer is rejected `22023`; a
+correction that reassigns the washer pays the new one and leaves the original's
+row intact. `phase_1a_roster.test.sql` `has_function` arg lists updated for the
+two new signatures).
+
+Hosted deploy is the separate **additive**-path `VibeTrunk/supabase` ADR-021
+step (catalogue byte-identical, extend `verify-catalog.ps1`, `migration list
+--linked` no drift, `db push --dry-run` reviewed, ride the last scheduled
+backup, user runs `db push`, verify the column + table + two widened checks +
+functions on hosted). Never `supabase db push` from this repo. Mixed-state
+window: between the KUT merge and the hosted push, choosing a bibs washer on
+the attendance form returns the RPC's "invalid argument" error — push promptly.

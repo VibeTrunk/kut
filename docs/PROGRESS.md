@@ -1846,7 +1846,7 @@ migration, no hosted push — the `kut.activity_feed` view is untouched.
 
 `npm run verify:fast` green (lint + typecheck + 34 unit tests).
 
-## Tester follow-up: market card art, Club Value v2, trade offers - 2026-09-01
+## Tester follow-up: market card art, Club Value v2, trade offers - 2026-08-31
 
 Branch `feat/market-art-club-value-trade-offers`. Three tester items in one PR;
 three additive/data-changing local migrations mirrored for hosted catalogue in
@@ -1881,5 +1881,11 @@ three additive/data-changing local migrations mirrored for hosted catalogue in
 Verification (all green): `npm run verify:full` (lint + typecheck + 38 unit +
 `test:db` + 20 e2e + build) plus `npm run test:market-race` (market + new
 trade-race). New pgTAP: `market_listing_card_art` (5), `club_value` (16),
-`trade_offers` (34). BUILD_SPEC Part XII §38/§39/§39a, Appendix C, Part XXXIV,
+`trade_offers` (48). BUILD_SPEC Part XII §38/§39/§39a, Appendix C, Part XXXIV,
 Part L invariants #20/#22/#23 updated; ADR-040/041/042 recorded.
+
+**Deployed to hosted 2026-08-31** &mdash; KUT PR #28 merged; the three SQL
+files catalogued into `VibeTrunk/supabase` (PR #19) and applied with one
+`supabase db push` from there (data-changing tier: fresh backup taken first).
+`kut.vibetrunk.com` smoke-tested: `/market` card art, `/club/value`,
+`/club`, `/leaderboard`, and a live offer + withdraw round-trip.

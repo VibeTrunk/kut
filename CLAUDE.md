@@ -36,22 +36,33 @@ don't add cross-repo coupling beyond the shared Supabase project.
 
 KUT is live at `https://kut.vibetrunk.com` as Vercel project `kut`. The
 hosted `kut` schema is applied through
-`20260908000000_activity_feed.sql` &mdash; the last of tester-feedback
-**Batch E** (three additive migrations, all deployed 2026-08-31 in one
-`db push`).
+`20260911000000_trade_offers.sql` &mdash; the tester follow-up trio
+(ADR-040/041/042), deployed 2026-08-31 in one `db push` from
+`VibeTrunk/supabase` (PR #19 there), on top of Batch E:
 
-> **Pending hosted push (2026-09-01, branch
-> `feat/market-art-club-value-trade-offers`):** three migrations catalogued
-> for `VibeTrunk/supabase` but **not yet deployed** &mdash;
-> `20260909000000_market_listing_card_art.sql` (ADR-040, additive: market
-> view gains `photo_path` + `seller_id`),
-> `20260910000000_club_value_v2.sql` (ADR-041, data-changing: Club Value =
-> coins + owned-card discard value + 4&times; personal card) and
-> `20260911000000_trade_offers.sql` (ADR-042, data-changing: coin+card
-> escrow trade offers on listings). Flip this note to "deployed" after the
-> `VibeTrunk/supabase` push.
+- `20260909000000_market_listing_card_art.sql` (ADR-040, additive) &mdash;
+  `kut.active_market_listings` gains `photo_path` + `seller_id` so `/market`
+  renders player card art and hides Buy/Offer on the viewer's own listings.
+- `20260910000000_club_value_v2.sql` (ADR-041, data-changing) &mdash; Club
+  Value becomes `coins + sum(owned-card discard value) + 4 &times;
+  personal-card discard-equivalent`. `kut.my_club_value` dropped + recreated
+  (`card_value` &rarr; `owned_cards_value` + personal-card columns);
+  `kut.club_value_leaderboard` `create or replace`d. `market_reference_value`
+  kept, but only for `get_listing_bounds`.
+- `20260911000000_trade_offers.sql` (ADR-042, data-changing) &mdash;
+  coin + card escrow trade offers on listings. New `kut.trade_offers` /
+  `kut.trade_offer_cards` tables + `kut.user_cards.held_by_offer_id`;
+  `propose_trade` / `respond_to_trade` / `withdraw_trade` /
+  `expire_trade_offers`; guards added to `create_listing`, `discard_card`,
+  `prevent_burning_listed_card`, `cancel_listing`, `buy_listing`,
+  `admin_reset_account`, `admin_prepare_account_deletion`.
+  `wallet_ledger.reason` += `trade_escrow` / `trade_unescrow` /
+  `trade_sale`; `user_notifications.event_type` += `trade_offer` /
+  `trade_response`; `kut.activity_feed` gains a `trade` row; new
+  `kut.my_trade_offers` view. Accepted trades are never written to
+  `kut.market_sales` (invariant #23).
 
-Batch E migrations:
+Batch E migrations (deployed 2026-08-31):
 
 - `20260906000000_goalkeeper_archetype.sql` (ADR-036, E1 / #4) &mdash; a
   seventh `goalkeeper` archetype reusing the six shared attributes with its

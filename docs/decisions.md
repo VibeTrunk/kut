@@ -1533,7 +1533,7 @@ this ships on a normal KUT PR with no hosted push.
 
 ## ADR-040 — Transfer-market cards render player art (and expose seller_id)
 
-Date: 2026-09-01
+Date: 2026-08-31
 
 Status: Accepted
 
@@ -1565,7 +1565,7 @@ screen reads as broken. Cheap, self-contained fix.
 
 ## ADR-041 — Club Value v2: a transparent coins + discard + 4x personal-card sum
 
-Date: 2026-09-01
+Date: 2026-08-31
 
 Status: Accepted
 
@@ -1620,7 +1620,7 @@ football rather than only about opening packs.
 
 ## ADR-042 — Trade offers on market listings, with coin + card escrow
 
-Date: 2026-09-01
+Date: 2026-08-31
 
 Status: Accepted
 

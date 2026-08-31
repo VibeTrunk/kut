@@ -1385,7 +1385,7 @@ Accepted **trade offers** (§39a / ADR-042) are **not** qualifying sales — the
 are private negotiations, not price signals, and are never written to
 `market_sales`.
 
-> **Note (2026-09-01, ADR-041):** Reference Value is now used **only** for
+> **Note (2026-08-31, ADR-041):** Reference Value is now used **only** for
 > `get_listing_bounds` (market listing price bands). It is no longer part of
 > Club Value — see the revised §39 below.
 
@@ -1393,7 +1393,7 @@ are private negotiations, not price signals, and are never written to
 
 ## 39. Club Value
 
-> **Revised 2026-09-01 (ADR-041).** The former model — `wallet_balance +
+> **Revised 2026-08-31 (ADR-041).** The former model — `wallet_balance +
 > sum(reference_value of every owned Card Copy)` — was replaced because
 > Reference Value depends on invisible sale history and a piecewise clamp, so
 > members could not audit their own number.
@@ -1441,7 +1441,7 @@ Cache only if measurement shows it is needed.
 
 ---
 
-## 39a. Trade offers (2026-09-01, ADR-042)
+## 39a. Trade offers (2026-08-31, ADR-042)
 
 Instead of paying a listing's buy-now price, a member may **offer** KUT Coins
 and/or up to **3** of their own Card Copies for it.
@@ -3598,7 +3598,7 @@ Potential:
 - achievements;
 - notifications;
 - friend activity;
-- ~~trading offers~~ — **shipped 2026-09-01, ADR-042** (see §39a);
+- ~~trading offers~~ — **shipped 2026-08-31, ADR-042** (see §39a);
 - auctions;
 - card wishlists;
 - watched prices.
@@ -4536,7 +4536,7 @@ Do not create a system wallet unless there is a real reason. Tax can simply be r
 
 # APPENDIX C — EXAMPLE CLUB VALUE
 
-> Revised 2026-09-01 (ADR-041) for the Club Value v2 formula.
+> Revised 2026-08-31 (ADR-041) for the Club Value v2 formula.
 
 Member's linked Player: **Bas**, current Live OVR 62 →
 `personal_card_base_value = round(10 × 1.08^32) ≈ 117`.

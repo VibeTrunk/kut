@@ -1609,3 +1609,56 @@ Front-end (Vercel, auto-deploy on the KUT PR #21 merge) and the hosted schema
 are now consistent: `/admin/links` "Adjust coins" and "Reset club" work end to
 end. Batch D closes tester feedback #8 + #6; Batch E (content features — #4
 Goalkeeper, #5 bibs bonus, #10 newsfeed) is the last tester-feedback batch.
+
+## Batch E1 — Goalkeeper archetype (ADR-036) - 2026-08-31
+
+The last tester-feedback batch (E) is split into three independent, all-additive
+sub-batches, each its own branch / ADR / migration / hosted deploy: **E1**
+Goalkeeper archetype, **E2** bibs-washing coin bonus, **E3** activity newsfeed.
+See `docs/TESTER_FEEDBACK_BATCHES.md`.
+
+E1 (finding #4) adds a **seventh archetype, Goalkeeper**, on branch
+`feat/goalkeeper-archetype`, migration
+`20260906000000_goalkeeper_archetype.sql`:
+
+- **Reuses the six shared attributes** with its own offset row — a shot-stopper,
+  `pac -6 / sho -12 / pas 0 / dri -8 / def +14 / phy +12`, summing to exactly 0
+  (BUILD_SPEC §589). Not a distinct DIV/HAN/REF stat set (§585). See ADR-036.
+- **TypeScript**: `"goalkeeper"` added to `ARCHETYPES` + `ARCHETYPE_LABELS`
+  (`src/game/archetypes.ts`) and `ARCHETYPE_OFFSETS` (`src/game/rating-engine.ts`).
+  Every archetype picker/validator already derives from those, so the admin
+  add-player form, `/settings/card` editor, and `/how-it-works` offsets table
+  (now 7 rows) pick it up with no UI change.
+- **SQL** (all additive): widen the `kut.players` archetype `check` (drop the
+  auto-named inline constraint by lookup, re-add as `players_archetype_check`
+  incl. `goalkeeper` — same shape as Batch D's `wallet_ledger.reason` widening);
+  `create or replace` `kut.admin_add_player` and `kut.set_own_player_archetype`
+  with `goalkeeper` in their allow-lists; `create or replace`
+  `kut._rebuild_season_core` with a `when 'goalkeeper' then <n>` arm on each of
+  the six attribute `CASE`s (restates the ADR-024 formula — byte-identical
+  otherwise). **No player is pre-assigned** and the rebuild is **not** called by
+  the migration — the new arm is inert until a player opts in via the existing
+  RPCs, which keeps the tier additive.
+- **Spec**: §585 reworded (GK is a 7th offset profile, not a separate stat set);
+  §15.1 gains a Goalkeeper offset block; §1446's "goalkeepers" subcollection
+  bullet annotated. §2881's "all archetypes" test list is already generic.
+- **Docs**: ADR-036 in `docs/decisions.md`; `docs/TESTER_FEEDBACK_BATCHES.md`
+  Batch E row split into E1/E2/E3 and finding #4 marked decided.
+
+Local gate (green): `npm run verify:fast` (lint, typecheck, 34 unit tests —
+`archetypes.test.ts` lock-step + a new goalkeeper scenario in
+`tests/fixtures/rating-scenarios.json` for the SQL↔TS parity suite) and
+`npm run test:db` (`supabase migration up --local` clean;
+`phase_1a_roster.test.sql` `plan(163)` → `plan(166)` — goalkeeper accepted by
+`admin_add_player`, archetype stored, and a fresh goalkeeper rebuilds to
+`array[24,18,30,22,44,42]` = `live_ovr 30 +` the six offsets).
+`member_self_service.test.sql` still uses `'keeper'` as its bogus archetype —
+the slug is `goalkeeper`, so that stays a valid negative case.
+
+Hosted deploy is the separate **additive**-path `VibeTrunk/supabase` ADR-021
+step (catalogue byte-identical, extend `verify-catalog.ps1` → "matches 38",
+`migration list --linked` no drift, `db push --dry-run` reviewed, ride the last
+scheduled backup, user runs `db push`, verify the widened check + three
+functions on hosted). Never `supabase db push` from this repo. Mixed-state
+window: between the KUT merge and the hosted push, picking "Goalkeeper" in the
+UI returns the RPC's "invalid archetype" error — push promptly.

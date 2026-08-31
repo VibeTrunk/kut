@@ -1299,6 +1299,68 @@ return an RPC-not-found error if used — do the push promptly. Hosted deploy is
 the additive path in `docs/OPERATIONS.md` via `VibeTrunk/supabase` (ADR-021);
 never `supabase db push` from this repo.
 
+## ADR-036 — Goalkeeper archetype (seventh offset profile)
+
+Date: 2026-08-31
+
+Status: Accepted
+
+Decision: KUT gains a seventh archetype, **Goalkeeper** (slug `goalkeeper`,
+label "Goalkeeper"). It **reuses the six shared attributes**
+(PAC/SHO/PAS/DRI/DEF/PHY) with its own offset row — it is **not** a distinct
+DIV/HAN/REF stat set (BUILD_SPEC §585 already said "MVP does not need separate
+goalkeeper statistics"; a distinct set would rewrite `live-card.tsx` and every
+attribute projection). The offsets are a shot-stopper — strong DEF/PHY, weak
+SHO/DRI — and **sum to exactly 0** like the other six (§589, "no large hidden
+OVR advantage"):
+
+```text
+PAC -6   SHO -12   PAS 0   DRI -8   DEF +14   PHY +12     (sum 0)
+```
+
+Changed in the places that must stay in sync: `src/game/archetypes.ts`
+(`ARCHETYPES`, `ARCHETYPE_LABELS`), `src/game/rating-engine.ts`
+(`ARCHETYPE_OFFSETS.goalkeeper`), `docs/BUILD_SPEC.md` §585 + §15.1, and
+migration `20260906000000_goalkeeper_archetype.sql`, which widens the
+`kut.players` archetype `check`, `create or replace`s `kut.admin_add_player`
+and `kut.set_own_player_archetype` with `goalkeeper` in their allow-lists, and
+`create or replace`s `kut._rebuild_season_core` with a
+`when 'goalkeeper' then <n>` arm on each of the six attribute `CASE`
+expressions (the six `<n>` equal `ARCHETYPE_OFFSETS.goalkeeper`). The slug is
+`goalkeeper`, not `keeper` — `tests/unit/archetypes.test.ts` and
+`member_self_service.test.sql` both keep `"keeper"` as a bogus negative case.
+Every archetype picker and validator already derives from `ARCHETYPES` /
+`isArchetype`, so the admin add-player form, the `/settings/card` editor, and
+the `/how-it-works` offsets table (now seven rows) pick Goalkeeper up with no
+UI change.
+
+**No player is pre-assigned Goalkeeper.** It is opt-in via the existing
+self-service (`set_own_player_archetype`) and admin (`admin_add_player`) RPCs,
+both of which already run `_rebuild_season_core`. Pre-assigning real keepers
+would make the migration data-changing; leaving it opt-in keeps it **additive**
+(ADR-032). A goalkeeper card is still driven by attendance + goals like every
+other card — keepers rarely score, so their Form stays low, and that is
+accepted: the card reflects turning up.
+
+Reason: tester feedback #4 ("add a Goalkeeper archetype"). The Medium path (a
+seventh offset row) was chosen over the Hard path (a separate GK stat set).
+
+Consequences: tier is **additive** — a widened check constraint plus three
+`create or replace function`s; nothing existing is rewritten and the migration
+touches no member rows (the new `_rebuild_season_core` arm is inert until a
+player has `archetype = 'goalkeeper'`). Rides the last scheduled backup; no
+fresh pre-push backup. Rollback is only safe while no player is a goalkeeper —
+DDL is in the migration header. `_rebuild_season_core` now restates the
+ADR-024 rating formula for the third time (SQL, TS, and this migration's
+copy); the pgTAP `phase_1a_roster.test.sql` asserts a fresh goalkeeper
+rebuilds to `live_ovr 30 + {pac -6, sho -12, pas 0, dri -8, def +14, phy +12}`
+and `tests/fixtures/rating-scenarios.json` carries a goalkeeper scenario for
+the SQL↔TS parity suite. Hosted deploy is the additive path in
+`docs/OPERATIONS.md` via `VibeTrunk/supabase` (ADR-021); never `supabase db
+push` from this repo. Between the KUT merge and the hosted push, picking
+"Goalkeeper" in the UI returns the RPC's "invalid archetype" error — do the
+push promptly.
+
 ## ADR-037 — Bibs bonus is coins-only (100), stored on the session, forward-only
 
 Date: 2026-08-31

@@ -582,7 +582,11 @@ Use six familiar but generic football attributes:
 - `DEF` — Defending
 - `PHY` — Physical
 
-MVP does not need separate goalkeeper statistics.
+MVP does not use separate goalkeeper statistics. The Goalkeeper archetype
+(ADR-036) is a seventh offset profile over these same six attributes — a
+shot-stopper (strong DEF/PHY, weak SHO/DRI) — not a distinct DIV/HAN/REF stat
+set. A goalkeeper card is still driven by attendance and goals like any other;
+keepers rarely score, so their Form stays low, and that is intended.
 
 Every player chooses or is assigned an archetype.
 
@@ -655,6 +659,17 @@ SHO  -2
 PAS  -2
 DRI  -4
 DEF  +4
+PHY +12
+```
+
+**Goalkeeper** (ADR-036 — reuses these six attributes, no distinct GK stat set)
+
+```text
+PAC  -6
+SHO -12
+PAS   0
+DRI  -8
+DEF +14
 PHY +12
 ```
 
@@ -1458,7 +1473,7 @@ Possible subcollections:
 - Friday regulars;
 - Gold players;
 - 2026 debutants;
-- goalkeepers;
+- goalkeepers (players with the Goalkeeper archetype, ADR-036);
 - season-specific groups.
 
 Completion rewards are later features.

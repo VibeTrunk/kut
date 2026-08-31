@@ -3,10 +3,11 @@ import { ARCHETYPES, ARCHETYPE_LABELS, archetypeLabel, isArchetype } from "@/gam
 import { ARCHETYPE_OFFSETS } from "@/game/rating-engine";
 
 describe("archetypes", () => {
-  it("accepts the six known slugs and rejects everything else", () => {
+  it("accepts every known slug and rejects everything else", () => {
     for (const slug of ARCHETYPES) {
       expect(isArchetype(slug)).toBe(true);
     }
+    // "keeper" stays bogus — the Goalkeeper archetype slug is "goalkeeper".
     for (const bogus of ["", "Speedster", "keeper", "all-rounder", "ALL_ROUNDER"]) {
       expect(isArchetype(bogus)).toBe(false);
     }

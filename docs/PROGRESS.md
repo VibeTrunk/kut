@@ -1773,3 +1773,46 @@ promptly.
 
 Batch E (and with it the 2026-08-30 tester-feedback round) is complete once
 E1 + E2 + E3 are merged and deployed.
+
+## Batch E deployed to hosted (E1 + E2 + E3) - 2026-08-31
+
+`20260906000000_goalkeeper_archetype.sql`, `20260907000000_bibs_bonus.sql`, and
+`20260908000000_activity_feed.sql` are live at `kut.vibetrunk.com`. Followed the
+**additive**-tier ADR-032 / ADR-021 workflow — one `db push` for all three (no
+data migration; the GK rebuild arm is inert until a player opts in, the bibs
+reward mutates rows only at run time, the feed is a view):
+
+- **KUT PRs #23 / #24 / #25** merged → Vercel shipped the Goalkeeper picker
+  option, the "Who washed the bibs?" attendance-form field, and `/feed` + its
+  More-menu entry.
+- **Catalogued** byte-identical into `VibeTrunk/supabase` (PR #17,
+  squash-merged); the three catalogue blobs match the KUT `main` blobs (git
+  object ids equal). `scripts/verify-catalog.ps1` extended and run → "Central
+  catalogue matches 40 approved source migrations".
+- **No fresh backup** — additive tier rides the last scheduled
+  `backup-kut-hosted.ps1` run.
+- Pre-push from `VibeTrunk/supabase`: `supabase migration list --linked` showed
+  the 36 previously-deployed migrations matching remote with no drift and
+  `20260906/07/08` pending; `supabase db push --dry-run` confirmed the three,
+  no seeds/roles.
+- The real `supabase db push` was run by the user from their own terminal —
+  live shared-Supabase mutations are not run unattended in this project.
+- **Verified against the hosted project** (`supabase db dump --linked -s kut`):
+  `players_archetype_check` lists `goalkeeper` and both roster RPC allow-lists
+  carry the seven-value list; `_rebuild_season_core` has the six
+  `when 'goalkeeper'` arms; `kut.match_sessions.bibs_washed_by`,
+  `kut.bibs_rewards`, `kut.grant_bibs_reward`, and `bibs_bonus` in both the
+  `wallet_ledger.reason` and `user_notifications.event_type` checks;
+  `publish_attendance_session` / `correct_published_attendance_session` present
+  only as the new 5-/6-arg signatures (old ones gone), granted to
+  `authenticated` + `service_role`; `kut.activity_feed` with its `authenticated`
+  select grant. `migration list --linked` shows all three Local = Remote.
+- `VibeTrunk/supabase` README / CLAUDE ledger notes flipped to "applied
+  2026-08-31" (PR #18).
+
+The mixed-state window for E2 is closed — attendance publishing works on prod
+again (it had been failing since the #24 merge, because the deployed front-end
+sends `p_bibs_washed_by` and the hosted 4-arg RPC couldn't resolve it).
+
+**Batch E, and with it the entire 2026-08-30 tester-feedback round, is
+complete.** No open tester-feedback items remain.

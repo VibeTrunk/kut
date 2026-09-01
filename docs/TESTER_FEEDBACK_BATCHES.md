@@ -74,7 +74,7 @@ migration deploys from `VibeTrunk/supabase` as its own step.
 
 | Batch | Contents | Migration tier (ADR-032) | Status |
 |-------|----------|--------------------------|--------|
-| **F — one sweep** | #1, #3, #4, #7, 💡01, 💡04, 💡12 | data-changing (the `user_notifications` backfill in #7; the RPC + view + view changes are additive) | built on `feat/tester-feedback-round-2`, ADR-044, migration `20260912000000`; hosted deploy pending via `VibeTrunk/supabase` |
+| **F — one sweep** | #1, #3, #4, #7, 💡01, 💡04, 💡12 | data-changing (the `user_notifications` backfill in #7; the RPC + view + view changes are additive) | **done** &mdash; KUT PR #31, ADR-044, migration `20260912000000`; deployed to hosted 2026-09-01 (VibeTrunk/supabase PR #20) |
 
 ## Delivery batches
 

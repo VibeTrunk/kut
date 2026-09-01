@@ -36,9 +36,24 @@ don't add cross-repo coupling beyond the shared Supabase project.
 
 KUT is live at `https://kut.vibetrunk.com` as Vercel project `kut`. The
 hosted `kut` schema is applied through
-`20260911000000_trade_offers.sql` &mdash; the tester follow-up trio
-(ADR-040/041/042), deployed 2026-08-31 in one `db push` from
-`VibeTrunk/supabase` (PR #19 there), on top of Batch E:
+`20260912000000_tester_feedback_round_2.sql` &mdash; tester feedback round 2
+(ADR-044), deployed 2026-09-01 in one `db push` from `VibeTrunk/supabase`
+(PR #20 there):
+
+- `20260912000000_tester_feedback_round_2.sql` (ADR-044, data-changing for the
+  backfill only) &mdash; one migration for four defects + three ideas.
+  `create or replace kut.grant_bibs_reward` with the notification body reworded
+  ("washing the bibs after" &rarr; "bringing the bibs to") + a scoped,
+  reversible backfill of existing `bibs_bonus` `kut.user_notifications` rows;
+  new `kut.set_own_club_name(text)` self-service RPC over the dormant
+  `kut.profiles.club_name` column (own row, trim, blank&rarr;NULL, &le;80, no
+  control chars, not unique); `kut.club_value_leaderboard` `create or replace`d
+  to `coalesce` that column with the synthesised `"<name>'s Club"` default
+  (`club_value` / `rank` unchanged); new additive `kut.published_sessions`
+  summary view backing `/sessions`.
+
+On top of the tester follow-up trio (ADR-040/041/042), deployed 2026-08-31 in
+one `db push` from `VibeTrunk/supabase` (PR #19 there), on top of Batch E:
 
 - `20260909000000_market_listing_card_art.sql` (ADR-040, additive) &mdash;
   `kut.active_market_listings` gains `photo_path` + `seller_id` so `/market`

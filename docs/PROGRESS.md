@@ -1927,5 +1927,13 @@ incl. new `tests/unit/activity.test.ts`), `npm run test:db` (383 pgTAP, incl.
 new `published_sessions.test.sql` (7) and extended `bibs_bonus` (19) /
 `member_self_service` (35) / `club_value` (20)), `npm run test:e2e` (22, incl.
 `/sessions` auth-boundary), `next build`. ADR-044; BUILD_SPEC §59 / Part 145 /
-the activity-feed + widgets notes updated. **Hosted deploy pending** via
-`VibeTrunk/supabase` (data-changing tier: fresh backup before the push).
+the activity-feed + widgets notes updated.
+
+**Deployed to hosted 2026-09-01** &mdash; KUT PR #31 merged; the SQL file
+catalogued into `VibeTrunk/supabase` (PR #20, which also brought
+`scripts/verify-catalog.ps1` current through `20260909`&ndash;`20260912`) and
+applied with one `supabase db push` from there (data-changing tier: fresh
+encrypted backup taken immediately before). `kut.vibetrunk.com` smoke-tested:
+`/sessions` list + detail, a `/settings` club-name round-trip to
+`/leaderboard`, the reworded bibs notification, and unchanged leaderboard
+`club_value` / `rank`.

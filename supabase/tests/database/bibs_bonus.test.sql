@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path to extensions, kut, public;
 
-select plan(15);
+select plan(19);
 
 -- Schema surface (ADR-037) --------------------------------------------------
 select has_column('kut', 'match_sessions', 'bibs_washed_by', 'match_sessions has a bibs_washed_by column');
@@ -47,6 +47,25 @@ values
   ('00000000-0000-4000-8000-00000009b301', '00000000-0000-4000-8000-00000009b101', 0),
   ('00000000-0000-4000-8000-00000009b301', '00000000-0000-4000-8000-00000009b102', 0);
 
+-- ADR-044 backfill fixtures: a legacy-worded bibs row plus a non-bibs row
+-- that carries the same phrase, to prove the update is scoped to
+-- event_type = 'bibs_bonus'.
+insert into kut.user_notifications (user_id, event_type, title, body, reference_type, reference_id)
+values
+  ('00000000-0000-4000-8000-00000009b202', 'bibs_bonus', 'Bibs bonus',
+   'You received 100 KUT Coins for washing the bibs after the session on 01 Jan 2098.',
+   'match_session', '00000000-0000-4000-8000-00000009bfff'),
+  ('00000000-0000-4000-8000-00000009b202', 'attendance_reward', 'Attendance reward',
+   'You received 250 KUT Coins for washing the bibs after the session on 01 Jan 2098.',
+   'match_session', '00000000-0000-4000-8000-00000009bffe');
+
+update kut.user_notifications
+   set body = replace(body,
+         'for washing the bibs after the session on',
+         'for bringing the bibs to the session on')
+ where event_type = 'bibs_bonus'
+   and body like '%for washing the bibs after the session on%';
+
 -- The washer was paid the bonus, once ------------------------------------
 select is(
   (select count(*)::int from kut.wallet_ledger
@@ -76,6 +95,32 @@ select ok(
    where user_id = '00000000-0000-4000-8000-00000009b201' and event_type = 'bibs_bonus'
    limit 1) like '%04 May 2099%',
   'the bibs message names the session date');
+
+-- ADR-044: corrected wording, forward + backfill ------------------------
+select ok(
+  (select body from kut.user_notifications
+   where user_id = '00000000-0000-4000-8000-00000009b201' and event_type = 'bibs_bonus'
+   limit 1) like '%for bringing the bibs to the session on%',
+  'a freshly granted bibs message uses the corrected "bringing" wording');
+select ok(
+  (select body from kut.user_notifications
+   where user_id = '00000000-0000-4000-8000-00000009b201' and event_type = 'bibs_bonus'
+   limit 1) not like '%washing the bibs after%',
+  'the bibs message no longer says "washing the bibs after"');
+select is(
+  (select body from kut.user_notifications
+   where user_id = '00000000-0000-4000-8000-00000009b202'
+     and event_type = 'bibs_bonus'
+     and reference_id = '00000000-0000-4000-8000-00000009bfff'),
+  'You received 100 KUT Coins for bringing the bibs to the session on 01 Jan 2098.',
+  'the backfill rewrote a legacy bibs_bonus notification row');
+select is(
+  (select body from kut.user_notifications
+   where user_id = '00000000-0000-4000-8000-00000009b202'
+     and event_type = 'attendance_reward'
+     and reference_id = '00000000-0000-4000-8000-00000009bffe'),
+  'You received 250 KUT Coins for washing the bibs after the session on 01 Jan 2098.',
+  'the backfill left non-bibs_bonus rows untouched');
 
 -- Idempotent: re-running the reward function is a no-op ------------------
 select is(kut.grant_bibs_reward('00000000-0000-4000-8000-00000009b301'), 0,

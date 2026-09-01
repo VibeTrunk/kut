@@ -995,18 +995,20 @@ attendance. See ADR-035.
 
 ### Bibs bonus
 
-The member linked to the Player who washed the bibs after a session receives a
+The member linked to the Player who brings the bibs to a session receives a
 one-off `+100 KUT Coins` (`BIBS_COIN_BONUS`, Part 145). The admin records the
-washer on the attendance form; `kut.match_sessions.bibs_washed_by` stores it
-(null = nobody). Paid by the audited `kut.grant_bibs_reward`, alongside
-`grant_attendance_rewards`, with `wallet_ledger.reason = 'bibs_bonus'` and a
-dated `bibs_bonus` inbox message ("You received 100 KUT Coins for washing the
-bibs after the session on DD Mon YYYY."). A `kut.bibs_rewards` guard table,
-PK `(session_id, player_id)`, plus a unique ledger key make it idempotent: at
-most once per `(session, washer)`, never re-paid for the same washer on a
-correction. Reassigning the washer on a correction pays the new washer; the
-previous one keeps their bonus (forward-only). Coins only — no rating/OVR
-effect. See ADR-037.
+bibs bringer on the attendance form; `kut.match_sessions.bibs_washed_by`
+stores it (null = nobody; the column name is retained from ADR-037). Paid by
+the audited `kut.grant_bibs_reward`, alongside `grant_attendance_rewards`, with
+`wallet_ledger.reason = 'bibs_bonus'` and a dated `bibs_bonus` inbox message
+("You received 100 KUT Coins for bringing the bibs to the session on DD Mon
+YYYY."). A `kut.bibs_rewards` guard table, PK `(session_id, player_id)`, plus a
+unique ledger key make it idempotent: at most once per `(session, bringer)`,
+never re-paid for the same bringer on a correction. Reassigning the bringer on
+a correction pays the new one; the previous one keeps their bonus
+(forward-only). Coins only — no rating/OVR effect. See ADR-037; the "washing
+the bibs after" wording was corrected to "bringing the bibs to" in ADR-044
+(user-visible copy only).
 
 ---
 
@@ -1716,6 +1718,16 @@ Home should answer "what changed?" quickly.
 > entry were removed. Home reads `order by ts desc limit 12` with a fixed
 > `ts >= 2026-08-30` floor (no pager, no `?before=` cursor); dates render
 > date-only. The `kut.activity_feed` view is unchanged.
+>
+> **Amended (ADR-044):** `kut.activity_feed` also emits `kind = 'trade'` (added
+> with trade offers, ADR-042); `src/lib/activity.ts` renders it as
+> "X traded Y to Z for N KUT Coins." and carries a `default` arm so an
+> unhandled `kind` can never render a blank row. A **member-facing
+> `/sessions`** list + `/sessions/[id]` detail (attendee list, goals, bibs
+> bringer) is now built, backed by the additive `kut.published_sessions`
+> summary view (`security_invoker = true` — published sessions and their
+> attendance are already member-readable by RLS). Home's "Session published"
+> rows link to it. This is the "latest-session widget" noted above.
 
 MVP widgets:
 
@@ -2089,6 +2101,15 @@ starter_claimed_at timestamptz nullable
 Do not store password.
 
 Avoid duplicating email from `auth.users` unless genuinely needed.
+
+> **Implemented (ADR-044):** `club_name` (dormant since the initial schema) is
+> now member-editable via `kut.set_own_club_name(text)` — a security-definer
+> RPC (own row only; trims; blank/whitespace → `NULL`; `≤ 80` chars, no
+> control characters; `revoke … from public, anon`). **Not unique.** Set from a
+> "Club name" section on `/settings`. `kut.club_value_leaderboard` renders
+> `coalesce(nullif(btrim(club_name), ''), display_name || '''s Club')`, so an
+> unset club falls back to the synthesised default. `club_value` / `rank` are
+> unaffected.
 
 ---
 
@@ -4104,7 +4125,7 @@ LIVE_OVR_MIN = 30
 LIVE_OVR_MAX = 83
 
 ATTENDANCE_COIN_REWARD = 250  # raised from 75 on 2026-08-29, ADR-029
-BIBS_COIN_BONUS = 100  # one-off, for the session's bibs washer, ADR-037
+BIBS_COIN_BONUS = 100  # one-off, for the session's bibs bringer, ADR-037 (copy fixed ADR-044)
 STARTER_COIN_GRANT = 250
 STARTER_CARD_COUNT = 3
 

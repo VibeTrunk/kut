@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { archetypeLabel } from "@/game/archetypes";
+import { CardLightbox } from "@/components/card-lightbox";
 import { AttributeBars, RatingHistory, type RatingSnapshot } from "@/components/card-stats";
 import { LiveCard, type LiveCardPlayer } from "@/components/live-card";
 import { requireUser } from "@/lib/auth/user";
@@ -57,6 +58,21 @@ export default async function PlayerProfilePage({ params }: PlayerProfilePagePro
   // Non-critical: a player with no published history simply has no chart.
   const snapshots = ((snapshotsResponse.data ?? []) as RatingSnapshot[]).slice().reverse();
 
+  const cardPlayer: LiveCardPlayer = {
+    id: player.id,
+    displayName: player.display_name,
+    archetype: player.archetype,
+    liveOvr: player.live_ovr,
+    pac: player.pac,
+    sho: player.sho,
+    pas: player.pas,
+    dri: player.dri,
+    def: player.def,
+    phy: player.phy,
+    rarityTier: player.rarity_tier,
+    photoUrl,
+  };
+
   return (
     <main className="board-ground min-h-screen p-5 text-ink sm:p-10">
       <section className="mx-auto max-w-5xl space-y-8 py-4 sm:py-8">
@@ -65,23 +81,10 @@ export default async function PlayerProfilePage({ params }: PlayerProfilePagePro
         </Link>
 
         <div className="grid gap-10 md:grid-cols-[minmax(240px,330px)_minmax(0,1fr)] md:items-start lg:gap-16">
-          <LiveCard
-            size="detail"
-            player={{
-              id: player.id,
-              displayName: player.display_name,
-              archetype: player.archetype,
-              liveOvr: player.live_ovr,
-              pac: player.pac,
-              sho: player.sho,
-              pas: player.pas,
-              dri: player.dri,
-              def: player.def,
-              phy: player.phy,
-              rarityTier: player.rarity_tier,
-              photoUrl,
-            }}
-          />
+          <div className="group relative">
+            <LiveCard size="detail" player={cardPlayer} />
+            <CardLightbox player={cardPlayer} />
+          </div>
 
           <div className="space-y-8">
             <div className="space-y-3">

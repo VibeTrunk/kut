@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { CardLightbox } from "@/components/card-lightbox";
 import { AttributeBars } from "@/components/card-stats";
 import { LiveCard, type LiveCardPlayer } from "@/components/live-card";
 import { requireUser } from "@/lib/auth/user";
@@ -73,6 +74,21 @@ export default async function CardDetailPage({ params, searchParams }: CardPageP
   const minimumPrice = bounds && "minimum_price" in bounds ? Number(bounds.minimum_price) : null;
   const maximumPrice = bounds && "maximum_price" in bounds ? Number(bounds.maximum_price) : null;
 
+  const cardPlayer: LiveCardPlayer = {
+    id: card.card_id,
+    displayName: card.display_name,
+    archetype: card.archetype,
+    liveOvr: card.ovr,
+    pac: card.pac,
+    sho: card.sho,
+    pas: card.pas,
+    dri: card.dri,
+    def: card.def,
+    phy: card.phy,
+    rarityTier: card.rarity_tier,
+    photoUrl: card.photo_path ? photoUrls.get(card.photo_path) ?? null : null,
+  };
+
   return (
     <main className="board-ground min-h-screen p-5 text-ink sm:p-10">
       <section className="mx-auto max-w-5xl space-y-8 py-4 sm:py-8">
@@ -81,23 +97,10 @@ export default async function CardDetailPage({ params, searchParams }: CardPageP
         </Link>
 
         <div className="grid gap-10 md:grid-cols-[minmax(240px,330px)_minmax(0,1fr)] md:items-start lg:gap-16">
-          <LiveCard
-            size="detail"
-            player={{
-              id: card.card_id,
-              displayName: card.display_name,
-              archetype: card.archetype,
-              liveOvr: card.ovr,
-              pac: card.pac,
-              sho: card.sho,
-              pas: card.pas,
-              dri: card.dri,
-              def: card.def,
-              phy: card.phy,
-              rarityTier: card.rarity_tier,
-              photoUrl: card.photo_path ? photoUrls.get(card.photo_path) ?? null : null,
-            }}
-          />
+          <div className="group relative">
+            <LiveCard size="detail" player={cardPlayer} />
+            <CardLightbox player={cardPlayer} />
+          </div>
 
           <div className="space-y-8">
             <div className="space-y-3">

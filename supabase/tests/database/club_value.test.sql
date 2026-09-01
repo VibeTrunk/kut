@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path to extensions, kut, public;
 
-select plan(16);
+select plan(20);
 
 -- Schema surface (ADR-041) ----------------------------------------------------
 select has_column('kut', 'my_club_value', 'owned_cards_value',
@@ -98,6 +98,29 @@ select cmp_ok(
   '<',
   (select rank from kut.club_value_leaderboard where display_name = 'CV Unlinked'),
   'the linked member outranks the unlinked member on equal coins');
+
+-- Custom club name (ADR-044) is presentation only ------------------------
+select is(
+  (select club_name from kut.club_value_leaderboard where display_name = 'CV Linked'),
+  'CV Linked''s Club',
+  'club_name defaults to the synthesised "<name>''s Club"');
+
+set local request.jwt.claim.sub = '00000000-0000-4000-8000-0000000d0201';
+select kut.set_own_club_name('Relegation FC');
+
+select is(
+  (select club_name from kut.club_value_leaderboard where display_name = 'CV Linked'),
+  'Relegation FC',
+  'a custom club name replaces the default on the leaderboard');
+select is(
+  (select club_value from kut.club_value_leaderboard where display_name = 'CV Linked'),
+  973::bigint,
+  'setting a club name does not change club_value');
+select cmp_ok(
+  (select rank from kut.club_value_leaderboard where display_name = 'CV Linked'),
+  '<',
+  (select rank from kut.club_value_leaderboard where display_name = 'CV Unlinked'),
+  'setting a club name does not change the ranking');
 
 reset role;
 select set_config('request.jwt.claim.sub', '', true);

@@ -1889,3 +1889,43 @@ files catalogued into `VibeTrunk/supabase` (PR #19) and applied with one
 `supabase db push` from there (data-changing tier: fresh backup taken first).
 `kut.vibetrunk.com` smoke-tested: `/market` card art, `/club/value`,
 `/club`, `/leaderboard`, and a live offer + withdraw round-trip.
+
+## Tester feedback round 2 — one sweep (ADR-044) - 2026-09-01
+
+Branch `feat/tester-feedback-round-2`. Four defects + three ideas in one PR;
+one migration `20260912000000_tester_feedback_round_2.sql` (data-changing tier
+because of a `user_notifications` backfill), mirrored for the hosted catalogue
+in `VibeTrunk/supabase` (not pushed from here). 💡03 ("see other members'
+squads") is documented as needs-a-product-decision, not built.
+
+- **#1 blank activity row** — `src/lib/activity.ts` gained the `trade` kind
+  (added to `kut.activity_feed` by ADR-042) + a `default` arm. Front-end only.
+- **#3 leaderboard name on mobile** — the row `<li>` restacks on phones
+  (rank + club, then value, then cards/players); club name shows at every
+  width. CSS only.
+- **#4 Home full name** — re-added the "Kelderklasse Ultimate Team" subtitle
+  ADR-043 dropped.
+- **#7 bibs copy** — `create or replace kut.grant_bibs_reward` with the body
+  string "for bringing the bibs to the session on …" + a scoped, reversible
+  backfill of existing `bibs_bonus` rows; internal identifiers unchanged.
+  Front-end: attendance-form label, How-it-works, `economy.ts` comment.
+- **💡01 card lightbox** — new `card-lightbox.tsx` (portal-free fixed overlay,
+  focus-trapped, `Esc`/backdrop close, reduced-motion aware, CSP-clean —
+  styling in `globals.css`). Expand button on each card; card-body tap still
+  navigates. Collection / Player directory / Market / both detail pages.
+- **💡04 custom club names** — new `kut.set_own_club_name(text)` RPC (own row,
+  trim, blank→NULL, ≤80, no control chars, not unique);
+  `club_value_leaderboard` `coalesce`s it with the `"<name>'s Club"` default.
+  New "Club name" section on `/settings` (`settings/actions.ts` +
+  `club-name-form.tsx`).
+- **💡12 published sessions** — new additive `kut.published_sessions` view;
+  `/sessions` list + `/sessions/[id]` detail (attendees, goals, bibs bringer);
+  "More" nav entry; Home "Session published" rows link to it.
+
+Verification (all green): `npm run verify:fast` (lint + typecheck + 48 unit,
+incl. new `tests/unit/activity.test.ts`), `npm run test:db` (383 pgTAP, incl.
+new `published_sessions.test.sql` (7) and extended `bibs_bonus` (19) /
+`member_self_service` (35) / `club_value` (20)), `npm run test:e2e` (22, incl.
+`/sessions` auth-boundary), `next build`. ADR-044; BUILD_SPEC §59 / Part 145 /
+the activity-feed + widgets notes updated. **Hosted deploy pending** via
+`VibeTrunk/supabase` (data-changing tier: fresh backup before the push).

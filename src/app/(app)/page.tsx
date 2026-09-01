@@ -3,7 +3,7 @@ import { IconPack } from "@/components/icons";
 import { LiveCard, type LiveCardPlayer } from "@/components/live-card";
 import {
   ACTIVITY_FLOOR_ISO,
-  ACTIVITY_KIND_LABEL,
+  activityKindLabel,
   describeActivity,
   type ActivityRow,
 } from "@/lib/activity";
@@ -89,6 +89,7 @@ export default async function Home() {
           <div className="space-y-4">
             <p className="text-[0.7rem] font-extrabold uppercase tracking-[0.26em] text-brass">Terrible Football Haarlem</p>
             <h1 className="display text-5xl sm:text-6xl lg:text-7xl">This week in KUT</h1>
+            <p className="text-sm font-bold text-ink-faint">Kelderklasse Ultimate Team</p>
             <p className="max-w-2xl text-base leading-relaxed text-ink-dim">
               The five cards that rose most since the last published football week. Published attendance updates Live Ratings automatically.
             </p>
@@ -191,9 +192,17 @@ export default async function Home() {
                   key={`${row.kind}-${row.ts}-${index}`}
                 >
                   <p className="text-[0.65rem] font-extrabold uppercase tracking-[0.14em] text-brass">
-                    {ACTIVITY_KIND_LABEL[row.kind]}
+                    {activityKindLabel(row.kind)}
                   </p>
-                  <p className="text-sm leading-relaxed text-ink-dim">{describeActivity(row)}</p>
+                  <p className="text-sm leading-relaxed text-ink-dim">
+                    {row.kind === "session" ? (
+                      <Link className="hover:text-brass hover:underline" href="/sessions">
+                        {describeActivity(row)}
+                      </Link>
+                    ) : (
+                      describeActivity(row)
+                    )}
+                  </p>
                   <time className="text-xs font-bold tabular-nums text-ink-faint sm:text-right" dateTime={row.ts}>
                     {formatDate(row.ts)}
                   </time>

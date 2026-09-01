@@ -40,6 +40,41 @@ Finding 3 was withdrawn by the tester (no entry).
   per season (ADR-031), so a per-player OVR line chart is mostly a query + a
   chart component on the player page. Per-attribute history would need a wider
   snapshot table.
+- **Round-2 idea 03 — see other members' squads/teams.** Needs a product
+  decision on card-ownership privacy + an ADR: the codebase deliberately hides
+  who owns which cards (`kut.my_collection_cards` is owner-scoped;
+  `kut.player_directory` "does not expose who claimed the player"). Building it
+  means a club-wide RLS-safe projection over `user_cards` (the
+  `security_invoker = false, security_barrier = true` pattern of
+  `club_value_leaderboard` / `activity_feed`), a member directory route, and
+  per-member pages. Documented, not built, in ADR-044.
+
+---
+
+# Tester feedback — round 2
+
+Date raised: 2026-09-01 (screenshots + notes). Four defects and three
+buildable ideas, delivered as **one sweep** (not batches): KUT branch
+`feat/tester-feedback-round-2`, one migration
+`20260912000000_tester_feedback_round_2.sql`, one ADR (ADR-044). The hosted
+migration deploys from `VibeTrunk/supabase` as its own step.
+
+| # | Summary | Difficulty | DB migration? | Notes |
+|---|---------|-----------|---------------|-------|
+| 1 | A club-activity row renders blank | Trivial | no | `kut.activity_feed` gained `kind = 'trade'` (ADR-042 §18); `src/lib/activity.ts` still knew 4 kinds, so a trade row had an empty kicker + `undefined` sentence. Added the `trade` case + a `default` arm. |
+| 3 | No club names on the leaderboard (mobile) | Low | no | CSS: the row `<li>` used the multi-column grid at every width, collapsing the `minmax(0,1fr)` name track to 0 on a phone; Club column was `hidden lg:block`. Row restacks on mobile; club name shows at every width. |
+| 4 | KUT full name lost from Home | Trivial | no | ADR-043 rewrote the Home header and dropped the "Kelderklasse Ultimate Team" subtitle (added in ADR-034). Re-added under the `<h1>`. |
+| 7 | Bibs message says "washing … after", should be "bringing … to" | Medium-low | **yes** | The notification body is built in `kut.grant_bibs_reward`. `create or replace` with the corrected `format()` string + a scoped, reversible backfill of existing `bibs_bonus` rows. Internal identifiers (`bibs_washed_by`, `bibs_bonus`) unchanged. Front-end: attendance-form label, How-it-works line, `economy.ts` comment. |
+| 💡01 | Tap a card to view it fullscreen | Medium | no | New `card-lightbox.tsx` client overlay (portal-free, CSP-clean, focus-trapped, reduced-motion aware). A dedicated expand button on each card opens it; card-body tap still navigates. Wired into Collection / Player directory / Market / both detail pages. |
+| 💡04 | Rename your club | Medium | **yes** | `profiles.club_name` existed unused. New `kut.set_own_club_name(text)` RPC (own-row, trim, blank→NULL, ≤80, no control chars, **not unique**); `club_value_leaderboard` `coalesce`s it with the old default. Front-end: a section on `/settings`. |
+| 💡12 | See published sessions somewhere | Low-Medium | **yes** (additive view) | Members already read published sessions/attendance via RLS. New `kut.published_sessions` summary view + `/sessions` list + `/sessions/[id]` detail (attendees, goals, bibs bringer) + a "More" nav entry. |
+| 💡03 | See other members' squads/teams | — | — | **Document only** — see "Future ideas" above. Needs a privacy decision + ADR. |
+
+## Round-2 delivery
+
+| Batch | Contents | Migration tier (ADR-032) | Status |
+|-------|----------|--------------------------|--------|
+| **F — one sweep** | #1, #3, #4, #7, 💡01, 💡04, 💡12 | data-changing (the `user_notifications` backfill in #7; the RPC + view + view changes are additive) | built on `feat/tester-feedback-round-2`, ADR-044, migration `20260912000000`; hosted deploy pending via `VibeTrunk/supabase` |
 
 ## Delivery batches
 

@@ -78,7 +78,7 @@ export default async function HowItWorksPage() {
             Showing up also pays: every published session you attend credits{" "}
             {ECONOMY.attendanceCoinReward} KUT Coins straight to your wallet, with a dated note in your{" "}
             <Link className="underline" href="/messages">Messages</Link>. It lands once the admin
-            publishes that session&rsquo;s attendance. Whoever washes the bibs afterwards gets a
+            publishes that session&rsquo;s attendance. Whoever brings the bibs to the session gets a
             one-off +{ECONOMY.bibsCoinBonus} KUT Coins on top.
           </p>
         </Section>

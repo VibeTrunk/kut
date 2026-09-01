@@ -1910,3 +1910,22 @@ pages are already a full-size view and every grid card links there.
 Front-end only: no migration, no schema, no economy value, no spec rule
 change. KB-001 marked fixed-by-removal. ADR-046. Verification: `npm run
 verify:fast` + `next build`.
+
+## Fix card top-left scrim hard edge (KB-002) — 2026-09-02
+
+`.live-card__topscrim` — the tinted readability ground under the OVR number
+(ADR-043) — was a fixed `66% x 46%` box whose single
+`linear-gradient(146deg, ...)` only feathered along that one diagonal, so its
+right and bottom edges clipped as a hard rectangle over a busy photo.
+
+Re-cut as `radial-gradient(120% 120% at top left, ...)`: opacity is highest
+exactly at the corner where the OVR number sits, and it reaches full
+transparency at ~84% of the box, clear of the right and bottom edges, so the
+ground melts into the photo on every exposed side. Box dimensions, tint
+(`--stock` per tier, darker on Elite), and the OVR readability contrast are
+unchanged. CSS-only, one rule; no JS, no backend. KB-002 marked fixed.
+
+Also tidied the round-3 feedback ledger (`TESTER_FEEDBACK_BATCHES.md`) so the
+KB-001 / KB-002 rows reflect their resolutions (removal / this fix).
+
+Verification: `npm run verify:fast` + `next build`.

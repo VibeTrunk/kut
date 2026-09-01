@@ -132,8 +132,8 @@ each item now lives.
 | No club names on leaderboard | screenshot, 💡04 | Already fixed / shipped — round-2 #3 + 💡04 / ADR-044. No action. |
 | KUT full name lost from Home | screenshot | Already fixed — round-2 #4 / ADR-044. No action. |
 | Bibs message wording | screenshot | Already fixed — round-2 #7 / ADR-044. No action. |
-| Card fullscreen "doesn't work like intended" | 💡18 (Maarten), 💡01 follow-up | → **`KNOWN_BUGS.md` KB-001** (open; needs a repro). |
-| Lighter box + hard line top-left of every card | screenshot (Maarten) | Intended element (`.live-card__topscrim`, the OVR readability ground, ADR-043) rendering with a hard edge → **`KNOWN_BUGS.md` KB-002** (open; fix sketch included). |
+| Card fullscreen "doesn't work like intended" | 💡18 (Maarten), 💡01 follow-up | **`KNOWN_BUGS.md` KB-001** — resolved by removing the lightbox (ADR-046); card detail pages remain the full-size view. |
+| Lighter box + hard line top-left of every card | screenshot (Maarten) | **`KNOWN_BUGS.md` KB-002** — fixed 2026-09-02: `.live-card__topscrim` re-cut as a corner radial-gradient that feathers clear of every edge. |
 
 ## Ideas
 
@@ -157,6 +157,6 @@ All carried to **`ROADMAP.md`** ("Tester-feedback ideas") with a status:
 - 💡13 — personal special card weighs heavier for score: shipped as Club Value
   v2's 4× personal-card term (ADR-041).
 - 💡12 — see published sessions: shipped (ADR-044, `/sessions`).
-- 💡01 — card fullscreen: shipped (ADR-044); the "doesn't work" report is
-  KB-001.
+- 💡01 — card fullscreen: shipped (ADR-044), then removed (ADR-046) after the
+  "doesn't work" report (KB-001); the detail pages are the full-size view.
 - 💡19, 💡20 — empty.

@@ -188,14 +188,17 @@ body {
 
 /* Puts a ground under the rating so it stays readable over a light photo.
    Tinted with the card's own stock, so it darkens on Elite and lightens
-   everywhere else. */
+   everywhere else. A radial falloff from the top-left corner: it reaches full
+   transparency (~84% of the box) before the box's right and bottom edges, so
+   the ground melts into the photo on every exposed side instead of clipping
+   as a rectangle (KB-002). */
 .live-card__topscrim {
   position: absolute;
   inset: 0 auto auto 0;
   z-index: 2;
   width: 66%;
   height: 46%;
-  background: linear-gradient(146deg, color-mix(in srgb, var(--stock) 86%, transparent) 0%, color-mix(in srgb, var(--stock) 34%, transparent) 42%, transparent 74%);
+  background: radial-gradient(120% 120% at top left, color-mix(in srgb, var(--stock) 88%, transparent) 0%, color-mix(in srgb, var(--stock) 32%, transparent) 38%, transparent 70%);
 }
 
 /* Hands any photograph, however busy, cleanly off to the nameplate. */

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CardLightbox } from "@/components/card-lightbox";
 import { IconCoin, IconOffer, IconSearch } from "@/components/icons";
 import { LiveCard, type LiveCardPlayer } from "@/components/live-card";
 import { requireUser } from "@/lib/auth/user";
@@ -134,30 +135,30 @@ export default async function MarketPage({ searchParams }: MarketPageProps) {
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {listings.map((listing) => {
               const isOwnListing = listing.seller_id === user.id;
+              const cardPlayer: LiveCardPlayer = {
+                id: listing.listing_id,
+                displayName: listing.display_name,
+                archetype: listing.archetype,
+                liveOvr: listing.ovr,
+                pac: listing.pac,
+                sho: listing.sho,
+                pas: listing.pas,
+                dri: listing.dri,
+                def: listing.def,
+                phy: listing.phy,
+                rarityTier: listing.rarity_tier,
+                photoUrl: listing.photo_path ? photoUrls.get(listing.photo_path) ?? null : null,
+              };
               return (
                 <article className="flex flex-col gap-3.5" key={listing.listing_id}>
-                  <div className="relative">
-                    <LiveCard
-                      player={{
-                        id: listing.listing_id,
-                        displayName: listing.display_name,
-                        archetype: listing.archetype,
-                        liveOvr: listing.ovr,
-                        pac: listing.pac,
-                        sho: listing.sho,
-                        pas: listing.pas,
-                        dri: listing.dri,
-                        def: listing.def,
-                        phy: listing.phy,
-                        rarityTier: listing.rarity_tier,
-                        photoUrl: listing.photo_path ? photoUrls.get(listing.photo_path) ?? null : null,
-                      }}
-                    />
+                  <div className="group relative">
+                    <LiveCard player={cardPlayer} />
                     {/* Price rides the card: a market grid is scanned by price. */}
                     <p className="absolute left-1/2 top-3.5 z-10 flex -translate-x-1/2 items-center gap-1.5 rounded-full border border-brass/55 bg-board-deep/90 px-3.5 py-1.5 text-sm font-black tabular-nums text-brass backdrop-blur-sm">
                       <IconCoin aria-hidden="true" className="h-3.5 w-3.5" />
                       {listing.price.toLocaleString()}
                     </p>
+                    <CardLightbox player={cardPlayer} />
                   </div>
 
                   <p className="text-xs font-bold text-ink-faint">Sold by {listing.seller_display_name}</p>

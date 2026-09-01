@@ -2,6 +2,7 @@ import Link from "next/link";
 import { LogoutButton } from "@/components/logout-button";
 import { requireUser } from "@/lib/auth/user";
 import { createClient } from "@/lib/supabase/server";
+import { ClubNameForm } from "./club-name-form";
 
 export default async function SettingsPage() {
   const user = await requireUser();
@@ -9,9 +10,12 @@ export default async function SettingsPage() {
   const { data: profile } = await supabase
     .schema("kut")
     .from("profiles")
-    .select("username")
+    .select("username, club_name, display_name")
     .eq("id", user.id)
     .maybeSingle();
+
+  const displayName = profile?.display_name ?? user.displayName;
+  const defaultClubName = `${displayName}'s Club`;
 
   return (
     <main className="board-ground min-h-screen p-5 text-ink sm:p-10">
@@ -29,6 +33,10 @@ export default async function SettingsPage() {
               Username: <span className="font-bold text-ink-dim">{profile.username}</span>
             </p>
           )}
+        </div>
+
+        <div className="rounded-2xl border border-line/60 bg-panel/60 p-6">
+          <ClubNameForm currentName={profile?.club_name ?? null} defaultName={defaultClubName} />
         </div>
 
         <Link

@@ -50,8 +50,8 @@ export function AttendanceForm({
     [goals, selectedPlayers],
   );
 
-  // A washer who was removed from attendance falls back to "Nobody" without
-  // touching state (the raw pick is kept in case they are re-added).
+  // A bibs bringer who was removed from attendance falls back to "Nobody"
+  // without touching state (the raw pick is kept in case they are re-added).
   const effectiveBibsWashedBy = bibsWashedBy && selected.includes(bibsWashedBy) ? bibsWashedBy : "";
 
   function togglePlayer(playerId: string) {
@@ -181,7 +181,7 @@ export function AttendanceForm({
               : `${isCorrection ? "Saving this correction" : "Publishing"} will recalculate every Live Card from the season history.`}
           </p>
           <label className="block space-y-2">
-            <span className="font-semibold">Who washed the bibs?</span>
+            <span className="font-semibold">Who brought the bibs?</span>
             <select
               className="min-h-12 w-full rounded-xl border border-line bg-panel px-4"
               onChange={(event) => setBibsWashedBy(event.target.value)}
@@ -195,8 +195,8 @@ export function AttendanceForm({
               ))}
             </select>
             <span className="block text-sm text-brass">
-              The bibs washer gets a one-off bonus in KUT Coins. Changing this on a
-              correction pays a new washer; the previous one keeps their bonus.
+              Whoever brings the bibs gets a one-off bonus in KUT Coins. Changing this on a
+              correction pays the new bringer; the previous one keeps their bonus.
             </span>
           </label>
           {isCorrection ? (

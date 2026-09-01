@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CardLightbox } from "@/components/card-lightbox";
 import { IconSearch, IconSort } from "@/components/icons";
 import { LiveCard, type LiveCardPlayer } from "@/components/live-card";
 import { requireUser } from "@/lib/auth/user";
@@ -192,43 +193,46 @@ export default async function CollectionPage({ searchParams }: CollectionPagePro
                   </p>
                 )}
                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5 lg:gap-6">
-                  {cards.map((card) => (
-                    <Link
-                      aria-label={`Open ${card.display_name}'s card`}
-                      className="group relative rounded-[0.9rem] outline-offset-4 outline-brass focus-visible:outline-2"
-                      href={`/club/collection/${card.card_id}`}
-                      key={card.card_id}
-                    >
-                      <LiveCard
-                        player={{
-                          id: card.player_id,
-                          displayName: card.display_name,
-                          archetype: card.archetype,
-                          liveOvr: card.ovr,
-                          pac: card.pac,
-                          sho: card.sho,
-                          pas: card.pas,
-                          dri: card.dri,
-                          def: card.def,
-                          phy: card.phy,
-                          rarityTier: card.rarity_tier,
-                          photoUrl: card.photo_path ? photoUrls.get(card.photo_path) ?? null : null,
-                        }}
-                      />
-                      {/* Status rides the card rather than floating as loose text
-                          beneath it, so a scanned grid reads in one pass. */}
-                      {card.active_listing_id && (
-                        <span className="absolute left-1/2 top-3 z-10 -translate-x-1/2 rounded-full border border-brass/55 bg-board-deep/90 px-3 py-1 text-[0.65rem] font-black uppercase tracking-[0.1em] text-brass backdrop-blur-sm">
-                          Listed
-                        </span>
-                      )}
-                      {!card.is_live && (
-                        <span className="absolute bottom-3 left-1/2 z-10 -translate-x-1/2 rounded-full border border-line bg-board-deep/90 px-3 py-1 text-[0.6rem] font-black uppercase tracking-[0.1em] text-ink-dim backdrop-blur-sm">
-                          {card.edition_title}
-                        </span>
-                      )}
-                    </Link>
-                  ))}
+                  {cards.map((card) => {
+                    const cardPlayer: LiveCardPlayer = {
+                      id: card.player_id,
+                      displayName: card.display_name,
+                      archetype: card.archetype,
+                      liveOvr: card.ovr,
+                      pac: card.pac,
+                      sho: card.sho,
+                      pas: card.pas,
+                      dri: card.dri,
+                      def: card.def,
+                      phy: card.phy,
+                      rarityTier: card.rarity_tier,
+                      photoUrl: card.photo_path ? photoUrls.get(card.photo_path) ?? null : null,
+                    };
+                    return (
+                      <div className="group relative" key={card.card_id}>
+                        <Link
+                          aria-label={`Open ${card.display_name}'s card`}
+                          className="block rounded-[0.9rem] outline-offset-4 outline-brass focus-visible:outline-2"
+                          href={`/club/collection/${card.card_id}`}
+                        >
+                          <LiveCard player={cardPlayer} />
+                          {/* Status rides the card rather than floating as loose text
+                              beneath it, so a scanned grid reads in one pass. */}
+                          {card.active_listing_id && (
+                            <span className="absolute left-1/2 top-3 z-10 -translate-x-1/2 rounded-full border border-brass/55 bg-board-deep/90 px-3 py-1 text-[0.65rem] font-black uppercase tracking-[0.1em] text-brass backdrop-blur-sm">
+                              Listed
+                            </span>
+                          )}
+                          {!card.is_live && (
+                            <span className="absolute bottom-3 left-1/2 z-10 -translate-x-1/2 rounded-full border border-line bg-board-deep/90 px-3 py-1 text-[0.6rem] font-black uppercase tracking-[0.1em] text-ink-dim backdrop-blur-sm">
+                              {card.edition_title}
+                            </span>
+                          )}
+                        </Link>
+                        <CardLightbox player={cardPlayer} />
+                      </div>
+                    );
+                  })}
                 </div>
               </>
             )}

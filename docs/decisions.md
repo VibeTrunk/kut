@@ -1836,3 +1836,106 @@ the admin tooling) were brought onto the same shell, eyebrow, display-serif
 heading, control and button vocabulary. Verified against the production CSP
 with `next start`: no `style-src` violations, no page errors and no 4xx across
 every route reachable without a session.
+
+## ADR-044 — Tester feedback round 2: activity-feed trade rows, mobile
+leaderboard, Home full name, bibs copy fix, card lightbox, custom club names,
+published-sessions pages
+
+Date: 2026-09-01
+
+Status: Accepted
+
+A second tester round (4 defects + 3 buildable ideas), shipped as **one
+sweep**: KUT branch `feat/tester-feedback-round-2`, one migration
+`20260912000000_tester_feedback_round_2.sql`, this one ADR. 💡03 ("see other
+members' squads") is recorded in `docs/TESTER_FEEDBACK_BATCHES.md` as
+needs-a-product-decision and is **not** built here.
+
+**Defects (front-end only).**
+
+- *Blank club-activity row.* `kut.activity_feed` grew a fifth `kind`,
+  `'trade'`, in `20260911000000` (ADR-042 §18) but `src/lib/activity.ts` still
+  knew four, so a trade row rendered an empty kicker and an `undefined`
+  sentence (the `switch` fell through). Added `'trade'` to `ActivityKind`, a
+  `describeActivity` case (`X traded Y to Z for N KUT Coins.`), and a
+  `default:` arm + a tolerant `activityKindLabel()` lookup so any future
+  `kind` can never render blank again.
+- *No name on the leaderboard on mobile.* The row `<li>` applied the
+  multi-column grid at every width (unlike the `sm:grid` header), so on a
+  phone the fixed tracks overflowed and the `minmax(0,1fr)` name track
+  collapsed to 0; the dedicated Club column was also `hidden lg:block`. The
+  row is now a two-cell grid on mobile (rank + club, with the value line and a
+  cards/players line each spanning both cells) that opens into the full ruled
+  table from `sm` up. The club name shows at every width, as a subtitle under
+  the member name — which also front-runs custom club names below. No view or
+  data change: `kut.club_value_leaderboard` always returned `display_name` and
+  a synthesised `club_name`.
+- *Home lost the KUT full name.* ADR-043 rewrote the Home `<header>` and
+  dropped the "Kelderklasse Ultimate Team" subtitle added in ADR-034. Re-added
+  under the `<h1>`.
+
+**Bibs bonus copy fix (#7) — DB, data-changing.** The reward is for the member
+who **brings the (clean) bibs to** a session, which is exactly what
+`match_sessions.bibs_washed_by` already records; the notification only ever
+said "for washing the bibs after the session". Decision: correct the
+**user-visible copy only** and keep every internal identifier
+(`bibs_washed_by`, `wallet_ledger.reason = 'bibs_bonus'`,
+`user_notifications.event_type = 'bibs_bonus'`, `kut.bibs_rewards`). The
+notification body is composed server-side in `kut.grant_bibs_reward`, so this
+needs a migration: a `create or replace` of that function with the one
+`format()` string changed to "for bringing the bibs to the session on %s", plus
+a one-shot, substring-scoped, reversible backfill of existing `bibs_bonus`
+rows. Front-end sweep: the attendance-form label ("Who brought the bibs?"),
+the How-it-works line, and the `ECONOMY.bibsCoinBonus` comment.
+`ECONOMY.bibsCoinBonus` and Part 145 are unchanged (still 100). ADR-037 stands;
+its "washing the bibs after" body wording is superseded here.
+
+**Card lightbox (💡01) — front-end only.** No overlay primitive existed. New
+`src/components/card-lightbox.tsx` (`"use client"`): a portal-free
+`position: fixed` overlay showing `<LiveCard size="detail">`, with `Esc` +
+backdrop close, focus moved to Close and trapped there, focus restored on
+close, `aria-modal`, body scroll-lock via a class toggle, and a zoom-in
+animation guarded by `prefers-reduced-motion`. All styling is in
+`globals.css` (`.card-lightbox*`, `.card-zoom-trigger`) — no inline `style`,
+per the nonce-only `style-src`. A dedicated expand button (`IconExpand`,
+corner-of-card, hover/focus-revealed, always visible on touch) opens it; the
+card-body tap target — a `next/link` to the detail page on the three grids —
+is untouched, so each grid card is wrapped in a `group relative` div holding
+the `<Link>` and the trigger. Wired into Collection, Player directory, Market,
+and both card detail pages.
+
+**Custom club names (💡04) — DB, additive.** `kut.profiles.club_name` has
+existed unused since `20260816010000` (nullable, `<= 80`). New security-definer
+RPC `kut.set_own_club_name(text)` (mirrors `set_own_player_photo`): writes the
+caller's own row only, trims, treats blank/whitespace as `NULL` (→ the
+synthesised default), rejects `> 80` chars and control characters with
+`22023`, `revoke … from public, anon` + `grant … to authenticated`. **Not
+unique** — it's a display label and the member's real name disambiguates rows.
+`kut.club_value_leaderboard` is `create or replace`d to project
+`coalesce(nullif(btrim(club_name), ''), display_name || '''s Club')`; the
+`club_value` / `rank` arithmetic is byte-identical, so no economy drift
+(pgTAP asserts this). `kut.my_club_value` is not touched. Front-end: a "Club
+name" section on `/settings` (new `settings/actions.ts` `saveClubName` +
+`club-name-form.tsx`).
+
+**Published-sessions pages (💡12) — DB, additive.** Members already have RLS
+`select` on published `match_sessions` and their `attendance`
+(`20260816010000`), so a new thin `kut.published_sessions` view
+(`security_invoker = true`, one row per published session with
+`attendee_count` + `goal_count`) is a convenience, not a permission change. New
+routes `/sessions` (list, newest first) and `/sessions/[sessionId]` (attendee
+list with goals, the bibs bringer). Nav entry added to the "More" group; the
+Home "Session published" activity rows link to `/sessions`.
+
+**Tier & rollout.** The migration is **data-changing** (ADR-032) solely
+because of the `user_notifications` backfill — fresh backup immediately before
+the `VibeTrunk/supabase` push; parts B/C/D are additive. Full rollback DDL is
+in the migration header. Never `supabase db push` from this repo.
+
+**Verification.** `npm run verify:fast` (lint, typecheck, 48 unit incl. new
+`tests/unit/activity.test.ts`), `npm run test:db` (383 pgTAP incl. new
+`published_sessions.test.sql` and extended `bibs_bonus` / `member_self_service`
+/ `club_value`), `npm run test:e2e` (22, incl. `/sessions` auth-boundary), and
+`next build` all green. The logged-in visuals (mobile leaderboard, lightbox,
+Home subtitle) are covered by a scripted manual checklist — the e2e harness
+has no authenticated session.

@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path to extensions, kut, public;
 
-select plan(25);
+select plan(35);
 
 -- ---------------------------------------------------------------------------
 -- Schema surface
@@ -11,6 +11,7 @@ select plan(25);
 select has_view('kut', 'player_directory', 'member-facing player directory view exists');
 select has_function('kut', 'set_own_player_photo', array['text'], 'own-photo RPC exists');
 select has_function('kut', 'set_own_player_archetype', array['text'], 'own-archetype RPC exists');
+select has_function('kut', 'set_own_club_name', array['text'], 'own-club-name RPC exists (ADR-044)');
 select has_column('kut', 'public_live_ratings', 'photo_path', 'public live ratings exposes photo_path');
 select has_column('kut', 'my_collection_cards', 'photo_path', 'collection view exposes photo_path');
 select has_column('kut', 'player_directory', 'photo_path', 'directory exposes photo_path');
@@ -163,6 +164,74 @@ select throws_ok(
   '42501',
   null,
   'anon cannot execute the member photo RPC'
+);
+reset role;
+
+-- ---------------------------------------------------------------------------
+-- set_own_club_name (ADR-044) -- any member, linked or not; not unique
+-- ---------------------------------------------------------------------------
+set local role authenticated;
+set local request.jwt.claim.sub = '00000000-0000-4000-8000-00000009b002';
+select lives_ok(
+  $$ select kut.set_own_club_name('  The Cellar Dwellers  '); $$,
+  'an unlinked member can set a club name'
+);
+reset role;
+select set_config('request.jwt.claim.sub', '', true);
+
+select is(
+  (select club_name from kut.profiles where id = '00000000-0000-4000-8000-00000009b002'),
+  'The Cellar Dwellers',
+  'the club name is trimmed and stored'
+);
+select is(
+  (select club_name from kut.club_value_leaderboard where display_name = 'Unlinked Member'),
+  'The Cellar Dwellers',
+  'the leaderboard shows the custom club name'
+);
+
+set local role authenticated;
+set local request.jwt.claim.sub = '00000000-0000-4000-8000-00000009b002';
+select lives_ok(
+  $$ select kut.set_own_club_name('   '); $$,
+  'a whitespace-only club name is accepted as a reset'
+);
+reset role;
+select set_config('request.jwt.claim.sub', '', true);
+
+select ok(
+  (select club_name from kut.profiles where id = '00000000-0000-4000-8000-00000009b002') is null,
+  'a blank club name resets the column to NULL'
+);
+select is(
+  (select club_name from kut.club_value_leaderboard where display_name = 'Unlinked Member'),
+  'Unlinked Member''s Club',
+  'the leaderboard falls back to the synthesised default when club_name is NULL'
+);
+
+set local role authenticated;
+set local request.jwt.claim.sub = '00000000-0000-4000-8000-00000009b002';
+select throws_ok(
+  $$ select kut.set_own_club_name(repeat('x', 81)); $$,
+  '22023',
+  null,
+  'a club name longer than 80 characters is rejected'
+);
+select throws_ok(
+  $$ select kut.set_own_club_name(E'tab\tname'); $$,
+  '22023',
+  null,
+  'a club name with a control character is rejected'
+);
+reset role;
+select set_config('request.jwt.claim.sub', '', true);
+
+set local role anon;
+select throws_ok(
+  $$ select kut.set_own_club_name('anything'); $$,
+  '42501',
+  null,
+  'anon cannot execute the club-name RPC'
 );
 reset role;
 

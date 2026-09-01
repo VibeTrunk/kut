@@ -109,6 +109,20 @@ test("requires sign-in before showing the player directory", async ({ page }) =>
   await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
 });
 
+test("requires sign-in before showing the published sessions list", async ({ page }) => {
+  await page.goto("/sessions");
+
+  await expect(page).toHaveURL(/\/login$/);
+  await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
+});
+
+test("requires sign-in before showing a published session", async ({ page }) => {
+  await page.goto("/sessions/00000000-0000-4000-8000-000000000001");
+
+  await expect(page).toHaveURL(/\/login$/);
+  await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
+});
+
 test("requires sign-in before showing a player profile", async ({ page }) => {
   await page.goto("/players/alex-example");
 

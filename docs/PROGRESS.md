@@ -1,69 +1,23 @@
-# Current phase
+# KUT build log
 
-Hosted alpha — feature-complete MVP live at `https://kut.vibetrunk.com` (see
-the "Hosted alpha deployment" entry below). The sections immediately below
-describe the original Phase 0 foundation; read the dated entries further down
-for the full history through the current hosted state.
+Dated delivery entries, oldest first — **newest at the bottom**. Each entry is
+one shipped slice: what changed, the migrations involved, verification
+results, and (where relevant) the hosted-deploy status.
 
-# Completed
+**Current state is not tracked here.** See `CLAUDE.md` ("Status so far" /
+"Current hosted deployment") for what is live, `ROADMAP.md` for what is next,
+and `KNOWN_BUGS.md` for open defects. The doc map is `docs/README.md`.
 
-- Next.js 16 App Router application with strict TypeScript, Tailwind CSS, and
-  ESLint.
-- Local Supabase CLI configuration, an initial `kut` schema migration, and a
-  pgTAP schema smoke test.
-- Vitest unit-test and Playwright end-to-end-test foundations.
-- `verify:fast` and `verify:full` scripts.
-- GitHub Actions verification workflow alongside the existing gitleaks scan.
-- Local development, environment, and verification instructions in README.
-
-# In progress
-
-Vercel preview deployment is pending explicit authorization and project setup.
-
-# Tests currently passing
-
-- `npm run verify:fast`
-- `npm run test:e2e` (Chromium)
-- `npm run test:db` (local pgTAP)
-- `npm run verify:full`
-
-# Known failures
-
-- None known.
-
-# Local environment notes
-
-- The host's npm safety policy reports deferred install scripts for `esbuild`,
-  `supabase`, and `unrs-resolver`. All Phase 0 checks pass without approving
-  them. Do not approve package scripts without reviewing them first.
-
-# Next recommended task
-
-Phase 1A, first slice: implement the players, seasons, profiles,
-match-sessions, attendance, and player-season-state migrations with RLS and
-fictional test fixtures. Do not begin invitation onboarding or the economy
-until those data/security foundations and the rating engine pass tests.
-
-# Manual setup still required
-
-- Link this repository to the shared Supabase project only when ready to
-  inspect/deploy migrations. Never run a real `supabase db push` without
-  deliberate approval.
-- Replace the placeholder Supabase host in `vercel.json` after the project
-  reference is known.
-- Create/link the Vercel project and deploy a preview only with explicit
-  authorization.
-
-# Database migrations added
-
-- `20260816000000_create_kut_schema.sql`
-
-# Environment variables added
-
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
-- `APP_URL`
-- `SUPABASE_SERVICE_ROLE_KEY` (server-only; pre-existing contract retained)
+> **Historical note.** This file originally opened with the fixed
+> `# Current phase / # Completed / # In progress / # Tests currently passing /
+> # Known failures / # Next recommended task / # Manual setup still required /
+> # Database migrations added / # Environment variables added` headings from
+> `BUILD_SPEC.md` §107. Once KUT shipped, that snapshot shape was permanently
+> stale and the running log below became the whole file (ADR-045). The
+> earliest entries describe the Phase 0 foundation — a Next.js 16 App Router
+> app with strict TypeScript, local Supabase + pgTAP, Vitest/Playwright, the
+> `verify:fast` / `verify:full` scripts, and CI — which the first dated entry
+> then supersedes.
 
 ## Phase 1A update — 2026-08-16
 
@@ -1937,3 +1891,22 @@ encrypted backup taken immediately before). `kut.vibetrunk.com` smoke-tested:
 `/sessions` list + detail, a `/settings` club-name round-trip to
 `/leaderboard`, the reworded bibs notification, and unchanged leaderboard
 `club_value` / `rank`.
+
+## Remove fullscreen card lightbox — 2026-09-02
+
+Reverted the ADR-044 card lightbox (💡01). It was reported broken in round-3
+feedback (KB-001, no repro) and judged not worth keeping — the card detail
+pages are already a full-size view and every grid card links there.
+
+- Deleted `src/components/card-lightbox.tsx` and the unused `IconExpand` icon.
+- Dropped `<CardLightbox>` + imports from all five surfaces (Player directory,
+  Market, Collection grid, both card detail pages).
+- Removed the `.card-zoom-trigger` / `.card-lightbox*` CSS (rules, keyframes,
+  reduced-motion guard) from `src/app/globals.css`.
+- Unwrapped the per-card `group relative` wrappers; kept `relative` where an
+  absolute child still needs it (Market price pill; Collection badges — moved
+  onto the card `<Link>`).
+
+Front-end only: no migration, no schema, no economy value, no spec rule
+change. KB-001 marked fixed-by-removal. ADR-046. Verification: `npm run
+verify:fast` + `next build`.

@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { CardLightbox } from "@/components/card-lightbox";
 import { IconSearch } from "@/components/icons";
 import { ARCHETYPES, ARCHETYPE_LABELS, isArchetype } from "@/game/archetypes";
 import { LiveCard, type LiveCardPlayer } from "@/components/live-card";
@@ -127,16 +126,14 @@ export default async function PlayerDirectoryPage({ searchParams }: PlayerDirect
                 photoUrl: player.photo_path ? photoUrls.get(player.photo_path) ?? null : null,
               };
               return (
-                <div className="group relative" key={player.id}>
-                  <Link
-                    aria-label={`Open ${player.display_name}'s profile`}
-                    className="block rounded-[0.9rem] outline-offset-4 outline-brass focus-visible:outline-2"
-                    href={`/players/${player.slug}`}
-                  >
-                    <LiveCard player={cardPlayer} />
-                  </Link>
-                  <CardLightbox player={cardPlayer} />
-                </div>
+                <Link
+                  aria-label={`Open ${player.display_name}'s profile`}
+                  className="block rounded-[0.9rem] outline-offset-4 outline-brass focus-visible:outline-2"
+                  href={`/players/${player.slug}`}
+                  key={player.id}
+                >
+                  <LiveCard player={cardPlayer} />
+                </Link>
               );
             })}
           </div>

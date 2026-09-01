@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { CardLightbox } from "@/components/card-lightbox";
 import { IconCoin, IconOffer, IconSearch } from "@/components/icons";
 import { LiveCard, type LiveCardPlayer } from "@/components/live-card";
 import { requireUser } from "@/lib/auth/user";
@@ -151,14 +150,13 @@ export default async function MarketPage({ searchParams }: MarketPageProps) {
               };
               return (
                 <article className="flex flex-col gap-3.5" key={listing.listing_id}>
-                  <div className="group relative">
+                  <div className="relative">
                     <LiveCard player={cardPlayer} />
                     {/* Price rides the card: a market grid is scanned by price. */}
                     <p className="absolute left-1/2 top-3.5 z-10 flex -translate-x-1/2 items-center gap-1.5 rounded-full border border-brass/55 bg-board-deep/90 px-3.5 py-1.5 text-sm font-black tabular-nums text-brass backdrop-blur-sm">
                       <IconCoin aria-hidden="true" className="h-3.5 w-3.5" />
                       {listing.price.toLocaleString()}
                     </p>
-                    <CardLightbox player={cardPlayer} />
                   </div>
 
                   <p className="text-xs font-bold text-ink-faint">Sold by {listing.seller_display_name}</p>

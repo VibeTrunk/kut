@@ -196,10 +196,6 @@ export function IconSort(props: IconProps) {
   );
 }
 
-export function IconExpand(props: IconProps) {
-  return base(<path d="M9 4H4v5M20 9V4h-5M15 20h5v-5M4 15v5h5" />, props);
-}
-
 export function IconSessions(props: IconProps) {
   return base(
     <>

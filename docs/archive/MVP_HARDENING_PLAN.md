@@ -1,4 +1,10 @@
-# MVP hardening plan
+# MVP hardening plan (archived)
+
+> **Historical — completed.** Every item in this plan shipped; see
+> `docs/PROGRESS.md` "MVP hardening update - 2026-08-17" and the entries
+> after it. The living successors are `docs/OPERATIONS.md` (deploy / migration
+> process) and `docs/SECURITY_REVIEW.md` (security boundaries). Kept for
+> history only. See ADR-045.
 
 Date: 2026-08-17
 

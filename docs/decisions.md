@@ -42,82 +42,13 @@ CSP `connect-src` placeholder was replaced with the real project ref and
 moved to a per-request nonce in `src/proxy.ts` (see the "Fix login hydration
 under strict CSP" commit).
 
-## Speculative idea — weekly 5-card squad knockout (not decided)
+## Speculative ideas → moved to `ROADMAP.md`
 
-Status: Half-baked — brainstormed only, not scoped, not an ADR.
-
-Idea raised while discussing whether KUT's collect/trade loop is fun enough
-on its own: give members a lightweight competitive use *for* the cards they
-own, without adding any new admin/attendance data entry and without
-attendance-guessing ("will they show up this week?") as the object of play.
-
-Rough shape discussed, none of it committed:
-
-- Each member may assemble a squad of 5 owned cards, one slot per distinct
-  real Player (no duplicate-player stacking within a squad — though owning
-  duplicates stays fine and is even encouraged as collecting flavor, per
-  Part 3.4's "why do you own eleven copies of Dennis" story goal).
-- Squad power derives entirely from existing Live OVR — no new stats and no
-  admin entry beyond what `publish_attendance_session` already records
-  (attendance + optional goals).
-- Sunday night, gated on the same "was a session published this football
-  week" rule Part 9 already defines (skip cleanly if not, same as activity/
-  form decay already does), squads feed into a single-elimination knockout
-  bracket, seeded by power, with byes for non-power-of-two fields.
-- Each matchup resolves via a power-weighted probability rather than a coin
-  flip or a certainty — exact formula not chosen, and it needs the same
-  deterministic, testable, pure-function treatment `pack_economy_health` got
-  in ADR-015 before it's allowed to affect real people's squads. Odds would
-  be published per round, not just once, so Sunday night has several reveal
-  moments instead of one static percentage.
-- Reward starts as bragging rights / a badge only, deliberately avoiding any
-  currency or pack payout until the mechanic is validated as fun — a payout
-  version would need the same ledger-backed, security-definer treatment as
-  `open_pack` / `buy_listing` (ADR-010, ADR-014, ADR-016), which is real
-  scope, not a UI afterthought.
-
-Open questions nobody has answered: minimum-entrant threshold before a
-week's tournament runs at all; whether a currency reward gets added later
-and if so how; the exact power-weighting formula; whether seeding uses total
-or average XI OVR. This is recorded here only so the brainstorm isn't lost —
-it is not scoped, not prioritized, and not a plan to build.
-
-## Speculative idea — player of the week vote (not decided)
-
-Status: Half-baked — brainstormed only, not scoped, not an ADR.
-
-Another route for a player's cards to improve, alongside attendance and Live
-OVR: a weekly peer vote for the top 3 players of the week, giving members a
-say in the card economy without any new admin data entry.
-
-Rough shape discussed, none of it committed:
-
-- Voting window opens Friday 21:00 and closes Sunday 23:59 (same football-week
-  framing Part 9 already uses; skip cleanly on weeks with no published
-  session, like activity/form decay does).
-- Each member picks 3 distinct players for the week and cannot vote for
-  themselves.
-- Voting pays a small coin reward — a currency payout, so it needs the same
-  ledger-backed, security-definer treatment as `open_pack` / `buy_listing`
-  (ADR-010, ADR-014, ADR-016), plus an anti-abuse rule so voting isn't a
-  free coin faucet (e.g. only counts once the ballot has 3 valid picks,
-  one reward per member per week).
-- After close, the 3 players with the most votes get an extra boost to their
-  cards — magnitude, stacking with Live OVR, and decay all unspecified, and
-  it needs the deterministic, testable, pure-function treatment
-  `pack_economy_health` got in ADR-015 before it touches real cards.
-
-Optional extra: the single top-voted player gets an "In Form" special-edition
-card. Mechanics unworked — would lean on the frozen-snapshot Special card
-model (ADR referenced around card snapshots / Part 3.4), one per week,
-supersedes the previous week's In Form card or coexists as a collectible.
-
-Open questions nobody has answered: the boost formula and how long it lasts;
-tie-breaking for 3rd place; minimum-turnout threshold before the boost
-applies at all; whether votes are public or secret; how the "In Form" card is
-minted, owned, and expired; abuse vectors (collusion, vote-trading).
-Recorded here so the brainstorm isn't lost — not scoped, not prioritized,
-not a plan to build.
+Two brainstorms once lived here — a **weekly 5-card squad knockout** and a
+**player-of-the-week peer vote** — explicitly "not an ADR, not scoped". They
+belong with the other forward-looking material, so they now sit in
+`docs/ROADMAP.md` under "Brainstorms (not scoped)", unchanged. Moved by
+ADR-045.
 
 ## ADR-001 — Phase 0 local development foundation
 
@@ -1939,3 +1870,88 @@ in the migration header. Never `supabase db push` from this repo.
 `next build` all green. The logged-in visuals (mobile leaderboard, lightbox,
 Home subtitle) are covered by a scripted manual checklist — the e2e harness
 has no authenticated session.
+
+## ADR-045 — Documentation restructure: one roadmap, a doc map, archived one-time plans
+
+Date: 2026-09-02
+
+Status: Accepted
+
+Forward-looking content had scattered across five documents — the 2026-08-17
+handoff's "Recommended next phases" (mostly shipped, still written as
+pending), `TESTER_FEEDBACK_BATCHES.md`'s "Future ideas", `decisions.md`'s
+"Open items", and BUILD_SPEC's own Phase 2–4 / future parts — with no single
+place to see what is next. "What to read first" was duplicated in four places
+and "agent guardrails" in three. Two one-time planning docs (`HANDOFF.md`,
+`MVP_HARDENING_PLAN.md`, both 2026-08-17) were fully executed but still sat in
+`docs/` as if live, and `PROGRESS.md` still opened with the frozen Phase-0
+snapshot headings from BUILD_SPEC §107.
+
+Decision:
+
+- **`docs/ROADMAP.md`** is the single home for everything not yet built —
+  ideas, planned phases, blocked items — each with a status
+  (idea / planned / blocked / partial / declined). It absorbs the handoff's
+  phase list (de-duplicated and status-checked), the tester "Future ideas",
+  and the one-off open items, and it *indexes* (does not copy) BUILD_SPEC's
+  future parts. BUILD_SPEC stays canonical and unchanged.
+- **`docs/README.md`** is the documentation map: one table of what each
+  document is for, plus the start-of-session reading order. Other docs point
+  here instead of restating the list.
+- **`docs/archive/`** holds superseded one-time documents with a "historical"
+  banner: `HANDOFF-2026-08-17.md` and `MVP_HARDENING_PLAN.md`. `git mv`, so
+  history is intact; dated log entries that mention them still resolve.
+- **`TESTER_FEEDBACK_BATCHES.md`** keeps only the triage record (who reported
+  what, de-duplication, disposition); its "Future ideas" section is now a
+  pointer to `ROADMAP.md`. Round 3's triage table was added here.
+- **`PROGRESS.md`** keeps every dated entry unchanged; its stale Phase-0
+  header block is replaced with a short orientation note. This is a
+  deliberate deviation from BUILD_SPEC §107's fixed-heading shape — recorded
+  here rather than by editing the spec, since §107 describes a
+  multi-session-coding convention, not a game rule or acceptance criterion.
+  (The long-standing lowercase `decisions.md` vs the spec's `DECISIONS.md` is
+  likewise left as-is; the lowercase name is canonical for this repo.)
+- **`README.md`** drops its stale, duplicative feature-walkthrough (superseded
+  by the in-app `/how-it-works` page and BUILD_SPEC Parts IV–XIII) and points
+  at `docs/README.md`.
+
+Reason: one canonical location per kind of information — spec, shipped log,
+decisions, forward work, bugs, raw feedback, runbooks — so nothing has to be
+cross-checked against a stale copy. No spec, code, migration, or economy
+value changed; this ADR is the record of a docs-only reorganisation.
+
+Consequences: agents should read `docs/README.md` after `CLAUDE.md` for the
+map, and record new forward-looking items in `ROADMAP.md` (not in a handoff or
+the feedback ledger). `CLAUDE.md`'s reading-order line now names
+`docs/README.md` and `docs/ROADMAP.md`. No verification impact (no code or
+test changed).
+
+## ADR-046 — Remove the fullscreen card lightbox (reverts ADR-044 💡01)
+
+Date: 2026-09-02
+
+Status: Accepted
+
+The card lightbox shipped in ADR-044 (tester idea 01) was reported broken in
+round-3 feedback — "tapping a card to view it fullscreen doesn't work like
+intended" (KB-001), with no repro detail. Rather than chase a fix, the owner
+decided the affordance is not worth keeping: the card detail pages already are
+a full-size view of the card, and every grid card links to its detail page.
+
+Removed, front-end only, no DB or spec impact:
+
+- Deleted `src/components/card-lightbox.tsx` and the unused `IconExpand` glyph.
+- Removed `<CardLightbox>` from all five surfaces (Player directory, Market,
+  Collection grid, and both card detail pages) and the now-unused imports.
+- Deleted the `.card-zoom-trigger` / `.card-lightbox*` block (rules +
+  keyframes + `prefers-reduced-motion` guard) from `src/app/globals.css`.
+- Unwrapped the per-card `group relative` wrappers the trigger needed. Where
+  an absolutely-positioned child still relies on a positioned ancestor
+  (Market price pill, Collection "Listed" / edition badges) the `relative`
+  was kept — moved onto the card's `<Link>` on the Collection grid.
+
+The `document.body` `overflow-hidden` toggle is gone with the component; no
+other code toggled that class.
+
+KB-001 is resolved by removal (status set in `KNOWN_BUGS.md`). ADR-044's
+other six items stand. Verification: `npm run verify:fast` + `next build`.

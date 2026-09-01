@@ -30,24 +30,14 @@ and an SQL-reversible shape.
 
 Finding 3 was withdrawn by the tester (no entry).
 
-## Future ideas (not scheduled)
+## Future ideas
 
-- **Idea 1 — coin-generating dimension** (mini-game or PvP battles on card
-  collections). Large; a new subsystem with its own tables, a new coin faucet
-  to balance against the Part L sink/faucet invariants, and its own UI.
-- **Idea 2 — rating graph over time.** Lower effort than it looks:
-  `kut.player_rating_snapshots` already records weekly `live_ovr` per player
-  per season (ADR-031), so a per-player OVR line chart is mostly a query + a
-  chart component on the player page. Per-attribute history would need a wider
-  snapshot table.
-- **Round-2 idea 03 — see other members' squads/teams.** Needs a product
-  decision on card-ownership privacy + an ADR: the codebase deliberately hides
-  who owns which cards (`kut.my_collection_cards` is owner-scoped;
-  `kut.player_directory` "does not expose who claimed the player"). Building it
-  means a club-wide RLS-safe projection over `user_cards` (the
-  `security_invoker = false, security_barrier = true` pattern of
-  `club_value_leaderboard` / `activity_feed`), a member directory route, and
-  per-member pages. Documented, not built, in ADR-044.
+Ideas raised in feedback but not scheduled now live in **`ROADMAP.md`**
+("Tester-feedback ideas"), each with a status and a next step. This file keeps
+only the triage record — who raised what, de-duplication, and where each item
+went. Round 1 sent two ideas forward (a coin-generating dimension; a rating
+graph over time); round 2 sent one (see other members' squads); round 3's
+triage table is below.
 
 ---
 
@@ -68,7 +58,7 @@ migration deploys from `VibeTrunk/supabase` as its own step.
 | 💡01 | Tap a card to view it fullscreen | Medium | no | New `card-lightbox.tsx` client overlay (portal-free, CSP-clean, focus-trapped, reduced-motion aware). A dedicated expand button on each card opens it; card-body tap still navigates. Wired into Collection / Player directory / Market / both detail pages. |
 | 💡04 | Rename your club | Medium | **yes** | `profiles.club_name` existed unused. New `kut.set_own_club_name(text)` RPC (own-row, trim, blank→NULL, ≤80, no control chars, **not unique**); `club_value_leaderboard` `coalesce`s it with the old default. Front-end: a section on `/settings`. |
 | 💡12 | See published sessions somewhere | Low-Medium | **yes** (additive view) | Members already read published sessions/attendance via RLS. New `kut.published_sessions` summary view + `/sessions` list + `/sessions/[id]` detail (attendees, goals, bibs bringer) + a "More" nav entry. |
-| 💡03 | See other members' squads/teams | — | — | **Document only** — see "Future ideas" above. Needs a privacy decision + ADR. |
+| 💡03 | See other members' squads/teams | — | — | **Document only** — carried to `ROADMAP.md` (blocked: needs a card-ownership privacy decision + ADR). |
 
 ## Round-2 delivery
 
@@ -124,3 +114,49 @@ migration deploys from `VibeTrunk/supabase` as its own step.
   Retention window?~~ **Decided 2026-08-31 (ADR-038):** completed sales + new
   listings + pack opens + published sessions; not discards. No retention job
   (`limit 200` + a `?before=` cursor). Sale rows show the buyer name club-wide.
+
+---
+
+# Tester feedback — round 3
+
+Date raised: 2026-09-01. Two threads: a screenshot thread (items A1–A10) and
+an ideas thread (💡01–💡20). De-duplicated across both, then triaged.
+Nothing here has been built in this round — the disposition column says where
+each item now lives.
+
+## Defects
+
+| Item | Sources | Disposition |
+|---|---|---|
+| Club-activity row renders blank | screenshot | Already fixed — round-2 #1 / ADR-044. No action. |
+| No club names on leaderboard | screenshot, 💡04 | Already fixed / shipped — round-2 #3 + 💡04 / ADR-044. No action. |
+| KUT full name lost from Home | screenshot | Already fixed — round-2 #4 / ADR-044. No action. |
+| Bibs message wording | screenshot | Already fixed — round-2 #7 / ADR-044. No action. |
+| Card fullscreen "doesn't work like intended" | 💡18 (Maarten), 💡01 follow-up | → **`KNOWN_BUGS.md` KB-001** (open; needs a repro). |
+| Lighter box + hard line top-left of every card | screenshot (Maarten) | Intended element (`.live-card__topscrim`, the OVR readability ground, ADR-043) rendering with a hard edge → **`KNOWN_BUGS.md` KB-002** (open; fix sketch included). |
+
+## Ideas
+
+All carried to **`ROADMAP.md`** ("Tester-feedback ideas") with a status:
+
+| Item | Sources | Status in ROADMAP |
+|---|---|---|
+| Duplicate copies weigh less for Club Value | A5, 💡02 (Freek; Maarten seconds) | blocked (economy formula + ADR) |
+| See other members' squads / teams | A6, 💡03 (Teize) | blocked (privacy ADR) — already tracked from round 2 |
+| Prestige (30 distinct cards → medal) + collections (themed set → payout) | A2, A10 (Maarten) | idea |
+| "Store" instead of "Packs" + more to buy | 💡11 (Teize) | idea |
+| Player / Team of the Season ("TOTS") | 💡17 (Darryl) | idea |
+| Performance / peer scoring beyond goals — assists, defence, 1–5 player ratings, post-game survey, goalie saves, goal reward scaled by player count | A8, 💡06, 💡08, 💡14, 💡15, 💡16 | **favored** — designed as "Real-life play → ratings" in `ROADMAP.md` (attendance backbone + diminishing-returns goals + positive-only kudos survey) |
+| Distinct goalkeeper stat set (handling / reflexes / …) | A9, 💡15 | idea (the "hard" GK variant deferred in round 1) |
+| Market auctions | 💡05 (Teize) | idea |
+| Weather bonus (rain / snow / freeze / >25 °C) | 💡07 (Teize) | idea |
+| In-app FAQ | 💡09 (Teize); 💡10 support hotline (jokey) not carried | idea |
+
+## Already covered (no action)
+
+- 💡13 — personal special card weighs heavier for score: shipped as Club Value
+  v2's 4× personal-card term (ADR-041).
+- 💡12 — see published sessions: shipped (ADR-044, `/sessions`).
+- 💡01 — card fullscreen: shipped (ADR-044); the "doesn't work" report is
+  KB-001.
+- 💡19, 💡20 — empty.

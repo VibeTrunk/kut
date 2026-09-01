@@ -111,11 +111,15 @@ schema. Hosted migrations are therefore catalogued and deployed only from
 keeps matching SQL files for local Supabase development and database tests;
 never run a hosted `supabase db push` from here.
 
-Before writing code in a new session, read (in order): `docs/BUILD_SPEC.md`,
-`docs/PROGRESS.md` (once it exists), `docs/decisions.md`, and recent git
-history — the build spec itself asks for this same reading order (Part
-XXXI) and lists the phased delivery plan (Part XXXIV) to follow slice by
-slice rather than building everything at once.
+Before writing code in a new session, read (in order): `docs/README.md` (the
+documentation map — what every doc is for), `docs/BUILD_SPEC.md`,
+`docs/PROGRESS.md`, `docs/decisions.md`, and recent git history; then
+`docs/ROADMAP.md` for what is planned or parked and `docs/KNOWN_BUGS.md` for
+open defects. The build spec asks for this same reading order (Part XXXI) and
+lists the phased delivery plan (Part XXXIV) to follow slice by slice rather
+than building everything at once. Forward-looking ideas belong in
+`docs/ROADMAP.md` (ADR-045), not scattered across handoffs or the feedback
+ledger.
 
 ## Backend model
 All VibeTrunk tools share **one Supabase project**, each in its own Postgres

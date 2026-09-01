@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { CardLightbox } from "@/components/card-lightbox";
 import { IconSearch, IconSort } from "@/components/icons";
 import { LiveCard, type LiveCardPlayer } from "@/components/live-card";
 import { requireUser } from "@/lib/auth/user";
@@ -209,11 +208,11 @@ export default async function CollectionPage({ searchParams }: CollectionPagePro
                       photoUrl: card.photo_path ? photoUrls.get(card.photo_path) ?? null : null,
                     };
                     return (
-                      <div className="group relative" key={card.card_id}>
-                        <Link
+                      <Link
                           aria-label={`Open ${card.display_name}'s card`}
-                          className="block rounded-[0.9rem] outline-offset-4 outline-brass focus-visible:outline-2"
+                          className="relative block rounded-[0.9rem] outline-offset-4 outline-brass focus-visible:outline-2"
                           href={`/club/collection/${card.card_id}`}
+                          key={card.card_id}
                         >
                           <LiveCard player={cardPlayer} />
                           {/* Status rides the card rather than floating as loose text
@@ -228,9 +227,7 @@ export default async function CollectionPage({ searchParams }: CollectionPagePro
                               {card.edition_title}
                             </span>
                           )}
-                        </Link>
-                        <CardLightbox player={cardPlayer} />
-                      </div>
+                      </Link>
                     );
                   })}
                 </div>

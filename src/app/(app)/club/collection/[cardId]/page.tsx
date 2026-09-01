@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CardLightbox } from "@/components/card-lightbox";
 import { AttributeBars } from "@/components/card-stats";
 import { LiveCard, type LiveCardPlayer } from "@/components/live-card";
 import { requireUser } from "@/lib/auth/user";
@@ -97,9 +96,8 @@ export default async function CardDetailPage({ params, searchParams }: CardPageP
         </Link>
 
         <div className="grid gap-10 md:grid-cols-[minmax(240px,330px)_minmax(0,1fr)] md:items-start lg:gap-16">
-          <div className="group relative">
+          <div>
             <LiveCard size="detail" player={cardPlayer} />
-            <CardLightbox player={cardPlayer} />
           </div>
 
           <div className="space-y-8">

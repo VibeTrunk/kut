@@ -6,9 +6,9 @@ players collect, open packs of, and trade. Part of the
 [VibeTrunk](https://vibetrunk.com) hub.
 
 Start with [`CLAUDE.md`](CLAUDE.md) for project context, then
-[`docs/BUILD_SPEC.md`](docs/BUILD_SPEC.md) for the full product and technical
-specification, [`docs/PROGRESS.md`](docs/PROGRESS.md) for delivery history, and
-[`docs/decisions.md`](docs/decisions.md) for why the code looks the way it does.
+[`docs/README.md`](docs/README.md) — the documentation map: what each document
+is for and the order to read them (`BUILD_SPEC.md`, `PROGRESS.md`,
+`decisions.md`, then `ROADMAP.md` for what's next).
 
 ## Status
 
@@ -60,17 +60,16 @@ Install the local browser once with:
 npx playwright install chromium
 ```
 
-## MVP hardening and operations
+## Operations
 
-The current local hardening plan is in
-[docs/MVP_HARDENING_PLAN.md](docs/MVP_HARDENING_PLAN.md). See
-[docs/SECURITY_REVIEW.md](docs/SECURITY_REVIEW.md) for the reviewed security
-boundaries and [docs/OPERATIONS.md](docs/OPERATIONS.md) for backup and preview
-deployment steps. These documents deliberately do not authorize a hosted
-Supabase migration or Vercel deployment.
-
-For the next Codex or Claude Code session, start with
-[docs/HANDOFF.md](docs/HANDOFF.md).
+[docs/OPERATIONS.md](docs/OPERATIONS.md) is the deploy / migration runbook
+(shared-migration authority, the risk-tiered hosted-migration checklist,
+preview-deploy preflight); [docs/BACKUP.md](docs/BACKUP.md) is the
+backup / restore runbook; [docs/SECURITY_REVIEW.md](docs/SECURITY_REVIEW.md)
+records the reviewed security boundaries. None of these authorize a hosted
+Supabase migration or Vercel deployment on their own. The completed MVP
+hardening plan is archived in
+[docs/archive/](docs/archive/MVP_HARDENING_PLAN.md).
 
 ## Environment
 
@@ -144,55 +143,11 @@ are recorded. Ordinary admins may reset normal member accounts only;
 superadmins may also reset administrator accounts. No administrator can reset
 their own password through this tool.
 
-## Economy foundation
+## How the game works
 
-New invite claims automatically receive 250 KUT Coins and three distinct
-Live Cards. An existing local account created before this feature
-will see a **Claim starter pack** button after signing in. This is a one-time,
-server-authoritative operation.
-
-Publishing attendance automatically awards 250 KUT Coins to each enabled user
-linked to an attending Player. Rewards are recorded once per Player/session in
-an immutable ledger, so publishing, correcting, or reactivating a session
-cannot duplicate coins. A cancelled session does not claw back coins already
-earned, per the MVP correction policy. If the admin records who washed the bibs
-on the attendance form, that member also receives a one-off 100 KUT Coins.
-
-## My Club and card details
-
-Any signed-in, enabled member can open **My Club** from Live Ratings at
-`http://localhost:3000/club`. It shows only their own active card copies and
-their own KUT Coin balance. Selecting a card opens its detail page, including
-its current Live rating and source. These are read-only views; no browser
-route can alter a card or coins.
-
-## Card discard
-
-Any owned card copy can be discarded unless it has an active market listing.
-Its detail page shows the current server-calculated value and requires
-confirmation before the card is permanently burned. The atomic database
-operation records a positive `discard` ledger entry and credits the same
-amount to the owner’s wallet.
-
-## Basic pack opening
-
-**My Club** offers one TFH Pack for 250 KUT Coins. It contains three
-server-selected Live Card copies; duplicate players are possible.
-The purchase, wallet debit, card minting, and saved opening record are one
-database transaction. Reloading a saved result page never rerolls the pack.
-
-## Admin economy health
-
-An admin can open **Admin → Economy** to inspect the current pack
-pool, expected discard value per slot and pack, expected return percentage,
-and compact coin/card totals. The calculation uses the active Live-card pool
-and the server-defined rarity weights. It is a read-only warning screen;
-changing pack price or odds remains a deliberate future configuration change.
-
-## Transfer market
-
-Any card copy can be listed from its detail page for 24 hours at a
-server-validated buy-now price. The card is locked while listed and may be
-cancelled by its seller. Signed-in members browse `/market` and buy listings
-with KUT Coins. A purchase atomically transfers the card, debits the buyer,
-credits the seller, and burns the 5% tax (rounded up, minimum one coin).
+The player-facing walkthrough — attendance rewards, Live Ratings, rarity,
+cards, packs, discard, the transfer market, Club Value, trade offers, and the
+message inbox — is the in-app **How KUT works** page (`/how-it-works`). The
+authoritative rules are `docs/BUILD_SPEC.md` Parts IV–XIII; canonical numbers
+(reward amounts, pack price, market tax) are `BUILD_SPEC.md` Part 145 and
+`src/game/economy.ts`. `docs/PROGRESS.md` is the dated build history.

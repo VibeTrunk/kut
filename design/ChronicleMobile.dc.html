@@ -1,0 +1,252 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Instrument+Serif&display=swap">
+  <style>
+    :root{
+      --board-deep:#0b0a07; --panel:#211c15; --panel-2:#2a2318; --line:#4a4030;
+      --ink:#f4efe3; --ink-dim:#b3a891; --ink-faint:#8a8072; --ink-on-accent:#1c150a;
+      --brass:#e0ac4a; --moss:#8bbd6c;
+      --sans:'Archivo','Helvetica Neue',Helvetica,Arial,sans-serif;
+      --serif:'Instrument Serif',Georgia,'Times New Roman',serif;
+    }
+    *{box-sizing:border-box;}
+    body{margin:0;font-family:var(--sans);color:var(--ink);
+      background:radial-gradient(120% 78% at 50% -8%, #221c13 0%, #15130f 46%, #0b0a07 100%);}
+    a{color:var(--brass);text-decoration:none;} a:hover{color:#f0c470;}
+    .display{font-family:var(--serif);font-weight:400;line-height:.94;letter-spacing:-.012em;}
+    .kicker{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.24em;color:var(--brass);margin:0;}
+    .clip-pennant{clip-path:polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%);}
+
+    .top{height:56px;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 16px;
+      border-bottom:1px solid rgba(74,64,48,.4);background:rgba(11,10,7,.85);}
+    .top__mark{display:flex;align-items:center;gap:8px;font-size:18px;font-weight:900;color:var(--ink);}
+    .top__mark i{display:block;width:12px;height:14px;background:var(--brass);}
+    .top__right{display:flex;align-items:center;gap:8px;}
+    .coins{display:flex;align-items:center;gap:4px;border:1px solid rgba(224,172,74,.3);border-radius:999px;
+      background:linear-gradient(to bottom, rgba(224,172,74,.15), rgba(224,172,74,.05));padding:4px 12px;
+      font-size:12px;font-weight:900;font-variant-numeric:tabular-nums;color:var(--brass);}
+    .burger{width:36px;height:36px;border-radius:999px;border:1px solid var(--line);display:grid;place-items:center;color:var(--ink-dim);}
+
+    main{padding:20px 20px 40px;}
+    .back{display:inline-block;font-size:13.5px;font-weight:700;color:var(--brass);margin-bottom:26px;}
+
+    .mast__rule-top{height:0;border-top:3px solid var(--brass);border-bottom:1px solid rgba(224,172,74,.45);padding-bottom:3px;}
+    .mast__row{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;padding:14px 0 12px;}
+    .mast__name{font-family:var(--serif);font-size:38px;line-height:.9;margin:0;}
+    .mast__no{text-align:right;flex:none;}
+    .mast__no b{display:block;font-size:19px;font-weight:900;font-variant-numeric:tabular-nums;color:var(--brass);line-height:1;}
+    .mast__no span{display:block;margin-top:4px;font-size:9px;font-weight:800;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-faint);}
+    .mast__rule-bot{height:1px;background:rgba(74,64,48,.9);}
+    .dateline{display:flex;flex-direction:column;gap:5px;padding:11px 0 0;
+      font-size:10.5px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-faint);}
+    .dateline em{font-style:normal;color:var(--ink-dim);}
+
+    .standfirst{margin:26px 0 0;font-family:var(--serif);font-size:24px;line-height:1.26;color:var(--ink-dim);text-wrap:pretty;}
+    .standfirst b{color:var(--ink);font-weight:400;}
+
+    .day{margin-top:38px;padding-top:26px;border-top:1px solid rgba(74,64,48,.55);}
+    .day__when h2{margin:8px 0 0;font-family:var(--serif);font-size:32px;line-height:1;}
+    .day__tally{display:flex;gap:14px;margin-top:16px;}
+    .day__tally div{flex:1;border:1px solid rgba(74,64,48,.5);border-radius:12px;padding:11px 14px;
+      background:linear-gradient(to bottom, rgba(42,35,24,.6), rgba(33,28,21,.6));}
+    .day__tally b{display:block;font-size:24px;font-weight:900;font-variant-numeric:tabular-nums;line-height:1;}
+    .day__tally span{display:block;margin-top:5px;font-size:9.5px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint);}
+
+    .bibs{display:flex;align-items:center;gap:9px;margin-top:14px;padding:11px 14px;border-radius:12px;
+      border:1px solid rgba(92,68,25,.55);background:rgba(43,31,10,.5);font-size:12.5px;font-weight:700;color:var(--ink-dim);}
+    .bibs b{color:var(--brass);font-weight:900;}
+    .bibs svg{flex:none;color:var(--brass);}
+
+    .roster{margin-top:18px;}
+    .row{display:flex;align-items:baseline;justify-content:space-between;gap:14px;padding:12px 0;border-bottom:1px solid rgba(74,64,48,.3);}
+    .row__name{font-size:15px;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    .row__g{flex:none;font-size:12.5px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--brass);}
+    .row__g--none{color:rgba(138,128,114,.6);font-weight:600;}
+
+    .cross{margin-top:38px;padding-top:26px;border-top:1px solid rgba(74,64,48,.55);}
+    .cross h2{margin:8px 0 4px;font-family:var(--serif);font-size:32px;line-height:1;}
+    .cross__lead{margin:0 0 20px;font-size:13.5px;line-height:1.6;color:var(--ink-dim);}
+    .cross__list{display:flex;flex-direction:column;gap:12px;}
+    .cross__item{border-radius:16px;border:1px solid rgba(74,64,48,.6);padding:15px 16px;
+      background:linear-gradient(to bottom, rgba(42,35,24,.7), rgba(33,28,21,.7));}
+    .cross__top{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;}
+    .cross__who b{display:block;font-size:16px;font-weight:800;}
+    .cross__who span{display:block;margin-top:3px;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);}
+    .cross__ovr{flex:none;text-align:right;}
+    .cross__ovr b{display:block;font-size:24px;font-weight:900;font-variant-numeric:tabular-nums;color:var(--brass);line-height:1;}
+    .cross__ovr span{display:block;margin-top:3px;font-size:9px;font-weight:800;letter-spacing:.2em;color:var(--ink-faint);}
+    .cross__move{display:flex;align-items:center;gap:11px;margin-top:14px;padding-top:13px;border-top:1px solid rgba(74,64,48,.4);}
+    .cross__arrow{color:var(--ink-faint);}
+
+    .tierchip{display:flex;align-items:center;gap:7px;}
+    .tierchip i{display:grid;place-items:center;width:26px;height:31px;flex:none;border-radius:5px;box-shadow:inset 0 0 0 1px rgb(0 0 0 / 14%);}
+    .tierchip i b{display:block;width:11px;height:11px;}
+    .tierchip u{text-decoration:none;font-size:11px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-dim);}
+    .t-bronze{background:#ecd8b1;} .t-bronze b{background:#8a5326;clip-path:polygon(50% 6%,6% 94%,94% 94%);}
+    .t-silver{background:#e3e8eb;} .t-silver b{background:#4b5761;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);}
+    .t-gold{background:linear-gradient(140deg,#f7e7b2,#e2c069);} .t-gold b{background:#8a6414;clip-path:polygon(50% 0%,100% 38%,82% 100%,18% 100%,0% 38%);}
+    .t-holo{background:linear-gradient(140deg,#d9f2ee,#e6dcf6 45%,#f5dcf0);} .t-holo b{background:#574481;clip-path:polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%);}
+    .t-elite{background:radial-gradient(120% 100% at 50% 0%, #2c2314, #0f0c08);box-shadow:inset 0 0 0 1px rgb(233 196 106 / 45%);}
+    .t-elite b{background:#e9c46a;clip-path:polygon(25% 0%,75% 0%,100% 50%,75% 100%,25% 100%,0% 50%);}
+
+    .pager{display:flex;flex-direction:column;gap:14px;margin-top:38px;padding-top:22px;border-top:1px solid rgba(74,64,48,.55);}
+    .pager a{display:flex;flex-direction:column;gap:5px;font-size:14px;font-weight:800;}
+    .pager span{font-size:9.5px;font-weight:800;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-faint);}
+
+    .tabs{position:absolute;left:0;right:0;bottom:0;display:flex;border-top:1px solid rgba(74,64,48,.4);background:rgba(11,10,7,.95);}
+    .tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 0 12px;font-size:11px;font-weight:700;color:var(--ink-faint);}
+  </style>
+</helmet>
+
+<div>
+  <header class="top">
+    <span class="top__mark"><i class="clip-pennant"></i>KUT</span>
+    <div class="top__right">
+      <span class="coins"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 8v8M9.5 10a2.3 2.3 0 0 1 2.5-1.6c1.4 0 2.4.7 2.4 1.8s-1 1.6-2.4 1.8c-1.4.2-2.4.8-2.4 1.8s1 1.8 2.4 1.8a2.4 2.4 0 0 0 2.5-1.6"/></svg>1,340</span>
+      <span class="burger"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></span>
+    </div>
+  </header>
+
+  <main>
+    <a class="back" href="#">&larr; All issues</a>
+
+    <div class="mast__rule-top"></div>
+    <div class="mast__row">
+      <h1 class="mast__name">KUT Chronicle</h1>
+      <span class="mast__no"><b>No. 14</b><span>Season 1</span></span>
+    </div>
+    <div class="mast__rule-bot"></div>
+    <div class="dateline">
+      <span>Week 36 &middot; Terrible Football Haarlem</span>
+      <em>31 August &ndash; 6 September 2026</em>
+    </div>
+
+    <p class="standfirst">Two sessions, <b>25 appearances</b> and <b>40 goals</b> &mdash; and three cards crossed into a new tier.</p>
+
+    <section class="day">
+      <div class="day__when">
+        <p class="kicker">Matchday one &middot; Monday</p>
+        <h2>31 August</h2>
+      </div>
+      <div class="day__tally">
+        <div><b>14</b><span>Attended</span></div>
+        <div><b>22</b><span>Goals</span></div>
+      </div>
+      <p class="bibs">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h8l4 3-2.5 3H18v10H6V10H4.5L2 7z"/></svg>
+        Bibs brought by <b>Kees Boonstra</b>
+      </p>
+      <div class="roster">
+        <div class="row"><span class="row__name">Stef Lammers</span><span class="row__g">4 goals</span></div>
+        <div class="row"><span class="row__name">Gijs Terpstra</span><span class="row__g">3 goals</span></div>
+        <div class="row"><span class="row__name">Tommy Vos</span><span class="row__g">3 goals</span></div>
+        <div class="row"><span class="row__name">Kevin Broer</span><span class="row__g">2 goals</span></div>
+        <div class="row"><span class="row__name">Ruben de Vries</span><span class="row__g">2 goals</span></div>
+        <div class="row"><span class="row__name">Mo El Baz</span><span class="row__g">2 goals</span></div>
+        <div class="row"><span class="row__name">Sander Bakker</span><span class="row__g">2 goals</span></div>
+        <div class="row"><span class="row__name">Thijs van Dijk</span><span class="row__g">1 goal</span></div>
+        <div class="row"><span class="row__name">Ilias Ouali</span><span class="row__g">1 goal</span></div>
+        <div class="row"><span class="row__name">Niels Dekker</span><span class="row__g">1 goal</span></div>
+        <div class="row"><span class="row__name">Milan Groot</span><span class="row__g">1 goal</span></div>
+        <div class="row"><span class="row__name">Bram Kuipers</span><span class="row__g row__g--none">&mdash;</span></div>
+        <div class="row"><span class="row__name">Daan Hoekstra</span><span class="row__g row__g--none">&mdash;</span></div>
+        <div class="row"><span class="row__name">Martijn van Oostrom</span><span class="row__g row__g--none">&mdash;</span></div>
+      </div>
+    </section>
+
+    <section class="day">
+      <div class="day__when">
+        <p class="kicker">Matchday two &middot; Friday</p>
+        <h2>4 September</h2>
+      </div>
+      <div class="day__tally">
+        <div><b>11</b><span>Attended</span></div>
+        <div><b>18</b><span>Goals</span></div>
+      </div>
+      <p class="bibs">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h8l4 3-2.5 3H18v10H6V10H4.5L2 7z"/></svg>
+        Bibs brought by <b>Bram Kuipers</b>
+      </p>
+      <div class="roster">
+        <div class="row"><span class="row__name">Tommy Vos</span><span class="row__g">5 goals</span></div>
+        <div class="row"><span class="row__name">Stef Lammers</span><span class="row__g">3 goals</span></div>
+        <div class="row"><span class="row__name">Nordin Ciss&eacute;</span><span class="row__g">3 goals</span></div>
+        <div class="row"><span class="row__name">Kevin Broer</span><span class="row__g">2 goals</span></div>
+        <div class="row"><span class="row__name">Thijs van Dijk</span><span class="row__g">2 goals</span></div>
+        <div class="row"><span class="row__name">Ruben de Vries</span><span class="row__g">1 goal</span></div>
+        <div class="row"><span class="row__name">Jesse Brouwer</span><span class="row__g">1 goal</span></div>
+        <div class="row"><span class="row__name">Floris Aalbers</span><span class="row__g">1 goal</span></div>
+        <div class="row"><span class="row__name">Joost Verhoeven</span><span class="row__g row__g--none">&mdash;</span></div>
+        <div class="row"><span class="row__name">Wouter Prins</span><span class="row__g row__g--none">&mdash;</span></div>
+        <div class="row"><span class="row__name">Martijn van Oostrom</span><span class="row__g row__g--none">&mdash;</span></div>
+      </div>
+    </section>
+
+    <section class="cross">
+      <p class="kicker">This week&rsquo;s promotions</p>
+      <h2 class="display">Crossings</h2>
+      <p class="cross__lead">Ratings move once per football week. These three cards changed material overnight &mdash; every copy in the club changed with them.</p>
+
+      <div class="cross__list">
+        <div class="cross__item">
+          <div class="cross__top">
+            <span class="cross__who"><b>Ruben de Vries</b><span>Defender</span></span>
+            <span class="cross__ovr"><b>81</b><span>OVR</span></span>
+          </div>
+          <div class="cross__move">
+            <span class="tierchip"><i class="t-holo"><b></b></i><u>Holo</u></span>
+            <svg class="cross__arrow" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13"/><path d="M13 6l6 6-6 6"/></svg>
+            <span class="tierchip"><i class="t-elite"><b></b></i><u>Elite</u></span>
+          </div>
+        </div>
+
+        <div class="cross__item">
+          <div class="cross__top">
+            <span class="cross__who"><b>Tommy Vos</b><span>Playmaker</span></span>
+            <span class="cross__ovr"><b>71</b><span>OVR</span></span>
+          </div>
+          <div class="cross__move">
+            <span class="tierchip"><i class="t-gold"><b></b></i><u>Gold</u></span>
+            <svg class="cross__arrow" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13"/><path d="M13 6l6 6-6 6"/></svg>
+            <span class="tierchip"><i class="t-holo"><b></b></i><u>Holo</u></span>
+          </div>
+        </div>
+
+        <div class="cross__item">
+          <div class="cross__top">
+            <span class="cross__who"><b>Milan Groot</b><span>Defender</span></span>
+            <span class="cross__ovr"><b>52</b><span>OVR</span></span>
+          </div>
+          <div class="cross__move">
+            <span class="tierchip"><i class="t-bronze"><b></b></i><u>Bronze</u></span>
+            <svg class="cross__arrow" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13"/><path d="M13 6l6 6-6 6"/></svg>
+            <span class="tierchip"><i class="t-silver"><b></b></i><u>Silver</u></span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <nav class="pager">
+      <a href="#"><span>&larr; Previous issue</span>Week 35 &middot; 24 August</a>
+      <a href="#"><span>Next issue &rarr;</span>Week 37 &middot; 7 September</a>
+    </nav>
+  </main>
+
+  <nav class="tabs">
+    <span class="tab"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.5 12 4l8 7.5"/><path d="M6 10v9h12v-9"/><path d="M10 19v-5h4v5"/></svg>Home</span>
+    <span class="tab"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="3.5" width="11" height="15" rx="1.6" transform="rotate(8 12.5 11)"/><rect x="4.5" y="6" width="11" height="15" rx="1.6" fill="#0b0a07"/></svg>Collection</span>
+    <span class="tab"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5 12 4l8 4.5v8L12 21l-8-4.5z"/><path d="M4 8.5 12 13l8-4.5"/><path d="M12 13v8"/></svg>Packs</span>
+    <span class="tab"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h13"/><path d="M13 4l4 4-4 4"/><path d="M21 16H8"/><path d="M11 20l-4-4 4-4"/></svg>Market</span>
+    <span class="tab"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 2.5v5.2C19 15.8 16 19 12 21c-4-2-7-5.2-7-10.3V5.5z"/><path d="M12 8v6"/><path d="M9.2 10.8h5.6"/></svg>Club</span>
+  </nav>
+</div>
+</x-dc>
+</body>
+</html>

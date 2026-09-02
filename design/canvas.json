@@ -1,0 +1,46 @@
+{
+  "artboards": [
+    { "file": "Main.dc.html", "title": "Album — bound spread (desktop)", "x": 0, "y": 0, "w": 1440, "h": 1660 },
+    { "file": "AlbumMobile.dc.html", "title": "Album — one leaf (mobile)", "x": 1560, "y": 0, "w": 390, "h": 2100 },
+
+    { "file": "ChronicleIndex.dc.html", "title": "Chronicle index — desktop", "x": 0, "y": 2220, "w": 1440, "h": 1420 },
+    { "file": "ChronicleIndexMobile.dc.html", "title": "Chronicle index — mobile", "x": 1560, "y": 2220, "w": 390, "h": 1300 },
+
+    { "file": "Chronicle.dc.html", "title": "Chronicle issue — desktop", "x": 0, "y": 3780, "w": 1440, "h": 1800 },
+    { "file": "ChronicleMobile.dc.html", "title": "Chronicle issue — mobile", "x": 1560, "y": 3780, "w": 390, "h": 2520 },
+
+    { "file": "Graph.dc.html", "title": "Rating history — desktop", "x": 0, "y": 6440, "w": 1440, "h": 1360 },
+    { "file": "GraphMobile.dc.html", "title": "Rating history — mobile", "x": 1560, "y": 6440, "w": 390, "h": 1440 }
+  ],
+  "annotations": [
+    {
+      "id": "note-album-a",
+      "x": -380,
+      "y": 40,
+      "w": 290,
+      "text": "PANINI ALBUM — /club/collection\n\nThe spine is PAGES: a fixed nine slots per page, ordered alphabetically by display name, 63 players = 7 pages. Desktop shows a two-page spread, mobile one leaf; page numbers are identical on both.\n\nThis is what makes the archetype skew harmless. Archetype stops being the structure and becomes a LENS — pick one and the album re-paginates to just those players.\n\n\"Specialists 14\" is the useful cut: the people who actually chose a type. The other 49 are All-rounders by default, which is why every one of their cards shows six identical numbers.\n\nSlot numbers are positional, not permanent: a new player joining mid-alphabet shifts every number after them."
+    },
+    {
+      "id": "note-index",
+      "x": -380,
+      "y": 2260,
+      "w": 290,
+      "text": "CHRONICLE INDEX — /chronicle\n\nReplaces /sessions. The latest issue gets the front page; earlier ones are a back-issue run.\n\nOnly weeks with a published session appear — note the jump from issue 12 (week of 17 Aug) to issue 11 (week of 3 Aug). That week had no TFH session, so nothing happened to anyone's rating and there is no issue. No placeholder row.\n\nIssue 11 also shows the no-crossings case: greyed, not hidden, because the row still has its attendance to report."
+    },
+    {
+      "id": "note-issue",
+      "x": -380,
+      "y": 3820,
+      "w": 290,
+      "text": "CHRONICLE ISSUE — /chronicle/2026-08-31\n\nOne issue per ISO football week; both sessions nested as matchday reports.\n\nv1 blocks only: matchdays + scorers + bibs, then tier crossings (promotions).\n\nThe crossings block is omitted entirely — no empty heading — when there is nothing to say."
+    },
+    {
+      "id": "note-graph",
+      "x": -380,
+      "y": 6480,
+      "w": 290,
+      "text": "RATING HISTORY — /players/[slug]\n\nReplaces the RatingHistory sparkline. Hand-drawn SVG: the app's CSP (style-src 'self' nonce) strips inline style, which rules out every charting library.\n\nFixed tier-band domain, never auto-fit to the data.\n\nThe desktop artboard carries a second panel: the one-point state almost everyone sees at launch."
+    }
+  ],
+  "launch": { "view": "canvas" }
+}

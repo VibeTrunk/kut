@@ -1,0 +1,770 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Instrument+Serif&display=swap">
+  <style>
+    :root{
+      --board:#15130f; --board-deep:#0b0a07; --panel:#211c15; --panel-2:#2a2318;
+      --line:#4a4030; --ink:#f4efe3; --ink-dim:#b3a891; --ink-faint:#8a8072; --ink-on-accent:#1c150a;
+      --brass:#e0ac4a; --steel:#8fb0c2; --moss:#8bbd6c; --brick:#dd7a55;
+      --sans:'Archivo','Helvetica Neue',Helvetica,Arial,sans-serif;
+      --serif:'Instrument Serif',Georgia,'Times New Roman',serif;
+    }
+    *{box-sizing:border-box;}
+    body{margin:0;font-family:var(--sans);color:var(--ink);
+      background:radial-gradient(120% 78% at 50% -8%, #221c13 0%, #15130f 46%, #0b0a07 100%);}
+    a{color:var(--brass);text-decoration:none;} a:hover{color:#f0c470;}
+    .display{font-family:var(--serif);font-weight:400;line-height:.94;letter-spacing:-.012em;}
+    .kicker{font-size:11.2px;font-weight:800;text-transform:uppercase;letter-spacing:.26em;color:var(--brass);margin:0;}
+    .clip-pennant{clip-path:polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%);}
+
+    .nav{height:64px;border-bottom:1px solid rgba(74,64,48,.4);background:rgba(11,10,7,.8);}
+    .nav__in{max-width:1152px;margin:0 auto;height:64px;padding:0 24px;display:flex;align-items:center;gap:24px;}
+    .nav__mark{display:flex;align-items:center;gap:10px;font-size:20px;font-weight:900;letter-spacing:-.02em;color:var(--ink);}
+    .nav__mark i{display:block;width:14px;height:16px;background:var(--brass);}
+    .nav__links{display:flex;flex:1;align-items:center;gap:4px;}
+    .nav__link{display:flex;align-items:center;gap:8px;border-radius:8px;padding:8px 12px;font-size:14px;font-weight:700;color:var(--ink-dim);}
+    .nav__link--on{background:rgba(224,172,74,.1);color:var(--brass);}
+    .nav__right{display:flex;align-items:center;gap:12px;}
+    .coins{display:flex;align-items:center;gap:6px;border:1px solid rgba(224,172,74,.3);border-radius:999px;
+      background:linear-gradient(to bottom, rgba(224,172,74,.15), rgba(224,172,74,.05));padding:6px 14px;
+      font-size:14px;font-weight:900;font-variant-numeric:tabular-nums;color:var(--brass);}
+    .more{display:flex;align-items:center;gap:6px;padding:0 12px;font-size:14px;font-weight:700;color:var(--ink-dim);}
+    .avatar{display:flex;width:36px;height:36px;align-items:center;justify-content:center;border-radius:999px;background:var(--brass);font-size:12px;font-weight:900;color:var(--ink-on-accent);}
+
+    main{padding:40px;}
+    .shell{max-width:1152px;margin:0 auto;padding:32px 0 64px;}
+    .head{display:flex;align-items:flex-end;justify-content:space-between;gap:40px;}
+    .head h1{margin:12px 0 0;font-size:60px;}
+    .stats{margin:14px 0 0;font-size:12px;font-weight:700;color:var(--ink-faint);}
+    .prog{margin-top:22px;max-width:520px;}
+    .prog__fig{display:flex;align-items:baseline;gap:12px;}
+    .prog__n{font-family:var(--serif);font-size:44px;line-height:1;color:var(--brass);font-variant-numeric:tabular-nums;}
+    .prog__of{font-size:13px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-dim);}
+    .prog__bar{display:block;width:100%;height:6px;margin-top:12px;}
+    .tools{display:flex;flex-direction:column;align-items:flex-end;gap:14px;}
+    .seg{display:flex;border:1px solid var(--line);border-radius:12px;background:rgba(11,10,7,.6);padding:3px;}
+    .seg a{min-height:38px;display:flex;align-items:center;padding:0 18px;border-radius:9px;font-size:13px;font-weight:800;color:var(--ink-faint);}
+    .seg a.on{background:rgba(224,172,74,.12);color:var(--brass);box-shadow:inset 0 0 0 1px rgba(224,172,74,.35);}
+    .nudge{display:flex;align-items:center;gap:9px;padding:9px 15px;border-radius:999px;
+      border:1px solid rgba(92,68,25,.6);background:rgba(43,31,10,.55);font-size:12.5px;font-weight:700;color:var(--ink-dim);}
+    .nudge b{color:var(--brass);font-weight:800;}
+
+    /* ---- lenses: what the album is filtered to. Pagination adapts. ---- */
+    .lens{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-top:34px;padding-bottom:24px;
+      border-bottom:1px solid rgba(74,64,48,.4);}
+    .lens__lab{font-size:10.5px;font-weight:800;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-faint);margin-right:4px;}
+    .chip{display:flex;align-items:center;gap:8px;min-height:38px;padding:0 15px;border-radius:999px;
+      border:1px solid var(--line);background:rgba(11,10,7,.5);font-size:12.5px;font-weight:800;color:var(--ink-dim);}
+    .chip b{font-variant-numeric:tabular-nums;font-weight:900;color:var(--ink-faint);}
+    .chip--on{border-color:rgba(224,172,74,.5);background:rgba(224,172,74,.12);color:var(--brass);}
+    .chip--on b{color:var(--brass);}
+    .chip--gap b{color:var(--brick);}
+    .lens__div{width:1px;height:24px;background:rgba(74,64,48,.7);margin:0 5px;}
+    .sel{display:flex;align-items:center;gap:9px;min-height:38px;padding:0 14px;border-radius:12px;
+      border:1px solid var(--line);background:rgba(11,10,7,.6);font-size:12.5px;font-weight:800;color:var(--ink-dim);}
+    .sel svg{color:var(--ink-faint);}
+
+    /* ---- the bound spread ---- */
+    .spreadwrap{position:relative;margin-top:34px;}
+    .spread{position:relative;display:grid;grid-template-columns:1fr 1fr;border-radius:20px;overflow:hidden;
+      box-shadow:0 2.4rem 4rem -1.2rem rgba(0,0,0,.85), 0 0 0 1px rgba(74,64,48,.55);}
+    .page{position:relative;padding:26px;background:linear-gradient(168deg, #1c1811 0%, #16130d 62%, #121009 100%);}
+    .page--l{box-shadow:inset -1px 0 0 rgba(0,0,0,.5);}
+    .page--r{box-shadow:inset 1px 0 0 rgba(244,239,227,.045);}
+    /* the fold: what tells you this is one bound object, not two panels */
+    .gutter{position:absolute;top:0;bottom:0;left:50%;width:56px;transform:translateX(-28px);pointer-events:none;z-index:5;
+      background:linear-gradient(90deg, rgba(0,0,0,0) 0%, rgba(0,0,0,.42) 38%, rgba(0,0,0,.62) 50%, rgba(0,0,0,.42) 62%, rgba(0,0,0,0) 100%);}
+    .gutter::after{content:"";position:absolute;top:0;bottom:0;left:50%;width:1px;background:rgba(224,172,74,.13);}
+    /* outer corner lift, so each leaf looks turnable */
+    .page__curl{position:absolute;bottom:0;width:74px;height:74px;pointer-events:none;}
+    .page--l .page__curl{left:0;background:linear-gradient(45deg, rgba(244,239,227,.05) 0%, transparent 58%);}
+    .page--r .page__curl{right:0;background:linear-gradient(315deg, rgba(244,239,227,.05) 0%, transparent 58%);}
+
+    .page__head{display:flex;align-items:baseline;justify-content:space-between;gap:16px;
+      padding-bottom:13px;margin-bottom:20px;border-bottom:1px solid rgba(74,64,48,.5);}
+    .page__n{font-family:var(--serif);font-size:23px;line-height:1;}
+    .page__range{font-size:10px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:rgba(138,128,114,.75);}
+    .page__done{font-size:12px;font-weight:900;font-variant-numeric:tabular-nums;color:var(--ink-faint);}
+    .page__done em{font-style:normal;color:var(--brass);}
+    .page__foot{margin-top:20px;font-size:11px;font-weight:800;font-variant-numeric:tabular-nums;color:rgba(138,128,114,.6);}
+    .page--l .page__foot{text-align:left;} .page--r .page__foot{text-align:right;}
+
+    .grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;}
+    .slot{position:relative;}
+    .slot__no{display:block;margin:0 0 6px;font-size:9.5px;font-weight:800;letter-spacing:.18em;
+      font-variant-numeric:tabular-nums;color:rgba(138,128,114,.5);}
+    .pill{position:absolute;left:50%;transform:translateX(-50%);z-index:10;top:28px;border-radius:999px;
+      padding:3px 9px;font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.09em;white-space:nowrap;background:rgba(11,10,7,.9);}
+    .pill--listed{border:1px solid rgba(224,172,74,.55);color:var(--brass);}
+    .pill--escrow{border:1px solid rgba(143,176,194,.5);color:var(--steel);}
+
+    .stack{position:relative;}
+    .stack__sheet{position:absolute;border-radius:.9rem;background:rgba(233,229,217,.14);box-shadow:0 .5rem 1rem -.4rem rgba(0,0,0,.7);}
+    .stack__sheet--a{inset:8px -7px -8px 7px;}
+    .stack__sheet--b{inset:4px -3px -4px 3px;background:rgba(233,229,217,.24);}
+    .stack__n{position:absolute;right:-5px;bottom:-6px;z-index:12;border-radius:999px;
+      border:1px solid rgba(224,172,74,.55);background:rgba(11,10,7,.94);padding:3px 9px;
+      font-size:11px;font-weight:900;font-variant-numeric:tabular-nums;color:var(--brass);box-shadow:0 .3rem .7rem rgba(0,0,0,.55);}
+
+    .empty{position:relative;width:100%;aspect-ratio:5/7;border-radius:.9rem;overflow:hidden;container-type:inline-size;
+      background:linear-gradient(180deg, rgba(4,4,3,.7) 0%, rgba(14,12,9,.46) 100%);
+      box-shadow:inset 0 2px 5px rgba(0,0,0,.85), inset 0 -1px 0 rgba(244,239,227,.045), inset 0 0 0 1px rgba(224,172,74,.09);}
+    .empty::after{content:"";position:absolute;inset:6px;border-radius:.58rem;border:1px dashed rgba(224,172,74,.2);}
+    .empty__ghost{position:absolute;inset:0;display:grid;place-items:center;opacity:.5;}
+    .empty__ghost svg{width:74%;height:74%;transform:translateY(-6%);}
+    .empty__pennant{position:absolute;top:0;right:1.15em;z-index:3;display:grid;place-items:center;width:2.5em;height:3.1em;
+      padding-bottom:.5em;font-size:4cqi;background:rgba(224,172,74,.11);clip-path:polygon(0 0, 100% 0, 100% 84%, 50% 100%, 0 84%);}
+    .empty__pennant i{display:block;width:.95em;height:.95em;background:rgba(224,172,74,.42);}
+    .empty__plate{position:absolute;inset:auto 0 0;padding:1.05em 1.05em 1.1em;font-size:4cqi;
+      background:linear-gradient(180deg, rgba(11,10,7,0) 0%, rgba(11,10,7,.62) 46%, rgba(11,10,7,.86) 100%);}
+    .empty__plate h3{margin:0;font-size:1.4em;font-weight:800;line-height:1.04;letter-spacing:-.018em;
+      color:rgba(179,168,145,.78);text-shadow:0 1px 0 rgba(0,0,0,.75);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    .empty__plate p{margin:.5em 0 0;font-size:.76em;font-weight:800;letter-spacing:.2em;text-transform:uppercase;color:rgba(138,128,114,.72);}
+
+    /* ---- turn controls ---- */
+    .turn{position:absolute;top:50%;margin-top:-26px;width:52px;height:52px;border-radius:999px;display:grid;place-items:center;
+      border:1px solid rgba(74,64,48,.9);background:rgba(11,10,7,.92);color:var(--ink-dim);
+      box-shadow:0 .8rem 1.6rem -.5rem rgba(0,0,0,.8);}
+    .turn--prev{left:-76px;} .turn--next{right:-76px;color:var(--brass);border-color:rgba(224,172,74,.45);}
+
+    /* ---- page index: every page's completion at a glance ---- */
+    .index{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:34px;}
+    .pg{width:74px;padding:9px 0 8px;border-radius:11px;border:1px solid rgba(74,64,48,.6);
+      background:rgba(11,10,7,.45);text-align:center;}
+    .pg--on{border-color:rgba(224,172,74,.55);background:rgba(224,172,74,.1);}
+    .pg b{display:block;font-size:13px;font-weight:900;font-variant-numeric:tabular-nums;color:var(--ink-faint);}
+    .pg--on b{color:var(--brass);}
+    .pg svg{display:block;width:46px;height:4px;margin:7px auto 0;}
+    .pg span{display:block;margin-top:6px;font-size:9.5px;font-weight:800;font-variant-numeric:tabular-nums;color:rgba(138,128,114,.7);}
+
+    /* ===== live card ===== */
+    .live-card{--stock:#e9e5d9;--ci:#3f3b33;--plate:#3b3830;--plate-ink:#f7f4ec;--rule:rgb(63 59 51 / 20%);
+      --edge:rgb(255 255 255 / 50%);--shirt:var(--plate);--shirt-ink:var(--plate-ink);
+      --lift:0 .8rem 1.6rem -.6rem rgb(0 0 0 / 66%), 0 .12rem .4rem rgb(0 0 0 / 40%);
+      container-type:inline-size;position:relative;isolation:isolate;display:grid;grid-template-rows:1fr auto auto;
+      width:100%;aspect-ratio:5/7;overflow:hidden;border-radius:.9rem;background:var(--stock);box-shadow:var(--lift);color:var(--ci);}
+    .live-card__grain,.live-card__frame,.live-card__glow{position:absolute;inset:0;border-radius:inherit;pointer-events:none;}
+    .live-card__grain{z-index:4;opacity:.5;background-image:radial-gradient(rgb(0 0 0 / 17%) .5px, transparent .6px);background-size:3px 3px;mix-blend-mode:multiply;}
+    .live-card__glow{z-index:0;opacity:0;}
+    .live-card__frame{z-index:6;font-size:4cqi;box-shadow:inset 0 0 0 .1em var(--edge), inset 0 0 0 .34em rgb(0 0 0 / 5.5%);}
+    .live-card__art{position:relative;z-index:1;overflow:hidden;font-size:4cqi;}
+    .live-card__portrait{position:absolute;inset:0;}
+    .live-card__portrait svg{display:block;width:100%;height:100%;object-fit:cover;}
+    .live-card__topscrim{position:absolute;inset:0 auto auto 0;z-index:2;width:66%;height:46%;
+      background:radial-gradient(120% 120% at top left, color-mix(in srgb, var(--stock) 88%, transparent) 0%, color-mix(in srgb, var(--stock) 32%, transparent) 38%, transparent 70%);}
+    .live-card__scrim{position:absolute;inset:auto 0 0;z-index:2;height:46%;
+      background:linear-gradient(180deg, rgb(0 0 0 / 0%) 0%, color-mix(in srgb, var(--stock) 82%, transparent) 100%);}
+    .live-card__ovr{position:absolute;top:.85em;left:1.05em;z-index:3;display:grid;margin:0;line-height:.8;}
+    .live-card__ovr b{font-size:3.5em;font-weight:900;font-variant-numeric:tabular-nums;letter-spacing:-.045em;}
+    .live-card__ovr span{margin-top:.5em;font-size:.82em;font-weight:800;letter-spacing:.24em;opacity:.62;}
+    .live-card__pennant{position:absolute;top:0;right:1.15em;z-index:3;display:grid;place-items:center;width:2.5em;height:3.1em;
+      padding-bottom:.5em;font-size:4cqi;background:var(--plate);clip-path:polygon(0 0, 100% 0, 100% 84%, 50% 100%, 0 84%);
+      box-shadow:0 .3em .6em rgb(0 0 0 / 30%);color:var(--plate-ink);}
+    .live-card__tier-icon{display:block;width:.95em;height:.95em;background:currentColor;}
+    .ti--common{border-radius:50%;}
+    .ti--bronze{clip-path:polygon(50% 6%, 6% 94%, 94% 94%);}
+    .ti--silver{clip-path:polygon(50% 0, 100% 50%, 50% 100%, 0 50%);}
+    .ti--gold{clip-path:polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%);}
+    .ti--holo{clip-path:polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);}
+    .ti--elite{clip-path:polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);}
+    .live-card__plate{position:relative;z-index:2;padding:.78em 1.15em .72em;font-size:4cqi;background:var(--plate);color:var(--plate-ink);}
+    .live-card__plate h2{overflow:hidden;margin:0;font-size:1.62em;font-weight:800;line-height:1.04;letter-spacing:-.018em;text-overflow:ellipsis;white-space:nowrap;}
+    .live-card__plate p{margin:.35em 0 0;font-size:.82em;font-weight:700;letter-spacing:.15em;text-transform:uppercase;opacity:.74;}
+    .live-card__stats{position:relative;z-index:2;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.55em .7em;margin:0;padding:.95em 1.1em 1.15em;font-size:4cqi;}
+    .live-card__stats div{display:flex;align-items:baseline;gap:.45em;padding-bottom:.32em;border-bottom:.1em solid var(--rule);}
+    .live-card__stats dt{min-width:2.9em;margin:0;font-size:.8em;font-weight:800;letter-spacing:.09em;opacity:.55;}
+    .live-card__stats dd{margin:0;font-size:1.3em;font-weight:900;font-variant-numeric:tabular-nums;}
+    .sb-ground{fill:color-mix(in srgb, var(--ci) 16%, var(--stock));}
+    .sb-body{fill:var(--shirt);}
+    .sb-seam{stroke:var(--shirt-ink);stroke-opacity:.16;stroke-width:2;}
+    .sb-name{fill:var(--shirt-ink);font-family:var(--sans);font-weight:800;letter-spacing:.16em;}
+    .sb-no{fill:var(--shirt-ink);font-family:var(--sans);font-weight:900;font-variant-numeric:tabular-nums;}
+    .halftone{position:absolute;inset:0;background-image:radial-gradient(color-mix(in srgb, var(--ci) 14%, transparent) 1.05px, transparent 1.15px);background-size:6px 6px;}
+    .live-card[data-rarity="common"] .live-card__grain{opacity:.66;}
+    .live-card[data-rarity="bronze"]{--stock:#ecd8b1;--ci:#57390f;--plate:#8a5326;--plate-ink:#fdf3e2;--rule:rgb(87 57 15 / 24%);--edge:rgb(255 247 232 / 62%);}
+    .live-card[data-rarity="silver"]{--stock:#e3e8eb;--ci:#313b45;--plate:#4b5761;--plate-ink:#f5f8fa;--rule:rgb(49 59 69 / 22%);--edge:rgb(255 255 255 / 72%);}
+    .live-card[data-rarity="silver"] .live-card__plate,.live-card[data-rarity="silver"] .live-card__pennant{
+      background-image:repeating-linear-gradient(96deg, rgb(255 255 255 / 16%) 0 1px, rgb(0 0 0 / 7%) 1px 3px), linear-gradient(178deg,#5e6b77 0%,#414b55 55%,#59646f 100%);}
+    .live-card[data-rarity="gold"]{--stock:#f7e7b2;--ci:#543609;--plate:#8a6414;--plate-ink:#fff6df;--rule:rgb(84 54 9 / 24%);--edge:rgb(255 246 222 / 75%);
+      box-shadow:var(--lift), 0 0 1.4rem rgb(224 172 74 / 12%);}
+    .live-card[data-rarity="gold"] .live-card__plate,.live-card[data-rarity="gold"] .live-card__pennant{
+      background-image:linear-gradient(100deg,#6b4a0d 0%,#b98f33 18%,#f2dd9a 30%,#c79b3d 44%,#7a560f 62%,#d8b45c 82%,#6b4a0d 100%);
+      background-size:260% 100%;background-position:32% 50%;}
+    .live-card[data-rarity="gold"] .live-card__ovr b{text-shadow:0 .045em 0 rgb(255 251 232 / 80%), 0 -.03em 0 rgb(84 54 9 / 30%), 0 .09em .12em rgb(84 54 9 / 25%);}
+    .live-card[data-rarity="holo"]{--stock:#ece7f4;--ci:#3a2a52;--plate:#574481;--plate-ink:#ffffff;--rule:rgb(58 42 82 / 20%);--edge:rgb(255 255 255 / 80%);
+      box-shadow:var(--lift), 0 0 1.8rem rgb(140 110 230 / 22%);}
+    .live-card[data-rarity="holo"] .live-card__frame{
+      box-shadow:inset 0 0 0 .1em rgb(255 255 255 / 80%), inset 0 .14em .45em rgb(94 211 200 / 30%), inset 0 -.14em .45em rgb(199 111 214 / 30%),
+        inset .16em 0 .45em rgb(123 126 224 / 26%), inset -.16em 0 .45em rgb(255 214 120 / 22%), inset 0 0 1.4em rgb(150 120 255 / 20%);}
+    .live-card[data-rarity="elite"]{--stock:#131009;--ci:#f2e6cb;--plate:#0d0b07;--plate-ink:#191204;--rule:rgb(233 196 106 / 24%);
+      --edge:rgb(233 196 106 / 42%);--shirt:#7c5f19;--shirt-ink:#f8ecc6;
+      background:radial-gradient(126% 92% at 50% -6%, #2c2314 0%, #141109 52%, #090806 100%);
+      box-shadow:0 1.1rem 2rem -.6rem rgb(0 0 0 / 82%), 0 0 0 1px rgb(233 196 106 / 32%), 0 0 2.2rem rgb(224 172 74 / 20%);}
+    .live-card[data-rarity="elite"] .live-card__grain{opacity:.34;mix-blend-mode:screen;background-image:radial-gradient(rgb(233 196 106 / 40%) .5px, transparent .6px);}
+    .live-card[data-rarity="elite"] .live-card__glow{inset:-25%;border-radius:50%;opacity:1;background:radial-gradient(closest-side, rgb(224 172 74 / 30%), rgb(224 172 74 / 0%) 72%);}
+    .live-card[data-rarity="elite"] .live-card__scrim{height:50%;background:linear-gradient(180deg, rgb(9 8 6 / 0%) 0%, rgb(12 10 7 / 72%) 58%, #100d08 100%);}
+    .live-card[data-rarity="elite"] .live-card__plate,.live-card[data-rarity="elite"] .live-card__pennant{
+      background-image:linear-gradient(100deg,#7c5f19 0%,#c8a147 16%,#f6e6b4 30%,#e9c46a 44%,#8a6a1f 62%,#dcbc6b 82%,#7c5f19 100%);
+      background-size:250% 100%;background-position:28% 50%;}
+    .live-card[data-rarity="elite"] .live-card__pennant{color:#191204;}
+    .live-card[data-rarity="elite"] .live-card__ovr b{color:#f6e6b4;text-shadow:0 0 .5em rgb(233 196 106 / 55%), 0 .05em .06em rgb(0 0 0 / 60%);}
+    .live-card[data-rarity="elite"] .live-card__ovr span{color:#e9c46a;opacity:.8;}
+    .live-card[data-rarity="elite"] .live-card__stats dd{color:#f6e6b4;}
+    .live-card[data-rarity="elite"] .live-card__frame{box-shadow:inset 0 0 0 .1em rgb(233 196 106 / 42%), inset 0 0 1.8em rgb(224 172 74 / 20%);}
+  </style>
+</helmet>
+
+<div>
+  <header class="nav">
+    <div class="nav__in">
+      <span class="nav__mark"><i class="clip-pennant"></i>KUT</span>
+      <nav class="nav__links">
+        <span class="nav__link"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.5 12 4l8 7.5"/><path d="M6 10v9h12v-9"/><path d="M10 19v-5h4v5"/></svg>Home</span>
+        <span class="nav__link nav__link--on"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="3.5" width="11" height="15" rx="1.6" transform="rotate(8 12.5 11)"/><rect x="4.5" y="6" width="11" height="15" rx="1.6" fill="#0b0a07"/></svg>Collection</span>
+        <span class="nav__link"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5 12 4l8 4.5v8L12 21l-8-4.5z"/><path d="M4 8.5 12 13l8-4.5"/><path d="M12 13v8"/></svg>Packs</span>
+        <span class="nav__link"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h13"/><path d="M13 4l4 4-4 4"/><path d="M21 16H8"/><path d="M11 20l-4-4 4-4"/></svg>Market</span>
+        <span class="nav__link"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 2.5v5.2C19 15.8 16 19 12 21c-4-2-7-5.2-7-10.3V5.5z"/><path d="M12 8v6"/><path d="M9.2 10.8h5.6"/></svg>Club</span>
+      </nav>
+      <div class="nav__right">
+        <span class="coins"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 8v8M9.5 10a2.3 2.3 0 0 1 2.5-1.6c1.4 0 2.4.7 2.4 1.8s-1 1.6-2.4 1.8c-1.4.2-2.4.8-2.4 1.8s1 1.8 2.4 1.8a2.4 2.4 0 0 0 2.5-1.6"/></svg>1,340</span>
+        <span class="more">More<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10l5 5 5-5"/></svg></span>
+        <span class="avatar">MO</span>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="shell">
+      <header class="head">
+        <div>
+          <p class="kicker">My club</p>
+          <h1 class="display">Collection</h1>
+          <div class="prog">
+            <div class="prog__fig">
+              <span class="prog__n">47 / 63</span>
+              <span class="prog__of">TFH players collected</span>
+            </div>
+            <svg class="prog__bar" viewBox="0 0 520 6" preserveAspectRatio="none" role="img" aria-label="47 of 63 players collected">
+              <rect x="0" y="0" width="520" height="6" rx="3" fill="#2a2318"/>
+              <rect x="0" y="0" width="388" height="6" rx="3" fill="#e0ac4a"/>
+            </svg>
+            <p class="stats">128 cards &middot; 47 unique players &middot; 14,820 KUT Coins of discard value</p>
+          </div>
+        </div>
+        <div class="tools">
+          <div class="seg"><a class="on" href="#">Album</a><a href="#">Manage</a></div>
+          <span class="nudge">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 16v-4M12 8.5v.01"/></svg>
+            Your card is an All-rounder by default &mdash; <b>choose your type &rarr;</b>
+          </span>
+        </div>
+      </header>
+
+      <!-- Lenses re-cut the album; pagination follows whatever is selected. -->
+      <div class="lens">
+        <span class="lens__lab">Lens</span>
+        <span class="chip chip--on">All players <b>63</b></span>
+        <span class="chip chip--gap">Gaps only <b>16</b></span>
+        <span class="chip">Specialists <b>14</b></span>
+        <span class="lens__div"></span>
+        <span class="sel">By type<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10l5 5 5-5"/></svg></span>
+        <span class="sel">By tier<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10l5 5 5-5"/></svg></span>
+      </div>
+
+      <div class="spreadwrap">
+        <div class="spread">
+          <span class="gutter"></span>
+
+          <!-- ================= LEFT LEAF ================= -->
+          <div class="page page--l">
+            <span class="page__curl"></span>
+            <div class="page__head">
+              <span><span class="page__n">Page 5</span> <span class="page__range">&nbsp;&nbsp;Slots 37&ndash;45</span></span>
+              <span class="page__done"><em>6</em> / 9</span>
+            </div>
+            <div class="grid">
+
+              <div class="slot">
+                <span class="slot__no">37</span>
+                <div class="empty">
+                  <span class="empty__ghost"><svg viewBox="0 0 200 200" fill="none"><path d="M64,28 L84,32 Q100,48 116,32 L136,28 L164,44 L180,92 L150,108 L144,94 L144,200 L56,200 L56,94 L50,108 L20,92 L36,44 Z" stroke="rgba(224,172,74,.28)" stroke-width="2.4" stroke-linejoin="round"/><path d="M56,94 L56,200 M144,94 L144,200" stroke="rgba(224,172,74,.16)" stroke-width="2"/></svg></span>
+                  <span class="empty__pennant"><i class="ti--silver"></i></span>
+                  <div class="empty__plate"><h3>Pieter Smit</h3><p>Not collected</p></div>
+                </div>
+              </div>
+
+              <div class="slot">
+                <span class="slot__no">38</span>
+                <article class="live-card" data-rarity="common">
+                  <span class="live-card__glow"></span>
+                  <div class="live-card__art">
+                    <div class="live-card__portrait">
+                      <svg viewBox="0 0 200 200" preserveAspectRatio="xMidYMid slice">
+                        <defs><path id="p38" d="M42,74 Q100,54 158,74"></path></defs>
+                        <rect class="sb-ground" x="0" y="0" width="200" height="200"/>
+                        <path class="sb-body" d="M64,28 L84,32 Q100,48 116,32 L136,28 L164,44 L180,92 L150,108 L144,94 L144,200 L56,200 L56,94 L50,108 L20,92 L36,44 Z"/>
+                        <path class="sb-seam" d="M56,94 L56,200 M144,94 L144,200" fill="none"/>
+                        <text class="sb-name" font-size="13"><textPath href="#p38" startOffset="50%" text-anchor="middle">ROOS</textPath></text>
+                        <text class="sb-no" x="100" y="126" font-size="62" text-anchor="middle" dominant-baseline="middle">38</text>
+                      </svg><span class="halftone"></span>
+                    </div>
+                    <span class="live-card__topscrim"></span><span class="live-card__scrim"></span>
+                    <p class="live-card__ovr"><b>38</b><span>OVR</span></p>
+                    <span class="live-card__pennant"><span class="live-card__tier-icon ti--common"></span></span>
+                  </div>
+                  <div class="live-card__plate"><h2>Quinten Roos</h2><p>All-rounder &middot; Common</p></div>
+                  <dl class="live-card__stats">
+                    <div><dt>PAC</dt><dd>38</dd></div><div><dt>SHO</dt><dd>38</dd></div><div><dt>PAS</dt><dd>38</dd></div>
+                    <div><dt>DRI</dt><dd>38</dd></div><div><dt>DEF</dt><dd>38</dd></div><div><dt>PHY</dt><dd>38</dd></div>
+                  </dl>
+                  <span class="live-card__grain"></span><span class="live-card__frame"></span>
+                </article>
+              </div>
+
+              <div class="slot">
+                <span class="slot__no">39</span>
+                <div class="empty">
+                  <span class="empty__ghost"><svg viewBox="0 0 200 200" fill="none"><path d="M64,28 L84,32 Q100,48 116,32 L136,28 L164,44 L180,92 L150,108 L144,94 L144,200 L56,200 L56,94 L50,108 L20,92 L36,44 Z" stroke="rgba(224,172,74,.28)" stroke-width="2.4" stroke-linejoin="round"/><path d="M56,94 L56,200 M144,94 L144,200" stroke="rgba(224,172,74,.16)" stroke-width="2"/></svg></span>
+                  <span class="empty__pennant"><i class="ti--bronze"></i></span>
+                  <div class="empty__plate"><h3>Rick Zwart</h3><p>Not collected</p></div>
+                </div>
+              </div>
+
+              <div class="slot">
+                <span class="slot__no">40</span>
+                <article class="live-card" data-rarity="bronze">
+                  <span class="live-card__glow"></span>
+                  <div class="live-card__art">
+                    <div class="live-card__portrait">
+                      <svg viewBox="0 0 200 200" preserveAspectRatio="xMidYMid slice">
+                        <defs><path id="p40" d="M42,74 Q100,54 158,74"></path></defs>
+                        <rect class="sb-ground" x="0" y="0" width="200" height="200"/>
+                        <path class="sb-body" d="M64,28 L84,32 Q100,48 116,32 L136,28 L164,44 L180,92 L150,108 L144,94 L144,200 L56,200 L56,94 L50,108 L20,92 L36,44 Z"/>
+                        <path class="sb-seam" d="M56,94 L56,200 M144,94 L144,200" fill="none"/>
+                        <text class="sb-name" font-size="13"><textPath href="#p40" startOffset="50%" text-anchor="middle">DOES</textPath></text>
+                        <text class="sb-no" x="100" y="126" font-size="62" text-anchor="middle" dominant-baseline="middle">42</text>
+                      </svg><span class="halftone"></span>
+                    </div>
+                    <span class="live-card__topscrim"></span><span class="live-card__scrim"></span>
+                    <p class="live-card__ovr"><b>42</b><span>OVR</span></p>
+                    <span class="live-card__pennant"><span class="live-card__tier-icon ti--bronze"></span></span>
+                  </div>
+                  <div class="live-card__plate"><h2>Robin Does</h2><p>All-rounder &middot; Bronze</p></div>
+                  <dl class="live-card__stats">
+                    <div><dt>PAC</dt><dd>42</dd></div><div><dt>SHO</dt><dd>42</dd></div><div><dt>PAS</dt><dd>42</dd></div>
+                    <div><dt>DRI</dt><dd>42</dd></div><div><dt>DEF</dt><dd>42</dd></div><div><dt>PHY</dt><dd>42</dd></div>
+                  </dl>
+                  <span class="live-card__grain"></span><span class="live-card__frame"></span>
+                </article>
+              </div>
+
+              <div class="slot">
+                <span class="slot__no">41</span>
+                <article class="live-card" data-rarity="elite">
+                  <span class="live-card__glow"></span>
+                  <div class="live-card__art">
+                    <div class="live-card__portrait">
+                      <svg viewBox="0 0 200 200" preserveAspectRatio="xMidYMid slice">
+                        <defs><path id="p41" d="M42,74 Q100,54 158,74"></path></defs>
+                        <rect class="sb-ground" x="0" y="0" width="200" height="200"/>
+                        <path class="sb-body" d="M64,28 L84,32 Q100,48 116,32 L136,28 L164,44 L180,92 L150,108 L144,94 L144,200 L56,200 L56,94 L50,108 L20,92 L36,44 Z"/>
+                        <path class="sb-seam" d="M56,94 L56,200 M144,94 L144,200" fill="none"/>
+                        <text class="sb-name" font-size="13"><textPath href="#p41" startOffset="50%" text-anchor="middle">VRIES</textPath></text>
+                        <text class="sb-no" x="100" y="126" font-size="62" text-anchor="middle" dominant-baseline="middle">81</text>
+                      </svg><span class="halftone"></span>
+                    </div>
+                    <span class="live-card__topscrim"></span><span class="live-card__scrim"></span>
+                    <p class="live-card__ovr"><b>81</b><span>OVR</span></p>
+                    <span class="live-card__pennant"><span class="live-card__tier-icon ti--elite"></span></span>
+                  </div>
+                  <div class="live-card__plate"><h2>Ruben de Vries</h2><p>Defender &middot; Elite</p></div>
+                  <dl class="live-card__stats">
+                    <div><dt>PAC</dt><dd>79</dd></div><div><dt>SHO</dt><dd>74</dd></div><div><dt>PAS</dt><dd>80</dd></div>
+                    <div><dt>DRI</dt><dd>77</dd></div><div><dt>DEF</dt><dd>91</dd></div><div><dt>PHY</dt><dd>85</dd></div>
+                  </dl>
+                  <span class="live-card__grain"></span><span class="live-card__frame"></span>
+                </article>
+              </div>
+
+              <div class="slot">
+                <span class="slot__no">42</span>
+                <div class="stack">
+                  <span class="stack__sheet stack__sheet--a"></span>
+                  <span class="stack__sheet stack__sheet--b"></span>
+                  <article class="live-card" data-rarity="gold">
+                    <span class="live-card__glow"></span>
+                    <div class="live-card__art">
+                      <div class="live-card__portrait">
+                        <svg viewBox="0 0 200 200" preserveAspectRatio="xMidYMid slice">
+                          <defs><path id="p42" d="M42,74 Q100,54 158,74"></path></defs>
+                          <rect class="sb-ground" x="0" y="0" width="200" height="200"/>
+                          <path class="sb-body" d="M64,28 L84,32 Q100,48 116,32 L136,28 L164,44 L180,92 L150,108 L144,94 L144,200 L56,200 L56,94 L50,108 L20,92 L36,44 Z"/>
+                          <path class="sb-seam" d="M56,94 L56,200 M144,94 L144,200" fill="none"/>
+                          <text class="sb-name" font-size="13"><textPath href="#p42" startOffset="50%" text-anchor="middle">BAKKER</textPath></text>
+                          <text class="sb-no" x="100" y="126" font-size="62" text-anchor="middle" dominant-baseline="middle">67</text>
+                        </svg><span class="halftone"></span>
+                      </div>
+                      <span class="live-card__topscrim"></span><span class="live-card__scrim"></span>
+                      <p class="live-card__ovr"><b>67</b><span>OVR</span></p>
+                      <span class="live-card__pennant"><span class="live-card__tier-icon ti--gold"></span></span>
+                    </div>
+                    <div class="live-card__plate"><h2>Sander Bakker</h2><p>Defender &middot; Gold</p></div>
+                    <dl class="live-card__stats">
+                      <div><dt>PAC</dt><dd>65</dd></div><div><dt>SHO</dt><dd>60</dd></div><div><dt>PAS</dt><dd>66</dd></div>
+                      <div><dt>DRI</dt><dd>63</dd></div><div><dt>DEF</dt><dd>77</dd></div><div><dt>PHY</dt><dd>71</dd></div>
+                    </dl>
+                    <span class="live-card__grain"></span><span class="live-card__frame"></span>
+                  </article>
+                  <a class="stack__n" href="#">&times;3</a>
+                </div>
+              </div>
+
+              <div class="slot">
+                <span class="slot__no">43</span>
+                <div class="empty">
+                  <span class="empty__ghost"><svg viewBox="0 0 200 200" fill="none"><path d="M64,28 L84,32 Q100,48 116,32 L136,28 L164,44 L180,92 L150,108 L144,94 L144,200 L56,200 L56,94 L50,108 L20,92 L36,44 Z" stroke="rgba(224,172,74,.28)" stroke-width="2.4" stroke-linejoin="round"/><path d="M56,94 L56,200 M144,94 L144,200" stroke="rgba(224,172,74,.16)" stroke-width="2"/></svg></span>
+                  <span class="empty__pennant"><i class="ti--silver"></i></span>
+                  <div class="empty__plate"><h3>Sem Kramer</h3><p>Not collected</p></div>
+                </div>
+              </div>
+
+              <div class="slot">
+                <span class="slot__no">44</span>
+                <article class="live-card" data-rarity="holo">
+                  <span class="live-card__glow"></span>
+                  <div class="live-card__art">
+                    <div class="live-card__portrait">
+                      <svg viewBox="0 0 200 200" preserveAspectRatio="xMidYMid slice">
+                        <defs><path id="p44" d="M42,74 Q100,54 158,74"></path></defs>
+                        <rect class="sb-ground" x="0" y="0" width="200" height="200"/>
+                        <path class="sb-body" d="M64,28 L84,32 Q100,48 116,32 L136,28 L164,44 L180,92 L150,108 L144,94 L144,200 L56,200 L56,94 L50,108 L20,92 L36,44 Z"/>
+                        <path class="sb-seam" d="M56,94 L56,200 M144,94 L144,200" fill="none"/>
+                        <text class="sb-name" font-size="13"><textPath href="#p44" startOffset="50%" text-anchor="middle">LAMMERS</textPath></text>
+                        <text class="sb-no" x="100" y="126" font-size="62" text-anchor="middle" dominant-baseline="middle">74</text>
+                      </svg><span class="halftone"></span>
+                    </div>
+                    <span class="live-card__topscrim"></span><span class="live-card__scrim"></span>
+                    <p class="live-card__ovr"><b>74</b><span>OVR</span></p>
+                    <span class="live-card__pennant"><span class="live-card__tier-icon ti--holo"></span></span>
+                  </div>
+                  <div class="live-card__plate"><h2>Stef Lammers</h2><p>Finisher &middot; Holo</p></div>
+                  <dl class="live-card__stats">
+                    <div><dt>PAC</dt><dd>76</dd></div><div><dt>SHO</dt><dd>84</dd></div><div><dt>PAS</dt><dd>71</dd></div>
+                    <div><dt>DRI</dt><dd>77</dd></div><div><dt>DEF</dt><dd>66</dd></div><div><dt>PHY</dt><dd>70</dd></div>
+                  </dl>
+                  <span class="live-card__grain"></span><span class="live-card__frame"></span>
+                </article>
+              </div>
+
+              <div class="slot">
+                <span class="slot__no">45</span>
+                <article class="live-card" data-rarity="silver">
+                  <span class="live-card__glow"></span>
+                  <div class="live-card__art">
+                    <div class="live-card__portrait">
+                      <svg viewBox="0 0 200 200" preserveAspectRatio="xMidYMid slice">
+                        <defs><path id="p45" d="M42,74 Q100,54 158,74"></path></defs>
+                        <rect class="sb-ground" x="0" y="0" width="200" height="200"/>
+                        <path class="sb-body" d="M64,28 L84,32 Q100,48 116,32 L136,28 L164,44 L180,92 L150,108 L144,94 L144,200 L56,200 L56,94 L50,108 L20,92 L36,44 Z"/>
+                        <path class="sb-seam" d="M56,94 L56,200 M144,94 L144,200" fill="none"/>
+                        <text class="sb-name" font-size="13"><textPath href="#p45" startOffset="50%" text-anchor="middle">DUINKERKEN</textPath></text>
+                        <text class="sb-no" x="100" y="126" font-size="62" text-anchor="middle" dominant-baseline="middle">53</text>
+                      </svg><span class="halftone"></span>
+                    </div>
+                    <span class="live-card__topscrim"></span><span class="live-card__scrim"></span>
+                    <p class="live-card__ovr"><b>53</b><span>OVR</span></p>
+                    <span class="live-card__pennant"><span class="live-card__tier-icon ti--silver"></span></span>
+                  </div>
+                  <div class="live-card__plate"><h2>Sven Duinkerken</h2><p>All-rounder &middot; Silver</p></div>
+                  <dl class="live-card__stats">
+                    <div><dt>PAC</dt><dd>53</dd></div><div><dt>SHO</dt><dd>53</dd></div><div><dt>PAS</dt><dd>53</dd></div>
+                    <div><dt>DRI</dt><dd>53</dd></div><div><dt>DEF</dt><dd>53</dd></div><div><dt>PHY</dt><dd>53</dd></div>
+                  </dl>
+                  <span class="live-card__grain"></span><span class="live-card__frame"></span>
+                </article>
+              </div>
+
+            </div>
+            <p class="page__foot">5</p>
+          </div>
+
+          <!-- ================= RIGHT LEAF ================= -->
+          <div class="page page--r">
+            <span class="page__curl"></span>
+            <div class="page__head">
+              <span><span class="page__n">Page 6</span> <span class="page__range">&nbsp;&nbsp;Slots 46&ndash;54</span></span>
+              <span class="page__done"><em>8</em> / 9</span>
+            </div>
+            <div class="grid">
+
+              <div class="slot">
+                <span class="slot__no">46</span>
+                <article class="live-card" data-rarity="bronze">
+                  <span class="live-card__glow"></span>
+                  <div class="live-card__art">
+                    <div class="live-card__portrait">
+                      <svg viewBox="0 0 200 200" preserveAspectRatio="xMidYMid slice">
+                        <defs><path id="p46" d="M42,74 Q100,54 158,74"></path></defs>
+                        <rect class="sb-ground" x="0" y="0" width="200" height="200"/>
+                        <path class="sb-body" d="M64,28 L84,32 Q100,48 116,32 L136,28 L164,44 L180,92 L150,108 L144,94 L144,200 L56,200 L56,94 L50,108 L20,92 L36,44 Z"/>
+                        <path class="sb-seam" d="M56,94 L56,200 M144,94 L144,200" fill="none"/>
+                        <text class="sb-name" font-size="13"><textPath href="#p46" startOffset="50%" text-anchor="middle">BOSMA</textPath></text>
+                        <text class="sb-no" x="100" y="126" font-size="62" text-anchor="middle" dominant-baseline="middle">43</text>
+                      </svg><span class="halftone"></span>
+                    </div>
+                    <span class="live-card__topscrim"></span><span class="live-card__scrim"></span>
+                    <p class="live-card__ovr"><b>43</b><span>OVR</span></p>
+                    <span class="live-card__pennant"><span class="live-card__tier-icon ti--bronze"></span></span>
+                  </div>
+                  <div class="live-card__plate"><h2>Teun Bosma</h2><p>All-rounder &middot; Bronze</p></div>
+                  <dl class="live-card__stats">
+                    <div><dt>PAC</dt><dd>43</dd></div><div><dt>SHO</dt><dd>43</dd></div><div><dt>PAS</dt><dd>43</dd></div>
+                    <div><dt>DRI</dt><dd>43</dd></div><div><dt>DEF</dt><dd>43</dd></div><div><dt>PHY</dt><dd>43</dd></div>
+                  </dl>
+                  <span class="live-card__grain"></span><span class="live-card__frame"></span>
+                </article>
+              </div>
+
+              <div class="slot">
+                <span class="slot__no">47</span>
+                <article class="live-card" data-rarity="holo">
+                  <span class="live-card__glow"></span>
+                  <div class="live-card__art">
+                    <div class="live-card__portrait">
+                      <svg viewBox="0 0 200 200" preserveAspectRatio="xMidYMid slice">
+                        <defs><path id="p47" d="M42,74 Q100,54 158,74"></path></defs>
+                        <rect class="sb-ground" x="0" y="0" width="200" height="200"/>
+                        <path class="sb-body" d="M64,28 L84,32 Q100,48 116,32 L136,28 L164,44 L180,92 L150,108 L144,94 L144,200 L56,200 L56,94 L50,108 L20,92 L36,44 Z"/>
+                        <path class="sb-seam" d="M56,94 L56,200 M144,94 L144,200" fill="none"/>
+                        <text class="sb-name" font-size="13"><textPath href="#p47" startOffset="50%" text-anchor="middle">DIJK</textPath></text>
+                        <text class="sb-no" x="100" y="126" font-size="62" text-anchor="middle" dominant-baseline="middle">71</text>
+                      </svg><span class="halftone"></span>
+                    </div>
+                    <span class="live-card__topscrim"></span><span class="live-card__scrim"></span>
+                    <p class="live-card__ovr"><b>71</b><span>OVR</span></p>
+                    <span class="live-card__pennant"><span class="live-card__tier-icon ti--holo"></span></span>
+                  </div>
+                  <div class="live-card__plate"><h2>Thijs van Dijk</h2><p>Tank &middot; Holo</p></div>
+                  <dl class="live-card__stats">
+                    <div><dt>PAC</dt><dd>63</dd></div><div><dt>SHO</dt><dd>69</dd></div><div><dt>PAS</dt><dd>69</dd></div>
+                    <div><dt>DRI</dt><dd>67</dd></div><div><dt>DEF</dt><dd>75</dd></div><div><dt>PHY</dt><dd>83</dd></div>
+                  </dl>
+                  <span class="live-card__grain"></span><span class="live-card__frame"></span>
+                </article>
+              </div>
+
+              <div class="slot">
+                <span class="slot__no">48</span>
+                <div class="empty">
+                  <span class="empty__ghost"><svg viewBox="0 0 200 200" fill="none"><path d="M64,28 L84,32 Q100,48 116,32 L136,28 L164,44 L180,92 L150,108 L144,94 L144,200 L56,200 L56,94 L50,108 L20,92 L36,44 Z" stroke="rgba(224,172,74,.28)" stroke-width="2.4" stroke-linejoin="round"/><path d="M56,94 L56,200 M144,94 L144,200" stroke="rgba(224,172,74,.16)" stroke-width="2"/></svg></span>
+                  <span class="empty__pennant"><i class="ti--silver"></i></span>
+                  <div class="empty__plate"><h3>Tim Molenaar</h3><p>Not collected</p></div>
+                </div>
+              </div>
+
+              <div class="slot">
+                <span class="slot__no">49</span>
+                <article class="live-card" data-rarity="holo">
+                  <span class="live-card__glow"></span>
+                  <div class="live-card__art">
+                    <div class="live-card__portrait">
+                      <svg viewBox="0 0 200 200" preserveAspectRatio="xMidYMid slice">
+                        <defs><path id="p49" d="M42,74 Q100,54 158,74"></path></defs>
+                        <rect class="sb-ground" x="0" y="0" width="200" height="200"/>
+                        <path class="sb-body" d="M64,28 L84,32 Q100,48 116,32 L136,28 L164,44 L180,92 L150,108 L144,94 L144,200 L56,200 L56,94 L50,108 L20,92 L36,44 Z"/>
+                        <path class="sb-seam" d="M56,94 L56,200 M144,94 L144,200" fill="none"/>
+                        <text class="sb-name" font-size="13"><textPath href="#p49" startOffset="50%" text-anchor="middle">VOS</textPath></text>
+                        <text class="sb-no" x="100" y="126" font-size="62" text-anchor="middle" dominant-baseline="middle">71</text>
+                      </svg><span class="halftone"></span>
+                    </div>
+                    <span class="live-card__topscrim"></span><span class="live-card__scrim"></span>
+                    <p class="live-card__ovr"><b>71</b><span>OVR</span></p>
+                    <span class="live-card__pennant"><span class="live-card__tier-icon ti--holo"></span></span>
+                  </div>
+                  <div class="live-card__plate"><h2>Tommy Vos</h2><p>Playmaker &middot; Holo</p></div>
+                  <dl class="live-card__stats">
+                    <div><dt>PAC</dt><dd>69</dd></div><div><dt>SHO</dt><dd>69</dd></div><div><dt>PAS</dt><dd>81</dd></div>
+                    <div><dt>DRI</dt><dd>76</dd></div><div><dt>DEF</dt><dd>65</dd></div><div><dt>PHY</dt><dd>66</dd></div>
+                  </dl>
+                  <span class="live-card__grain"></span><span class="live-card__frame"></span>
+                </article>
+              </div>
+
+              <div class="slot">
+                <span class="slot__no">50</span>
+                <div class="stack">
+                  <span class="stack__sheet stack__sheet--b"></span>
+                  <article class="live-card" data-rarity="silver">
+                    <span class="live-card__glow"></span>
+                    <div class="live-card__art">
+                      <div class="live-card__portrait">
+                        <svg viewBox="0 0 200 200" preserveAspectRatio="xMidYMid slice">
+                          <defs><path id="p50" d="M42,74 Q100,54 158,74"></path></defs>
+                          <rect class="sb-ground" x="0" y="0" width="200" height="200"/>
+                          <path class="sb-body" d="M64,28 L84,32 Q100,48 116,32 L136,28 L164,44 L180,92 L150,108 L144,94 L144,200 L56,200 L56,94 L50,108 L20,92 L36,44 Z"/>
+                          <path class="sb-seam" d="M56,94 L56,200 M144,94 L144,200" fill="none"/>
+                          <text class="sb-name" font-size="13"><textPath href="#p50" startOffset="50%" text-anchor="middle">ROOS</textPath></text>
+                          <text class="sb-no" x="100" y="126" font-size="62" text-anchor="middle" dominant-baseline="middle">51</text>
+                        </svg><span class="halftone"></span>
+                      </div>
+                      <span class="live-card__topscrim"></span><span class="live-card__scrim"></span>
+                      <p class="live-card__ovr"><b>51</b><span>OVR</span></p>
+                      <span class="live-card__pennant"><span class="live-card__tier-icon ti--silver"></span></span>
+                    </div>
+                    <div class="live-card__plate"><h2>Valentijn Roos</h2><p>All-rounder &middot; Silver</p></div>
+                    <dl class="live-card__stats">
+                      <div><dt>PAC</dt><dd>51</dd></div><div><dt>SHO</dt><dd>51</dd></div><div><dt>PAS</dt><dd>51</dd></div>
+                      <div><dt>DRI</dt><dd>51</dd></div><div><dt>DEF</dt><dd>51</dd></div><div><dt>PHY</dt><dd>51</dd></div>
+                    </dl>
+                    <span class="live-card__grain"></span><span class="live-card__frame"></span>
+                  </article>
+                  <a class="stack__n" href="#">&times;2</a>
+                </div>
+              </div>
+
+              <div class="slot">
+                <span class="slot__no">51</span>
+                <span class="pill pill--listed">Listed</span>
+                <article class="live-card" data-rarity="silver">
+                  <span class="live-card__glow"></span>
+                  <div class="live-card__art">
+                    <div class="live-card__portrait">
+                      <svg viewBox="0 0 200 200" preserveAspectRatio="xMidYMid slice">
+                        <defs><path id="p51" d="M42,74 Q100,54 158,74"></path></defs>
+                        <rect class="sb-ground" x="0" y="0" width="200" height="200"/>
+                        <path class="sb-body" d="M64,28 L84,32 Q100,48 116,32 L136,28 L164,44 L180,92 L150,108 L144,94 L144,200 L56,200 L56,94 L50,108 L20,92 L36,44 Z"/>
+                        <path class="sb-seam" d="M56,94 L56,200 M144,94 L144,200" fill="none"/>
+                        <text class="sb-name" font-size="13"><textPath href="#p51" startOffset="50%" text-anchor="middle">KOK</textPath></text>
+                        <text class="sb-no" x="100" y="126" font-size="62" text-anchor="middle" dominant-baseline="middle">55</text>
+                      </svg><span class="halftone"></span>
+                    </div>
+                    <span class="live-card__topscrim"></span><span class="live-card__scrim"></span>
+                    <p class="live-card__ovr"><b>55</b><span>OVR</span></p>
+                    <span class="live-card__pennant"><span class="live-card__tier-icon ti--silver"></span></span>
+                  </div>
+                  <div class="live-card__plate"><h2>Vincent Kok</h2><p>All-rounder &middot; Silver</p></div>
+                  <dl class="live-card__stats">
+                    <div><dt>PAC</dt><dd>55</dd></div><div><dt>SHO</dt><dd>55</dd></div><div><dt>PAS</dt><dd>55</dd></div>
+                    <div><dt>DRI</dt><dd>55</dd></div><div><dt>DEF</dt><dd>55</dd></div><div><dt>PHY</dt><dd>55</dd></div>
+                  </dl>
+                  <span class="live-card__grain"></span><span class="live-card__frame"></span>
+                </article>
+              </div>
+
+              <div class="slot">
+                <span class="slot__no">52</span>
+                <article class="live-card" data-rarity="bronze">
+                  <span class="live-card__glow"></span>
+                  <div class="live-card__art">
+                    <div class="live-card__portrait">
+                      <svg viewBox="0 0 200 200" preserveAspectRatio="xMidYMid slice">
+                        <defs><path id="p52" d="M42,74 Q100,54 158,74"></path></defs>
+                        <rect class="sb-ground" x="0" y="0" width="200" height="200"/>
+                        <path class="sb-body" d="M64,28 L84,32 Q100,48 116,32 L136,28 L164,44 L180,92 L150,108 L144,94 L144,200 L56,200 L56,94 L50,108 L20,92 L36,44 Z"/>
+                        <path class="sb-seam" d="M56,94 L56,200 M144,94 L144,200" fill="none"/>
+                        <text class="sb-name" font-size="13"><textPath href="#p52" startOffset="50%" text-anchor="middle">AARTS</textPath></text>
+                        <text class="sb-no" x="100" y="126" font-size="62" text-anchor="middle" dominant-baseline="middle">46</text>
+                      </svg><span class="halftone"></span>
+                    </div>
+                    <span class="live-card__topscrim"></span><span class="live-card__scrim"></span>
+                    <p class="live-card__ovr"><b>46</b><span>OVR</span></p>
+                    <span class="live-card__pennant"><span class="live-card__tier-icon ti--bronze"></span></span>
+                  </div>
+                  <div class="live-card__plate"><h2>Wessel Aarts</h2><p>All-rounder &middot; Bronze</p></div>
+                  <dl class="live-card__stats">
+                    <div><dt>PAC</dt><dd>46</dd></div><div><dt>SHO</dt><dd>46</dd></div><div><dt>PAS</dt><dd>46</dd></div>
+                    <div><dt>DRI</dt><dd>46</dd></div><div><dt>DEF</dt><dd>46</dd></div><div><dt>PHY</dt><dd>46</dd></div>
+                  </dl>
+                  <span class="live-card__grain"></span><span class="live-card__frame"></span>
+                </article>
+              </div>
+
+              <div class="slot">
+                <span class="slot__no">53</span>
+                <span class="pill pill--escrow">In a trade</span>
+                <article class="live-card" data-rarity="common">
+                  <span class="live-card__glow"></span>
+                  <div class="live-card__art">
+                    <div class="live-card__portrait">
+                      <svg viewBox="0 0 200 200" preserveAspectRatio="xMidYMid slice">
+                        <defs><path id="p53" d="M42,74 Q100,54 158,74"></path></defs>
+                        <rect class="sb-ground" x="0" y="0" width="200" height="200"/>
+                        <path class="sb-body" d="M64,28 L84,32 Q100,48 116,32 L136,28 L164,44 L180,92 L150,108 L144,94 L144,200 L56,200 L56,94 L50,108 L20,92 L36,44 Z"/>
+                        <path class="sb-seam" d="M56,94 L56,200 M144,94 L144,200" fill="none"/>
+                        <text class="sb-name" font-size="13"><textPath href="#p53" startOffset="50%" text-anchor="middle">DOORN</textPath></text>
+                        <text class="sb-no" x="100" y="126" font-size="62" text-anchor="middle" dominant-baseline="middle">37</text>
+                      </svg><span class="halftone"></span>
+                    </div>
+                    <span class="live-card__topscrim"></span><span class="live-card__scrim"></span>
+                    <p class="live-card__ovr"><b>37</b><span>OVR</span></p>
+                    <span class="live-card__pennant"><span class="live-card__tier-icon ti--common"></span></span>
+                  </div>
+                  <div class="live-card__plate"><h2>Wietse Doorn</h2><p>All-rounder &middot; Common</p></div>
+                  <dl class="live-card__stats">
+                    <div><dt>PAC</dt><dd>37</dd></div><div><dt>SHO</dt><dd>37</dd></div><div><dt>PAS</dt><dd>37</dd></div>
+                    <div><dt>DRI</dt><dd>37</dd></div><div><dt>DEF</dt><dd>37</dd></div><div><dt>PHY</dt><dd>37</dd></div>
+                  </dl>
+                  <span class="live-card__grain"></span><span class="live-card__frame"></span>
+                </article>
+              </div>
+
+              <div class="slot">
+                <span class="slot__no">54</span>
+                <article class="live-card" data-rarity="bronze">
+                  <span class="live-card__glow"></span>
+                  <div class="live-card__art">
+                    <div class="live-card__portrait">
+                      <svg viewBox="0 0 200 200" preserveAspectRatio="xMidYMid slice">
+                        <defs><path id="p54" d="M42,74 Q100,54 158,74"></path></defs>
+                        <rect class="sb-ground" x="0" y="0" width="200" height="200"/>
+                        <path class="sb-body" d="M64,28 L84,32 Q100,48 116,32 L136,28 L164,44 L180,92 L150,108 L144,94 L144,200 L56,200 L56,94 L50,108 L20,92 L36,44 Z"/>
+                        <path class="sb-seam" d="M56,94 L56,200 M144,94 L144,200" fill="none"/>
+                        <text class="sb-name" font-size="13"><textPath href="#p54" startOffset="50%" text-anchor="middle">PRINS</textPath></text>
+                        <text class="sb-no" x="100" y="126" font-size="62" text-anchor="middle" dominant-baseline="middle">45</text>
+                      </svg><span class="halftone"></span>
+                    </div>
+                    <span class="live-card__topscrim"></span><span class="live-card__scrim"></span>
+                    <p class="live-card__ovr"><b>45</b><span>OVR</span></p>
+                    <span class="live-card__pennant"><span class="live-card__tier-icon ti--bronze"></span></span>
+                  </div>
+                  <div class="live-card__plate"><h2>Wouter Prins</h2><p>All-rounder &middot; Bronze</p></div>
+                  <dl class="live-card__stats">
+                    <div><dt>PAC</dt><dd>45</dd></div><div><dt>SHO</dt><dd>45</dd></div><div><dt>PAS</dt><dd>45</dd></div>
+                    <div><dt>DRI</dt><dd>45</dd></div><div><dt>DEF</dt><dd>45</dd></div><div><dt>PHY</dt><dd>45</dd></div>
+                  </dl>
+                  <span class="live-card__grain"></span><span class="live-card__frame"></span>
+                </article>
+              </div>
+
+            </div>
+            <p class="page__foot">6</p>
+          </div>
+        </div>
+
+        <span class="turn turn--prev"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></span>
+        <span class="turn turn--next"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></span>
+      </div>
+
+      <!-- every page's completion, so a gap is one click away -->
+      <nav class="index">
+        <span class="pg"><b>1</b><svg viewBox="0 0 46 4" preserveAspectRatio="none"><rect x="0" y="0" width="46" height="4" rx="2" fill="#2a2318"/><rect x="0" y="0" width="36" height="4" rx="2" fill="#8a8072"/></svg><span>7/9</span></span>
+        <span class="pg"><b>2</b><svg viewBox="0 0 46 4" preserveAspectRatio="none"><rect x="0" y="0" width="46" height="4" rx="2" fill="#2a2318"/><rect x="0" y="0" width="31" height="4" rx="2" fill="#8a8072"/></svg><span>6/9</span></span>
+        <span class="pg"><b>3</b><svg viewBox="0 0 46 4" preserveAspectRatio="none"><rect x="0" y="0" width="46" height="4" rx="2" fill="#2a2318"/><rect x="0" y="0" width="41" height="4" rx="2" fill="#8a8072"/></svg><span>8/9</span></span>
+        <span class="pg"><b>4</b><svg viewBox="0 0 46 4" preserveAspectRatio="none"><rect x="0" y="0" width="46" height="4" rx="2" fill="#2a2318"/><rect x="0" y="0" width="26" height="4" rx="2" fill="#8a8072"/></svg><span>5/9</span></span>
+        <span class="pg pg--on"><b>5</b><svg viewBox="0 0 46 4" preserveAspectRatio="none"><rect x="0" y="0" width="46" height="4" rx="2" fill="#2a2318"/><rect x="0" y="0" width="31" height="4" rx="2" fill="#e0ac4a"/></svg><span>6/9</span></span>
+        <span class="pg pg--on"><b>6</b><svg viewBox="0 0 46 4" preserveAspectRatio="none"><rect x="0" y="0" width="46" height="4" rx="2" fill="#2a2318"/><rect x="0" y="0" width="41" height="4" rx="2" fill="#e0ac4a"/></svg><span>8/9</span></span>
+        <span class="pg"><b>7</b><svg viewBox="0 0 46 4" preserveAspectRatio="none"><rect x="0" y="0" width="46" height="4" rx="2" fill="#2a2318"/><rect x="0" y="0" width="36" height="4" rx="2" fill="#8a8072"/></svg><span>7/9</span></span>
+      </nav>
+    </div>
+  </main>
+</div>
+</x-dc>
+</body>
+</html>

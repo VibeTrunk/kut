@@ -46,3 +46,8 @@ supabase/.temp
 # Supabase Studio SQL Editor snippets can contain real production data
 # (user IDs, role grants, etc.) — never commit them.
 supabase/snippets/
+
+# Claude Design canvas: the seeded editor payload is a ~3 MB generated artifact.
+# The artboard sources (design/*.dc.html, design/canvas.json) are kept so the
+# docs/design/ PNGs can be regenerated.
+design/kut-feature-designs.html

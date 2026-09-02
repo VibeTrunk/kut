@@ -13,6 +13,8 @@ Everything **not yet built**, in one place. For the rest:
 - **idea** — raised, not yet evaluated or committed
 - **favored** — the direction is endorsed; needs an ADR + spec change before build
 - **planned** — agreed in principle, waiting for a slot or a design
+- **specified** — the design is settled and written down; needs its ADR +
+  spec change at build time, but no open product questions remain
 - **blocked** — needs a product decision or an ADR before it can start
 - **partial** — some of it shipped; the open remainder is described
 - **declined** — considered and deliberately not doing; the reason is stated
@@ -153,7 +155,7 @@ Raw triage (who asked, de-duplication, disposition) lives in
 
 | Item | Status | Notes / next step |
 |---|---|---|
-| Rating graph over time — per-player OVR line chart | planned | Low effort: `kut.player_rating_snapshots` already stores weekly `live_ovr` per player per season (ADR-031). A query + a chart component on `/players/[slug]`. Per-attribute history would need a wider snapshot table. |
+| Rating graph over time — per-player OVR line chart | **specified** | Design settled 2026-09-02 in `SPEC_ALBUM_CHRONICLE_GRAPH.md` §2 (proposed ADR-047). No migration: `kut.player_rating_snapshots` (ADR-031) plus published attendance for goal markers. Line chart over rarity-tier bands on `/players/[slug]`, replacing the `RatingHistory` sparkline. No snapshot backfill — the series starts sparse and accumulates. |
 | See other members' squads / teams | blocked | Needs a card-ownership privacy decision + an ADR — the codebase deliberately hides who owns which card (`my_collection_cards` is owner-scoped; `player_directory` hides who claimed a player). Build sketch in ADR-044 / `TESTER_FEEDBACK_BATCHES.md` round-2 💡03. |
 | Duplicate copies weigh less for Club Value | blocked | Changes a published economy formula (Club Value v2, ADR-041) — data-changing migration + ADR + a re-balance against the Part L faucet/sink invariants. Intent: reward collecting breadth and make the transfer market more active. |
 | Prestige + collections — hand in N cards for a reward | idea | Two related card-sink mechanics: a permanent cosmetic medal for turning in 30 distinct cards; themed sets (e.g. ≥80% of a session's attendees) handed in for a coin payout. New tables + a sink and/or faucet + UI. `BUILD_SPEC.md` Part XXXV already sketches collection challenges. |
@@ -166,6 +168,52 @@ Raw triage (who asked, de-duplication, disposition) lives in
 | Weather bonus — extra coins for rain / snow / freeze / >25 °C | idea | No weather data source today. |
 | In-app FAQ | idea | There is a "How KUT works" page; a short FAQ is a smaller, distinct surface. |
 
+## Product-fit ideas
+
+New ideas identified during roadmap review. They are deliberately **not scoped** and need an ADR before implementation; in particular, none may weaken the card-ownership privacy stance or add an unbounded coin faucet.
+
+| Item | Status | Notes / next step |
+|---|---|---|
+| Wanted-card lists and trade matching | idea | Members can privately mark cards as **wanted** or **available to trade**. Surface compatible swaps and optionally notify a member when a wanted card is listed. Builds on fixed-price listings and ADR-042 escrow trade offers, without exposing collections by default or changing card/coin balances. Needs an opt-in privacy model, notification preferences, matching-query design, and anti-spam limits. |
+| Session Recap / "TFH Chronicle" | **specified** | Design settled 2026-09-02 in `SPEC_ALBUM_CHRONICLE_GRAPH.md` §4 (proposed ADR-049). One issue per ISO football week at `/chronicle`, replacing `/sessions`; computed live, no snapshot table. v1 blocks: matchday reports (attendance, scorers, bibs) + tier crossings only. Member-only — no public or tokenised share link. One additive migration (`chronicle_weeks`, `chronicle_tier_changes`). |
+| Opt-in community collection goals | idea | A TFH-wide seasonal album or themed goal that members can contribute toward while retaining their own cards. Completion unlocks a cosmetic club-wide badge, card frame, or Chronicle moment — **not** coins, packs, ratings, or ownership disclosure. This complements the personal Panini album and collection challenges; needs opt-in contribution semantics, a privacy-safe aggregate-progress design, and an ADR. |
+
+## KUT Five Cup — archetype-aware weekly knockout
+
+**Status: favored.** A lightweight, asynchronous competitive use for the cards
+members own, without live PvP, manual result entry, or a full football match
+engine. This promotes the card collection beyond raw OVR while keeping real
+TFH football as KUT's main event.
+
+- **Entry:** one squad per member per football week, made from five owned Card
+  Copies representing five distinct real Players. Entry is available to all
+  members; attending the underlying session is not required.
+- **Timing:** entries lock after a published TFH session in that football week;
+  no Cup runs in a week without one. A server-side single-elimination bracket
+  resolves on Sunday.
+- **Line-up shape:** any five-card squad is valid. A balanced formation earns
+  a small, capped bonus rather than being a hard requirement: an Anchor
+  (Goalkeeper / Defender / Tank), Creator (Playmaker / All-rounder), Runner
+  (Speedster / All-rounder), Finisher (Finisher / All-rounder), and Wildcard.
+  An All-rounder may fill only one role. This makes specialists valuable
+  without making new or incomplete collections unable to enter.
+- **Resolution:** a small server-authoritative match resolver, not a real-time
+  match engine. It snapshots each selected card's attributes at lock, then
+  resolves a few seeded match moments from Attack (SHO/PAC/DRI), Control
+  (PAS/DRI/PHY), and Defence (DEF/PHY), with bounded randomness and published
+  pre-match odds. A stored result is final and can never be rerolled.
+- **Rewards:** start with a cosmetic trophy / badge during validation. A later
+  coin reward may be a modest, hard-capped weekly faucet (for example, a small
+  entry-completion amount plus a small amount per win; no more than 50 KUT
+  Coins per member per week). It must not rival the 250-coin attendance reward
+  or make stronger collections snowball into a dominant coin source.
+
+Before implementation, write an ADR and update `BUILD_SPEC.md`: specify the
+resolved probability formula and tie-break, exact reward and economy cap,
+entry/ownership edge cases, card-stat snapshot policy, audit/ledger behaviour,
+and abuse/concurrency tests. The result and every monetary reward must remain
+server-authoritative and idempotent.
+
 ## Larger phases
 
 From the archived 2026-08-17 handoff's "recommended next phases",
@@ -176,7 +224,7 @@ de-duplicated and status-checked (`archive/HANDOFF-2026-08-17.md`):
 | A — Alpha readiness & operational safety | shipped | Backup/restore drill, preview preflight, risk-tiered migration process — `OPERATIONS.md`, `BACKUP.md`, ADR-032. |
 | B — Navigation & product clarity | shipped | Authenticated nav overhaul + the `/how-it-works` page (PROGRESS "Navigation overhaul update"). |
 | C — Safer admin testing tools | shipped | `admin_adjust_wallet` audited coin faucet + `admin_reset_account` soft reset — ADR-035. |
-| D — Visual & collection experience | partial | Shipped: `/settings/card` photo (ADR-027), Player Directory (ADR-027), Home top-risers (ADR-031), the material-ladder redesign (ADR-043). **Open:** the Panini-style album view for `/club/collection` — duplicate stacks grouped by edition, alongside the current grid as a management mode. |
+| D — Visual & collection experience | partial | Shipped: `/settings/card` photo (ADR-027), Player Directory (ADR-027), Home top-risers (ADR-031), the material-ladder redesign (ADR-043). **Open, now specified:** the Panini-style album view for `/club/collection` — `SPEC_ALBUM_CHRONICLE_GRAPH.md` §3 (proposed ADR-048). A bound, paged album: nine slots per page, alphabetical, desktop two-page spread / mobile one leaf, duplicate stacks, gaps as empty slots. Archetype is a lens rather than the spine — roughly 80% of the roster is All-rounder by default, which made archetype pages unworkable. Album becomes the route's default with the current grid as a "Manage" mode. No migration. |
 | E — Community contribution mechanics | partial | Shipped: bibs-washing coin bonus (ADR-037). **Open / declined:** a "first 10 to sign up" bonus — keep it out of the football Live Rating; if built, do it as a capped coin bonus or a separate badge, transparent and auditable (the archived handoff has the full reasoning). |
 | F — Message Center expansion | shipped | attendance-reward / pack-opened / trade / admin-notice inbox events — ADR-028, ADR-042, ADR-044. |
 

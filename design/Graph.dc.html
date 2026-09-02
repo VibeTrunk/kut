@@ -1,0 +1,284 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Instrument+Serif&display=swap">
+  <style>
+    :root{
+      --board-deep:#0b0a07; --panel:#211c15; --panel-2:#2a2318; --line:#4a4030;
+      --ink:#f4efe3; --ink-dim:#b3a891; --ink-faint:#8a8072; --ink-on-accent:#1c150a;
+      --brass:#e0ac4a; --steel:#8fb0c2; --moss:#8bbd6c;
+      --sans:'Archivo','Helvetica Neue',Helvetica,Arial,sans-serif;
+      --serif:'Instrument Serif',Georgia,'Times New Roman',serif;
+    }
+    *{box-sizing:border-box;}
+    body{margin:0;font-family:var(--sans);color:var(--ink);
+      background:radial-gradient(120% 78% at 50% -8%, #221c13 0%, #15130f 46%, #0b0a07 100%);}
+    a{color:var(--brass);text-decoration:none;} a:hover{color:#f0c470;}
+    .display{font-family:var(--serif);font-weight:400;line-height:.94;letter-spacing:-.012em;}
+    .kicker{font-size:11.2px;font-weight:800;text-transform:uppercase;letter-spacing:.26em;color:var(--brass);margin:0;}
+    .clip-pennant{clip-path:polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%);}
+
+    .nav{height:64px;border-bottom:1px solid rgba(74,64,48,.4);background:rgba(11,10,7,.8);}
+    .nav__in{max-width:1152px;margin:0 auto;height:64px;padding:0 24px;display:flex;align-items:center;gap:24px;}
+    .nav__mark{display:flex;align-items:center;gap:10px;font-size:20px;font-weight:900;letter-spacing:-.02em;color:var(--ink);}
+    .nav__mark i{display:block;width:14px;height:16px;background:var(--brass);}
+    .nav__links{display:flex;flex:1;align-items:center;gap:4px;}
+    .nav__link{display:flex;align-items:center;gap:8px;border-radius:8px;padding:8px 12px;font-size:14px;font-weight:700;color:var(--ink-dim);}
+    .nav__right{display:flex;align-items:center;gap:12px;}
+    .coins{display:flex;align-items:center;gap:6px;border:1px solid rgba(224,172,74,.3);border-radius:999px;
+      background:linear-gradient(to bottom, rgba(224,172,74,.15), rgba(224,172,74,.05));padding:6px 14px;
+      font-size:14px;font-weight:900;font-variant-numeric:tabular-nums;color:var(--brass);}
+    .more{display:flex;align-items:center;gap:6px;padding:0 12px;font-size:14px;font-weight:700;color:var(--ink-dim);}
+    .avatar{display:flex;width:36px;height:36px;align-items:center;justify-content:center;border-radius:999px;background:var(--brass);font-size:12px;font-weight:900;color:var(--ink-on-accent);}
+
+    main{padding:40px;}
+    .shell{max-width:1024px;margin:0 auto;padding:32px 0 72px;}
+    .back{display:inline-block;font-size:14px;font-weight:700;color:var(--brass);margin-bottom:34px;}
+    .profile{display:grid;grid-template-columns:330px minmax(0,1fr);gap:64px;align-items:start;}
+    .profile h1{margin:12px 0 0;font-size:58px;}
+    .meta{margin:14px 0 0;font-size:16px;color:var(--ink-dim);}
+
+    /* attribute bars — SVG geometry, mirroring src/components/card-stats.tsx */
+    .attrs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px 32px;margin:34px 0 0;}
+    .attrs .a{display:flex;flex-direction:column;gap:8px;}
+    .attrs .a .t{display:flex;align-items:baseline;justify-content:space-between;gap:8px;}
+    .attrs dt{font-size:10.4px;font-weight:800;text-transform:uppercase;letter-spacing:.14em;color:var(--ink-faint);margin:0;}
+    .attrs dd{margin:0;font-size:20px;font-weight:900;font-variant-numeric:tabular-nums;}
+    .attrs svg{display:block;height:4px;width:100%;}
+    hr{border:none;border-top:1px solid rgba(74,64,48,.4);margin:34px 0;}
+
+    /* rating history */
+    .hist__head{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:16px;}
+    .hist__title{font-size:10.4px;font-weight:800;text-transform:uppercase;letter-spacing:.15em;color:var(--ink-faint);margin:0;}
+    .hist__now{text-align:right;flex:none;}
+    .hist__now b{display:block;font-size:44px;font-weight:900;font-variant-numeric:tabular-nums;color:var(--brass);line-height:.9;}
+    .hist__now span{display:block;margin-top:6px;font-size:9.5px;font-weight:800;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-faint);}
+    .chart{display:block;width:100%;}
+    .cap{margin:14px 0 0;font-size:12px;line-height:1.6;color:var(--ink-faint);max-width:62ch;}
+
+    .band{font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;}
+    .xlab{font-size:11px;font-weight:700;}
+    .glab{font-size:10px;font-weight:900;}
+
+    /* early-season state study */
+    .study{margin-top:56px;padding-top:34px;border-top:1px solid rgba(74,64,48,.55);}
+    .study__lead{margin:10px 0 0;font-size:14px;line-height:1.65;color:var(--ink-dim);max-width:64ch;}
+    .study__box{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:40px;align-items:center;
+      margin-top:24px;padding:26px 30px;border-radius:20px;border:1px solid rgba(74,64,48,.6);
+      background:linear-gradient(to bottom, rgba(42,35,24,.55), rgba(33,28,21,.55));}
+    .study__note b{display:block;font-family:var(--serif);font-size:30px;line-height:1.06;color:var(--ink);}
+    .study__note p{margin:12px 0 0;font-size:13px;line-height:1.6;color:var(--ink-faint);}
+    .gap{display:inline-flex;align-items:baseline;gap:8px;margin-top:16px;padding:8px 14px;border-radius:999px;
+      border:1px solid rgba(224,172,74,.4);background:rgba(43,31,10,.6);
+      font-size:13px;font-weight:800;color:var(--brass);}
+
+    /* live card, detail size */
+    .live-card{--stock:#e9e5d9;--ci:#3f3b33;--plate:#3b3830;--plate-ink:#f7f4ec;--rule:rgb(63 59 51 / 20%);
+      --edge:rgb(255 255 255 / 50%);--shirt:var(--plate);--shirt-ink:var(--plate-ink);
+      --lift:0 1rem 2rem -0.7rem rgb(0 0 0 / 66%), 0 0.15rem 0.45rem rgb(0 0 0 / 40%);
+      container-type:inline-size;position:relative;isolation:isolate;display:grid;grid-template-rows:1fr auto auto;
+      width:330px;max-width:100%;aspect-ratio:5/7;overflow:hidden;border-radius:1.1rem;background:var(--stock);
+      box-shadow:var(--lift);color:var(--ci);}
+    .live-card__grain,.live-card__frame,.live-card__glow{position:absolute;inset:0;border-radius:inherit;pointer-events:none;}
+    .live-card__grain{z-index:4;opacity:.5;background-image:radial-gradient(rgb(0 0 0 / 17%) .5px, transparent .6px);background-size:3px 3px;mix-blend-mode:multiply;}
+    .live-card__glow{z-index:0;opacity:0;}
+    .live-card__frame{z-index:6;font-size:4cqi;box-shadow:inset 0 0 0 .1em var(--edge), inset 0 0 0 .34em rgb(0 0 0 / 5.5%);}
+    .live-card__art{position:relative;z-index:1;overflow:hidden;font-size:4cqi;}
+    .live-card__portrait{position:absolute;inset:0;}
+    .live-card__portrait svg{display:block;width:100%;height:100%;object-fit:cover;}
+    .live-card__topscrim{position:absolute;inset:0 auto auto 0;z-index:2;width:66%;height:46%;
+      background:radial-gradient(120% 120% at top left, color-mix(in srgb, var(--stock) 88%, transparent) 0%, color-mix(in srgb, var(--stock) 32%, transparent) 38%, transparent 70%);}
+    .live-card__scrim{position:absolute;inset:auto 0 0;z-index:2;height:46%;
+      background:linear-gradient(180deg, rgb(0 0 0 / 0%) 0%, color-mix(in srgb, var(--stock) 82%, transparent) 100%);}
+    .live-card__ovr{position:absolute;top:.85em;left:1.05em;z-index:3;display:grid;margin:0;line-height:.8;}
+    .live-card__ovr b{font-size:3.5em;font-weight:900;font-variant-numeric:tabular-nums;letter-spacing:-.045em;}
+    .live-card__ovr span{margin-top:.5em;font-size:.82em;font-weight:800;letter-spacing:.24em;opacity:.62;}
+    .live-card__pennant{position:absolute;top:0;right:1.15em;z-index:3;display:grid;place-items:center;width:2.5em;height:3.1em;
+      padding-bottom:.5em;font-size:4cqi;background:var(--plate);clip-path:polygon(0 0, 100% 0, 100% 84%, 50% 100%, 0 84%);
+      box-shadow:0 .3em .6em rgb(0 0 0 / 30%);color:var(--plate-ink);}
+    .live-card__tier-icon{display:block;width:.95em;height:.95em;background:currentColor;
+      clip-path:polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%);}
+    .live-card__plate{position:relative;z-index:2;padding:.78em 1.15em .72em;font-size:4cqi;background:var(--plate);color:var(--plate-ink);}
+    .live-card__plate h2{overflow:hidden;margin:0;font-size:1.62em;font-weight:800;line-height:1.04;letter-spacing:-.018em;text-overflow:ellipsis;white-space:nowrap;}
+    .live-card__plate p{margin:.35em 0 0;font-size:.82em;font-weight:700;letter-spacing:.15em;text-transform:uppercase;opacity:.74;}
+    .live-card__stats{position:relative;z-index:2;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.55em .7em;margin:0;padding:.95em 1.1em 1.15em;font-size:4cqi;}
+    .live-card__stats div{display:flex;align-items:baseline;gap:.45em;padding-bottom:.32em;border-bottom:.1em solid var(--rule);}
+    .live-card__stats dt{min-width:2.9em;margin:0;font-size:.8em;font-weight:800;letter-spacing:.09em;opacity:.55;}
+    .live-card__stats dd{margin:0;font-size:1.3em;font-weight:900;font-variant-numeric:tabular-nums;}
+    .sb-ground{fill:color-mix(in srgb, var(--ci) 16%, var(--stock));}
+    .sb-body{fill:var(--shirt);}
+    .sb-seam{stroke:var(--shirt-ink);stroke-opacity:.16;stroke-width:2;}
+    .sb-name{fill:var(--shirt-ink);font-family:var(--sans);font-weight:800;letter-spacing:.16em;}
+    .sb-no{fill:var(--shirt-ink);font-family:var(--sans);font-weight:900;font-variant-numeric:tabular-nums;}
+    .halftone{position:absolute;inset:0;background-image:radial-gradient(color-mix(in srgb, var(--ci) 14%, transparent) 1.05px, transparent 1.15px);background-size:6px 6px;}
+    .live-card[data-rarity="gold"]{--stock:#f7e7b2;--ci:#543609;--plate:#8a6414;--plate-ink:#fff6df;--rule:rgb(84 54 9 / 24%);--edge:rgb(255 246 222 / 75%);
+      box-shadow:var(--lift), 0 0 1.4rem rgb(224 172 74 / 12%);}
+    .live-card[data-rarity="gold"] .live-card__plate,.live-card[data-rarity="gold"] .live-card__pennant{
+      background-image:linear-gradient(100deg,#6b4a0d 0%,#b98f33 18%,#f2dd9a 30%,#c79b3d 44%,#7a560f 62%,#d8b45c 82%,#6b4a0d 100%);
+      background-size:260% 100%;background-position:32% 50%;}
+    .live-card[data-rarity="gold"] .live-card__plate h2{text-shadow:0 .04em .02em rgb(66 42 6 / 50%);}
+    .live-card[data-rarity="gold"] .live-card__ovr b{text-shadow:0 .045em 0 rgb(255 251 232 / 80%), 0 -.03em 0 rgb(84 54 9 / 30%), 0 .09em .12em rgb(84 54 9 / 25%);}
+  </style>
+</helmet>
+
+<div>
+  <header class="nav">
+    <div class="nav__in">
+      <span class="nav__mark"><i class="clip-pennant"></i>KUT</span>
+      <nav class="nav__links">
+        <span class="nav__link"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.5 12 4l8 7.5"/><path d="M6 10v9h12v-9"/><path d="M10 19v-5h4v5"/></svg>Home</span>
+        <span class="nav__link"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="3.5" width="11" height="15" rx="1.6" transform="rotate(8 12.5 11)"/><rect x="4.5" y="6" width="11" height="15" rx="1.6" fill="#0b0a07"/></svg>Collection</span>
+        <span class="nav__link"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5 12 4l8 4.5v8L12 21l-8-4.5z"/><path d="M4 8.5 12 13l8-4.5"/><path d="M12 13v8"/></svg>Packs</span>
+        <span class="nav__link"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h13"/><path d="M13 4l4 4-4 4"/><path d="M21 16H8"/><path d="M11 20l-4-4 4-4"/></svg>Market</span>
+        <span class="nav__link"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 2.5v5.2C19 15.8 16 19 12 21c-4-2-7-5.2-7-10.3V5.5z"/><path d="M12 8v6"/><path d="M9.2 10.8h5.6"/></svg>Club</span>
+      </nav>
+      <div class="nav__right">
+        <span class="coins"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 8v8M9.5 10a2.3 2.3 0 0 1 2.5-1.6c1.4 0 2.4.7 2.4 1.8s-1 1.6-2.4 1.8c-1.4.2-2.4.8-2.4 1.8s1 1.8 2.4 1.8a2.4 2.4 0 0 0 2.5-1.6"/></svg>1,340</span>
+        <span class="more">More<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10l5 5 5-5"/></svg></span>
+        <span class="avatar">MO</span>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="shell">
+      <a class="back" href="#">&larr; Player directory</a>
+
+      <div class="profile">
+        <div>
+          <article class="live-card" data-rarity="gold">
+            <span class="live-card__glow"></span>
+            <div class="live-card__art">
+              <div class="live-card__portrait">
+                <svg viewBox="0 0 200 200" preserveAspectRatio="xMidYMid slice">
+                  <defs><path id="g01" d="M42,74 Q100,54 158,74"></path></defs>
+                  <rect class="sb-ground" x="0" y="0" width="200" height="200"/>
+                  <path class="sb-body" d="M64,28 L84,32 Q100,48 116,32 L136,28 L164,44 L180,92 L150,108 L144,94 L144,200 L56,200 L56,94 L50,108 L20,92 L36,44 Z"/>
+                  <path class="sb-seam" d="M56,94 L56,200 M144,94 L144,200" fill="none"/>
+                  <text class="sb-name" font-size="13"><textPath href="#g01" startOffset="50%" text-anchor="middle">BAKKER</textPath></text>
+                  <text class="sb-no" x="100" y="126" font-size="62" text-anchor="middle" dominant-baseline="middle">67</text>
+                </svg>
+                <span class="halftone"></span>
+              </div>
+              <span class="live-card__topscrim"></span><span class="live-card__scrim"></span>
+              <p class="live-card__ovr"><b>67</b><span>OVR</span></p>
+              <span class="live-card__pennant"><span class="live-card__tier-icon"></span></span>
+            </div>
+            <div class="live-card__plate"><h2>Sander Bakker</h2><p>Defender &middot; Gold</p></div>
+            <dl class="live-card__stats">
+              <div><dt>PAC</dt><dd>65</dd></div><div><dt>SHO</dt><dd>60</dd></div><div><dt>PAS</dt><dd>66</dd></div>
+              <div><dt>DRI</dt><dd>63</dd></div><div><dt>DEF</dt><dd>77</dd></div><div><dt>PHY</dt><dd>71</dd></div>
+            </dl>
+            <span class="live-card__grain"></span><span class="live-card__frame"></span>
+          </article>
+        </div>
+
+        <div>
+          <p class="kicker">Live card &middot; Gold</p>
+          <h1 class="display">Sander Bakker</h1>
+          <p class="meta">Defender &middot; 67 OVR &middot; rises and falls with published sessions</p>
+
+          <dl class="attrs">
+            <div class="a"><div class="t"><dt>PAC</dt><dd>65</dd></div><svg viewBox="0 0 100 4" preserveAspectRatio="none"><rect x="0" y="0" width="100" height="4" rx="2" fill="#4a4030"/><rect x="0" y="0" width="65" height="4" rx="2" fill="#e0ac4a"/></svg></div>
+            <div class="a"><div class="t"><dt>SHO</dt><dd>60</dd></div><svg viewBox="0 0 100 4" preserveAspectRatio="none"><rect x="0" y="0" width="100" height="4" rx="2" fill="#4a4030"/><rect x="0" y="0" width="60" height="4" rx="2" fill="#e0ac4a"/></svg></div>
+            <div class="a"><div class="t"><dt>PAS</dt><dd>66</dd></div><svg viewBox="0 0 100 4" preserveAspectRatio="none"><rect x="0" y="0" width="100" height="4" rx="2" fill="#4a4030"/><rect x="0" y="0" width="66" height="4" rx="2" fill="#e0ac4a"/></svg></div>
+            <div class="a"><div class="t"><dt>DRI</dt><dd>63</dd></div><svg viewBox="0 0 100 4" preserveAspectRatio="none"><rect x="0" y="0" width="100" height="4" rx="2" fill="#4a4030"/><rect x="0" y="0" width="63" height="4" rx="2" fill="#e0ac4a"/></svg></div>
+            <div class="a"><div class="t"><dt>DEF</dt><dd>77</dd></div><svg viewBox="0 0 100 4" preserveAspectRatio="none"><rect x="0" y="0" width="100" height="4" rx="2" fill="#4a4030"/><rect x="0" y="0" width="77" height="4" rx="2" fill="#e0ac4a"/></svg></div>
+            <div class="a"><div class="t"><dt>PHY</dt><dd>71</dd></div><svg viewBox="0 0 100 4" preserveAspectRatio="none"><rect x="0" y="0" width="100" height="4" rx="2" fill="#4a4030"/><rect x="0" y="0" width="71" height="4" rx="2" fill="#e0ac4a"/></svg></div>
+          </dl>
+
+          <hr>
+
+          <section>
+            <div class="hist__head">
+              <p class="hist__title">Rating over six published weeks</p>
+              <span class="hist__now"><b>67</b><span>Now</span></span>
+            </div>
+
+            <svg class="chart" viewBox="0 0 630 250" role="img"
+                 aria-label="Rating history for Sander Bakker: 58 on 27 July rising to 67 on 31 August, crossing from Silver into Gold. Goals scored in three of the six weeks.">
+              <!-- tier bands: the fixed domain is what makes 'how close am I to Gold' honest -->
+              <rect x="64" y="10" width="558" height="56.67" fill="#ece7f4" fill-opacity="0.055"/>
+              <rect x="64" y="66.67" width="558" height="56.66" fill="#f7e7b2" fill-opacity="0.085"/>
+              <rect x="64" y="123.33" width="558" height="56.67" fill="#e3e8eb" fill-opacity="0.05"/>
+              <line x1="64" y1="66.67" x2="622" y2="66.67" stroke="#4a4030" stroke-width="1"/>
+              <line x1="64" y1="123.33" x2="622" y2="123.33" stroke="#4a4030" stroke-width="1"/>
+              <line x1="64" y1="180" x2="622" y2="180" stroke="#4a4030" stroke-width="1"/>
+
+              <text class="band" x="0" y="42" fill="#8a8072">Holo 70</text>
+              <text class="band" x="0" y="98.5" fill="#e0ac4a" fill-opacity="0.85">Gold 60</text>
+              <text class="band" x="0" y="155" fill="#8a8072">Silver 50</text>
+
+              <!-- the line -->
+              <polyline points="110,134.67 206,123.33 302,112 398,117.67 494,95 590,83.67"
+                        fill="none" stroke="#e0ac4a" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>
+
+              <circle cx="110" cy="134.67" r="4" fill="#15130f" stroke="#e0ac4a" stroke-width="2"><title>27 July — 58 OVR, Silver</title></circle>
+              <circle cx="206" cy="123.33" r="4" fill="#15130f" stroke="#e0ac4a" stroke-width="2"><title>3 August — 60 OVR, crossed into Gold</title></circle>
+              <circle cx="302" cy="112" r="4" fill="#15130f" stroke="#e0ac4a" stroke-width="2"><title>10 August — 62 OVR, Gold</title></circle>
+              <circle cx="398" cy="117.67" r="4" fill="#15130f" stroke="#e0ac4a" stroke-width="2"><title>17 August — 61 OVR, Gold</title></circle>
+              <circle cx="494" cy="95" r="4" fill="#15130f" stroke="#e0ac4a" stroke-width="2"><title>24 August — 65 OVR, Gold</title></circle>
+              <circle cx="590" cy="83.67" r="6" fill="#e0ac4a"><title>31 August — 67 OVR, Gold</title></circle>
+
+              <!-- week labels -->
+              <text class="xlab" x="110" y="199" fill="#8a8072" text-anchor="middle">27 Jul</text>
+              <text class="xlab" x="206" y="199" fill="#8a8072" text-anchor="middle">3 Aug</text>
+              <text class="xlab" x="302" y="199" fill="#8a8072" text-anchor="middle">10 Aug</text>
+              <text class="xlab" x="398" y="199" fill="#8a8072" text-anchor="middle">17 Aug</text>
+              <text class="xlab" x="494" y="199" fill="#8a8072" text-anchor="middle">24 Aug</text>
+              <text class="xlab" x="590" y="199" fill="#b3a891" text-anchor="middle">31 Aug</text>
+
+              <!-- goal markers: what explains a Form spike that later fades -->
+              <polygon points="200,222 212,222 206,212" fill="#e0ac4a" fill-opacity="0.75"><title>1 goal in this week</title></polygon>
+              <text class="glab" x="206" y="240" fill="#8a8072" text-anchor="middle">1</text>
+              <polygon points="488,222 500,222 494,212" fill="#e0ac4a" fill-opacity="0.75"><title>2 goals in this week</title></polygon>
+              <text class="glab" x="494" y="240" fill="#8a8072" text-anchor="middle">2</text>
+              <polygon points="584,222 596,222 590,212" fill="#e0ac4a"><title>2 goals in this week</title></polygon>
+              <text class="glab" x="590" y="240" fill="#b3a891" text-anchor="middle">2</text>
+              <text class="glab" x="0" y="240" fill="#8a8072">GOALS</text>
+            </svg>
+
+            <p class="cap">Six published weeks, 27 July &ndash; 31 August. Ratings are recorded once per football week and are not revised if attendance is corrected later.</p>
+          </section>
+        </div>
+      </div>
+
+      <!-- ===== state study: what almost everyone sees on day one ===== -->
+      <section class="study">
+        <p class="kicker">State study</p>
+        <h2 class="display" style="font-size:34px;margin:10px 0 0">The first week</h2>
+        <p class="study__lead">Rating snapshots only started on 30 August and there is no backfill, so at launch most players have a single point. The bands carry the panel on their own &mdash; this has to read as a record that has just begun, never as a chart that failed to load.</p>
+
+        <div class="study__box">
+          <svg class="chart" viewBox="0 0 630 210" role="img" aria-label="Rating history: one published week, 54 OVR, Silver.">
+            <rect x="64" y="10" width="558" height="56.67" fill="#f7e7b2" fill-opacity="0.085"/>
+            <rect x="64" y="66.67" width="558" height="56.66" fill="#e3e8eb" fill-opacity="0.05"/>
+            <rect x="64" y="123.33" width="558" height="56.67" fill="#ecd8b1" fill-opacity="0.05"/>
+            <line x1="64" y1="66.67" x2="622" y2="66.67" stroke="#4a4030" stroke-width="1"/>
+            <line x1="64" y1="123.33" x2="622" y2="123.33" stroke="#4a4030" stroke-width="1"/>
+            <line x1="64" y1="180" x2="622" y2="180" stroke="#4a4030" stroke-width="1"/>
+            <text class="band" x="0" y="42" fill="#e0ac4a" fill-opacity="0.85">Gold 60</text>
+            <text class="band" x="0" y="98.5" fill="#8a8072">Silver 50</text>
+            <text class="band" x="0" y="155" fill="#8a8072">Bronze 40</text>
+            <circle cx="110" cy="100.33" r="6" fill="#e0ac4a"><title>31 August — 54 OVR, Silver</title></circle>
+            <text class="xlab" x="110" y="199" fill="#b3a891" text-anchor="middle">31 Aug</text>
+          </svg>
+          <div class="study__note">
+            <b>54 OVR</b>
+            <p>One published week so far. The line begins with the next session.</p>
+            <span class="gap">6 OVR from Gold</span>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+</x-dc>
+</body>
+</html>

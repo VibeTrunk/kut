@@ -1,0 +1,231 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Instrument+Serif&display=swap">
+  <style>
+    :root{
+      --board-deep:#0b0a07; --panel:#211c15; --panel-2:#2a2318; --line:#4a4030;
+      --ink:#f4efe3; --ink-dim:#b3a891; --ink-faint:#8a8072; --ink-on-accent:#1c150a;
+      --brass:#e0ac4a; --steel:#8fb0c2; --moss:#8bbd6c;
+      --sans:'Archivo','Helvetica Neue',Helvetica,Arial,sans-serif;
+      --serif:'Instrument Serif',Georgia,'Times New Roman',serif;
+    }
+    *{box-sizing:border-box;}
+    body{margin:0;font-family:var(--sans);color:var(--ink);
+      background:radial-gradient(120% 78% at 50% -8%, #221c13 0%, #15130f 46%, #0b0a07 100%);}
+    a{color:var(--brass);text-decoration:none;} a:hover{color:#f0c470;}
+    .display{font-family:var(--serif);font-weight:400;line-height:.94;letter-spacing:-.012em;}
+    .kicker{font-size:11.2px;font-weight:800;text-transform:uppercase;letter-spacing:.26em;color:var(--brass);margin:0;}
+    .clip-pennant{clip-path:polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%);}
+
+    .nav{height:64px;border-bottom:1px solid rgba(74,64,48,.4);background:rgba(11,10,7,.8);}
+    .nav__in{max-width:1152px;margin:0 auto;height:64px;padding:0 24px;display:flex;align-items:center;gap:24px;}
+    .nav__mark{display:flex;align-items:center;gap:10px;font-size:20px;font-weight:900;letter-spacing:-.02em;color:var(--ink);}
+    .nav__mark i{display:block;width:14px;height:16px;background:var(--brass);}
+    .nav__links{display:flex;flex:1;align-items:center;gap:4px;}
+    .nav__link{display:flex;align-items:center;gap:8px;border-radius:8px;padding:8px 12px;font-size:14px;font-weight:700;color:var(--ink-dim);}
+    .nav__right{display:flex;align-items:center;gap:12px;}
+    .coins{display:flex;align-items:center;gap:6px;border:1px solid rgba(224,172,74,.3);border-radius:999px;
+      background:linear-gradient(to bottom, rgba(224,172,74,.15), rgba(224,172,74,.05));padding:6px 14px;
+      font-size:14px;font-weight:900;font-variant-numeric:tabular-nums;color:var(--brass);}
+    .more{display:flex;align-items:center;gap:6px;padding:0 12px;font-size:14px;font-weight:700;color:var(--brass);}
+    .avatar{display:flex;width:36px;height:36px;align-items:center;justify-content:center;border-radius:999px;background:var(--brass);font-size:12px;font-weight:900;color:var(--ink-on-accent);}
+
+    main{padding:40px;}
+    .paper{max-width:768px;margin:0 auto;padding:32px 0 72px;}
+
+    .mast__rule-top{height:0;border-top:3px solid var(--brass);border-bottom:1px solid rgba(224,172,74,.45);padding-bottom:3px;}
+    .mast__row{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;padding:20px 0 16px;}
+    .mast__name{font-family:var(--serif);font-size:66px;line-height:.9;letter-spacing:-.006em;margin:0;}
+    .mast__no{text-align:right;flex:none;}
+    .mast__no b{display:block;font-size:26px;font-weight:900;font-variant-numeric:tabular-nums;color:var(--brass);line-height:1;}
+    .mast__no span{display:block;margin-top:5px;font-size:10px;font-weight:800;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-faint);}
+    .mast__rule-bot{height:1px;background:rgba(74,64,48,.9);}
+    .dateline{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:12px 0 0;
+      font-size:11.5px;font-weight:800;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-faint);}
+    .dateline em{font-style:normal;color:var(--ink-dim);}
+
+    /* ---- latest issue, given the front page ---- */
+    .lead{margin-top:40px;border-radius:22px;overflow:hidden;border:1px solid rgba(92,68,25,.55);
+      background:linear-gradient(168deg, rgba(43,31,10,.55) 0%, rgba(33,28,21,.75) 55%, rgba(20,17,12,.8) 100%);
+      box-shadow:0 1.8rem 3.4rem -1.4rem rgba(0,0,0,.85);}
+    .lead__top{display:flex;align-items:flex-start;justify-content:space-between;gap:28px;padding:28px 30px 0;}
+    .lead__when h2{margin:10px 0 0;font-family:var(--serif);font-size:44px;line-height:1;}
+    .lead__when p{margin:10px 0 0;font-size:12.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint);}
+    .lead__no{flex:none;text-align:right;}
+    .lead__no b{display:block;font-family:var(--serif);font-size:52px;line-height:.9;color:var(--brass);}
+    .lead__no span{display:block;margin-top:6px;font-size:9.5px;font-weight:800;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-faint);}
+    .lead__stand{margin:22px 30px 0;font-family:var(--serif);font-size:27px;line-height:1.26;color:var(--ink-dim);text-wrap:pretty;}
+    .lead__stand b{color:var(--ink);font-weight:400;}
+    .lead__days{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:24px 30px 0;}
+    .day{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:13px 16px;border-radius:13px;
+      border:1px solid rgba(74,64,48,.55);background:rgba(11,10,7,.4);}
+    .day b{font-size:14px;font-weight:800;}
+    .day span{font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--ink-faint);}
+    .lead__foot{display:flex;align-items:center;justify-content:space-between;gap:20px;
+      margin-top:26px;padding:18px 30px;border-top:1px solid rgba(74,64,48,.5);background:rgba(11,10,7,.3);}
+    .crossnote{display:flex;align-items:center;gap:9px;font-size:12.5px;font-weight:700;color:var(--ink-dim);}
+    .crossnote b{color:var(--brass);font-weight:900;}
+    .cta{display:inline-flex;align-items:center;gap:9px;min-height:46px;padding:0 22px;border-radius:12px;
+      background:linear-gradient(to bottom,#eebd63,#d29a34);font-size:14.5px;font-weight:900;color:var(--ink-on-accent);}
+
+    /* ---- back issues ---- */
+    .earlier{margin-top:52px;}
+    .earlier__head{display:flex;align-items:baseline;gap:20px;margin-bottom:8px;}
+    .earlier__head h2{margin:8px 0 0;font-family:var(--serif);font-size:32px;line-height:1;}
+    .earlier__rule{flex:1;height:1px;background:linear-gradient(to right, rgba(74,64,48,.9), rgba(74,64,48,.15));}
+    .issue{display:flex;align-items:center;gap:24px;padding:19px 4px;border-bottom:1px solid rgba(74,64,48,.35);}
+    .issue__no{flex:none;width:52px;font-family:var(--serif);font-size:26px;line-height:1;color:rgba(138,128,114,.85);
+      font-variant-numeric:tabular-nums;}
+    .issue__when{flex:1;min-width:0;}
+    .issue__when b{display:block;font-size:16px;font-weight:800;}
+    .issue__when span{display:block;margin-top:4px;font-size:11.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);}
+    .issue__tally{display:flex;gap:26px;flex:none;}
+    .issue__tally div{text-align:right;min-width:52px;}
+    .issue__tally b{display:block;font-size:17px;font-weight:900;font-variant-numeric:tabular-nums;line-height:1;}
+    .issue__tally span{display:block;margin-top:5px;font-size:9px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint);}
+    .badge{flex:none;min-width:88px;text-align:right;}
+    .badge i{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:5px 11px;font-style:normal;
+      border:1px solid rgba(224,172,74,.45);background:rgba(43,31,10,.5);
+      font-size:11px;font-weight:900;color:var(--brass);white-space:nowrap;}
+    .badge u{text-decoration:none;font-size:11px;font-weight:700;color:rgba(138,128,114,.6);}
+    .issue__go{flex:none;color:var(--ink-faint);}
+  </style>
+</helmet>
+
+<div>
+  <header class="nav">
+    <div class="nav__in">
+      <span class="nav__mark"><i class="clip-pennant"></i>KUT</span>
+      <nav class="nav__links">
+        <span class="nav__link"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.5 12 4l8 7.5"/><path d="M6 10v9h12v-9"/><path d="M10 19v-5h4v5"/></svg>Home</span>
+        <span class="nav__link"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="3.5" width="11" height="15" rx="1.6" transform="rotate(8 12.5 11)"/><rect x="4.5" y="6" width="11" height="15" rx="1.6" fill="#0b0a07"/></svg>Collection</span>
+        <span class="nav__link"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5 12 4l8 4.5v8L12 21l-8-4.5z"/><path d="M4 8.5 12 13l8-4.5"/><path d="M12 13v8"/></svg>Packs</span>
+        <span class="nav__link"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h13"/><path d="M13 4l4 4-4 4"/><path d="M21 16H8"/><path d="M11 20l-4-4 4-4"/></svg>Market</span>
+        <span class="nav__link"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 2.5v5.2C19 15.8 16 19 12 21c-4-2-7-5.2-7-10.3V5.5z"/><path d="M12 8v6"/><path d="M9.2 10.8h5.6"/></svg>Club</span>
+      </nav>
+      <div class="nav__right">
+        <span class="coins"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 8v8M9.5 10a2.3 2.3 0 0 1 2.5-1.6c1.4 0 2.4.7 2.4 1.8s-1 1.6-2.4 1.8c-1.4.2-2.4.8-2.4 1.8s1 1.8 2.4 1.8a2.4 2.4 0 0 0 2.5-1.6"/></svg>1,340</span>
+        <span class="more">More<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10l5 5 5-5"/></svg></span>
+        <span class="avatar">MO</span>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="paper">
+      <div class="mast__rule-top"></div>
+      <div class="mast__row">
+        <h1 class="mast__name">KUT Chronicle</h1>
+        <span class="mast__no"><b>14</b><span>Issues</span></span>
+      </div>
+      <div class="mast__rule-bot"></div>
+      <div class="dateline">
+        <span>Season 1</span>
+        <em>One issue per football week</em>
+        <span>Terrible Football Haarlem</span>
+      </div>
+
+      <!-- ============ LATEST ============ -->
+      <article class="lead">
+        <div class="lead__top">
+          <div class="lead__when">
+            <p class="kicker">Latest issue</p>
+            <h2>Week of 31 August</h2>
+            <p>31 August &ndash; 6 September 2026</p>
+          </div>
+          <span class="lead__no"><b>14</b><span>Issue</span></span>
+        </div>
+
+        <p class="lead__stand">Two sessions, <b>25 appearances</b> and <b>40 goals</b> &mdash; and three cards crossed into a new tier.</p>
+
+        <div class="lead__days">
+          <span class="day"><b>Mon 31 Aug</b><span>14 in &middot; 22 goals</span></span>
+          <span class="day"><b>Fri 4 Sep</b><span>11 in &middot; 18 goals</span></span>
+        </div>
+
+        <div class="lead__foot">
+          <span class="crossnote">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13"/><path d="M13 6l6 6-6 6"/></svg>
+            <b>3 crossings</b> &mdash; de Vries into Elite
+          </span>
+          <a class="cta" href="#">Read the issue
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13"/><path d="M13 6l6 6-6 6"/></svg>
+          </a>
+        </div>
+      </article>
+
+      <!-- ============ BACK ISSUES ============ -->
+      <section class="earlier">
+        <div class="earlier__head">
+          <h2 class="display">Earlier issues</h2>
+          <span class="earlier__rule"></span>
+        </div>
+
+        <a class="issue" href="#">
+          <span class="issue__no">13</span>
+          <span class="issue__when"><b>Week of 24 August</b><span>24 &ndash; 30 August &middot; 2 sessions</span></span>
+          <span class="issue__tally">
+            <div><b>23</b><span>In</span></div>
+            <div><b>36</b><span>Goals</span></div>
+          </span>
+          <span class="badge"><i>1 crossing</i></span>
+          <span class="issue__go"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></span>
+        </a>
+
+        <a class="issue" href="#">
+          <span class="issue__no">12</span>
+          <span class="issue__when"><b>Week of 17 August</b><span>17 &ndash; 23 August &middot; 1 session</span></span>
+          <span class="issue__tally">
+            <div><b>12</b><span>In</span></div>
+            <div><b>19</b><span>Goals</span></div>
+          </span>
+          <span class="badge"><i>2 crossings</i></span>
+          <span class="issue__go"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></span>
+        </a>
+
+        <a class="issue" href="#">
+          <span class="issue__no">11</span>
+          <span class="issue__when"><b>Week of 3 August</b><span>3 &ndash; 9 August &middot; 2 sessions</span></span>
+          <span class="issue__tally">
+            <div><b>26</b><span>In</span></div>
+            <div><b>44</b><span>Goals</span></div>
+          </span>
+          <span class="badge"><u>No crossings</u></span>
+          <span class="issue__go"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></span>
+        </a>
+
+        <a class="issue" href="#">
+          <span class="issue__no">10</span>
+          <span class="issue__when"><b>Week of 27 July</b><span>27 July &ndash; 2 August &middot; 2 sessions</span></span>
+          <span class="issue__tally">
+            <div><b>24</b><span>In</span></div>
+            <div><b>38</b><span>Goals</span></div>
+          </span>
+          <span class="badge"><i>2 crossings</i></span>
+          <span class="issue__go"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></span>
+        </a>
+
+        <a class="issue" href="#">
+          <span class="issue__no">09</span>
+          <span class="issue__when"><b>Week of 20 July</b><span>20 &ndash; 26 July &middot; 2 sessions</span></span>
+          <span class="issue__tally">
+            <div><b>21</b><span>In</span></div>
+            <div><b>31</b><span>Goals</span></div>
+          </span>
+          <span class="badge"><i>1 crossing</i></span>
+          <span class="issue__go"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></span>
+        </a>
+      </section>
+    </div>
+  </main>
+</div>
+</x-dc>
+</body>
+</html>

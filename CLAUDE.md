@@ -35,10 +35,23 @@ don't add cross-repo coupling beyond the shared Supabase project.
 ## Current hosted deployment
 
 KUT is live at `https://kut.vibetrunk.com` as Vercel project `kut`. The
-hosted `kut` schema is applied through
-`20260912000000_tester_feedback_round_2.sql` &mdash; tester feedback round 2
-(ADR-044), deployed 2026-09-01 in one `db push` from `VibeTrunk/supabase`
-(PR #20 there):
+hosted `kut` schema is applied through `20260913000000_chronicle_views.sql`
+&mdash; the TFH Chronicle read projections (ADR-049), deployed 2026-09-02 from
+`VibeTrunk/supabase` (PR #22 there):
+
+- `20260913000000_chronicle_views.sql` (ADR-049, additive) &mdash; two computed
+  read projections behind the Chronicle. `kut.chronicle_weeks` aggregates
+  published sessions into one row per football week (session / appearance /
+  attendee / goal counts); `kut.chronicle_tier_changes` runs a `lag()` over
+  `kut.player_rating_snapshots` to find consecutive weeks where a player's
+  rarity tier differs. Both `security_invoker = true, security_barrier = true`,
+  `revoke all from public`, `grant select to authenticated, service_role`. No
+  data change; rollback is two `drop view`s. Shipped alongside the Panini album
+  (ADR-048) and the rating history graph (ADR-047), neither of which needed a
+  migration.
+
+On top of tester feedback round 2, deployed 2026-09-01 in one `db push` from
+`VibeTrunk/supabase` (PR #20 there):
 
 - `20260912000000_tester_feedback_round_2.sql` (ADR-044, data-changing for the
   backfill only) &mdash; one migration for four defects + three ideas.

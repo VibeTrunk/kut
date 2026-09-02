@@ -1,8 +1,8 @@
 # Design reference — album, Chronicle, rating history
 
 Rendered mockups for the three features specified in
-[`../SPEC_ALBUM_CHRONICLE_GRAPH.md`](../SPEC_ALBUM_CHRONICLE_GRAPH.md) and
-built per [`../PLAN_ALBUM_CHRONICLE_GRAPH.md`](../PLAN_ALBUM_CHRONICLE_GRAPH.md).
+[`../archive/SPEC_ALBUM_CHRONICLE_GRAPH.md`](../archive/SPEC_ALBUM_CHRONICLE_GRAPH.md) and
+built per [`../archive/PLAN_ALBUM_CHRONICLE_GRAPH.md`](../archive/PLAN_ALBUM_CHRONICLE_GRAPH.md).
 
 **These are the visual source of truth for the build.** Where the prose and a
 mockup disagree on layout, follow the mockup and note it; where they disagree

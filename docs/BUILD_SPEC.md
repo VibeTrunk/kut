@@ -1511,32 +1511,55 @@ Each Card Copy detail should show:
 
 ---
 
-## 41. Collection album — Phase 2
+## 41. Collection album
 
-Provide a roster-completion view:
+**Built 2026-09-02 (ADR-048).** This section originally sketched the album as
+Phase 2 scope and left its organisation open; it now describes what shipped.
+The design detail is `docs/archive/SPEC_ALBUM_CHRONICLE_GRAPH.md` §3.
+
+A roster-completion view, whose job is to make the *gap* visible:
 
 > 73 / 201 TFH Players collected
 
-Each real Player has a slot.
+Each real Player has a slot. Owned slots show the card; missing slots show an
+empty slot; duplicate copies stack in the owner's slot.
 
-Owned:
+The form is a **bound album that is leafed through**, not a scrolling grid:
 
-- visible card/image.
+- nine slots per page, ordered alphabetically by display name;
+- desktop (≥1024px) shows two facing leaves as a spread, mobile shows one leaf,
+  with identical page numbers on both;
+- slot numbers are **positional, not permanent** — an alphabetical index that
+  shifts when a player is added. They must never be persisted or used as an
+  identifier.
 
-Missing:
+The album is the **default view of `/club/collection`**. The filter/sort grid
+with the discard and list actions remains, as a "Manage" mode at
+`?view=manage`, selected by a segmented control under the page title. Album
+params (`page`, `lens`) and Manage params (`q`, `rarity`, `sort`) do not leak
+across modes.
 
-- silhouette and/or name.
+**Subcollections are lenses, not pages.** Archetype was the first candidate for
+the album's spine and does not survive contact with the data:
+`kut.players.archetype` defaults to `all_rounder` and changes only when a member
+sets it at `/settings/card` (ADR-027) or an admin does, so roughly 80% of the
+roster carries the default. A lens instead selects which players are in the
+album, and pagination adapts:
 
-Possible subcollections:
+- `all` (default) — every player in the directory;
+- `gaps` — uncollected only;
+- `specialists` — every player whose archetype is not `all_rounder`;
+- `type:<archetype>` — one of the seven archetypes, including goalkeepers
+  (ADR-036) and `type:all_rounder`;
+- `tier:<tier>` — one of the six live tiers.
 
-- Monday regulars;
-- Friday regulars;
-- Gold players;
-- 2026 debutants;
-- goalkeepers (players with the Goalkeeper archetype, ADR-036);
-- season-specific groups.
+Monday/Friday regulars, 2026 debutants and season-specific groups are still
+possible subcollections; if built they are added as lenses.
 
-Completion rewards are later features.
+Completion rewards remain a later feature — any reward is a coin faucet or a
+card sink and must be balanced against the Part L invariants first. The album
+is cosmetic. Other members' albums are out of scope: card ownership is
+deliberately private and exposing it needs its own decision.
 
 ---
 
@@ -1677,11 +1700,22 @@ Recommended authenticated bottom navigation on mobile:
 Additional pages via menu/profile:
 
 - Leaderboard;
+- **Chronicle** (`/chronicle`);
+- Club Value;
+- Trade offers;
 - Player directory;
 - Settings;
 - Admin.
 
 Desktop may use side/top navigation.
+
+**Update (2026-09-02, ADR-049).** The "Sessions" entry (`/sessions`) in the
+More menu is now **"Chronicle"** (`/chronicle`), keeping the same icon.
+`/sessions` and `/sessions/[sessionId]` are permanent redirects to
+`/chronicle` and to the containing week's issue. The Chronicle presents one
+issue per football week — the rating engine's own unit (§9) — with each
+session in that week as a matchday report inside it. Because the navigation is
+a public surface, this list is the canonical record of it.
 
 ---
 
@@ -2772,6 +2806,15 @@ Document whichever path is actually enabled in `README.md`.
 
 Do not pretend password reset works if SMTP was never configured.
 
+**Resolved (2026-09-02, ADR-050): path 2.** Custom SMTP is deliberately not
+configured for the wide TFH launch, so password recovery is **admin-assisted**
+(ADR-011) and the audited `/admin/accounts` flow — `create_password_reset_event`
+then `complete_password_reset_event` — is the only route. Nothing in onboarding
+depends on email; invites are player-bound token links delivered by WhatsApp DM,
+so this costs support load, not capability. Revisit if the
+manual load becomes tiresome; the DNS verification lead time is the reason to
+start it well ahead rather than on a launch night.
+
 ---
 
 # PART XXVI — STORAGE
@@ -3580,7 +3623,7 @@ Build:
 - optional supply cap;
 - special artwork;
 - own-special grant;
-- Collection Album;
+- ~~Collection Album~~ — delivered early, 2026-09-02 (§41, ADR-048);
 - milestones;
 - season history.
 
@@ -3946,6 +3989,16 @@ can now add Players from the app, and (ADR-026) deactivate/reactivate or —
 for a never-used entry — hard-delete them. A read-only member-facing
 `/players` directory and rename / archetype / photo editing remain to build.
 
+**Update (2026-09-02, ADR-050):** the initial imports applied a "2+ appearances
+before a Player row" bar, to keep one-off guests out of the roster. That was an
+*import* policy for backfilled historical attendance sheets, and it stays that.
+It does **not** apply to people joining KUT: anyone invited gets a Player row at
+the 30 OVR / common baseline via `kut.admin_add_player`, so their own card is in
+their album from day one. Joiners are **not** backfilled into past published
+sessions — a correction that adds them also back-pays the per-session attendance
+reward, which would be an unplanned faucet against the Part L invariants. They
+accrue from the next published session.
+
 ---
 
 # PART XLI — DESIGN SYSTEM
@@ -4207,7 +4260,12 @@ They should remain configurable decisions rather than questions that stop develo
 2. Exact color palette/card art.
 3. Whether full surnames are visible.
 4. Whether users choose archetypes themselves or admin assigns them.
+   — *Answered: both. Members self-serve at `/settings/card`
+   (`set_own_player_archetype`, ADR-027); admins can also set it. New joiners
+   keep the `all_rounder` default and are not nudged (ADR-050).*
 5. Whether custom SMTP is configured before alpha.
+   — *Answered 2026-09-02: no. Password recovery is admin-assisted; see §89.1
+   and ADR-050.*
 6. Whether attendance reward remains 75 after economy testing.
 7. Whether Pack price remains 250 after simulation/playtest.
 8. Whether a Player automatically receives a copy of their own future Special.

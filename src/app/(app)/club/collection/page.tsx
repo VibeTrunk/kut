@@ -29,6 +29,7 @@ type CollectionCard = {
   rarity_tier: LiveCardPlayer["rarityTier"];
   discard_value: number;
   active_listing_id: string | null;
+  held_by_offer_id: string | null;
   photo_path: string | null;
 };
 
@@ -76,18 +77,22 @@ export default async function CollectionPage({ searchParams }: CollectionPagePro
   // fetched once and narrowed here: it keeps the header totals honest (they
   // describe the whole collection, not the current filter) in one round trip.
   const all = (data ?? []) as CollectionCard[];
+  const directory = (rosterResponse.data ?? []) as AlbumDirectoryPlayer[];
+  const ownPlayer = profileResponse.data?.player_id ? directory.find((player) => player.id === profileResponse.data?.player_id) : null;
   if (query.view !== "manage") {
     if (rosterResponse.error) throw new Error("Could not load the TFH album.");
     const page = query.page ?? "1";
     const requestedPage = page === "all" ? page : Number(page);
     if (page !== "all" && (!Number.isInteger(requestedPage) || Number(requestedPage) < 1)) notFound();
     const albumCards = all.map((card) => ({ ...card, live_ovr: card.ovr })) as unknown as AlbumCollectionCard[];
-    const roster = (rosterResponse.data ?? []) as AlbumDirectoryPlayer[];
+    const roster = directory;
     const filteredSlots = applyLens(buildSlots(roster, albumCards), parseLens(query.lens));
     const albumTotal = paginate(filteredSlots, 1).total;
     if (page !== "all" && Number(page) > albumTotal) notFound();
-    const visibleIds = page === "all" ? roster.map((player) => player.id) : roster.slice(Math.max(0, (Number(page) - 1) * 9), Number(page) * 9).map((player) => player.id);
-    const visiblePaths = roster.filter((player) => visibleIds.includes(player.id)).map((player) => player.photo_path);
+    const visibleSlots = page === "all"
+      ? filteredSlots
+      : (() => { const [left, right] = Number(page) % 2 === 0 ? [Number(page) - 1, Number(page)] : [Number(page), Number(page) + 1]; return [...(paginate(filteredSlots, left).slots ?? []), ...(right <= albumTotal ? paginate(filteredSlots, right).slots : [])]; })();
+    const visiblePaths = visibleSlots.flatMap((slot) => slot.copies.map((card) => card.photo_path));
     const photoUrls = await resolvePhotoUrls(supabase, visiblePaths);
     return <main className="board-ground min-h-screen p-5 text-ink sm:p-10"><section className="mx-auto max-w-6xl py-4 sm:py-8"><CollectionAlbum cards={albumCards} lensValue={query.lens} ownPlayerId={profileResponse.data?.player_id ?? null} pageValue={page} photoUrls={photoUrls} roster={roster} /></section></main>;
   }
@@ -110,21 +115,30 @@ export default async function CollectionPage({ searchParams }: CollectionPagePro
   const photoUrls = await resolvePhotoUrls(supabase, cards.map((card) => card.photo_path));
   const uniquePlayers = new Set(all.map((card) => card.player_id)).size;
   const discardValue = all.reduce((total, card) => total + (card.discard_value ?? 0), 0);
+  const totalPlayers = directory.length;
   const filtered = Boolean(term || rarity);
 
   return (
     <main className="board-ground min-h-screen p-5 text-ink sm:p-10">
       <section className="mx-auto max-w-6xl space-y-8 py-4 sm:py-8">
-        <header className="flex flex-wrap items-end justify-between gap-4">
+        <header className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
           <div className="space-y-3">
             <p className="text-[0.7rem] font-extrabold uppercase tracking-[0.26em] text-brass">My club</p>
             <h1 className="display text-5xl sm:text-6xl">Collection</h1>
+            <p className="display text-4xl text-brass">{uniquePlayers} / {totalPlayers} <span className="font-sans text-xs font-extrabold uppercase tracking-[0.16em] text-ink-dim">TFH players collected</span></p>
+            <svg aria-label={`${uniquePlayers} of ${totalPlayers} TFH players collected`} className="h-2 w-full" viewBox="0 0 100 8"><rect className="fill-line/60" height="8" rx="4" width="100" /><rect className="fill-brass" height="8" rx="4" width={totalPlayers ? uniquePlayers / totalPlayers * 100 : 0} /></svg>
             <p className="text-xs font-bold text-ink-faint">
               {all.length} {all.length === 1 ? "card" : "cards"} &middot; {uniquePlayers} unique{" "}
               {uniquePlayers === 1 ? "player" : "players"} &middot; {discardValue.toLocaleString()} KUT Coins of discard value
             </p>
           </div>
-          <p className="rounded-full border border-line px-3.5 py-1.5 text-xs font-bold text-ink-dim">Live cards update automatically</p>
+          <div className="space-y-3">
+            <nav aria-label="Collection view" className="flex rounded-xl border border-line p-1">
+              <Link className="min-h-11 flex-1 px-5 py-3 text-center text-sm font-black text-ink-dim hover:text-ink" href="/club/collection">Album</Link>
+              <Link className="min-h-11 flex-1 rounded-lg bg-brass/15 px-5 py-3 text-center text-sm font-black text-brass" href="/club/collection?view=manage">Manage</Link>
+            </nav>
+            {ownPlayer?.archetype === "all_rounder" && <Link className="block rounded-full border border-brass-line bg-brass-bg/40 px-4 py-3 text-sm font-bold text-ink-dim hover:text-brass" href="/settings/card">Your card is an All-rounder by default — <span className="text-brass">choose your type →</span></Link>}
+          </div>
         </header>
 
         {query.discard && Number.isSafeInteger(Number(query.discard)) && Number(query.discard) > 0 && (

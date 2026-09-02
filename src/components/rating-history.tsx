@@ -23,6 +23,15 @@ function shortDate(value: string) {
   return new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", timeZone: "UTC" }).format(new Date(Date.UTC(year, month - 1, day)));
 }
 
+function GoalFootball({ goals, x, y }: { goals: number; x: number; y: number }) {
+  return <g aria-label={`${goals} goal${goals === 1 ? "" : "s"} in this week`}>
+    <circle cx={x} cy={y} fill="#e0ac4a" r="7" stroke="#15130f" strokeWidth="2" />
+    <path d={`M ${x} ${y - 3.6} l 3 2.1 -1.15 3.5 h -3.7 l -1.15 -3.5 Z`} fill="#15130f" />
+    <path d={`M ${x - 5.7} ${y - 1} l 3.8 1.3 M ${x + 5.7} ${y - 1} l -3.8 1.3 M ${x} ${y + 6.4} l 0 -3.2`} fill="none" stroke="#15130f" strokeLinecap="round" strokeWidth="1.2" />
+    {goals > 1 && <text className="fill-brass text-[11px] font-black" x={x + 9} y={y - 7}>×{goals}</text>}
+  </g>;
+}
+
 export function RatingHistory({ snapshots, goalsByWeek, playerName }: RatingHistoryProps) {
   if (snapshots.length === 0) {
     return <p className="text-sm font-semibold text-ink-faint">{playerName}&rsquo;s rating history starts with the next published session.</p>;
@@ -73,19 +82,13 @@ export function RatingHistory({ snapshots, goalsByWeek, playerName }: RatingHist
           const goals = goalsByWeek.get(snapshot.week_start) ?? 0;
           return <g key={snapshot.week_start}>
             <title>{`${shortDate(snapshot.week_start)}: ${snapshot.live_ovr} OVR${goals ? `, ${goals} goal${goals === 1 ? "" : "s"}` : ""}`}</title>
-            <circle cx={x(index)} cy={y(snapshot.live_ovr)} fill={index === snapshots.length - 1 ? "#e0ac4a" : "#19160f"} r={index === snapshots.length - 1 ? "5" : "3.5"} stroke="#e0ac4a" strokeWidth="2" />
+            {goals > 0 ? <GoalFootball goals={goals} x={x(index)} y={y(snapshot.live_ovr)} /> : <circle cx={x(index)} cy={y(snapshot.live_ovr)} fill={index === snapshots.length - 1 ? "#e0ac4a" : "#19160f"} r={index === snapshots.length - 1 ? "5" : "3.5"} stroke="#e0ac4a" strokeWidth="2" />}
             {showLabel && <text className="fill-ink-faint text-[10px] font-bold" textAnchor="middle" x={x(index)} y={height - 27}>{shortDate(snapshot.week_start)}</text>}
-            {goals > 0 && <g>
-              <title>{`${goals} goal${goals === 1 ? "" : "s"} in this week`}</title>
-              <path d={`M ${x(index) - 5} ${height - 18} L ${x(index) + 5} ${height - 18} L ${x(index)} ${height - 27} Z`} fill="#e0ac4a" />
-              <text className="fill-brass text-[10px] font-bold" textAnchor="middle" x={x(index)} y={height - 4}>{goals}</text>
-            </g>}
           </g>;
         })}
       </svg>
       {snapshots.length === 1 && <p className="text-sm text-ink-dim">One published week so far. The line begins with the next published session.</p>}
       {snapshots.length === 1 && nextBand && <p className="text-sm font-bold text-brass">{nextBand.min - latest.live_ovr} OVR from {nextBand.tier[0].toUpperCase() + nextBand.tier.slice(1)}.</p>}
-      <p className="text-xs leading-relaxed text-ink-faint">{range}. Goals feed Form, the temporary part of this line. Historical ratings are not revised after attendance corrections; a correction can still update the current football week.</p>
       <table className="sr-only"><caption>{playerName}&rsquo;s rating history</caption><thead><tr><th>Week</th><th>OVR</th><th>Goals</th></tr></thead><tbody>{snapshots.map((snapshot) => <tr key={snapshot.week_start}><td>{shortDate(snapshot.week_start)}</td><td>{snapshot.live_ovr}</td><td>{goalsByWeek.get(snapshot.week_start) ?? 0}</td></tr>)}</tbody></table>
     </section>
   );

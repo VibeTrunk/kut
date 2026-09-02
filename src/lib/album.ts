@@ -1,4 +1,4 @@
-import type { Archetype } from "@/game/archetypes";
+import { ARCHETYPES, type Archetype } from "@/game/archetypes";
 import type { RarityTier } from "@/game/rating-engine";
 
 export type AlbumDirectoryPlayer = {
@@ -16,8 +16,8 @@ export type Lens = { kind: "all" | "gaps" | "specialists" } | { kind: "type"; ar
 
 export function parseLens(value?: string): Lens {
   if (value === "gaps" || value === "specialists") return { kind: value };
-  if (value?.startsWith("type:")) return { kind: "type", archetype: value.slice(5) as Archetype };
-  if (value?.startsWith("tier:")) return { kind: "tier", tier: value.slice(5) as RarityTier };
+  if (value?.startsWith("type:") && ARCHETYPES.includes(value.slice(5) as Archetype)) return { kind: "type", archetype: value.slice(5) as Archetype };
+  if (value?.startsWith("tier:") && ["common", "bronze", "silver", "gold", "holo", "elite"].includes(value.slice(5))) return { kind: "tier", tier: value.slice(5) as RarityTier };
   return { kind: "all" };
 }
 export function lensParam(lens: Lens) { return lens.kind === "type" ? `type:${lens.archetype}` : lens.kind === "tier" ? `tier:${lens.tier}` : lens.kind; }

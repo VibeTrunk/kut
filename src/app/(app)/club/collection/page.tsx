@@ -4,6 +4,9 @@ import { LiveCard, type LiveCardPlayer } from "@/components/live-card";
 import { requireUser } from "@/lib/auth/user";
 import { resolvePhotoUrls } from "@/lib/player-photos";
 import { createClient } from "@/lib/supabase/server";
+import { CollectionAlbum } from "@/components/album/collection-album";
+import { applyLens, buildSlots, paginate, parseLens, type AlbumCollectionCard, type AlbumDirectoryPlayer } from "@/lib/album";
+import { notFound } from "next/navigation";
 
 type CollectionCard = {
   card_id: string;
@@ -30,7 +33,7 @@ type CollectionCard = {
 };
 
 type CollectionPageProps = {
-  searchParams: Promise<{ discard?: string; purchase?: string; q?: string; rarity?: string; sort?: string }>;
+  searchParams: Promise<{ discard?: string; purchase?: string; q?: string; rarity?: string; sort?: string; view?: string; page?: string; lens?: string }>;
 };
 
 const RARITIES = ["elite", "holo", "gold", "silver", "bronze", "common"] as const;
@@ -51,15 +54,17 @@ function href(base: Record<string, string | undefined>, patch: Record<string, st
 }
 
 export default async function CollectionPage({ searchParams }: CollectionPageProps) {
-  await requireUser();
+  const user = await requireUser();
   const supabase = await createClient();
-  const [{ data, error }, query] = await Promise.all([
+  const [{ data, error }, rosterResponse, profileResponse, query] = await Promise.all([
     supabase
       .schema("kut")
       .from("my_collection_cards")
-      .select("card_id, edition_id, edition_title, edition_type, is_live, source, player_id, player_slug, display_name, archetype, ovr, pac, sho, pas, dri, def, phy, rarity_tier, discard_value, active_listing_id, photo_path")
+      .select("card_id, edition_id, edition_title, edition_type, is_live, source, player_id, player_slug, display_name, archetype, ovr, pac, sho, pas, dri, def, phy, rarity_tier, discard_value, active_listing_id, held_by_offer_id, photo_path")
       .order("ovr", { ascending: false })
       .order("display_name"),
+    supabase.schema("kut").from("player_directory").select("id, slug, display_name, archetype, photo_path, live_ovr, pac, sho, pas, dri, def, phy, rarity_tier").order("display_name"),
+    supabase.schema("kut").from("profiles").select("player_id").eq("id", user.id).maybeSingle(),
     searchParams,
   ]);
 
@@ -71,6 +76,21 @@ export default async function CollectionPage({ searchParams }: CollectionPagePro
   // fetched once and narrowed here: it keeps the header totals honest (they
   // describe the whole collection, not the current filter) in one round trip.
   const all = (data ?? []) as CollectionCard[];
+  if (query.view !== "manage") {
+    if (rosterResponse.error) throw new Error("Could not load the TFH album.");
+    const page = query.page ?? "1";
+    const requestedPage = page === "all" ? page : Number(page);
+    if (page !== "all" && (!Number.isInteger(requestedPage) || Number(requestedPage) < 1)) notFound();
+    const albumCards = all.map((card) => ({ ...card, live_ovr: card.ovr })) as unknown as AlbumCollectionCard[];
+    const roster = (rosterResponse.data ?? []) as AlbumDirectoryPlayer[];
+    const filteredSlots = applyLens(buildSlots(roster, albumCards), parseLens(query.lens));
+    const albumTotal = paginate(filteredSlots, 1).total;
+    if (page !== "all" && Number(page) > albumTotal) notFound();
+    const visibleIds = page === "all" ? roster.map((player) => player.id) : roster.slice(Math.max(0, (Number(page) - 1) * 9), Number(page) * 9).map((player) => player.id);
+    const visiblePaths = roster.filter((player) => visibleIds.includes(player.id)).map((player) => player.photo_path);
+    const photoUrls = await resolvePhotoUrls(supabase, visiblePaths);
+    return <main className="board-ground min-h-screen p-5 text-ink sm:p-10"><section className="mx-auto max-w-6xl py-4 sm:py-8"><CollectionAlbum cards={albumCards} lensValue={query.lens} ownPlayerId={profileResponse.data?.player_id ?? null} pageValue={page} photoUrls={photoUrls} roster={roster} /></section></main>;
+  }
   const term = query.q?.trim().slice(0, 80) ?? "";
   const rarity = RARITIES.includes(query.rarity as (typeof RARITIES)[number]) ? query.rarity : undefined;
   const sort: SortKey = query.sort && query.sort in SORTS ? (query.sort as SortKey) : "ovr";

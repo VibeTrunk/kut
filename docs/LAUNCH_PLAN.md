@@ -116,9 +116,17 @@ dump. See §4 for what this implies if something goes wrong on the night.
 
 ### 1.4 Robustness (optional, safe to defer)
 
-- [ ] **Scheduled `expire_trade_offers`.** Offer expiry is a lazy sweep on
-      `/market` page loads today (ADR-042); a cron makes it robust for a larger
-      population. Self-healing without it — still fine to defer.
+- [x] **Scheduled `expire_trade_offers`: declined for launch** (owner,
+      2026-09-02). Offer expiry stays a lazy sweep on `/market` page loads
+      (ADR-042), and the sweep is not what enforces expiry. `respond_to_trade`
+      checks `expires_at <= now()` inline: on a stale offer it refunds the
+      escrow, marks the offer `expired`, notifies the proposer, and refuses the
+      acceptance. So an expired offer can never be accepted regardless of when
+      the sweep last ran, and any offer someone actually touches self-heals on
+      contact. The only residual cost is escrow on offers **nobody** touches
+      sitting locked a little past its nominal 12 hours, until the next
+      `/market` load sweeps it. Revisit if members complain about coins or cards
+      staying locked — that is the symptom that would justify a cron.
 
 ## 2. Player card database (the roster)
 
@@ -137,9 +145,10 @@ without destroying the economy. Grow the roster, don't reset it.
       both "Nick"s, Xander, Zak, Jurie, Cormac, Peter) **and** anyone in the
       group who has never attended. `kut.admin_add_player` via `/admin/roster`
       does the whole job in one transaction — inserts the player, mints their
-      Live edition, runs the rebuild. **Invites are player-bound, so every row
-      must exist before its invite can be issued.** This is the bulk of
-      Thursday's work; the 25 already on the roster need nothing.
+      Live edition, runs the rebuild. **Invites are player-bound, so a row must
+      exist before that person's invite can be issued** — but only theirs, so
+      creating the row and sending the invite person by person is fine (§5).
+      The 25 already on the roster need nothing.
 - [x] **The two "Nick" placeholders are a non-item.** Friday 07.08's sheet
       listed "Nick" twice and both were excluded from the import, so no such
       rows exist and there is nothing to rename. What remains is a naming call
@@ -210,14 +219,33 @@ Worth deciding before the night rather than during it.
 
 **Thursday 2026-09-03 — the working evening:**
 
-1. **Fresh backup** (`scripts/backup-kut-hosted.ps1`), logged.
-2. Create Player rows for every invitee not already on the roster. Expect this
-   to be the slow part: `admin_add_player` runs a full season rebuild per call,
-   so do it in one sitting *before* the invites rather than interleaved with
-   them.
-3. Generate and DM invite tokens — one at a time, individually, never in the
-   group.
-4. Post the group announcement and the FAQ (Appendix A).
+The pre-launch backup is already taken (§1.2), so the evening is one loop plus
+one post.
+
+1. **Per person, in one pass:** if they are not on the roster, create their
+   Player row at `/admin/roster`; then issue their invite at `/admin/invites`
+   and DM them the link. Add-as-you-go is fine — see the note below.
+2. Post the group announcement and the FAQ (Appendix A).
+
+**On adding players one at a time.** `admin_add_player` calls
+`_rebuild_season_core`, which re-folds *every* player over *every* published
+week — but at this size that is roughly 45 players × 5 August weeks of small
+indexed aggregates, i.e. milliseconds, and it is fully idempotent:
+`player_season_state` upserts on `(player_id, season_id)` and the snapshot
+trigger upserts on `(player_id, season_id, week_start)`, so repeated rebuilds
+cannot duplicate snapshot rows or disturb the rating graph and the Chronicle's
+`lag()`-based tier crossings. An earlier draft of this plan advised batching the
+roster work to avoid repeated rebuilds; that was unfounded and has been removed.
+
+Two things that *do* deserve care while adding people:
+
+- **Give same-named people distinct display names.** The function auto-suffixes
+  the *slug* (`nick`, `nick-2`) but leaves display names identical, and
+  `/admin/invites` picks players by display name — two entries reading "Nick"
+  is a coin flip as to whose card an invite claims.
+- **If an add looks like it failed, check the roster before retrying.** Each
+  call is its own transaction, and a retry with the same name cheerfully
+  creates a second row with a `-2` slug.
 
 **Friday 2026-09-04 — session day:**
 

@@ -76,7 +76,8 @@ dump. See §4 for what this implies if something goes wrong on the night.
       `https://kut.vibetrunk.com`. The "Confirm email" toggle is on and is
       harmless — invited accounts are created pre-confirmed through the
       service-role admin API, so no mail is ever attempted.
-- [ ] **Invite tokens go by DM only — never into the group chat.** Tokens are
+- **Standing rule — invite tokens go by DM only, never into the group chat.**
+      Not a task to tick; a rule that holds all evening. Tokens are
       single-use, player-bound and valid 14 days; one posted to a group would
       let the wrong person claim someone else's identity and card. If it
       happens, the fix is `/admin/links` → `admin_set_profile_player` to
@@ -84,19 +85,23 @@ dump. See §4 for what this implies if something goes wrong on the night.
 
 ### 1.2 Data safety
 
-- [ ] **Take a fresh backup Thursday, before the first invite goes out**
-      (`scripts/backup-kut-hosted.ps1`). Log it in
-      `.private-backups/BACKUP_LOG.md`. With no PITR this is the launch's only
-      safety net — do not skip it or reuse an older one.
+- [x] **Fresh backup taken 2026-09-02 16:23** —
+      `kut-backup-20260902-162326.sql.enc`, round-trip integrity check passed,
+      logged in `.private-backups/BACKUP_LOG.md`. With no PITR this is the
+      launch's safety net. It predates Thursday's roster work, which is the
+      correct shape for a rollback point; optionally take a second one *after*
+      the Player rows exist and before the invites go out, so a restore does not
+      also mean re-creating twenty rows by hand.
 - [x] **Restore drill: deferred to after the launch weekend** (ADR-050). The
       2026-08-30 drill passed, and the only schema change since is two additive
       views. Re-drill once real member data is in the dump, which is the more
       meaningful test. [`BACKUP.md`](BACKUP.md) asks for one "before the first
       invite" — this is a conscious deviation, recorded here.
-- [ ] **`player-photos` storage bucket** is still not covered by the SQL dump
-      ([`BACKUP.md`](BACKUP.md)). Accept the gap in writing before members start
-      uploading: photos are re-uploadable by their owners, so the loss is
-      annoyance rather than lost game state. Revisit if the bucket grows.
+- [x] **`player-photos` bucket gap accepted in writing — this bullet is the
+      acceptance.** Storage objects are not in the SQL dump
+      ([`BACKUP.md`](BACKUP.md)). Photos are re-uploadable by their owners at
+      `/settings/card`, so losing the bucket costs annoyance, not game state.
+      Revisit if it grows or if photos start carrying sentimental weight.
 - [x] **Supabase Pro: decided against** (ADR-050).
 
 ### 1.3 Moderation & privacy
@@ -135,10 +140,12 @@ without destroying the economy. Grow the roster, don't reset it.
       Live edition, runs the rebuild. **Invites are player-bound, so every row
       must exist before its invite can be issued.** This is the bulk of
       Thursday's work; the 25 already on the roster need nothing.
-- [ ] **Resolve the two placeholder "Nick" rows.** Friday 07.08's sheet listed
-      "Nick" twice at different skill levels and both were excluded from the
-      import. They need distinguishing display names before either can be
-      invited — ask in the group chat rather than guessing.
+- [x] **The two "Nick" placeholders are a non-item.** Friday 07.08's sheet
+      listed "Nick" twice and both were excluded from the import, so no such
+      rows exist and there is nothing to rename. What remains is a naming call
+      at row-creation time: if two people in the group both go by Nick, give
+      them distinguishing display names, because `/admin/invites` picks players
+      by display name and two identical entries are a coin flip.
 - [x] **Do not backfill new members into past August sessions** (ADR-050). A
       correction that adds them also back-pays 250 KUT Coins per session — an
       unplanned faucet against the Part L invariants. Joiners accrue from the

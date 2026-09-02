@@ -62,21 +62,20 @@ dump. See §4 for what this implies if something goes wrong on the night.
 - [x] **Custom SMTP: decided against** (ADR-050). `BUILD_SPEC.md` §89.1 and
       open question §4210 #5 are updated to record path 2, admin-assisted
       recovery.
-- [ ] **Write the admin-assisted password-recovery runbook.** Now required
-      rather than optional, since it is the only recovery path. Short and
-      concrete: where the request arrives (WhatsApp), the admin flow
-      (`/admin/accounts`, which audits through `create_password_reset_event`
-      then `complete_password_reset_event`), how the new password reaches the
-      member, and the rule that it is never posted in a group chat. Add it to
-      `README.md` or `OPERATIONS.md` — §89.1 requires whichever path is enabled
-      to be documented.
-- [ ] **Narrow the Supabase Auth redirect allow-list** from
-      `https://*-vibetrunk.vercel.app/**` to
-      `https://kut-*-vibetrunk.vercel.app/**`
-      ([`OPERATIONS.md`](OPERATIONS.md) Follow-ups, 2026-08-19). Dashboard
-      change, a few minutes.
-- [ ] **Re-confirm** hosted Supabase Auth still has public self-sign-up
-      disabled and Site URL is `https://kut.vibetrunk.com`.
+- [x] **Password-recovery runbook written** 2026-09-02 —
+      [`OPERATIONS.md`](OPERATIONS.md) "Member support runbooks". It also
+      records the sharper reason this path is permanent: KUT holds no real email
+      address for anyone, so self-service recovery is not a config away (ADR-050
+      amendment).
+- [x] **Auth redirect allow-list narrowed** 2026-09-02 to
+      `https://kut-*-vibetrunk.vercel.app/**`; the team-wide
+      `https://*-vibetrunk.vercel.app/**` is gone. Three entries remain:
+      production, that pattern, and `http://localhost:3000/**`.
+- [x] **Re-confirmed** 2026-09-02: public self-sign-up disabled, anonymous
+      sign-ins disabled, Email the only enabled provider, Site URL
+      `https://kut.vibetrunk.com`. The "Confirm email" toggle is on and is
+      harmless — invited accounts are created pre-confirmed through the
+      service-role admin API, so no mail is ever attempted.
 - [ ] **Invite tokens go by DM only — never into the group chat.** Tokens are
       single-use, player-bound and valid 14 days; one posted to a group would
       let the wrong person claim someone else's identity and card. If it
@@ -102,11 +101,13 @@ dump. See §4 for what this implies if something goes wrong on the night.
 
 ### 1.3 Moderation & privacy
 
-- [ ] **Document a photo-removal procedure** — admin edits the player row and
-      deletes the storage object. The minimum bar before ~30 people can upload
-      card photos. ADR-027's photo consent toggle and admin moderation UI remain
-      open ([`ROADMAP.md`](ROADMAP.md) one-off items) and are the proper fix;
-      not required for launch, but the manual procedure is.
+- [x] **Photo-removal procedure documented** 2026-09-02 —
+      [`OPERATIONS.md`](OPERATIONS.md) "Member support runbooks". Ask the member
+      to remove it themselves first; otherwise null `kut.players.photo_path` in
+      Studio *and* delete `players/<player_id>/profile.webp` from the bucket.
+      Note the one-hour signed-URL TTL: an already-issued link stays fetchable
+      until it expires. ADR-027's consent toggle and admin moderation UI remain
+      open ([`ROADMAP.md`](ROADMAP.md) one-off items) and are the proper fix.
 
 ### 1.4 Robustness (optional, safe to defer)
 
@@ -181,28 +182,35 @@ Worth deciding before the night rather than during it.
 
 ## 5. Sequencing
 
-**Wednesday 2026-09-02 (today):**
+**Wednesday 2026-09-02 — done.**
 
-- Documentation backfill for the shipped features (ADR-047/048/049/050,
+- ✅ Documentation backfill for the shipped features (ADR-047/048/049/050,
   `PROGRESS.md`, `BUILD_SPEC.md` §41 / Part XVII §46 / Part 137, ROADMAP status,
-  both hosted-deploy records). *In progress.*
-- Narrow the auth redirect allow-list; re-confirm self-sign-up and Site URL.
-- Ask the group chat to resolve the two "Nick" identities.
+  both hosted-deploy records) — KUT PR #37, catalogue PR #23.
+- ✅ Auth redirect allow-list narrowed; self-sign-up, anonymous sign-ins,
+  providers and Site URL all re-confirmed.
+- ✅ Password-recovery runbook and photo-removal procedure written
+  ([`OPERATIONS.md`](OPERATIONS.md)); launch messages drafted (Appendix A);
+  ADR-050 amended with the identity-model consequence.
+- ✅ **Production smoke-tested as a logged-in member** — pulled forward from
+  Thursday. The album, Chronicle and graph were exercised by a real account the
+  day they shipped.
+- ⛔️ Dropped: resolving the two placeholder "Nick" identities. No such rows
+  exist — both were excluded from the import — so there is nothing to rename.
+  If two people in the group both go by Nick, give them distinguishing display
+  names when their rows are created, because `/admin/invites` picks players by
+  display name.
 
 **Thursday 2026-09-03 — the working evening:**
 
-1. **Smoke-test production as a logged-in member first.** The album, the
-   Chronicle and the graph went live today and have not been exercised by a
-   real account: `/club/collection` (album and `?view=manage`), `/chronicle`
-   and an issue, `/players/[slug]`, plus the redirects from `/sessions` and an
-   old `/sessions/[id]` link. Do this *before* the invites, not after.
-2. Write the password-recovery runbook and the photo-removal procedure.
-3. **Fresh backup** (`scripts/backup-kut-hosted.ps1`), logged.
-4. Create Player rows for every invitee not already on the roster.
-5. Generate and DM invite tokens — one at a time, individually, never in the
+1. **Fresh backup** (`scripts/backup-kut-hosted.ps1`), logged.
+2. Create Player rows for every invitee not already on the roster. Expect this
+   to be the slow part: `admin_add_player` runs a full season rebuild per call,
+   so do it in one sitting *before* the invites rather than interleaved with
+   them.
+3. Generate and DM invite tokens — one at a time, individually, never in the
    group.
-6. Post the group message: what KUT is, the `/how-it-works` link, that the
-   invite link is personal and not to be forwarded, and where to ask for help.
+4. Post the group announcement and the FAQ (Appendix A).
 
 **Friday 2026-09-04 — session day:**
 
@@ -226,3 +234,88 @@ duplicate-copy Club Value weighting, "Real-life play → ratings" (goals + kudos
 survey), the KUT Five Cup, market auctions, an in-app FAQ page, prestige and
 collection rewards, wanted-card lists, and the Chronicle's reserved club-desk
 and kudos blocks.
+
+## Appendix A — Launch messages
+
+Drafts to copy into WhatsApp. Two audiences: the group, and each person
+individually with their own invite link. The numbers below are the live ones —
+starter grant 250 KUT Coins, attendance reward 250 per published session
+(ADR-029), bibs bonus 100, basic pack 250.
+
+### A1. The group announcement
+
+> ⚽ **KUT is live** — Kelderklasse Ultimate Team.
+>
+> It's a card game for TFH. Everyone who plays has their own player card, and
+> your card gets better by *showing up* — every session I publish moves the
+> ratings. You collect cards of the rest of us, open packs, and trade.
+>
+> You'll each get a personal invite link from me in a DM. **Don't forward it** —
+> it's tied to your own card, and whoever opens it first becomes you.
+>
+> How it works: https://kut.vibetrunk.com/how-it-works
+>
+> Questions in here, or DM me.
+
+### A2. The individual invite DM
+
+Send one per person, with their own link. Never paste a link into the group.
+
+> Here's your personal KUT invite 👇
+> `<invite link>`
+>
+> It's just for you — don't forward it. Pick a username and a password of at
+> least 12 characters. There's no email involved, so **write your password down
+> somewhere**: if you lose it I have to reset it by hand.
+>
+> You'll start with 250 KUT Coins and a few cards. See you Friday.
+
+### A3. Short FAQ
+
+Post after the announcement, or keep it to answer questions as they come.
+
+> **Do I need to download anything?**
+> No, it's a website. Open it in your phone browser and add it to your home
+> screen if you want.
+>
+> **Why does it want a username instead of my email?**
+> KUT doesn't use email at all. You pick a username and a password. Nothing gets
+> sent to you and I don't store an address for you.
+>
+> **I forgot my password.**
+> Message me and I'll set a new one for you. There's no reset email — that's the
+> trade-off for not collecting addresses.
+>
+> **How do I get a better card?**
+> Turn up. Attendance is what drives your rating. You can't buy your way to a
+> better card, and playing badly never costs you anything.
+>
+> **How do I get coins?**
+> 250 to start, 250 every session you're marked present, and 100 for bringing
+> the bibs. You also get coins from selling cards.
+>
+> **What do I spend them on?**
+> Packs are 250 and contain cards of other TFH players. You can also buy cards
+> directly from other people on the market, or offer them a swap.
+>
+> **Can I see other people's collections?**
+> No — on purpose. You can see everyone's *ratings* and what's for sale, but not
+> who owns which cards.
+>
+> **My card photo is wrong / I want it gone.**
+> Change or remove it yourself under Settings → Card. Ask me if you want a hand.
+>
+> **My graph is nearly empty.**
+> Rating history only started recording a few days ago, so everyone's is short
+> right now. It fills in a week at a time.
+>
+> **Something's broken.**
+> Tell me what you were doing and send a screenshot.
+
+### A4. What not to say
+
+- Do not post any invite link, temporary password, or username in the group.
+- Do not promise features from `ROADMAP.md` — the Cup, the kudos survey, the
+  store and prestige rewards are unbuilt and several may never be built.
+- Do not claim the market has liquidity on day one. Nobody has anything to sell
+  until people open packs.

@@ -93,14 +93,110 @@ wallets, cards, sessions, or market history.
 
 ## Follow-ups
 
-- Confirmed 2026-08-19: hosted Supabase Auth has public self-sign-up disabled
-  and the Site URL is `https://kut.vibetrunk.com`. The redirect URL allow-list
-  includes `https://*-vibetrunk.vercel.app/**`, which is scoped to the whole
-  `vibetrunk` Vercel team rather than just KUT's own previews — any preview
-  deployment under that team is currently a valid auth-redirect target for
-  KUT sessions. Not a blocker for inviting real members to the production
-  URL, but narrow it to KUT's own preview pattern (e.g.
-  `https://kut-*-vibetrunk.vercel.app/**`) when convenient.
+- **Resolved 2026-09-02.** The redirect URL allow-list previously included
+  `https://*-vibetrunk.vercel.app/**`, scoped to the whole `vibetrunk` Vercel
+  team rather than just KUT's own previews, which made any preview deployment
+  under that team a valid auth-redirect target for KUT sessions. It has been
+  narrowed to `https://kut-*-vibetrunk.vercel.app/**` ahead of the wide launch.
+  The list now holds exactly three entries: production, that KUT preview
+  pattern, and `http://localhost:3000/**` for local development against the
+  hosted project.
+- Re-confirmed 2026-09-02 alongside that change: public self-sign-up is
+  disabled, anonymous sign-ins are disabled, Email is the only enabled auth
+  provider, and the Site URL is `https://kut.vibetrunk.com`.
+- The hosted **"Confirm email" toggle is on, and that is fine.** Invited
+  accounts are created through the service-role admin API with
+  `email_confirm: true` (`src/app/invite/[token]/actions.ts`), so they are
+  pre-confirmed and no mail is ever attempted; the toggle only gates the public
+  sign-up path, which is disabled. Do not read it as a launch risk — but do not
+  turn *off* self-sign-up protection thinking the toggle compensates, either.
+
+## Member support runbooks
+
+Written for the wide TFH launch (ADR-050). Both procedures are manual by
+design: KUT has no self-service password recovery and no admin photo tooling,
+and both gaps were accepted knowingly rather than overlooked.
+
+### Password recovery (the only recovery path)
+
+KUT holds **no real email address for any member**. Sign-in is by self-chosen
+username, mapped to a synthetic address on the non-routable domain
+`users.kut.local` (`src/lib/auth/username.ts`). There is nowhere to send a reset
+link, so every forgotten password is handled by an admin by hand. This is not a
+gap waiting on SMTP — see ADR-050's amendment.
+
+**When a member says they are locked out:**
+
+1. **Confirm who they are** out of band. A WhatsApp message from their own
+   number is enough for this group; the point is that whoever asks is the person
+   who owns the account, because this procedure hands out a working credential.
+   Do not act on a request relayed by someone else.
+2. **Get their username**, not their display name. If they cannot remember it,
+   find it at `/admin/links`, which lists every profile with its username and
+   linked player.
+3. Go to **`/admin/accounts`**, pick the member, enter a **new temporary
+   password of at least 12 characters**, and write a **reason** (3–500
+   characters — it is stored in the audit trail, so make it meaningful:
+   "forgot password, confirmed by WhatsApp DM 2026-09-05").
+4. Submit. The action writes an audit row through `create_password_reset_event`,
+   changes the password via the service-role admin API, then closes the audit
+   row with `complete_password_reset_event`. A failed attempt is recorded too.
+5. **Send the temporary password by DM only.** Never in the group chat, and
+   never alongside the username in the same message if you can avoid it.
+6. **Tell them to change it** at `/settings` once they are back in.
+
+**Notes and failure modes.**
+
+- Disabled accounts are not listed at `/admin/accounts`, and the RPC refuses
+  them — "This reset is not allowed for that account" usually means the profile
+  is disabled, not that you mistyped.
+- "Password changed, but its audit record needs review before another reset"
+  means the password *did* change but the audit row did not close. The member
+  can sign in; check `kut.password_reset_events` before doing another reset for
+  the same person.
+- The last ten resets are shown on the page. Skim them occasionally — a member
+  needing frequent resets is a sign of a shared or forgotten username rather
+  than a security problem.
+- Only enabled admins can do this, and every attempt is attributable. Do not
+  work around a failure by editing `auth.users` directly.
+
+### Removing a player card photo
+
+Members upload their own card photo at `/settings/card`. There is **no admin UI
+to remove someone else's** — ADR-027's consent toggle and moderation surface are
+still open roadmap items — so a takedown is done by hand. Two things must
+happen, in this order.
+
+**First, ask the member to remove it themselves.** `/settings/card` has a clear
+action that calls `set_own_player_photo(null)`. For anything short of an urgent
+problem this is the right route: it is one message, it leaves them in control of
+their own card, and it does both steps below correctly.
+
+**If that is not appropriate or not fast enough:**
+
+1. **Clear the pointer.** In Supabase Studio, against the `kut` schema:
+
+   ```sql
+   update kut.players set photo_path = null where slug = '<player-slug>';
+   ```
+
+   `kut.players.photo_path` is the source of truth. Nulling it removes the photo
+   from every surface — card faces, the album, the directory, the market — on
+   the next page load.
+
+2. **Delete the object.** Storage → `player-photos` bucket → delete
+   `players/<player_id>/profile.webp`. Step 1 alone hides the photo; only this
+   step removes the file.
+
+**Timing note.** The bucket is private and images are served as **signed URLs
+with a one-hour TTL** (`src/lib/player-photos.ts`). Clearing `photo_path` stops
+new URLs being minted immediately, but a URL already handed to a browser stays
+valid until it expires. For an ordinary "I don't like my photo" this is
+irrelevant; for a genuine takedown, do step 2 and know the object may still be
+fetchable through an outstanding link for up to an hour.
+
+**Record what you did and why**, at least in the launch notes — there is no
+audit table for photo actions, unlike password resets.
 
 ## Alpha operations
 

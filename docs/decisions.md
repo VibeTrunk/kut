@@ -2115,6 +2115,24 @@ there.
   `BUILD_SPEC.md` open question §4210 #5 as "not for launch". Onboarding never
   depended on email — invites are player-bound token links — so this costs
   support load in week two rather than blocking the launch.
+
+  **Amended 2026-09-02, and this is the stronger point:** self-service email
+  recovery is not merely unconfigured, it is **impossible with the current
+  identity model**, and no amount of SMTP configuration changes that. Members
+  sign in with a self-chosen username, which `src/lib/auth/username.ts` maps to
+  a synthetic address on the non-routable domain `users.kut.local`. KUT holds no
+  real email address for any member, so there is nowhere to send a recovery
+  link. Adding a provider later is therefore **not** a config change: it would
+  need a way to collect and verify real addresses first (a schema change, a
+  settings surface, a consent question, and a decision about whether an address
+  is required or optional), and only then the SMTP setup. Anyone revisiting this
+  should cost it as a feature, not a checkbox.
+
+  The same design is why the hosted "Confirm email" Auth toggle can stay on
+  harmlessly: invited accounts are created through the service-role admin API
+  with `email_confirm: true` (`src/app/invite/[token]/actions.ts`), so they are
+  pre-confirmed and no mail is ever attempted. The toggle only gates the public
+  sign-up path, which is disabled.
 - **Invite process unchanged.** `/admin/invites` issues one token at a time,
   delivered by WhatsApp DM. Tokens are single-use, player-bound and expire in 14
   days; a token posted to a group chat would let the wrong person claim someone

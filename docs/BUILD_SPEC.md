@@ -4267,6 +4267,10 @@ They should remain configurable decisions rather than questions that stop develo
    — *Answered 2026-09-02: no. Password recovery is admin-assisted; see §89.1
    and ADR-050.*
 6. Whether attendance reward remains 75 after economy testing.
+   — *Answered: no. Raised to **250** by ADR-029 (migration
+   `20260831000000`, `v_amount constant bigint := 250`), not applied
+   retroactively — past rewards keep the amount they were credited. The starter
+   grant and the basic pack price are also 250.*
 7. Whether Pack price remains 250 after simulation/playtest.
 8. Whether a Player automatically receives a copy of their own future Special.
 9. Exact season length.

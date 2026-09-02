@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { archetypeLabel } from "@/game/archetypes";
-import { AttributeBars, RatingHistory, type RatingSnapshot } from "@/components/card-stats";
+import { AttributeBars } from "@/components/card-stats";
+import { RatingHistory, type RatingSnapshot } from "@/components/rating-history";
+import { weekStart } from "@/game/football-week";
 import { LiveCard, type LiveCardPlayer } from "@/components/live-card";
 import { requireUser } from "@/lib/auth/user";
 import { resolvePhotoUrls } from "@/lib/player-photos";
@@ -43,19 +45,42 @@ export default async function PlayerProfilePage({ params }: PlayerProfilePagePro
   if (!data) notFound();
 
   const player = data as DirectoryRow;
-  const [photoUrls, snapshotsResponse] = await Promise.all([
+  const [photoUrls, seasonResponse, attendanceResponse] = await Promise.all([
     resolvePhotoUrls(supabase, [player.photo_path]),
     supabase
       .schema("kut")
-      .from("player_rating_snapshots")
-      .select("week_start, live_ovr")
+      .from("seasons")
+      .select("id")
+      .eq("is_active", true)
+      .maybeSingle(),
+    supabase
+      .schema("kut")
+      .from("attendance")
+      .select("goals, match_sessions!inner(session_date, status)")
       .eq("player_id", player.id)
-      .order("week_start", { ascending: false })
-      .limit(8),
+      .eq("match_sessions.status", "published"),
   ]);
+  const snapshotsResponse = seasonResponse.data
+    ? await supabase
+        .schema("kut")
+        .from("player_rating_snapshots")
+        .select("week_start, live_ovr, rarity_tier")
+        .eq("player_id", player.id)
+        .eq("season_id", seasonResponse.data.id)
+        .order("week_start")
+    : { data: null, error: null };
   const photoUrl = player.photo_path ? photoUrls.get(player.photo_path) ?? null : null;
-  // Non-critical: a player with no published history simply has no chart.
-  const snapshots = ((snapshotsResponse.data ?? []) as RatingSnapshot[]).slice().reverse();
+  // Both chart queries are deliberately non-critical.
+  const snapshots = snapshotsResponse.error ? [] : ((snapshotsResponse.data ?? []) as RatingSnapshot[]);
+  const goalsByWeek = new Map<string, number>();
+  if (!attendanceResponse.error) {
+    for (const row of (attendanceResponse.data ?? []) as unknown as { goals: number; match_sessions: { session_date: string } | null }[]) {
+      if (row.match_sessions?.session_date) {
+        const week = weekStart(row.match_sessions.session_date);
+        goalsByWeek.set(week, (goalsByWeek.get(week) ?? 0) + row.goals);
+      }
+    }
+  }
 
   const cardPlayer: LiveCardPlayer = {
     id: player.id,
@@ -97,12 +122,8 @@ export default async function PlayerProfilePage({ params }: PlayerProfilePagePro
 
             <AttributeBars player={player} />
 
-            {snapshots.length >= 2 && (
-              <>
-                <hr className="border-line/40" />
-                <RatingHistory snapshots={snapshots} />
-              </>
-            )}
+            <hr className="border-line/40" />
+            <RatingHistory goalsByWeek={goalsByWeek} playerName={player.display_name} snapshots={snapshots} />
           </div>
         </div>
       </section>

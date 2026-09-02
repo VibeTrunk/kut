@@ -22,6 +22,7 @@ type CollectionCard = {
   is_live: boolean;
   source: string;
   display_name: string;
+  player_slug: string;
   archetype: string;
   ovr: number;
   pac: number;
@@ -49,7 +50,7 @@ export default async function CardDetailPage({ params, searchParams }: CardPageP
   const { data, error } = await supabase
     .schema("kut")
     .from("my_collection_cards")
-    .select("card_id, edition_id, edition_title, edition_type, is_live, source, display_name, archetype, ovr, pac, sho, pas, dri, def, phy, rarity_tier, discard_value, active_listing_id, active_listing_price, held_by_offer_id, photo_path")
+    .select("card_id, edition_id, edition_title, edition_type, is_live, source, player_slug, display_name, archetype, ovr, pac, sho, pas, dri, def, phy, rarity_tier, discard_value, active_listing_id, active_listing_price, held_by_offer_id, photo_path")
     .eq("card_id", cardId)
     .maybeSingle();
 
@@ -114,6 +115,10 @@ export default async function CardDetailPage({ params, searchParams }: CardPageP
             </div>
 
             <AttributeBars player={card} />
+
+            <Link className="block text-sm font-bold text-brass hover:underline" href={`/players/${card.player_slug}`}>
+              See {card.display_name.split(" ")[0]}&rsquo;s rating history &rarr;
+            </Link>
 
             <hr className="border-line/40" />
 

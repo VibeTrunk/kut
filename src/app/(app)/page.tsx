@@ -196,7 +196,7 @@ export default async function Home() {
                   </p>
                   <p className="text-sm leading-relaxed text-ink-dim">
                     {row.kind === "session" ? (
-                      <Link className="hover:text-brass hover:underline" href="/sessions">
+                      <Link className="hover:text-brass hover:underline" href="/chronicle">
                         {describeActivity(row)}
                       </Link>
                     ) : (

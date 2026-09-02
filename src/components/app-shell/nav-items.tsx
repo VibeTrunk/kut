@@ -39,7 +39,7 @@ export const primaryNavItems: Omit<NavItem, "badgeCount">[] = [
 export function buildMoreNavItems(unreadCount: number, incomingOfferCount = 0): NavItem[] {
   return [
     { href: "/leaderboard", label: "Leaderboard", Icon: IconLeaderboard, isActive: prefixed("/leaderboard") },
-    { href: "/sessions", label: "Sessions", Icon: IconSessions, isActive: prefixed("/sessions") },
+    { href: "/chronicle", label: "Chronicle", Icon: IconSessions, isActive: prefixed("/chronicle") },
     { href: "/club/value", label: "Club Value", Icon: IconScale, isActive: prefixed("/club/value") },
     { href: "/market/offers", label: "Trade offers", Icon: IconOffer, isActive: prefixed("/market/offers"), badgeCount: incomingOfferCount },
     { href: "/players", label: "Player directory", Icon: IconDirectory, isActive: prefixed("/players") },

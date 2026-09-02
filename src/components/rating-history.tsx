@@ -34,13 +34,15 @@ export function RatingHistory({ snapshots, goalsByWeek, playerName }: RatingHist
   const domainMax = bands[bands.length - 1].max;
   const width = 560;
   const height = 230;
-  const left = 64;
+  // Reserve a real y-axis gutter: tier labels sit on their threshold rule and
+  // can never collide with the plotted series.
+  const left = 88;
   const right = 12;
   const top = 12;
   const bottom = 51;
   const plotWidth = width - left - right;
   const plotHeight = height - top - bottom;
-  const x = (index: number) => snapshots.length === 1 ? left + plotWidth / 2 : left + (index * plotWidth) / (snapshots.length - 1);
+  const x = (index: number) => snapshots.length === 1 ? left + plotWidth * 0.18 : left + (index * plotWidth) / (snapshots.length - 1);
   const y = (value: number) => top + ((domainMax - value) / (domainMax - domainMin + 1)) * plotHeight;
   const points = snapshots.map((snapshot, index) => `${x(index)},${y(snapshot.live_ovr)}`).join(" ");
   const latest = snapshots[snapshots.length - 1];
@@ -55,14 +57,14 @@ export function RatingHistory({ snapshots, goalsByWeek, playerName }: RatingHist
         </h2>
         <p className="text-4xl font-black tabular-nums leading-none text-brass">{latest.live_ovr}<span className="ml-1 text-[0.65rem] uppercase tracking-[0.16em]">now</span></p>
       </div>
-      <svg className="block h-auto w-full" role="img" aria-label={`${playerName}: ${range}, latest rating ${latest.live_ovr}.`} viewBox={`0 0 ${width} ${height}`}>
+      <svg className={`block h-auto w-full ${snapshots.length === 1 ? "rounded-2xl border border-line/60 bg-panel/40 p-2" : ""}`} role="img" aria-label={`${playerName}: ${range}, latest rating ${latest.live_ovr}.`} viewBox={`0 0 ${width} ${height}`}>
         {bands.map((band) => {
-          const bandTop = y(band.max);
-          const bandBottom = y(band.min - 1);
+          const bandTop = Math.max(top, y(band.max + 1));
+          const bandBottom = Math.min(top + plotHeight, y(band.min));
           return <g key={band.tier}>
             <rect fill={TIER_COLORS[band.tier]} fillOpacity="0.12" height={bandBottom - bandTop} width={plotWidth} x={left} y={bandTop} />
             <line className="stroke-line/60" strokeWidth="1" x1={left} x2={width - right} y1={bandBottom} y2={bandBottom} />
-            <text className="fill-ink-faint text-[10px] font-bold uppercase tracking-[0.12em]" x="2" y={bandTop + 14}>{band.tier} {band.min}</text>
+            <text className="fill-ink-faint text-[10px] font-bold uppercase tracking-[0.12em]" x="4" y={bandBottom + 3}>{band.tier} {band.min}</text>
           </g>;
         })}
         {snapshots.length > 1 && <polyline fill="none" points={points} stroke="#e0ac4a" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />}
@@ -81,8 +83,9 @@ export function RatingHistory({ snapshots, goalsByWeek, playerName }: RatingHist
           </g>;
         })}
       </svg>
+      {snapshots.length === 1 && <p className="text-sm text-ink-dim">One published week so far. The line begins with the next published session.</p>}
       {snapshots.length === 1 && nextBand && <p className="text-sm font-bold text-brass">{nextBand.min - latest.live_ovr} OVR from {nextBand.tier[0].toUpperCase() + nextBand.tier.slice(1)}.</p>}
-      <p className="text-xs leading-relaxed text-ink-faint">{range}. Goals feed Form, the temporary part of this line. Ratings are recorded once per football week and are not revised if attendance is corrected later.</p>
+      <p className="text-xs leading-relaxed text-ink-faint">{range}. Goals feed Form, the temporary part of this line. Historical ratings are not revised after attendance corrections; a correction can still update the current football week.</p>
       <table className="sr-only"><caption>{playerName}&rsquo;s rating history</caption><thead><tr><th>Week</th><th>OVR</th><th>Goals</th></tr></thead><tbody>{snapshots.map((snapshot) => <tr key={snapshot.week_start}><td>{shortDate(snapshot.week_start)}</td><td>{snapshot.live_ovr}</td><td>{goalsByWeek.get(snapshot.week_start) ?? 0}</td></tr>)}</tbody></table>
     </section>
   );

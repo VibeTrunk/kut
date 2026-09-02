@@ -1955,3 +1955,195 @@ other code toggled that class.
 
 KB-001 is resolved by removal (status set in `KNOWN_BUGS.md`). ADR-044's
 other six items stand. Verification: `npm run verify:fast` + `next build`.
+
+---
+
+## ADR-047 — Rating history as a line chart over tier bands
+
+Date: 2026-09-02
+
+Status: Accepted
+
+`/players/[slug]` carried an eight-bar sparkline (`RatingHistory` in
+`card-stats.tsx`) with no axis, no scale, no tier context and no dates beyond a
+start–end caption, and it hid itself entirely below two snapshots. It answered
+"has this gone up?" and nothing else.
+
+Replaced with a line chart — one point per published football week, drawn over
+horizontal rarity-tier bands, with goal markers on the weeks a player scored.
+Design settled in `archive/SPEC_ALBUM_CHRONICLE_GRAPH.md` §2.
+
+- **Tier bands, not a bare axis.** OVR alone is a number; OVR against the tier
+  it sits in is the thing members actually care about, because the tier is what
+  changes the card face and its market value.
+- **X is ordinal by week index, not by date.** A holiday gap shows up in the
+  labels, not as blank horizontal space, so a sparse series reads as a history
+  with gaps rather than a broken chart.
+- **Season-scoped.** The query now filters `player_rating_snapshots` on the
+  active season (`kut.seasons where is_active`) instead of an unscoped
+  `limit(8)`. Ratings are per-season, so an unscoped series was wrong the
+  moment a second season existed.
+- **Goal markers reuse published attendance**, which the Chronicle and the
+  activity feed already show club-wide. No new disclosure.
+
+**No backfill.** `kut.player_rating_snapshots` has only accumulated since
+ADR-031 (2026-08-30) and the capture trigger writes one week per rebuild, so on
+ship day most players have one or two points. The chart is therefore designed
+so a sparse series reads as *early*, not as broken — no empty box, no "no data"
+apology. A deterministic season backfill stays available later
+(`BUILD_SPEC.md` §10 guarantees the season is rebuildable from published
+sessions) and is recorded as deferred in the spec's §7.
+
+No migration: the snapshot table and published attendance already exist. Both
+queries are non-critical — a failure renders the profile without the chart,
+exactly as the page already treated snapshots.
+
+## ADR-048 — The collection album is a bound, paged book; archetype is a lens
+
+Date: 2026-09-02
+
+Status: Accepted
+
+`BUILD_SPEC.md` §41 specified a "Collection album — Phase 2" as a
+roster-completion view with owned and missing slots, and left the organisation
+open ("possible subcollections: Monday regulars, Friday regulars, Gold players,
+2026 debutants"). This settles those choices and builds it.
+
+The emotional job is to **make the gap visible**. `/club/collection` could show
+what you have but never what you are missing, so there was no pull toward the
+market and no reason to care about a duplicate.
+
+- **A bound album you leaf through, not a scrolling grid.** Nine slots per
+  page, ordered alphabetically by display name; desktop shows two facing leaves
+  as a spread, mobile one leaf, page numbers identical on both.
+- **Album is the default view of `/club/collection`**; the existing
+  filter/sort/discard/list grid becomes a "Manage" mode at `?view=manage`,
+  reached by a segmented control under the page title. Completion is the more
+  emotional read, and ROADMAP phase D already described exactly this split.
+- **Archetype is a lens, not the spine.** The first design used archetype
+  pages. It does not survive contact with the data: `kut.players.archetype`
+  defaults to `all_rounder` and only changes if a member sets it at
+  `/settings/card` (ADR-027) or an admin does, so roughly **80% of the roster
+  is All-rounder** — six near-empty pages and one page of about fifty. Lenses
+  (`all` · `gaps` · `specialists` · `type:<archetype>` · `tier:<tier>`) select
+  which players are in the album and pagination adapts. `specialists` — the
+  players who actually chose a type — is the only cut of the archetype data
+  that means anything while the default dominates.
+- **Slot numbers are positional, never identifiers.** They are an alphabetical
+  index, so adding a player shifts every number after them. Nothing may persist
+  or reference them.
+
+Out of scope in v1 and unchanged by this ADR: completion rewards (a faucet or
+sink that must be balanced against Part L — the ROADMAP "Prestige +
+collections" item is their home), other members' albums (card ownership is
+deliberately private; "see other members' squads" stays a blocked roadmap item
+needing its own privacy ADR), and sub-collections, which are where §41's
+"possible subcollections" list would land if built — as lenses.
+
+No migration: both queries already exist elsewhere in the app.
+
+## ADR-049 — The TFH Chronicle replaces /sessions, one issue per football week
+
+Date: 2026-09-02
+
+Status: Accepted
+
+`/sessions` was a list of dates. The Chronicle is a weekly club paper: one
+issue per football week, telling what happened at TFH and what it did to the
+cards. Design settled in `archive/SPEC_ALBUM_CHRONICLE_GRAPH.md` §4.
+
+- **The football week is the unit** because it is the rating engine's unit
+  (`BUILD_SPEC.md` §9). A Monday and a Friday in the same week share one
+  activity calculation, so "whose card moved" is only a truthful statement at
+  week level. Individual sessions become matchday reports nested inside the
+  issue.
+- **Computed live, no snapshot table and no write path.** An attendance
+  correction retroactively fixes an old issue, which is the correct behaviour
+  here: the Chronicle then always agrees with the ratings people can see.
+- **`[week]` is the ISO Monday as `YYYY-MM-DD`** (e.g. `/chronicle/2026-08-31`)
+  rather than `2026-W36`, because it *is* the `week_start` key — no conversion,
+  no ISO week-year edge cases at year boundaries, and it sorts naturally.
+- **Promotions only, editorially.** v1 carries the issue header, matchday
+  reports (attendance, scorers, bibs) and **tier crossings** — no risers and
+  fallers list, no market or pack desk, no club-table movement. A rating falling
+  is a consequence of not showing up; a weekly paper that named people for it
+  would make KUT a place you get called out, which is the opposite of what it is
+  for. Tier crossings are the one rating event worth reporting because they
+  visibly change the card. Layout leaves room for a later club desk and a
+  kudos/goals block; no code was written for either.
+- **Members only.** No public route, share token or OG image. An issue names who
+  attended, who scored and who brought the bibs — all already club-visible via
+  the activity feed — and the Chronicle must not become the surface that leaks
+  them outside TFH.
+- **Weeks with no published session produce no issue.** No "quiet week"
+  placeholder, consistent with §9: a week without a published session does
+  nothing to anyone.
+
+`/sessions` and `/sessions/[sessionId]` become permanent redirects; the More
+menu's "Sessions" entry becomes "Chronicle" (`IconSessions` retained). The nav
+is a public surface, so `BUILD_SPEC.md` Part XVII §46 is updated with it.
+
+One additive migration, `20260913000000_chronicle_views.sql`:
+`kut.chronicle_weeks` (one row per football week with a published session) and
+`kut.chronicle_tier_changes` (a `lag()` over `player_rating_snapshots` finding
+consecutive weeks where the tier differs), both `security_invoker = true`
+because every underlying select is already permitted to members. Rollback is two
+`drop view`s.
+
+**Known-sparse at launch:** tier crossings need two snapshot weeks to compute
+anything, and snapshots only started accumulating 2026-08-30, so the block is
+omitted entirely — no heading, no empty box — on early issues. See ADR-047 for
+the same constraint on the graph.
+
+## ADR-050 — Go-live operating decisions for the wide TFH invite
+
+Date: 2026-09-02
+
+Status: Accepted
+
+Decisions taken by the owner when opening KUT from closed alpha to the whole of
+Terrible Football Haarlem, ahead of the Friday 2026-09-04 session. The checklist
+they resolve is `docs/LAUNCH_PLAN.md`; the reasoning not repeated here lives
+there.
+
+- **No Supabase Pro upgrade.** The shared project stays on the free plan, so
+  there is no PITR and no managed backup. The encrypted logical dump
+  (`scripts/backup-kut-hosted.ps1`) remains the only rollback path for game
+  state, and `docs/BACKUP.md`'s cadence is therefore load-bearing rather than
+  advisory. Accepted knowingly.
+- **No custom SMTP.** Password recovery stays admin-assisted (ADR-011), closing
+  `BUILD_SPEC.md` open question §4210 #5 as "not for launch". Onboarding never
+  depended on email — invites are player-bound token links — so this costs
+  support load in week two rather than blocking the launch.
+- **Invite process unchanged.** `/admin/invites` issues one token at a time,
+  delivered by WhatsApp DM. Tokens are single-use, player-bound and expire in 14
+  days; a token posted to a group chat would let the wrong person claim someone
+  else's identity, so DM is the rule, with `/admin/links`
+  (`admin_set_profile_player`) as the recovery path if it happens anyway.
+- **Anyone who joins gets a card immediately.** The "2+ appearances before a
+  Player row" bar was a one-off *import* policy recorded in the roster
+  migrations, never a spec rule; it does not apply to joiners. Every invitee gets
+  a Player at the 30 OVR / common baseline via `kut.admin_add_player`, so their
+  album has their own card in it on day one. `BUILD_SPEC.md` Part 137 is updated.
+  The bar stays only for migration-backfilled historical players.
+- **Invite scope is the whole TFH WhatsApp group**, including people who never
+  appeared on an August sheet — each needs a Player row created before their
+  invite can be issued, since invites are player-bound.
+- **No backfill of joiners into past sessions.** A correction that adds someone
+  to an August session also back-pays 250 KUT Coins per session, an unplanned
+  faucet against the Part L invariants. Joiners accrue from the next published
+  session.
+- **No blanket account reset, no season reset, no roster reset.** Reasoning in
+  `LAUNCH_PLAN.md` §2–§3; card editions are referenced with `ON DELETE RESTRICT`
+  and everyone is on the same faucet from go-live regardless.
+- **New joiners keep the `all_rounder` default archetype** and are not nudged to
+  change it. Self-service stays available at `/settings/card`
+  (`set_own_player_archetype`). Reassigning an *existing* player's archetype
+  triggers a rating rebuild and is data-changing tier, so it is not launch work.
+- **Restore drill deferred to after the launch weekend.** The 2026-08-30 drill
+  passed and the only schema change since is two additive views; re-drilling once
+  real member data is in the dump is the more meaningful test. A fresh backup is
+  still taken before the first invite wave.
+- **Backup cadence to be set after launch**, once the group's real trading
+  activity is visible. `BACKUP.md`'s unattended scheduled-task recipe is
+  available when that is decided.

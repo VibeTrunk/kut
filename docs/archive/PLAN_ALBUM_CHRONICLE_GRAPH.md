@@ -3,7 +3,7 @@
 Build plan for the three features specified in
 [`SPEC_ALBUM_CHRONICLE_GRAPH.md`](SPEC_ALBUM_CHRONICLE_GRAPH.md). Rendered
 designs — desktop and mobile per surface — are checked in at
-[`docs/design/`](design/README.md).
+[`docs/design/`](../design/README.md).
 
 **Read the spec first.** This document says *how and in what order*; the spec
 says *what*. Where they disagree, the spec wins and this file is wrong.
@@ -34,13 +34,13 @@ predictable, expensive kind of wrong.
 2. [`SPEC_ALBUM_CHRONICLE_GRAPH.md`](SPEC_ALBUM_CHRONICLE_GRAPH.md) — **in
    full**, including §0 (locked decisions), §1 (shared constraints) and §7
    (deliberately deferred).
-3. [`design/`](design/README.md) — the eight rendered mockups. These are the
+3. [`design/`](../design/README.md) — the eight rendered mockups. These are the
    visual source of truth.
 4. This plan.
 
 ### 0.2 The design reference is in the repo
 
-[`docs/design/`](design/README.md) holds a PNG per surface, desktop and mobile,
+[`docs/design/`](../design/README.md) holds a PNG per surface, desktop and mobile,
 rendered at native size, with an index mapping each to its route and spec
 section. Look at the one for the surface you are building **before** writing
 its markup. Two things there are commonly mistaken for bugs — all-rounder cards

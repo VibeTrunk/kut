@@ -1929,3 +1929,60 @@ Also tidied the round-3 feedback ledger (`TESTER_FEEDBACK_BATCHES.md`) so the
 KB-001 / KB-002 rows reflect their resolutions (removal / this fix).
 
 Verification: `npm run verify:fast` + `next build`.
+
+## Rating graph, collection album, TFH Chronicle (ADR-047/048/049) — 2026-09-02
+
+Three collection-and-story features in one branch, specified first in
+`archive/SPEC_ALBUM_CHRONICLE_GRAPH.md` and sequenced in
+`archive/PLAN_ALBUM_CHRONICLE_GRAPH.md` (both merged separately as PR #35), then built
+and merged as PR #36.
+
+**Rating history graph (ADR-047).** The eight-bar `RatingHistory` sparkline in
+`card-stats.tsx` is deleted and replaced by `src/components/rating-history.tsx`
+— a line chart, one point per published football week, over horizontal
+rarity-tier bands, with goal markers on weeks the player scored. On
+`/players/[slug]` beneath `AttributeBars`; `/club/collection/[cardId]` gains a
+one-line link to it rather than a second copy. The snapshot query is now scoped
+to the active season instead of an unscoped `limit(8)`. No migration — the
+series stays sparse (one or two points per player) until more weeks accumulate,
+by design.
+
+**Panini collection album (ADR-048).** `/club/collection` defaults to a bound,
+paged album: nine slots per page, alphabetical, desktop two-page spread and
+mobile one leaf, owned slots showing the card, gaps showing an empty slot,
+duplicates stacked. The existing filter/sort/discard/list grid moves to
+`?view=manage` behind a segmented control. Lenses (`all` · `gaps` ·
+`specialists` · `type:<archetype>` · `tier:<tier>`) choose the album's contents;
+archetype is a lens rather than the album's spine because ~80% of the roster
+carries the `all_rounder` default. New `src/lib/album.ts` plus
+`src/components/album/` (`collection-album.tsx`, `lens-menu.tsx`,
+`album-keyboard-navigation.tsx`). No migration.
+
+**TFH Chronicle (ADR-049).** `/chronicle` (index) and `/chronicle/[week]` (one
+issue per football week, keyed by the ISO Monday as `YYYY-MM-DD`) replace
+`/sessions`, which — with `/sessions/[sessionId]` — becomes a permanent
+redirect. The More-menu entry is renamed "Sessions" → "Chronicle", keeping
+`IconSessions`. v1 issues carry the header, matchday reports (attendance,
+scorers, bibs) and tier crossings only; the crossings block is omitted entirely
+when there is not enough snapshot history rather than rendering an empty box.
+New `src/lib/chronicle.ts` and `src/game/football-week.ts`.
+
+Migration `20260913000000_chronicle_views.sql` (additive tier): the
+`kut.chronicle_weeks` and `kut.chronicle_tier_changes` views, both
+`security_invoker = true`, `revoke all from public`, `grant select to
+authenticated, service_role`. Rollback is two `drop view`s.
+
+Verification: CI green on PR #36 — `fast`, `e2e`, `database` and `scan` jobs all
+passed, plus the Vercel deployment. New tests: `tests/unit/album.test.ts`,
+`chronicle.test.ts`, `football-week.test.ts`, `rating-history.test.ts` (54 unit
+tests total, up from 48) and `supabase/tests/database/chronicle_views.test.sql`
+(`plan(4)`).
+
+**Deployed to hosted 2026-09-02** — the SQL file catalogued into
+`VibeTrunk/supabase` (PR #22) and applied from there; `supabase migration list`
+shows `20260913000000` local and remote with no drift on the 44 prior
+migrations. Production serves `/chronicle` at `kut.vibetrunk.com`.
+
+Spec updated with this entry: §41 (collection album) rewritten from its Phase 2
+sketch to the built design, Part XVII §46 (navigation) updated for the
+`/chronicle` entry, and Part 137 amended for the launch roster rule (ADR-050).

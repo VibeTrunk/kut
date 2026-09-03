@@ -2040,10 +2040,23 @@ fixes and take none, per the KB-002 precedent.
 Spec updated with this entry: §36 gains the listing surfaces.
 
 Verification: `npm run verify:fast` (55 unit tests, up one for `spreadPartner`) +
-`next build`. Layout measured in a headless browser against the compiled CSS
-bundle, at 390x844 and 1280: leaderboard rows are 63px and the name track holds
-at 189px on a worst-case row (38-character name beside a seven-digit value),
-truncating rather than collapsing; market tiles are 167px wide, two per row on a
-phone, with the Buy button at 44px and no wrap at a five-digit price; no
-horizontal overflow at either width. The authenticated pass through a running
-app is still outstanding — the local Supabase stack was down at the time.
+`next build`, then driven against a local Supabase stack signed in as a real
+member.
+
+- **Album, 1440px.** Every slot box measures 222px whether collected or empty,
+  and on a spread mixing the two states across both leaves the row tops match
+  exactly (`[555, 793, 1031]` on each). Both spread chips render brass, with
+  `aria-current` on only the requested page.
+- **Leaderboard, 390x844.** 63px rows, ruled header present, counts on the club
+  meta line, no horizontal overflow. Only one club exists locally, so the row
+  geometry is measured and the six-or-seven figure follows from it rather than
+  being counted on screen.
+- **Market, 390x844.** Two 167px tiles per row; the card links through to
+  `/market/<id>`, which renders the detail card, Buy, and the offer form with no
+  leftover "Make an offer" button. A stale listing id renders "Page not found",
+  matching `/club/collection/[cardId]`. No console errors on any page.
+
+Known, pre-existing and unchanged by this work: a *malformed* (non-UUID) id on
+either `/market/<id>` or `/club/collection/<id>` renders the error boundary
+rather than "Page not found", because the query rejects the cast before the
+`notFound()` check is reached.

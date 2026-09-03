@@ -2060,3 +2060,30 @@ Known, pre-existing and unchanged by this work: a *malformed* (non-UUID) id on
 either `/market/<id>` or `/club/collection/<id>` renders the error boundary
 rather than "Page not found", because the query rejects the cast before the
 `notFound()` check is reached.
+
+## Compact the market filter form on mobile (KB-008), register KB-007 — 2026-09-04
+
+Two follow-ups from the KB-006 verification pass.
+
+**KB-008 — the filter form.** Verifying the two-column market grid showed the fix
+was being wasted: the filter form only opened into columns at `sm`, so on a phone
+its six controls stacked full width for ~352px, and the first listing still sat
+below the fold. It is now two columns below `lg` — search across the top, the two
+selects paired, the price bounds paired, then Filter — measured at **232px**, with
+the first listing moving from ~706px to 586px. DOM order was regrouped to match
+the rows, which moves sort ahead of the price pair in the `lg:` track list; the
+desktop row is otherwise unchanged, still a single 74px row of six tracks.
+
+**KB-007 — registered, not fixed.** A malformed (non-UUID) id on `/market/<id>` or
+`/club/collection/<id>` renders the error boundary rather than "Page not found",
+because the raw path segment reaches the query and fails the `uuid` cast before
+the `notFound()` check. Pre-dates this work — the new market route inherited the
+pattern from the collection page. Left open deliberately: fixing it touches a page
+outside this branch's scope, and the register is the right place to hold it.
+
+Front-end only: no migration, no schema, no economy value.
+
+Verification: `npm run verify:fast` + `next build`, then measured in the running
+app at 390x844 and 1440x900 — form 232px vs 74px respectively, six controls
+present at both widths, no horizontal overflow, and two listing cards now visible
+under the form on a phone where previously only a sliver of one showed.

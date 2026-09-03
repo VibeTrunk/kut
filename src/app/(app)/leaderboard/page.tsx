@@ -12,12 +12,19 @@ type LeaderboardClub = {
   is_current_user: boolean;
 };
 
-// Mobile is a two-cell grid (rank + club); the value line and the
-// cards/players line each span both cells on their own row. From `sm` up it
-// opens into a full ruled table. The club name always shows — the previous
-// layout applied the multi-column grid at every width, so on a phone the
-// fixed tracks overflowed and the name track collapsed to zero (finding #3).
-const COLUMNS = "grid-cols-[2.75rem_minmax(0,1fr)] sm:grid-cols-[3.5rem_minmax(0,1fr)_9rem_5rem_5rem]";
+// One table shape at every width: rank / member+club / value, with Cards and
+// Players joining as their own columns from `sm` up. Those two take `hidden
+// sm:block`, which drops them out of grid flow entirely below it, so three items
+// land in three tracks. Mobile used to be a two-cell grid whose value line and
+// cards/players line each took a full-width row of their own — three rows and
+// ~129px per club, so only three fitted on a phone and the eye had to travel
+// down rather than across to compare values (KB-005).
+//
+// The name track is the only flexible one, and its cell carries `min-w-0`. That
+// is load-bearing: the pre-round-3 layout applied these fixed tracks at every
+// width, so on a phone they overflowed and the name track collapsed to zero
+// (finding #3). Any column added here stays fixed or `auto` — never a second 1fr.
+const COLUMNS = "grid-cols-[2rem_minmax(0,1fr)_auto] sm:grid-cols-[3.5rem_minmax(0,1fr)_9rem_5rem_5rem]";
 
 export default async function LeaderboardPage() {
   await requireUser();
@@ -56,45 +63,50 @@ export default async function LeaderboardPage() {
           /* A ruled table rather than a boxed card: standings are a list of
              records and read faster as one. */
           <div>
-            <div className={`hidden gap-4 border-b border-line/60 px-3 pb-3 text-[0.6rem] font-extrabold uppercase tracking-[0.14em] text-ink-faint sm:grid ${COLUMNS}`}>
-              <span>Rank</span>
+            <div className={`grid gap-x-3 border-b border-line/60 px-3 pb-2.5 text-[0.6rem] font-extrabold uppercase tracking-[0.14em] text-ink-faint sm:gap-x-4 sm:pb-3 ${COLUMNS}`}>
+              <span className="text-center">#</span>
               <span>Member &amp; club</span>
               <span className="text-right">Value</span>
-              <span className="text-right">Cards</span>
-              <span className="text-right">Players</span>
+              <span className="hidden text-right sm:block">Cards</span>
+              <span className="hidden text-right sm:block">Players</span>
             </div>
             <ol>
               {clubs.map((club) => (
                 <li
-                  className={`grid items-baseline gap-x-4 gap-y-2 border-b border-line/30 px-3 py-4 sm:items-center ${COLUMNS} ${
+                  className={`grid items-center gap-x-3 border-b border-line/30 px-3 py-3 sm:gap-x-4 ${COLUMNS} ${
                     club.is_current_user ? "rounded-lg bg-brass/8" : ""
                   }`}
                   key={`${club.rank}-${club.display_name}`}
                 >
                   <span
-                    className={`text-xl font-black tabular-nums sm:text-2xl ${club.rank <= 3 ? "text-brass" : "text-ink-faint"}`}
+                    className={`text-center text-base font-black tabular-nums sm:text-xl ${club.rank <= 3 ? "text-brass" : "text-ink-faint"}`}
                   >
                     {club.rank}
                   </span>
                   <span className="min-w-0">
-                    <span className="block truncate font-extrabold">
+                    <span className="block truncate text-[0.95rem] font-extrabold leading-tight">
                       {club.display_name}
                       {club.is_current_user && (
-                        <span className="ml-2 text-[0.6rem] font-black uppercase tracking-[0.12em] text-brass">You</span>
+                        <span className="ml-1.5 text-[0.6rem] font-black uppercase tracking-[0.12em] text-brass">You</span>
                       )}
                     </span>
-                    <span className="block truncate text-xs text-ink-faint">{club.club_name}</span>
+                    {/* The counts are demoted onto this line below `sm`, not hidden:
+                        BUILD_SPEC §39 lists card count and unique-player count as
+                        leaderboard display fields, so both stay visible at every width. */}
+                    <span className="mt-0.5 block truncate text-[0.7rem] tabular-nums text-ink-faint">
+                      {club.club_name}
+                      <span className="sm:hidden">
+                        {" "}
+                        &middot; {club.card_count} cards &middot; {club.unique_player_count} players
+                      </span>
+                    </span>
                   </span>
-                  <span className="col-span-2 flex items-baseline gap-2 pt-1 tabular-nums sm:col-span-1 sm:block sm:pt-0 sm:text-right">
-                    <span className="font-black text-brass">{Number(club.club_value).toLocaleString()}</span>
-                    <span className="text-xs text-ink-faint sm:hidden">KUT Coins</span>
+                  <span className="text-right text-[0.95rem] font-black tabular-nums text-brass">
+                    {Number(club.club_value).toLocaleString()}
                   </span>
-                  <span className="hidden text-sm tabular-nums text-ink-dim sm:block sm:text-right">{club.card_count}</span>
-                  <span className="hidden text-sm tabular-nums text-ink-dim sm:block sm:text-right">
+                  <span className="hidden text-right text-sm tabular-nums text-ink-dim sm:block">{club.card_count}</span>
+                  <span className="hidden text-right text-sm tabular-nums text-ink-dim sm:block">
                     {club.unique_player_count}
-                  </span>
-                  <span className="col-span-2 -mt-1 text-xs tabular-nums text-ink-faint sm:hidden">
-                    {club.card_count} cards &middot; {club.unique_player_count} players
                   </span>
                 </li>
               ))}

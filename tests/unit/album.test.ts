@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applyLens, buildSlots, paginate, spreadFor } from "@/lib/album";
+import { applyLens, buildSlots, paginate, spreadFor, spreadPartner } from "@/lib/album";
 
 const player = (id: string, name: string, archetype = "all_rounder") => ({ id, slug: id, display_name: name, archetype, photo_path: null, live_ovr: 30, pac: 30, sho: 30, pas: 30, dri: 30, def: 30, phy: 30, rarity_tier: "common" as const });
 
@@ -16,5 +16,11 @@ describe("album logic", () => {
     const slots = buildSlots([player("b", "Beta"), player("a", "Alpha", "defender")], []);
     expect(applyLens(slots, { kind: "specialists" })[0].index).toBe(1);
     expect(applyLens(slots, { kind: "gaps" })).toHaveLength(2);
+  });
+
+  it("names the facing leaf of a spread, and nothing past the last page", () => {
+    expect(spreadPartner(5, 7)).toBe(6);
+    expect(spreadPartner(6, 7)).toBe(5);
+    expect(spreadPartner(7, 7)).toBeNull();
   });
 });

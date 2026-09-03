@@ -156,7 +156,7 @@ Raw triage (who asked, de-duplication, disposition) lives in
 | Item | Status | Notes / next step |
 |---|---|---|
 | Rating-history backfill | idea | The graph itself shipped 2026-09-02 (ADR-047) with **no** backfill, so each player's series starts at one or two points and accumulates weekly. `BUILD_SPEC.md` §10 guarantees a season is rebuildable from published sessions, so a deterministic backfill of `player_rating_snapshots` remains possible if the sparse start proves unsatisfying. Data-changing; needs an ADR. Design note in `archive/SPEC_ALBUM_CHRONICLE_GRAPH.md` §7. |
-| See other members' squads / teams | blocked | Needs a card-ownership privacy decision + an ADR — the codebase deliberately hides who owns which card (`my_collection_cards` is owner-scoped; `player_directory` hides who claimed a player). Build sketch in ADR-044 / `TESTER_FEEDBACK_BATCHES.md` round-2 💡03. |
+| See other members' squads / teams | blocked | Needs a card-ownership privacy decision + an ADR — the codebase deliberately hides who owns which card (`my_collection_cards` is owner-scoped; `player_directory` hides who claimed a player). Build sketch in ADR-044 / `TESTER_FEEDBACK_BATCHES.md` round-2 💡03. The **admin** view of a member's cards under "Admin tooling" below is a separate, operator-only item and does not unblock this one — admins already hold an `admins read all cards` RLS policy, members do not. |
 | Duplicate copies weigh less for Club Value | blocked | Changes a published economy formula (Club Value v2, ADR-041) — data-changing migration + ADR + a re-balance against the Part L faucet/sink invariants. Intent: reward collecting breadth and make the transfer market more active. |
 | Prestige + collections — hand in N cards for a reward | idea | Two related card-sink mechanics: a permanent cosmetic medal for turning in 30 distinct cards; themed sets (e.g. ≥80% of a session's attendees) handed in for a coin payout. New tables + a sink and/or faucet + UI. `BUILD_SPEC.md` Part XXXV already sketches collection challenges. |
 | "Store" instead of "Packs" | idea | Rename the section and add variety: multiple pack types, sub-250-coin items, cosmetics that pimp your personal card. Today there is one 250-coin basic pack. New product surface + a cosmetics model; ADR + migration. |
@@ -214,6 +214,60 @@ entry/ownership edge cases, card-stat snapshot policy, audit/ledger behaviour,
 and abuse/concurrency tests. The result and every monetary reward must remain
 server-authoritative and idempotent.
 
+## Admin tooling
+
+Continues Phase C ("Safer admin testing tools", ADR-035) below. Both items are
+operator surfaces, not member-facing features, and neither weakens the
+member-to-member card-ownership privacy stance — "See other members' squads /
+teams" above stays blocked on its own privacy ADR, and the admin view below
+must stay `kut.is_admin()`-gated rather than becoming a member-reusable
+projection. Scoped 2026-09-03; the pair needs one ADR (next free number:
+ADR-052) and a `BUILD_SPEC.md` touch at build time. Rough estimate ~1.5 days
+for both, of which the deciding and documenting outweighs the coding.
+
+| Item | Status | Notes / next step |
+|---|---|---|
+| Admin view of a member's cards | specified | The permission already exists — `kut.user_cards` has carried an `admins read all cards` RLS policy since `20260816070000`. Only a projection is missing: `kut.my_collection_cards` is deliberately owner-scoped (`owner_id = auth.uid()`, with a comment saying it stays so even for admins), so add an `is_admin()`-gated sibling view that exposes `owner_id` instead of filtering on it, `security_invoker` + `security_barrier` + `revoke all from public` like every other projection. One additive `create view` + grants; no rows touched. Front end is a page under `src/app/(app)/admin/` plus a tab in `admin-tabs.tsx`; card rendering already exists in `src/components/album/`. |
+| Admin grant of specific cards | specified | **Mint, not transfer** (decided 2026-09-03): a granted card is a new copy, so Part L invariants #20 (ownership changes only via `buy_listing` / `respond_to_trade`) and #22 (trade escrow) stay untouched, nothing needs recomputing (`pack_economy_health`, `my_club_value`, `club_value_leaderboard` are all views), and an accidental grant is undone by burning that one card id. **Cap: 5 copies per call** as the fat-finger guard, dual-declared as `ECONOMY.adminCardGrantMax` in `src/game/economy.ts` and a literal in the RPC, mirroring how `adminWalletAdjustMax` / `100000` are declared today. `user_cards.source` already allows `'admin'` and `user_notifications.event_type` already allows `'admin_notice'`, so the schema work is one new `kut.admin_grant_cards` RPC shaped like `admin_adjust_wallet` (is_admin, not-yourself, superadmin / admin-target guards, required 1–200 char reason, audit row, member notification) plus `'card_grant'` added to the `admin_account_events.action` check. UI is another `intent` branch in `admin/links/actions.ts` and its table, alongside `adjust_coins`. |
+
+**Migration tier: additive** — decided 2026-09-03, and worth stating
+explicitly in the ADR rather than leaving implicit. `OPERATIONS.md` lists "any
+change to `user_cards` semantics" under the data-changing tier, and a new
+minting path arguably is one; the classification follows ADR-035's precedent
+instead, which shipped `admin_reset_account` — a function that *burns* cards
+and re-grants starter cards at run time — as additive on the reasoning that
+the migration itself mutates no member rows and the minting is gated behind
+`is_admin()` at run time. The grant RPC is the same shape and strictly less
+destructive. Consequence per ADR-032: the ~10–15 min checklist, no fresh
+pre-push backup (rides the last scheduled one), no restore drill.
+
+Open at build time, none of them blocking:
+
+- Whether the admin card view shows burned copies and acquisition history or
+  only the active collection (default: active only, matching
+  `my_collection_cards`), and whether wallet balance / Club Value belong on
+  the same screen or stay on the existing tabs.
+- Whether the grant form carries an idempotency key. `admin_reset_account`
+  takes one (`p_idempotency_key` + the `admin_account_events_reset_idem_idx`
+  partial unique index); `admin_adjust_wallet` does **not**, so a double form
+  submit there writes two events. Cards are recoverable by burning, but the
+  reset pattern is cheap to copy and worth copying.
+- Whether a grant appears in `kut.activity_feed` (ADR-038). Default: silent,
+  matching the coin faucet — a club-wide "an admin gave X a card" row reads as
+  favouritism and leaks ownership that the privacy stance otherwise protects.
+- Which editions are grantable. Only Live editions exist today (every
+  `insert into kut.card_editions` in the migration history sets
+  `is_live true`), so the picker is just the roster and there is no supply
+  ceiling. When special editions land (`BUILD_SPEC.md` Part VI §19 / Part XIV)
+  decide whether admin grants respect `max_supply` and increment
+  `minted_count` — `open_pack` is its only writer today.
+- A revoke / claw-back counterpart is deliberately **out of scope**: unlike a
+  mint it would touch invariants #20 and #22 and need active-listing and
+  `held_by_offer_id` guards. Raise it as its own item if it turns out to be
+  wanted.
+- Each feature needs a matching `supabase/tests/database/*.test.sql`; locally
+  these apply via `docker exec supabase_db_kut psql`, not `supabase db reset`.
+
 ## Larger phases
 
 From the archived 2026-08-17 handoff's "recommended next phases",
@@ -223,7 +277,7 @@ de-duplicated and status-checked (`archive/HANDOFF-2026-08-17.md`):
 |---|---|---|
 | A — Alpha readiness & operational safety | shipped | Backup/restore drill, preview preflight, risk-tiered migration process — `OPERATIONS.md`, `BACKUP.md`, ADR-032. |
 | B — Navigation & product clarity | shipped | Authenticated nav overhaul + the `/how-it-works` page (PROGRESS "Navigation overhaul update"). |
-| C — Safer admin testing tools | shipped | `admin_adjust_wallet` audited coin faucet + `admin_reset_account` soft reset — ADR-035. |
+| C — Safer admin testing tools | partial | Shipped: `admin_adjust_wallet` audited coin faucet + `admin_reset_account` soft reset — ADR-035. **Open remainder:** an admin view of a member's cards and an admin card grant, both scoped 2026-09-03 — see "Admin tooling" above. |
 | D — Visual & collection experience | shipped | `/settings/card` photo (ADR-027), Player Directory (ADR-027), Home top-risers (ADR-031), the material-ladder redesign (ADR-043), and the Panini album at `/club/collection` (ADR-048, 2026-09-02) — a bound, paged album, nine slots per page, alphabetical, desktop two-page spread / mobile one leaf, duplicate stacks, gaps as empty slots, with the old grid as `?view=manage`. Archetype ended up a lens rather than the spine, because roughly 80% of the roster is All-rounder by default. Completion rewards remain deliberately unbuilt — see "Prestige + collections" above. |
 | E — Community contribution mechanics | partial | Shipped: bibs-washing coin bonus (ADR-037). **Open / declined:** a "first 10 to sign up" bonus — keep it out of the football Live Rating; if built, do it as a capped coin bonus or a separate badge, transparent and auditable (the archived handoff has the full reasoning). |
 | F — Message Center expansion | shipped | attendance-reward / pack-opened / trade / admin-notice inbox events — ADR-028, ADR-042, ADR-044. |

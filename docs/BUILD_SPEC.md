@@ -1328,6 +1328,16 @@ Later:
 - bargains;
 - watched players.
 
+Listing surfaces (ADR-051):
+
+- the **grid** at `/market` is a card, its price and one Buy button per listing —
+  two columns on a phone, four from `lg`;
+- each card links to a **listing detail page** at `/market/<listing_id>`, which
+  carries the full attribute breakdown, Buy, and the coin-and-card offer form.
+  Offers are made here and nowhere else;
+- a sold, cancelled or expired listing 404s, since it leaves
+  `kut.active_market_listings`.
+
 ---
 
 # PART XII — REFERENCE VALUE AND CLUB VALUE

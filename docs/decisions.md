@@ -2165,3 +2165,49 @@ there.
 - **Backup cadence to be set after launch**, once the group's real trading
   activity is visible. `BACKUP.md`'s unattended scheduled-task recipe is
   available when that is decided.
+
+---
+
+## ADR-051 — Trade offers move from the market grid to a listing detail page
+
+Date: 2026-09-04
+
+Status: Accepted
+
+Round-4 feedback reported the transfer market as unbrowsable on a phone: the
+listing grid was `grid-cols-1` below `sm`, so one listing filled the viewport
+(KB-006). Moving it to two columns is the fix, but it leaves each tile ~160px
+wide, and a tile carried two action controls. `BuyListingForm`'s label shortens
+cleanly. `ProposeOfferForm` does not — it expands inline into a bordered panel
+with a coin input and a scrollable card list, which is unusable at that width.
+
+Offers therefore leave the grid entirely, at every width:
+
+- **New route `/market/[listingId]`** — the card at `size="detail"`, attribute
+  bars, price, seller, Buy, and the offer form full width. It reads
+  `kut.active_market_listings` by `listing_id`; sold, cancelled and expired
+  listings drop out of that view, so a stale id `notFound()`s rather than
+  rendering a dead Buy button. The tile's card links here.
+- **`ProposeOfferForm` loses its collapsed state.** On the detail page the form
+  *is* the screen, so the "Make an offer" button and the `open` state are gone
+  rather than kept behind a prop. Nothing else rendered the collapsed mode.
+- **The market index stops fetching offerable cards.** That query only fed the
+  per-tile form; the index is one Supabase round trip lighter.
+- **`revalidatePath("/market")` widened to `("/market", "layout")`** in all four
+  market actions, so the new nested route is invalidated too. It also subsumes
+  the separate `/market/offers` call.
+
+Rejected: **a bottom sheet** over the grid. It keeps offers one tap from
+browsing and is the native phone idiom, but it needs a modal layer the app does
+not have, and the grid tile would still carry two controls. The detail page
+costs a navigation and reuses a page shape the collection already has.
+
+Nothing changes server-side. The same `propose_trade` RPC, the same escrow, the
+same idempotency key; both forms already carried a hidden `listingId` and did no
+page-specific work, so they were imported unchanged. Part L invariants #20
+(ownership changes only via `buy_listing` / `respond_to_trade`), #22 (trade
+escrow) and #23 (accepted trades never written to `market_sales`) are untouched.
+Front-end only: no migration, no schema, no economy value.
+
+`BUILD_SPEC.md` §36 gains the detail page. KB-006 marked fixed. Verification:
+`npm run verify:fast` + `next build`.

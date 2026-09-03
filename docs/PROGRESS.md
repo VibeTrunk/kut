@@ -1986,3 +1986,64 @@ migrations. Production serves `/chronicle` at `kut.vibetrunk.com`.
 Spec updated with this entry: §41 (collection album) rewritten from its Phase 2
 sketch to the built design, Part XVII §46 (navigation) updated for the
 `/chronicle` entry, and Part 137 amended for the launch roster rule (ADR-050).
+
+## Fix the four open layout defects (KB-003 … KB-006) — 2026-09-04
+
+Cleared `KNOWN_BUGS.md` — two album alignment defects found in our own review of
+the ADR-048 spread, and the two mobile defects from Maarten's round-4 feedback.
+The mobile pair was designed as before/after phone artboards first and the
+approach approved from those.
+
+**Album slot alignment (KB-003).** A collected slot was a `pt-4` wrapper around a
+5:7 card; an empty slot was a bare 5:7 link with its number placed *inside* the
+box. The two states were ~1rem apart in height, and since each leaf is its own
+grid in its own `<article>`, row heights are computed per page — so any row where
+one leaf held a card and the other held a gap pushed the facing leaves out of
+horizontal alignment for the rest of the spread. Both states now render through
+one `SlotFrame` (number strip + aspect box); the collected overlays already
+positioned against that wrapper, so nothing moved. Matches design spec §3.7.
+
+**Spread page index (KB-004).** Desktop opens two leaves but the index
+highlighted one chip, so the facing page read as closed. Added `spreadPartner()`
+beside `spreadFor()` in `src/lib/album.ts`, with a unit test, and made the chip
+class three-way. The partner is marked at `lg:` only — the second leaf is
+revealed purely by CSS, and `BUILD_SPEC.md` §41 requires identical page numbers
+at both widths, so it is marked, never renumbered. `aria-current` still names the
+single requested page; the all-pages view has no partner.
+
+**Leaderboard on mobile (KB-005).** Below `sm` each club was a three-row block
+~129px tall with the ruled header hidden, so three clubs filled a phone and the
+eye travelled down rather than across. Now one table shape at every width:
+`grid-cols-[2rem_minmax(0,1fr)_auto]`, header always shown, 63px per row, six or
+seven clubs visible. The cards/players counts are **demoted** into the club meta
+line, not hidden — `BUILD_SPEC.md` §39 lists both as leaderboard display fields.
+The name track stays the only flexible one with `min-w-0`, which is what keeps
+round-3 finding #3 from returning; the comment there was rewritten to say so.
+
+**Market on mobile (KB-006, ADR-051).** The grid was `grid-cols-1` below `sm`, so
+one listing filled the viewport. It is now `grid-cols-2 … sm:grid-cols-3
+lg:grid-cols-4`, matching Home's riser grid. `Buy for 1250 KUT Coins` does not
+fit a ~160px button, so the label is a coin glyph plus the price with the full
+sentence kept as `aria-label`. The offer form does not fit either, and rather
+than a modal layer the app does not have, offers moved to a new
+`/market/[listingId]` detail page — see ADR-051 for the rejected bottom-sheet
+alternative. `ProposeOfferForm` lost its collapsed state, the market index
+stopped fetching offerable cards it no longer renders, and the four market
+actions widened `revalidatePath("/market")` to `("/market", "layout")` so the
+nested route is invalidated.
+
+Front-end only: no migration, no schema, no economy value, no RPC change. Every
+surface already had the data it needed. KB-003, KB-004, KB-005 and KB-006 all
+marked fixed. ADR-051 for the offer relocation only; the other three are layout
+fixes and take none, per the KB-002 precedent.
+
+Spec updated with this entry: §36 gains the listing surfaces.
+
+Verification: `npm run verify:fast` (55 unit tests, up one for `spreadPartner`) +
+`next build`. Layout measured in a headless browser against the compiled CSS
+bundle, at 390x844 and 1280: leaderboard rows are 63px and the name track holds
+at 189px on a worst-case row (38-character name beside a seven-digit value),
+truncating rather than collapsing; market tiles are 167px wide, two per row on a
+phone, with the Buy button at 44px and no wrap at a five-digit price; no
+horizontal overflow at either width. The authenticated pass through a running
+app is still outstanding — the local Supabase stack was down at the time.

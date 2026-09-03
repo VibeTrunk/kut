@@ -20,7 +20,7 @@ export async function buyListing(_state: BuyState, formData: FormData): Promise<
   if (error || !data || typeof data !== "object" || !("price" in data)) return { error: "This listing could not be bought. It may have sold or you may need more KUT Coins." };
   const price = Number(data.price);
   if (!Number.isSafeInteger(price) || price < 1) return { error: "This listing could not be bought." };
-  revalidatePath("/club/collection", "layout"); revalidatePath("/market"); revalidatePath("/market/offers"); revalidatePath("/messages");
+  revalidatePath("/club/collection", "layout"); revalidatePath("/market", "layout"); revalidatePath("/messages");
   redirect(`/club/collection?purchase=${price}`);
 }
 
@@ -52,7 +52,7 @@ export async function proposeOffer(_state: OfferState, formData: FormData): Prom
   if (error || !data || typeof data !== "object" || !("offer_id" in data)) {
     return { error: "This offer could not be made. Check your balance and that the listing is still active." };
   }
-  revalidatePath("/market"); revalidatePath("/market/offers"); revalidatePath("/club/collection", "layout"); revalidatePath("/messages");
+  revalidatePath("/market", "layout"); revalidatePath("/club/collection", "layout"); revalidatePath("/messages");
   redirect("/market/offers?sent=1");
 }
 
@@ -63,7 +63,7 @@ export async function withdrawOffer(_state: OfferState, formData: FormData): Pro
   const supabase = await createClient();
   const { error } = await supabase.schema("kut").rpc("withdraw_trade", { p_offer_id: offerId });
   if (error) return { error: "This offer could not be withdrawn. It may already have been answered." };
-  revalidatePath("/market/offers"); revalidatePath("/market"); revalidatePath("/club/collection", "layout"); revalidatePath("/messages");
+  revalidatePath("/market", "layout"); revalidatePath("/club/collection", "layout"); revalidatePath("/messages");
   redirect("/market/offers?withdrawn=1");
 }
 
@@ -82,6 +82,6 @@ export async function respondToOffer(_state: OfferState, formData: FormData): Pr
   if (error || !data || typeof data !== "object" || !("status" in data)) {
     return { error: "This offer could not be updated. It may have expired or the listing may no longer be active." };
   }
-  revalidatePath("/market/offers"); revalidatePath("/market"); revalidatePath("/club/collection", "layout"); revalidatePath("/messages");
+  revalidatePath("/market", "layout"); revalidatePath("/club/collection", "layout"); revalidatePath("/messages");
   redirect(`/market/offers?${accept ? "accepted" : "declined"}=1`);
 }

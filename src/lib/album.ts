@@ -40,3 +40,9 @@ export function paginate<T>(items: T[], page: number, perPage = 9) {
   return { pages, total, slots: pages[page - 1] ?? [] };
 }
 export function spreadFor(page: number): [number, number | null] { const left = page % 2 === 0 ? page - 1 : page; return [left, left + 1]; }
+/** The other leaf of the spread `page` sits on, or null when that leaf is past the end. */
+export function spreadPartner(page: number, total: number): number | null {
+  const [left, right] = spreadFor(page);
+  if (right === null || right > total) return null;
+  return page === left ? right : left;
+}

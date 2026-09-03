@@ -5,7 +5,6 @@ import { requireUser } from "@/lib/auth/user";
 import { resolvePhotoUrls } from "@/lib/player-photos";
 import { createClient } from "@/lib/supabase/server";
 import { BuyListingForm } from "./buy-listing-form";
-import { ProposeOfferForm, type OfferableCard } from "./propose-offer-form";
 
 type MarketPageProps = { searchParams: Promise<{ q?: string; rarity?: string; sort?: string; min?: string; max?: string }> };
 
@@ -56,14 +55,11 @@ export default async function MarketPage({ searchParams }: MarketPageProps) {
   else if (query.sort === "ovr") request = request.order("ovr", { ascending: false });
   else request = request.order("listed_at", { ascending: false });
 
-  const [{ data, error }, { data: wallet }, { data: ownCards }] = await Promise.all([
+  // The offerable-cards query used to live here for the per-tile offer form. Offers
+  // moved to the listing detail page (ADR-051), so the index no longer pays for it.
+  const [{ data, error }, { data: wallet }] = await Promise.all([
     request,
     supabase.schema("kut").from("wallets").select("balance").eq("user_id", user.id).maybeSingle(),
-    supabase
-      .schema("kut")
-      .from("my_collection_cards")
-      .select("card_id, display_name, ovr, rarity_tier, active_listing_id, held_by_offer_id")
-      .order("ovr", { ascending: false }),
   ]);
 
   if (error) throw new Error("Could not load the market.");
@@ -71,9 +67,6 @@ export default async function MarketPage({ searchParams }: MarketPageProps) {
   const listings = (data ?? []) as Listing[];
   const balance = wallet?.balance ?? 0;
   const photoUrls = await resolvePhotoUrls(supabase, listings.map((listing) => listing.photo_path));
-  const offerableCards: OfferableCard[] = ((ownCards ?? []) as (OfferableCard & { active_listing_id: string | null; held_by_offer_id: string | null })[])
-    .filter((card) => !card.active_listing_id && !card.held_by_offer_id)
-    .map((card) => ({ card_id: card.card_id, display_name: card.display_name, ovr: card.ovr, rarity_tier: card.rarity_tier }));
 
   return (
     <main className="board-ground min-h-screen p-5 text-ink sm:p-10">
@@ -131,7 +124,9 @@ export default async function MarketPage({ searchParams }: MarketPageProps) {
             No active listings match these filters. List a card from your Collection to start the market.
           </p>
         ) : (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          /* Two columns on a phone, matching Home's riser grid — one listing per
+             screen made the market unbrowsable on mobile (KB-006). */
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
             {listings.map((listing) => {
               const isOwnListing = listing.seller_id === user.id;
               const cardPlayer: LiveCardPlayer = {
@@ -149,27 +144,32 @@ export default async function MarketPage({ searchParams }: MarketPageProps) {
                 photoUrl: listing.photo_path ? photoUrls.get(listing.photo_path) ?? null : null,
               };
               return (
-                <article className="flex flex-col gap-3.5" key={listing.listing_id}>
+                <article className="flex flex-col gap-2.5" key={listing.listing_id}>
                   <div className="relative">
-                    <LiveCard player={cardPlayer} />
+                    {/* The card is the way into the listing: offers, and the full
+                        stat breakdown, live on its detail page (ADR-051). */}
+                    <Link
+                      aria-label={`${listing.display_name} — open this listing`}
+                      className="block rounded-[0.9rem] outline-offset-4 outline-brass focus-visible:outline-2"
+                      href={`/market/${listing.listing_id}`}
+                    >
+                      <LiveCard player={cardPlayer} />
+                    </Link>
                     {/* Price rides the card: a market grid is scanned by price. */}
-                    <p className="absolute left-1/2 top-3.5 z-10 flex -translate-x-1/2 items-center gap-1.5 rounded-full border border-brass/55 bg-board-deep/90 px-3.5 py-1.5 text-sm font-black tabular-nums text-brass backdrop-blur-sm">
-                      <IconCoin aria-hidden="true" className="h-3.5 w-3.5" />
+                    <p className="absolute left-1/2 top-2.5 z-10 flex -translate-x-1/2 items-center gap-1 rounded-full border border-brass/55 bg-board-deep/90 px-3 py-1 text-xs font-black tabular-nums text-brass backdrop-blur-sm">
+                      <IconCoin aria-hidden="true" className="h-3 w-3" />
                       {listing.price.toLocaleString()}
                     </p>
                   </div>
 
-                  <p className="text-xs font-bold text-ink-faint">Sold by {listing.seller_display_name}</p>
+                  <p className="truncate text-[0.7rem] font-bold text-ink-faint">Sold by {listing.seller_display_name}</p>
 
                   {isOwnListing ? (
                     <p className="grid min-h-11 place-items-center rounded-xl border border-dashed border-line text-[0.65rem] font-black uppercase tracking-[0.12em] text-ink-faint">
                       Your listing
                     </p>
                   ) : (
-                    <>
-                      <BuyListingForm canAfford={balance >= listing.price} listingId={listing.listing_id} price={listing.price} />
-                      <ProposeOfferForm askingPrice={listing.price} listingId={listing.listing_id} offerableCards={offerableCards} />
-                    </>
+                    <BuyListingForm canAfford={balance >= listing.price} listingId={listing.listing_id} price={listing.price} />
                   )}
                 </article>
               );

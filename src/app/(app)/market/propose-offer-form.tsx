@@ -8,6 +8,15 @@ export type OfferableCard = { card_id: string; display_name: string; ovr: number
 
 const initialState: OfferState = { error: null };
 
+/**
+ * The coin-and-card offer builder.
+ *
+ * This used to expand inline inside a market grid tile, behind a "Make an offer"
+ * button. Since the grid went to two columns on a phone (KB-006 / ADR-051) a tile
+ * is ~160px wide — far too narrow for a coin input and a scrollable card list — so
+ * offers moved to the listing detail page, where this is the whole point of the
+ * screen. It therefore renders open: there is no collapsed state left to manage.
+ */
 export function ProposeOfferForm({
   listingId,
   askingPrice,
@@ -17,7 +26,6 @@ export function ProposeOfferForm({
   askingPrice: number;
   offerableCards: OfferableCard[];
 }) {
-  const [open, setOpen] = useState(false);
   const [coins, setCoins] = useState<number>(askingPrice);
   const [picked, setPicked] = useState<Set<string>>(new Set());
   const key = useRef<string | null>(null);
@@ -40,20 +48,8 @@ export function ProposeOfferForm({
 
   const nothingOffered = coins <= 0 && picked.size === 0;
 
-  if (!open) {
-    return (
-      <button
-        className="mt-2 min-h-11 w-full rounded-xl border border-line px-3 text-sm font-bold text-ink-dim hover:border-brass hover:text-brass"
-        onClick={() => setOpen(true)}
-        type="button"
-      >
-        Make an offer
-      </button>
-    );
-  }
-
   return (
-    <form action={action} className="mt-2 space-y-3 rounded-xl border border-line bg-board/60 p-3 text-left">
+    <form action={action} className="space-y-3 rounded-xl border border-line bg-board/60 p-3 text-left">
       <input name="listingId" type="hidden" value={listingId} />
       {[...picked].map((cardId) => (
         <input key={cardId} name="cardId" type="hidden" value={cardId} />
@@ -80,12 +76,12 @@ export function ProposeOfferForm({
           <legend className="text-xs font-bold uppercase tracking-[0.12em] text-ink-faint">
             Add cards ({picked.size}/{ECONOMY.tradeOfferMaxCards})
           </legend>
-          <div className="max-h-40 space-y-1 overflow-y-auto">
+          <div className="max-h-64 space-y-1 overflow-y-auto">
             {offerableCards.map((card) => {
               const checked = picked.has(card.card_id);
               return (
                 <label
-                  className={`flex cursor-pointer items-center gap-2 rounded-lg border px-2 py-1.5 text-sm ${
+                  className={`flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border px-2 py-1.5 text-sm ${
                     checked ? "border-brass bg-brass/10" : "border-line"
                   }`}
                   key={card.card_id}
@@ -110,22 +106,13 @@ export function ProposeOfferForm({
 
       {state.error && <p className="rounded-lg bg-brick-bg p-2 text-xs text-brick">{state.error}</p>}
 
-      <div className="flex gap-2">
-        <button
-          className="min-h-11 flex-1 rounded-lg bg-brass px-3 text-sm font-black text-ink-on-accent disabled:bg-line disabled:text-ink-faint"
-          disabled={pending || nothingOffered}
-          type="submit"
-        >
-          {pending ? "Sending..." : "Send offer"}
-        </button>
-        <button
-          className="min-h-11 rounded-lg border border-line px-3 text-sm font-bold text-ink-dim"
-          onClick={() => setOpen(false)}
-          type="button"
-        >
-          Cancel
-        </button>
-      </div>
+      <button
+        className="min-h-11 w-full rounded-lg bg-brass px-3 text-sm font-black text-ink-on-accent disabled:bg-line disabled:text-ink-faint"
+        disabled={pending || nothingOffered}
+        type="submit"
+      >
+        {pending ? "Sending..." : "Send offer"}
+      </button>
       <p className="text-[0.7rem] text-ink-faint">
         Coins and cards are held in escrow until the seller responds or the offer expires after{" "}
         {ECONOMY.tradeOfferExpiryHours}h.

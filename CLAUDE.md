@@ -35,9 +35,27 @@ don't add cross-repo coupling beyond the shared Supabase project.
 ## Current hosted deployment
 
 KUT is live at `https://kut.vibetrunk.com` as Vercel project `kut`. The
-hosted `kut` schema is applied through `20260913000000_chronicle_views.sql`
-&mdash; the TFH Chronicle read projections (ADR-049), deployed 2026-09-02 from
-`VibeTrunk/supabase` (PR #22 there):
+hosted `kut` schema is applied through
+`20260914000000_admin_self_wallet_grant.sql` &mdash; a second,
+superadmin-only coin faucet (ADR-052), deployed 2026-09-04 from
+`VibeTrunk/supabase` (PR #24 + #25 there):
+
+- `20260914000000_admin_self_wallet_grant.sql` (ADR-052, additive) &mdash;
+  `kut.admin_grant_self_wallet(bigint, text, uuid)` credits/claws back the
+  *caller's own* wallet (`auth.uid()`), gated to `role = 'superadmin'`.
+  `kut.admin_adjust_wallet` (ADR-035) is untouched and still refuses to touch
+  the caller's own wallet for every role. New audit tags
+  (`wallet_ledger.reason 'admin_self_grant'`,
+  `admin_account_events.action 'self_wallet_grant'`) keep self-grants
+  distinguishable from admin-to-member grants; a real `p_idempotency_key`
+  (backed by a partial unique index) closes a gap `admin_adjust_wallet`
+  itself has. Same cap/guards as `admin_adjust_wallet` (`abs(amount) &le;
+  100000`, never below zero, 1&ndash;200 char reason). No data change; rollback
+  drops the function, the index, and restores the two narrower check
+  constraints.
+
+On top of the TFH Chronicle read projections (ADR-049), deployed 2026-09-02
+from `VibeTrunk/supabase` (PR #22 there):
 
 - `20260913000000_chronicle_views.sql` (ADR-049, additive) &mdash; two computed
   read projections behind the Chronicle. `kut.chronicle_weeks` aggregates

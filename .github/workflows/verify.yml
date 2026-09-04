@@ -23,6 +23,11 @@ concurrency:
   group: verify-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  # Single source of truth: both `setup-node` and the node_modules cache key
+  # read this, so the cached tree can never belong to a different Node major.
+  NODE_VERSION: '24'
+
 jobs:
   fast:
     runs-on: ubuntu-latest
@@ -30,9 +35,21 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: ${{ env.NODE_VERSION }}
           cache: npm
-      - run: npm ci
+      # `cache: npm` above only caches downloaded tarballs — with a warm npm
+      # cache, `npm ci` still spent 2m38s–5m02s per job re-extracting and
+      # linking 443 packages single-threaded. Caching the *result* skips that
+      # entirely. Keyed on the lockfile hash, so any dependency change pays
+      # one cold `npm ci` and every later run restores a single archive.
+      - name: Cache node_modules
+        id: modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-${{ hashFiles('package-lock.json') }}
+      - if: steps.modules.outputs.cache-hit != 'true'
+        run: npm ci --prefer-offline --no-audit --no-fund
       - run: npm run verify:fast
       - run: npm run build
 
@@ -42,11 +59,25 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: ${{ env.NODE_VERSION }}
           cache: npm
-      - run: npm ci
+      - name: Cache node_modules
+        id: modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-${{ hashFiles('package-lock.json') }}
+      - if: steps.modules.outputs.cache-hit != 'true'
+        run: npm ci --prefer-offline --no-audit --no-fund
       - name: Skip the flaky azure.archive.ubuntu.com mirror
         run: echo "http://archive.ubuntu.com/ubuntu" | sudo tee /etc/apt/apt-mirrors.txt
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+      # `--with-deps` still runs (its apt work is ~23s and cannot be cached),
+      # but the browser downloads underneath it are skipped on a cache hit.
       - name: Install Playwright browsers
         timeout-minutes: 5
         run: npx playwright install --with-deps chromium
@@ -58,11 +89,33 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: ${{ env.NODE_VERSION }}
           cache: npm
-      - run: npm ci
-      - run: npx supabase start
-      # start applies migrations, but reset also loads the committed fictional
-      # seed fixtures required by the database contract tests.
-      - run: npx supabase db reset --local
+      - name: Cache node_modules
+        id: modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-${{ hashFiles('package-lock.json') }}
+      - if: steps.modules.outputs.cache-hit != 'true'
+        run: npm ci --prefer-offline --no-audit --no-fund
+      # Only three of the CLI's fourteen containers are load-bearing here:
+      #   postgres     — obviously
+      #   storage-api  — its startup migrations create storage.buckets,
+      #                  storage.objects and storage.foldername(), all of which
+      #                  20260830000000_member_self_service_and_player_directory
+      #                  writes to. The base postgres image ships an *empty*
+      #                  `storage` schema, so excluding this breaks migrations.
+      #   kong         — `supabase start` finishes by reaching the storage API
+      #                  through the gateway; without it, start exits non-zero.
+      # auth is safe to exclude: auth.users and auth.uid()/role()/email() come
+      # from the postgres image itself, not from gotrue.
+      #
+      # `supabase start` on a fresh volume applies migrations *and* runs
+      # supabase/seed.sql ([db.seed] enabled = true), so the previous
+      # `supabase db reset --local` step was pure duplicated work. Verified
+      # locally against an isolated scratch project on this exact exclude
+      # list: 12 files / 398 tests pass with no reset step at all.
+      - name: Start only the containers the pgTAP suite needs
+        run: npx supabase start -x gotrue,realtime,imgproxy,mailpit,postgrest,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
       - run: npm run test:db

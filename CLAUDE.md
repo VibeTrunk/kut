@@ -20,6 +20,24 @@ substitute.
   go through a feature branch and PR, squash-merged, branch auto-deleted on
   merge. See the global CLAUDE.md's "Branch workflow" section for the
   session-level conventions (branch naming, who merges).
+- **Batching agent work into one PR:** Claude Code and Codex often contribute
+  to the same branch, and whichever agent pushes packages the lot into a
+  single PR. That is the intended default — a full `verify` round costs
+  minutes — but squash-merge means one PR becomes exactly one commit on
+  `main`, so batching spends revert and `git bisect` granularity to buy it.
+  Therefore:
+  - **Batch freely:** docs, `KNOWN_BUGS.md` registrations, independent small
+    UI/layout fixes, chores. Use a combined prefix (`docs+fix:`), as #42 did.
+  - **Never batch:** anything carrying a `supabase/migrations/*.sql`, or any
+    change to a Part L invariant or an RPC contract. Hosted migrations are
+    deployed separately from `VibeTrunk/supabase`, so a bundled PR cannot be
+    reverted without dragging unrelated work with it while the hosted schema
+    stays migrated. One such change per PR.
+  - **Never run two agents in one working tree.** Each holds stale file state
+    and they will silently clobber each other. Serialize them on the branch,
+    or give each its own `git worktree` and merge into the PR branch.
+  - **The packaging agent reads `git diff main...HEAD` in full** before
+    writing the PR body — not only its own changes.
 - **Vercel:** connected as project `kut` at `kut.vibetrunk.com`.
 - **Supabase:** uses the shared VibeTrunk Supabase project, schema `kut`
   (not `public`); the hosted schema is created and migrated — see below.

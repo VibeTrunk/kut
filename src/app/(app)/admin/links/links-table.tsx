@@ -13,6 +13,7 @@ export type LinkAccount = {
   linked_player_name: string | null;
   wallet_balance: number;
   reset_idempotency_key: string;
+  self_grant_idempotency_key: string;
 };
 
 export type LinkablePlayer = { id: string; display_name: string; slug: string };
@@ -46,6 +47,9 @@ export function LinksTable({
             !isSelf &&
             account.role !== "superadmin" &&
             (account.role === "user" || currentUserRole === "superadmin");
+          // A superadmin may grant/claw back coins on their own wallet — a
+          // separate, narrower path than canModerate (ADR-052).
+          const canSelfGrant = isSelf && currentUserRole === "superadmin";
 
           return (
             <li className="rounded-2xl border border-line/60 bg-board-deep/40 p-4" key={account.id}>
@@ -201,6 +205,39 @@ export function LinksTable({
                   </button>
                 </form>
               )}
+
+              {canSelfGrant && (
+                <form action={formAction} className="mt-2 flex flex-wrap items-center gap-2">
+                  <input name="intent" type="hidden" value="self_grant_coins" />
+                  <input name="user_id" type="hidden" value={account.id} />
+                  <input name="idempotency_key" type="hidden" value={account.self_grant_idempotency_key} />
+                  <input
+                    aria-label="Grant yourself coins"
+                    className="min-h-9 w-24 rounded-lg border border-line bg-board-deep/60 px-2 text-xs"
+                    inputMode="numeric"
+                    name="amount"
+                    placeholder="+/- coins"
+                    required
+                    type="number"
+                  />
+                  <input
+                    aria-label="Reason for granting yourself coins"
+                    className="min-h-9 flex-1 rounded-lg border border-line bg-board-deep/60 px-2 text-xs"
+                    maxLength={200}
+                    name="reason"
+                    placeholder="Reason (required)"
+                    required
+                    type="text"
+                  />
+                  <button
+                    className="rounded-lg border border-brass px-3 py-1.5 text-xs font-bold text-brass disabled:cursor-not-allowed disabled:opacity-50"
+                    disabled={isPending}
+                    type="submit"
+                  >
+                    Grant myself coins
+                  </button>
+                </form>
+              )}
             </li>
           );
         })}
@@ -210,7 +247,9 @@ export function LinksTable({
         Linking connects a member&rsquo;s account to a player card so they earn attendance coins and can edit that
         card; it does <strong>not</strong> back-pay coins for sessions before the link. <strong>Adjust coins</strong>
         credits or claws back KUT Coins (audited, never below zero, max{" "}
-        {(100_000).toLocaleString("en-GB")} per adjustment). <strong>Reset club</strong> wipes wallet, cards, pack
+        {(100_000).toLocaleString("en-GB")} per adjustment). <strong>Grant myself coins</strong> is the same tool for a
+        superadmin&rsquo;s own wallet — same rules and cap, but never sends yourself a notification.{" "}
+        <strong>Reset club</strong> wipes wallet, cards, pack
         history and messages and re-grants the starter, keeping the login and all trade history.{" "}
         <strong>Disable</strong> blocks sign-in and removes the account from the leaderboard (reversible).{" "}
         <strong>Delete</strong> is permanent and only goes through for an account with no completed market trades —

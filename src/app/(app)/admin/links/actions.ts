@@ -122,6 +122,43 @@ export async function manageAccount(_prev: LinkActionState, formData: FormData):
     };
   }
 
+  if (intent === "self_grant_coins") {
+    const raw = String(formData.get("amount") ?? "").trim();
+    const amount = Number(raw);
+    if (!raw || !Number.isInteger(amount) || amount === 0) {
+      return { ok: false, error: "Enter a whole, non-zero amount." };
+    }
+    if (Math.abs(amount) > ECONOMY.adminWalletAdjustMax) {
+      return {
+        ok: false,
+        error: `Keep it within ${ECONOMY.adminWalletAdjustMax.toLocaleString("en-GB")} KUT Coins per adjustment.`,
+      };
+    }
+    const reason = String(formData.get("reason") ?? "").trim();
+    if (reason.length < 1 || reason.length > 200) {
+      return { ok: false, error: "Give a reason of 1–200 characters." };
+    }
+    const idempotencyKey = String(formData.get("idempotency_key") ?? "");
+    if (!UUID_RE.test(idempotencyKey)) return { ok: false, error: "Could not start the grant. Reload and try again." };
+
+    const { data, error } = await supabase.schema("kut").rpc("admin_grant_self_wallet", {
+      p_amount: amount,
+      p_reason: reason,
+      p_idempotency_key: idempotencyKey,
+    });
+    if (error) return { ok: false, error: mapRpcError(error) };
+    revalidateLinks();
+    const row = data as { amount?: number; balance?: number; already_processed?: boolean } | null;
+    if (row?.already_processed) {
+      return { ok: true, message: `Already granted with this request (balance ${row?.balance ?? "?"} KUT Coins).` };
+    }
+    const signed = (row?.amount ?? amount) > 0 ? `+${row?.amount ?? amount}` : String(row?.amount ?? amount);
+    return {
+      ok: true,
+      message: `You granted yourself ${signed} KUT Coins (new balance ${row?.balance ?? "?"}).`,
+    };
+  }
+
   if (intent === "reset_account") {
     const idempotencyKey = String(formData.get("idempotency_key") ?? "");
     if (!UUID_RE.test(idempotencyKey)) return { ok: false, error: "Could not start the reset. Reload and try again." };

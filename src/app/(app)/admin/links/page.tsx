@@ -40,6 +40,8 @@ export default async function AccountLinksPage() {
     wallet_balance: balanceByUserId.get(profile.id) ?? 0,
     // Stable per page load so a double-submit of the same Reset form is idempotent.
     reset_idempotency_key: crypto.randomUUID(),
+    // Same idea for the "Grant myself coins" form.
+    self_grant_idempotency_key: crypto.randomUUID(),
   }));
 
   const availablePlayers: LinkablePlayer[] = players

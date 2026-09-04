@@ -993,6 +993,12 @@ attendance. See ADR-035.
 > fresh `+250` starter, netting the wallet to `250`. It does not create coins
 > beyond the standard starter grant.
 
+> A superadmin may also grant/claw back coins on their **own** wallet through
+> a separate, superadmin-only RPC (`kut.admin_grant_self_wallet`,
+> `wallet_ledger.reason = 'admin_self_grant'`) — same cap and guards as
+> `admin_adjust_wallet`, but `admin_adjust_wallet` itself still refuses to
+> touch the caller's own wallet. See ADR-052.
+
 ### Bibs bonus
 
 The member linked to the Player who brings the bibs to a session receives a
@@ -2118,6 +2124,7 @@ ledger_reason:
   admin_adjustment
   admin_grant   # ADR-035: kut.admin_adjust_wallet
   admin_reset   # ADR-035: kut.admin_reset_account wallet zero + starter re-grant
+  admin_self_grant   # ADR-052: kut.admin_grant_self_wallet
 ```
 
 Exact PostgreSQL enum vs constrained text is an implementation choice. Prefer migration-friendly constrained text if agents are likely to change categories frequently.
@@ -3774,9 +3781,10 @@ Simple queries/cards are enough.
 
 > **Note (ADR-035):** the per-reason coin bullets above are spec'd but not yet
 > built — `kut.pack_economy_health` reports `total_coin_supply` only. When a
-> per-reason breakdown is built it must include the two admin ledger reasons
-> `admin_grant` (audited faucet) and `admin_reset` (the reset's wallet zero +
-> starter re-grant); today both flow into the supply total automatically.
+> per-reason breakdown is built it must include the three admin ledger reasons
+> `admin_grant` (audited faucet), `admin_reset` (the reset's wallet zero +
+> starter re-grant), and `admin_self_grant` (ADR-052, the superadmin
+> self-grant); today all three flow into the supply total automatically.
 
 ---
 

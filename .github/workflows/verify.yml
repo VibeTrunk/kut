@@ -71,13 +71,10 @@ jobs:
         run: npm ci --prefer-offline --no-audit --no-fund
       - name: Skip the flaky azure.archive.ubuntu.com mirror
         run: echo "http://archive.ubuntu.com/ubuntu" | sudo tee /etc/apt/apt-mirrors.txt
-      - name: Cache Playwright browsers
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-      # `--with-deps` still runs (its apt work is ~23s and cannot be cached),
-      # but the browser downloads underneath it are skipped on a cache hit.
+      # Deliberately NOT cached. Measured on this PR: the step takes 29s with
+      # a warm browser cache and 29s without, because `--with-deps` apt work
+      # dominates and the browser download never was the cost. A cache here
+      # only added a 3s restore and ate 249 MB of the repo cache budget.
       - name: Install Playwright browsers
         timeout-minutes: 5
         run: npx playwright install --with-deps chromium

@@ -37,19 +37,18 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
-      # `cache: npm` above only caches downloaded tarballs — with a warm npm
-      # cache, `npm ci` still spent 2m38s–5m02s per job re-extracting and
-      # linking 443 packages single-threaded. Caching the *result* skips that
-      # entirely. Keyed on the lockfile hash, so any dependency change pays
-      # one cold `npm ci` and every later run restores a single archive.
-      - name: Cache node_modules
-        id: modules
-        uses: actions/cache@v4
-        with:
-          path: node_modules
-          key: modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-${{ hashFiles('package-lock.json') }}
-      - if: steps.modules.outputs.cache-hit != 'true'
-        run: npm ci --prefer-offline --no-audit --no-fund
+      # The flags are what matter here, not a cache: `npm ci` used to take
+      # 2m38s-5m02s per job *with* a warm npm cache, because it was making
+      # registry round trips for the audit and for metadata revalidation.
+      # --prefer-offline --no-audit drops that to 9-12s.
+      #
+      # A node_modules cache was measured on top of this and removed again:
+      # it saved only a further 5-7s of a ~104s run, while costing 140 MB of
+      # cache budget and, more importantly, the guarantee `npm ci` gives of
+      # a tree rebuilt from the lockfile every time. A cache save that
+      # happens on a cancelled or failed run can otherwise pin a partial
+      # tree until the lockfile changes.
+      - run: npm ci --prefer-offline --no-audit --no-fund
       - run: npm run verify:fast
       - run: npm run build
 
@@ -61,14 +60,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
-      - name: Cache node_modules
-        id: modules
-        uses: actions/cache@v4
-        with:
-          path: node_modules
-          key: modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-${{ hashFiles('package-lock.json') }}
-      - if: steps.modules.outputs.cache-hit != 'true'
-        run: npm ci --prefer-offline --no-audit --no-fund
+      - run: npm ci --prefer-offline --no-audit --no-fund
       - name: Skip the flaky azure.archive.ubuntu.com mirror
         run: echo "http://archive.ubuntu.com/ubuntu" | sudo tee /etc/apt/apt-mirrors.txt
       # Deliberately NOT cached. Measured on this PR: the step takes 29s with
@@ -88,14 +80,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
-      - name: Cache node_modules
-        id: modules
-        uses: actions/cache@v4
-        with:
-          path: node_modules
-          key: modules-${{ runner.os }}-node${{ env.NODE_VERSION }}-${{ hashFiles('package-lock.json') }}
-      - if: steps.modules.outputs.cache-hit != 'true'
-        run: npm ci --prefer-offline --no-audit --no-fund
+      - run: npm ci --prefer-offline --no-audit --no-fund
       # Only three of the CLI's fourteen containers are load-bearing here:
       #   postgres     — obviously
       #   storage-api  — its startup migrations create storage.buckets,

@@ -2211,3 +2211,57 @@ Front-end only: no migration, no schema, no economy value.
 
 `BUILD_SPEC.md` §36 gains the detail page. KB-006 marked fixed. Verification:
 `npm run verify:fast` + `next build`.
+
+## ADR-052 — A superadmin may grant themselves KUT Coins
+
+Date: 2026-09-04
+
+Status: Accepted
+
+Decision: a new `security definer` RPC, `kut.admin_grant_self_wallet(p_amount
+bigint, p_reason text, p_idempotency_key uuid)`, gated to `role = 'superadmin'`
+(stricter than `kut.is_admin()`, which also passes a plain `admin`) rather than
+widening `kut.admin_adjust_wallet` (ADR-035). It credits (`+`) or claws back
+(`-`) the caller's own wallet in one transaction: a `wallet_ledger` row (new
+reason `'admin_self_grant'`), the wallet update, and a
+`kut.admin_account_events` audit row (new action `'self_wallet_grant'`) —
+**no** `admin_notice` inbox message, since a superadmin does not need to be
+told they granted themselves coins. Same guards as `admin_adjust_wallet`:
+`abs(p_amount)` capped at `100000` (`ECONOMY.adminWalletAdjustMax`), a result
+below zero raises `P0001`, a 1–200 char `p_reason` is required. Unlike
+`admin_adjust_wallet`, it takes a real `p_idempotency_key uuid` (backed by a
+partial unique index on `admin_account_events (target_user_id,
+detail->>'idempotency_key') where action = 'self_wallet_grant'`, the same
+pattern `admin_reset_account` uses) — closing the gap flagged in
+`docs/ROADMAP.md` for the coin-faucet family.
+
+Migration `20260914000000_admin_self_wallet_grant.sql`: widens
+`admin_account_events.action`'s check with `'self_wallet_grant'` and
+`wallet_ledger.reason`'s check with `'admin_self_grant'`, adds the partial
+unique index, and creates the RPC.
+
+Rejected: reusing `admin_adjust_wallet` by dropping its self-block. That RPC's
+`p_user_id = auth.uid()` guard (`P0001` "you cannot adjust your own wallet")
+stays exactly as-is; a superadmin granting themselves coins is a distinct,
+higher-scrutiny action that deserves its own audit tags rather than being
+indistinguishable from an ordinary admin-to-member grant in
+`kut.admin_account_events` / `kut.wallet_ledger`.
+
+Reason: a superadmin sometimes needs to correct or top up their own wallet
+(e.g. after manually verifying a discrepancy, or for testing) without routing
+through a second admin account, and the existing faucet deliberately refuses
+to touch the caller's own wallet.
+
+Consequences: tier is **additive** (ADR-032) — `create or replace function`
+plus two widened checks and one new partial index; nothing existing is
+rewritten or dropped. Rides the last scheduled backup; no fresh pre-push
+backup required. SQL-reversible (drop function / drop index / restore the
+narrower checks — no `self_wallet_grant` / `admin_self_grant` rows exist
+before this migration's hosted push). UI: a new "Grant myself coins" form
+renders only on the current superadmin's own row in `/admin/links`
+(`src/app/(app)/admin/links/links-table.tsx`), gated `isSelf &&
+currentUserRole === "superadmin"` — distinct from the existing `canModerate`
+gate, which stays `false` for one's own row (disable/reset/delete/adjust-others
+are unaffected). `BUILD_SPEC.md` §58's `ledger_reason` list gains
+`admin_self_grant`; the "Admin adjustment" note near `admin_adjust_wallet`
+gains a one-line pointer to this RPC.

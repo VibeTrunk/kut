@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path to extensions, kut, public;
 
-select plan(47);
+select plan(58);
 
 select has_column('kut', 'profiles', 'username', 'profiles has a username column');
 select has_function('kut', 'admin_set_profile_player', array['uuid', 'uuid'], 'admin link/unlink RPC exists');
@@ -11,6 +11,7 @@ select has_function('kut', 'admin_set_account_disabled', array['uuid', 'boolean'
 select has_function('kut', 'admin_prepare_account_deletion', array['uuid'], 'admin delete-prep RPC exists');
 select has_function('kut', 'admin_adjust_wallet', array['uuid', 'bigint', 'text'], 'admin coin faucet RPC exists');
 select has_function('kut', 'admin_reset_account', array['uuid', 'uuid'], 'admin account reset RPC exists');
+select has_function('kut', 'admin_grant_self_wallet', array['bigint', 'text', 'uuid'], 'admin self-grant RPC exists');
 select has_table('kut', 'admin_account_events', 'the admin account audit table exists');
 
 -- Fixtures ------------------------------------------------------------------
@@ -275,6 +276,78 @@ select is(
    where target_user_id = '00000000-0000-4000-8000-00000009d002' and action = 'wallet_adjust'),
   1,
   'one wallet_adjust audit row was written'
+);
+
+-- admin_grant_self_wallet (ADR-052) ------------------------------------------
+insert into auth.users (id, email, aud, role, raw_app_meta_data, raw_user_meta_data, created_at, updated_at)
+values ('00000000-0000-4000-8000-00000009d006', 'links-superadmin@example.test', 'authenticated', 'authenticated', '{}'::jsonb, '{}'::jsonb, now(), now());
+insert into kut.profiles (id, display_name, role, player_id, username)
+values ('00000000-0000-4000-8000-00000009d006', 'Links Superadmin', 'superadmin', null, null);
+insert into kut.wallets (user_id, balance) values ('00000000-0000-4000-8000-00000009d006', 300)
+on conflict (user_id) do update set balance = excluded.balance;
+
+-- A plain admin (not superadmin) is rejected.
+set local role authenticated;
+set local request.jwt.claim.sub = '00000000-0000-4000-8000-00000009d001';
+select throws_ok(
+  $$ select kut.admin_grant_self_wallet(100, 'not a superadmin', '00000000-0000-4000-8000-0000000ade04'); $$,
+  '42501', 'superadmin access required',
+  'a non-superadmin admin cannot grant themselves coins'
+);
+reset role;
+select set_config('request.jwt.claim.sub', '', true);
+
+set local role authenticated;
+set local request.jwt.claim.sub = '00000000-0000-4000-8000-00000009d006';
+select throws_ok(
+  $$ select kut.admin_grant_self_wallet(100, 'missing key', null); $$,
+  '22023', 'idempotency key is required',
+  'a self-grant without an idempotency key is rejected'
+);
+select throws_ok(
+  $$ select kut.admin_grant_self_wallet(100001, 'too big', '00000000-0000-4000-8000-0000000ade05'); $$,
+  '22023', 'amount exceeds the per-adjustment limit of 100000 KUT Coins',
+  'a self-grant over the per-call cap is rejected'
+);
+select throws_ok(
+  $$ select kut.admin_grant_self_wallet(-1000, 'overdraw', '00000000-0000-4000-8000-0000000ade06'); $$,
+  'P0001', 'adjustment would drop the balance below zero',
+  'a self-grant that would go below zero is rejected'
+);
+select lives_ok(
+  $$ select kut.admin_grant_self_wallet(200, 'happy path self-grant', '00000000-0000-4000-8000-0000000ade07'); $$,
+  'a superadmin can grant themselves coins'
+);
+select lives_ok(
+  $$ select kut.admin_grant_self_wallet(200, 'happy path self-grant', '00000000-0000-4000-8000-0000000ade07'); $$,
+  'replaying the same idempotency key is a no-op'
+);
+
+reset role;
+select set_config('request.jwt.claim.sub', '', true);
+
+select is(
+  (select balance from kut.wallets where user_id = '00000000-0000-4000-8000-00000009d006'),
+  500::bigint,
+  'the superadmin wallet was credited once, not twice, by the replayed self-grant'
+);
+select is(
+  (select count(*)::int from kut.wallet_ledger
+   where user_id = '00000000-0000-4000-8000-00000009d006' and reason = 'admin_self_grant'),
+  1,
+  'one admin_self_grant ledger row was written'
+);
+select is(
+  (select count(*)::int from kut.admin_account_events
+   where target_user_id = '00000000-0000-4000-8000-00000009d006' and action = 'self_wallet_grant'),
+  1,
+  'one self_wallet_grant audit row was written'
+);
+select is(
+  (select count(*)::int from kut.user_notifications
+   where user_id = '00000000-0000-4000-8000-00000009d006' and event_type = 'admin_notice'),
+  0,
+  'no self-notification was sent for the self-grant'
 );
 
 -- admin_reset_account (ADR-035) -------------------------------------------

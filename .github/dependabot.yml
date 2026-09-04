@@ -1,0 +1,27 @@
+# Restores the dependency-vulnerability signal that `npm ci --no-audit` gave
+# up in the verify workflow. Better than what it replaces: audit only printed
+# into a CI log, whereas this opens a reviewable PR.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    # Routine churn arrives as one PR a week; majors still come separately so
+    # a breaking Next / React / Supabase bump gets its own review and its own
+    # revertable commit on main.
+    groups:
+      minor-and-patch:
+        update-types:
+          - minor
+          - patch
+    commit-message:
+      prefix: chore
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: ci

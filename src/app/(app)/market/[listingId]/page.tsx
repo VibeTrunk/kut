@@ -7,6 +7,7 @@ import { archetypeLabel } from "@/game/archetypes";
 import { requireUser } from "@/lib/auth/user";
 import { resolvePhotoUrls } from "@/lib/player-photos";
 import { createClient } from "@/lib/supabase/server";
+import { isUuid } from "@/lib/uuid";
 import { BuyListingForm } from "../buy-listing-form";
 import { ProposeOfferForm, type OfferableCard } from "../propose-offer-form";
 
@@ -41,6 +42,9 @@ type Listing = {
 export default async function ListingPage({ params }: ListingPageProps) {
   const user = await requireUser();
   const { listingId } = await params;
+  // A malformed id (a stray path segment) fails the `uuid` cast below with a
+  // query error instead of the intended "not found" (KB-007).
+  if (!isUuid(listingId)) notFound();
   const supabase = await createClient();
 
   // Mirrors the market index: retire offers past their 12h window before reading.

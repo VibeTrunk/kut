@@ -26,7 +26,8 @@ export function ProposeOfferForm({
   askingPrice: number;
   offerableCards: OfferableCard[];
 }) {
-  const [coins, setCoins] = useState<number>(askingPrice);
+  const [coinsInput, setCoinsInput] = useState<string>(String(askingPrice));
+  const coins = Math.max(0, Math.floor(Number(coinsInput) || 0));
   const [picked, setPicked] = useState<Set<string>>(new Set());
   const key = useRef<string | null>(null);
   const [state, formAction, pending] = useActionState(proposeOffer, initialState);
@@ -64,10 +65,11 @@ export function ProposeOfferForm({
           id={`offer-coins-${listingId}`}
           min={0}
           name="offeredCoins"
-          onChange={(event) => setCoins(Math.max(0, Math.floor(Number(event.target.value) || 0)))}
+          onChange={(event) => setCoinsInput(event.target.value)}
+          onFocus={(event) => event.target.select()}
           step={1}
           type="number"
-          value={coins}
+          value={coinsInput}
         />
       </div>
 

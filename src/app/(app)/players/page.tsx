@@ -8,7 +8,7 @@ import { LEADERBOARD_TABS } from "@/lib/nav/routes";
 import { resolvePhotoUrls } from "@/lib/player-photos";
 import { createClient } from "@/lib/supabase/server";
 
-export const metadata = { title: "Player directory" };
+export const metadata = { title: "Players" };
 
 type DirectoryRow = {
   id: string;
@@ -67,8 +67,8 @@ export default async function PlayerDirectoryPage({ searchParams }: PlayerDirect
       <section className="mx-auto max-w-6xl space-y-8 py-4 sm:py-8">
         <header className="space-y-3">
           <p className="text-[0.7rem] font-extrabold uppercase tracking-[0.26em] text-brass">KUT roster</p>
-          <h1 className="display text-5xl sm:text-6xl">Player directory</h1>
-          <p className="max-w-2xl text-base leading-relaxed text-ink-dim">
+          <h1 className="display text-3xl sm:text-6xl">Players</h1>
+          <p className="hidden max-w-2xl text-base leading-relaxed text-ink-dim sm:block">
             Every collectible TFH player and their current Live Card. Tap a card for the full profile.
           </p>
           <p className="text-xs font-bold text-ink-faint">{players.length} {players.length === 1 ? "player" : "players"}</p>

@@ -168,11 +168,12 @@ export function IconSort(props: IconProps) {
   );
 }
 
-export function IconSessions(props: IconProps) {
+export function IconChronicle(props: IconProps) {
   return base(
     <>
-      <rect height="16" rx="2" width="18" x="3" y="5" />
-      <path d="M3 10h18M8 3v4M16 3v4" />
+      <path d="M4 6h11a2 2 0 0 1 2 2v11H6a2 2 0 0 1-2-2z" />
+      <path d="M17 9h3v8a2 2 0 0 1-2 2h-1" />
+      <path d="M7 9.5h5M7 12.5h5M7 15.5h3" />
     </>,
     props,
   );

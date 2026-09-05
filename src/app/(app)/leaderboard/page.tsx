@@ -46,7 +46,7 @@ export default async function LeaderboardPage() {
       <section className="mx-auto max-w-5xl space-y-8 py-4 sm:py-8">
         <header className="space-y-3">
           <p className="text-[0.7rem] font-extrabold uppercase tracking-[0.26em] text-brass">KUT standings</p>
-          <h1 className="display text-5xl sm:text-6xl">Club Value Leaderboard</h1>
+          <h1 className="display text-3xl sm:text-6xl">Leaderboard</h1>
           <p className="max-w-2xl text-base leading-relaxed text-ink-dim">
             Club Value is your KUT Coins, plus the discard value of every unburned card you own, plus your linked
             player&rsquo;s Live-card value counted 4&times;.{" "}

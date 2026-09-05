@@ -22,7 +22,7 @@ export default async function SettingsPage() {
       <section className="mx-auto max-w-2xl space-y-8 py-4 sm:py-8">
         <header className="space-y-3">
           <p className="text-[0.7rem] font-extrabold uppercase tracking-[0.26em] text-brass">Account</p>
-          <h1 className="display text-5xl sm:text-6xl">Settings</h1>
+          <h1 className="display text-3xl sm:text-6xl">Settings</h1>
         </header>
 
         <div className="rounded-2xl border border-line/60 bg-panel/60 p-6">

@@ -1,0 +1,207 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Instrument+Serif&display=swap">
+  <style>
+    :root{
+      --board:#15130f; --board-deep:#0b0a07; --panel:#211c15; --panel-2:#2a2318;
+      --line:#4a4030; --ink:#f4efe3; --ink-dim:#b3a891; --ink-faint:#8a8072; --ink-on-accent:#1c150a;
+      --brass:#e0ac4a; --brick:#dd7a55; --brick-line:#5c3221; --moss:#8bbd6c; --moss-line:#3c5230;
+      --warning:#d68a3c; --warning-line:#5c3c1f; --steel:#8fb0c2;
+      --sans:"Archivo","Helvetica Neue",Helvetica,Arial,sans-serif;
+      --serif:"Instrument Serif",Georgia,"Times New Roman",serif;
+    }
+    *{box-sizing:border-box;}
+    body{margin:0;font-family:var(--sans);color:var(--ink);
+      background:radial-gradient(120% 62% at 50% -6%, #221c13 0%, #15130f 46%, #0b0a07 100%);}
+    .display{font-family:var(--serif);font-weight:400;line-height:.94;letter-spacing:-.012em;text-wrap:pretty;}
+    code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.9em;color:var(--ink-faint);}
+    .wrap{max-width:1152px;margin:0 auto;padding:0 24px;}
+
+    .hd{padding:48px 0 30px;}
+    .hd p.k{margin:0;font-size:11.2px;font-weight:800;text-transform:uppercase;letter-spacing:.26em;color:var(--brass);}
+    .hd h1{margin:14px 0 0;font-size:56px;}
+    .hd .lede{margin:16px 0 0;max-width:800px;font-size:16px;line-height:1.66;color:var(--ink-dim);}
+
+    .sec{padding:44px 0 0;}
+    .sec__h{display:flex;align-items:baseline;gap:16px;padding-bottom:20px;border-bottom:1px solid rgba(74,64,48,.45);}
+    .sec__h h2{margin:0;font-size:32px;}
+    .sec__h span{font-size:11px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint);}
+
+    .spec{margin-top:26px;}
+    .spec__lab{display:flex;align-items:center;gap:12px;margin-bottom:11px;}
+    .spec__lab b{font-size:13px;font-weight:900;color:var(--ink);}
+    .spec__lab em{font-style:normal;font-size:11.5px;font-weight:700;color:var(--ink-faint);}
+    .pill{border-radius:999px;padding:4px 11px;font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;}
+    .pill--submit{background:rgba(43,25,13,.8);color:var(--warning);box-shadow:inset 0 0 0 1px var(--warning-line);}
+    .pill--live{background:rgba(28,36,22,.8);color:var(--moss);box-shadow:inset 0 0 0 1px var(--moss-line);}
+    .spec+.spec{margin-top:30px;}
+
+    .fbox{border:1px solid rgba(74,64,48,.6);border-radius:16px;background:rgba(11,10,7,.4);padding:14px;}
+    .frow{display:grid;gap:12px;}
+    .f-market{grid-template-columns:minmax(0,1fr) 160px 144px 112px 112px auto;}
+    .f-players{grid-template-columns:minmax(0,1fr) 160px 192px 160px auto;}
+    .fi{display:flex;align-items:center;gap:9px;height:44px;padding:0 14px;border:1px solid var(--line);
+      border-radius:12px;background:rgba(11,10,7,.6);font-size:14px;font-weight:600;color:var(--ink-faint);}
+    .fi--sel{justify-content:space-between;color:var(--ink);}
+    .fbtn{display:grid;place-items:center;height:44px;padding:0 22px;border-radius:12px;
+      background:linear-gradient(to bottom,#eebd63,#d29a34);font-size:14px;font-weight:900;color:var(--ink-on-accent);}
+
+    .cbar{display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding-bottom:22px;border-bottom:1px solid rgba(74,64,48,.4);}
+    .csearch{display:flex;align-items:center;gap:9px;height:44px;padding:0 14px;border:1px solid var(--line);
+      border-radius:12px;background:rgba(11,10,7,.6);font-size:14px;font-weight:600;color:var(--ink-faint);width:220px;}
+    .chip{display:flex;align-items:center;height:36px;padding:0 14px;border:1px solid var(--line);border-radius:999px;
+      background:rgba(11,10,7,.5);font-size:12px;font-weight:800;color:var(--ink-dim);text-transform:capitalize;}
+    .chip--on{border-color:rgba(224,172,74,.5);background:rgba(224,172,74,.12);color:var(--brass);}
+    .grow{flex:1;}
+    .sortbox{display:flex;align-items:center;gap:6px;height:44px;padding:0 10px;border:1px solid var(--line);
+      border-radius:12px;background:rgba(11,10,7,.6);}
+    .sortbox span{padding:0 8px;font-size:12px;font-weight:700;color:var(--ink-faint);}
+    .sortbox span.on{color:var(--brass);}
+
+    .lensbar{display:flex;flex-wrap:wrap;align-items:center;gap:9px;padding:16px 0;
+      border-top:1px solid rgba(74,64,48,.4);border-bottom:1px solid rgba(74,64,48,.4);}
+    .lensbar>em{font-style:normal;margin-right:4px;font-size:10.5px;font-weight:800;letter-spacing:.2em;
+      text-transform:uppercase;color:var(--ink-faint);}
+    .lchip{display:flex;align-items:center;gap:7px;height:40px;padding:0 16px;border:1px solid var(--line);
+      border-radius:999px;font-size:12.5px;font-weight:800;color:var(--ink-dim);}
+    .lchip--on{border-color:rgba(224,172,74,.6);background:rgba(224,172,74,.12);color:var(--brass);}
+    .lchip b{font-variant-numeric:tabular-nums;color:var(--ink-faint);}
+
+    .prop{margin-top:26px;border:1px solid var(--moss-line);border-radius:18px;background:rgba(28,36,22,.24);padding:20px;}
+    .prop__h{display:flex;align-items:center;gap:12px;margin-bottom:16px;}
+    .prop__h b{font-size:13px;font-weight:900;color:var(--moss);}
+    .prop__h em{font-style:normal;font-size:11.5px;font-weight:700;color:var(--ink-faint);}
+    .propbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;}
+    .note{margin:16px 0 0;font-size:12.5px;line-height:1.7;color:var(--ink-faint);max-width:900px;}
+    .note b{color:var(--ink-dim);font-weight:800;}
+
+    .names{margin-top:6px;}
+    .nrow{display:grid;grid-template-columns:150px 130px 168px 190px 178px minmax(0,1fr);gap:16px;align-items:baseline;
+      padding:14px 4px;border-bottom:1px solid rgba(74,64,48,.32);font-size:13px;color:var(--ink-dim);}
+    .nrow--h{padding-bottom:9px;border-bottom:1px solid rgba(74,64,48,.6);}
+    .nrow--h span{font-size:10px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint);}
+    .nrow b{font-size:13.5px;font-weight:900;color:var(--ink);}
+    .nrow .bad{color:var(--brick);font-weight:700;}
+    .nrow .ok{color:var(--moss);font-weight:800;}
+    .foot{margin:0;padding:38px 0 60px;font-size:12.5px;line-height:1.72;color:var(--ink-faint);max-width:940px;}
+    .foot b{color:var(--ink-dim);font-weight:800;}
+  </style>
+</helmet>
+
+<div class="wrap hd">
+  <p class="k">KUT navigation audit &middot; consistency</p>
+  <h1 class="display">Same thing,<br>different clothes</h1>
+  <p class="lede">Three grids show the same cards, filtered by the same three fields, using three different sets of controls that behave two different ways. And one section carries three names depending on where you meet it.</p>
+</div>
+
+<div class="wrap sec">
+  <div class="sec__h"><h2 class="display">Filtering, three ways</h2><span>search &middot; tier &middot; sort &mdash; identical fields, every time</span></div>
+
+  <div class="spec">
+    <div class="spec__lab"><b>Market</b><em>/market</em><span class="pill pill--submit">applies on submit</span></div>
+    <div class="fbox">
+      <div class="frow f-market">
+        <span class="fi"><svg aria-hidden="true" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewBox="0 0 24 24" width="16"><circle cx="11" cy="11" r="6.5" /><path d="M16 16l4 4" /></svg>Search player</span>
+        <span class="fi fi--sel">Any tier<svg aria-hidden="true" fill="none" height="15" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="15"><path d="M7 10l5 5 5-5" /></svg></span>
+        <span class="fi fi--sel">Newest<svg aria-hidden="true" fill="none" height="15" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="15"><path d="M7 10l5 5 5-5" /></svg></span>
+        <span class="fi">Min</span>
+        <span class="fi">Max</span>
+        <span class="fbtn">Filter</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="spec">
+    <div class="spec__lab"><b>Player directory</b><em>/players</em><span class="pill pill--submit">applies on submit</span></div>
+    <div class="fbox">
+      <div class="frow f-players">
+        <span class="fi"><svg aria-hidden="true" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewBox="0 0 24 24" width="16"><circle cx="11" cy="11" r="6.5" /><path d="M16 16l4 4" /></svg>Search player</span>
+        <span class="fi fi--sel">Any tier<svg aria-hidden="true" fill="none" height="15" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="15"><path d="M7 10l5 5 5-5" /></svg></span>
+        <span class="fi fi--sel">Any archetype<svg aria-hidden="true" fill="none" height="15" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="15"><path d="M7 10l5 5 5-5" /></svg></span>
+        <span class="fi fi--sel">Highest OVR<svg aria-hidden="true" fill="none" height="15" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="15"><path d="M7 10l5 5 5-5" /></svg></span>
+        <span class="fbtn">Filter</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="spec">
+    <div class="spec__lab"><b>Collection &rarr; Manage</b><em>/club/collection?view=manage</em><span class="pill pill--live">applies on click</span></div>
+    <div class="cbar">
+      <span class="csearch"><svg aria-hidden="true" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewBox="0 0 24 24" width="16"><circle cx="11" cy="11" r="6.5" /><path d="M16 16l4 4" /></svg>Search your cards</span>
+      <span class="chip chip--on">All tiers</span>
+      <span class="chip">Elite</span>
+      <span class="chip">Holo</span>
+      <span class="chip">Gold</span>
+      <span class="chip">Silver</span>
+      <span class="chip">Bronze</span>
+      <span class="chip">Common</span>
+      <span class="grow"></span>
+      <span class="sortbox"><svg aria-hidden="true" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewBox="0 0 24 24" width="16" style="color:var(--ink-faint)"><path d="M7 4v16M7 20l-3-3M7 20l3-3" /><path d="M17 20V4M17 4l-3 3M17 4l3 3" /></svg><span class="on">Rating, high to low</span><span>Name, A to Z</span><span>Discard value</span></span>
+    </div>
+  </div>
+
+  <div class="spec">
+    <div class="spec__lab"><b>Collection &rarr; Album</b><em>/club/collection</em><span class="pill pill--live">applies on click</span></div>
+    <div class="lensbar">
+      <em>Lens</em>
+      <span class="lchip lchip--on">All players <b>63</b></span>
+      <span class="lchip">Gaps only <b>41</b></span>
+      <span class="lchip">Specialists <b>14</b></span>
+      <span class="lchip">By type <svg aria-hidden="true" fill="none" height="14" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="14"><path d="M7 10l5 5 5-5" /></svg></span>
+      <span class="lchip">By tier <svg aria-hidden="true" fill="none" height="14" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="14"><path d="M7 10l5 5 5-5" /></svg></span>
+    </div>
+  </div>
+
+  <div class="prop">
+    <div class="prop__h"><b>One bar, everywhere</b><em>chips for a short enumerated set &middot; a select for a long one &middot; search left, sort right &middot; applies on click</em></div>
+    <div class="propbar">
+      <span class="csearch"><svg aria-hidden="true" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewBox="0 0 24 24" width="16"><circle cx="11" cy="11" r="6.5" /><path d="M16 16l4 4" /></svg>Search player</span>
+      <span class="chip chip--on">All tiers</span>
+      <span class="chip">Elite</span>
+      <span class="chip">Holo</span>
+      <span class="chip">Gold</span>
+      <span class="chip">Silver</span>
+      <span class="chip">Bronze</span>
+      <span class="chip">Common</span>
+      <span class="grow"></span>
+      <span class="fi fi--sel" style="width:180px">Newest<svg aria-hidden="true" fill="none" height="15" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="15"><path d="M7 10l5 5 5-5" /></svg></span>
+    </div>
+    <p class="note"><b>What stays per-surface:</b> the Market&rsquo;s min/max price pair and the directory&rsquo;s archetype select are genuinely local &mdash; they join the same bar, they do not change its grammar. The Album&rsquo;s <b>Lens</b> is a different idea and should stay one, but it should stop carrying its own By type / By tier menus once the shared bar already offers them. And on a phone the whole bar collapses to one <b>Filters</b> pill plus chips for whatever is active &mdash; the sheet is where the price pair gets its Apply button, the one place a submit is genuinely wanted.</p>
+  </div>
+</div>
+
+<div class="wrap sec">
+  <div class="sec__h"><h2 class="display">One section, three names</h2><span>tab &middot; kicker &middot; heading &middot; back link</span></div>
+  <div class="names">
+    <div class="nrow nrow--h"><span>Section</span><span>Tab says</span><span>Kicker says</span><span>Heading says</span><span>Back link says</span><span>Call it</span></div>
+    <div class="nrow">
+      <b>Market</b><span>Market</span><span class="bad">Transfer market</span><span class="bad">Buy Live Cards</span><span class="bad">&larr; Transfer market</span><span class="ok">Market &mdash; everywhere</span>
+    </div>
+    <div class="nrow">
+      <b>Chronicle</b><span>Chronicle</span><span>&mdash;</span><span class="bad">KUT Chronicle</span><span>&mdash;</span><span class="ok">Chronicle</span>
+    </div>
+    <div class="nrow">
+      <b>Collection</b><span>Collection</span><span class="bad">My club</span><span>Collection</span><span>&larr; Collection</span><span class="ok">Collection</span>
+    </div>
+    <div class="nrow">
+      <b>Club Value</b><span>Club Value</span><span class="bad">My club</span><span>Club Value</span><span>&mdash;</span><span class="ok">Club Value</span>
+    </div>
+    <div class="nrow">
+      <b>Player directory</b><span>Player directory</span><span class="bad">KUT roster</span><span>Player directory</span><span class="bad">&larr; Player directory</span><span class="ok">Players</span>
+    </div>
+    <div class="nrow">
+      <b>Messages</b><span>Messages</span><span class="bad">KUT inbox</span><span>Messages</span><span>&mdash;</span><span class="ok">Messages</span>
+    </div>
+  </div>
+  <p class="foot"><b>The kicker is not the problem &mdash; using it as a second name is.</b> &ldquo;Transfer market&rdquo;, &ldquo;KUT roster&rdquo; and &ldquo;KUT inbox&rdquo; are good editorial lines and they should stay; they are what gives the app its clubblad voice. What should change is the <code>h1</code> underneath: it is the one string a member will read as &ldquo;where am I&rdquo;, and it should be the same word that is lit in the tab bar. &ldquo;Buy Live Cards&rdquo; is the odd one out &mdash; it names an action, not a place, and there is now a whole Offers tab under it that is not buying.</p>
+</div>
+</x-dc>
+</body>
+</html>

@@ -1,0 +1,277 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Instrument+Serif&display=swap">
+  <style>
+    :root{
+      --board:#15130f; --board-deep:#0b0a07; --panel:#211c15; --panel-2:#2a2318;
+      --line:#4a4030; --ink:#f4efe3; --ink-dim:#b3a891; --ink-faint:#8a8072; --ink-on-accent:#1c150a;
+      --brass:#e0ac4a; --brass-line:#5c4419;
+      --steel:#8fb0c2; --steel-line:#3a5866;
+      --moss:#8bbd6c; --moss-line:#3c5230;
+      --brick:#dd7a55; --brick-line:#5c3221;
+      --warning:#d68a3c; --warning-line:#5c3c1f;
+      --sans:"Archivo","Helvetica Neue",Helvetica,Arial,sans-serif;
+      --serif:"Instrument Serif",Georgia,"Times New Roman",serif;
+    }
+    *{box-sizing:border-box;}
+    body{margin:0;font-family:var(--sans);color:var(--ink);
+      background:radial-gradient(120% 78% at 50% -8%, #221c13 0%, #15130f 46%, #0b0a07 100%);}
+    a{color:var(--brass);text-decoration:none;} a:hover{color:#f0c470;}
+    .display{font-family:var(--serif);font-weight:400;line-height:.94;letter-spacing:-.012em;text-wrap:pretty;}
+    .kicker{margin:0;font-size:11.2px;font-weight:800;text-transform:uppercase;letter-spacing:.26em;color:var(--brick);}
+    .clip-pennant{clip-path:polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%);}
+    .wrap{max-width:1152px;margin:0 auto;padding:0 24px;}
+    code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.92em;color:var(--ink-faint);}
+
+    .hd{padding:48px 0 34px;}
+    .hd h1{margin:14px 0 0;font-size:62px;}
+    .lede{margin:16px 0 0;max-width:760px;font-size:16px;line-height:1.65;color:var(--ink-dim);}
+
+    .barband{position:relative;border-top:1px solid rgba(74,64,48,.28);border-bottom:1px solid rgba(74,64,48,.4);
+      background:rgba(11,10,7,.8);}
+    .bar{max-width:1152px;margin:0 auto;height:64px;padding:0 24px;display:flex;align-items:center;gap:24px;}
+    .mark{display:flex;align-items:center;gap:10px;font-size:20px;font-weight:900;letter-spacing:-.02em;color:var(--ink);}
+    .mark i{display:block;width:14px;height:16px;background:var(--brass);}
+    .tabs{display:flex;flex:1;align-items:center;gap:4px;}
+    .tab{display:flex;align-items:center;gap:8px;border-radius:8px;padding:8px 12px;font-size:14px;font-weight:700;color:var(--ink-dim);}
+    .right{display:flex;align-items:center;gap:12px;}
+    .coins{display:flex;align-items:center;gap:6px;border:1px solid rgba(224,172,74,.3);border-radius:999px;
+      background:linear-gradient(to bottom, rgba(224,172,74,.15), rgba(224,172,74,.05));padding:6px 14px;
+      font-size:14px;font-weight:900;font-variant-numeric:tabular-nums;color:var(--brass);}
+    .more{display:flex;align-items:center;gap:6px;padding:0 12px;height:40px;font-size:14px;font-weight:700;color:var(--ink-dim);}
+    .more i{display:block;width:6px;height:6px;border-radius:999px;background:var(--brass);}
+    .avatar{display:grid;place-items:center;width:36px;height:36px;border-radius:999px;background:var(--brass);
+      font-size:12px;font-weight:900;color:var(--ink-on-accent);}
+
+    /* dotted problem rings drawn over the real chrome */
+    .ring{position:absolute;border:1.5px dashed var(--brick);border-radius:12px;pointer-events:none;}
+    .ring--more{top:11px;right:calc(50% - 576px + 84px);width:96px;height:42px;}
+    .ring--av{top:14px;right:calc(50% - 576px + 24px);width:40px;height:40px;border-radius:999px;}
+    .ring--tabs{top:11px;left:calc(50% - 576px + 108px);width:340px;height:42px;border-color:var(--warning);}
+    .pin{position:absolute;display:grid;place-items:center;width:22px;height:22px;border-radius:999px;
+      background:var(--brick);color:#160c08;font-size:12px;font-weight:900;}
+    .pin--warn{background:var(--warning);}
+
+    .dropzone{position:relative;height:560px;}
+    .drop{position:absolute;top:12px;right:calc(50% - 576px + 24px);width:264px;border:1px solid var(--line);
+      border-radius:16px;background:var(--panel);padding:8px;box-shadow:0 24px 48px -12px rgba(0,0,0,.75);}
+    .drop__who{padding:8px 12px 4px;font-size:11.2px;font-weight:900;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint);}
+    .drop__item{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:44px;padding:0 12px;
+      border-radius:8px;font-size:14px;font-weight:700;color:var(--ink-dim);}
+    .drop__item span{display:flex;align-items:center;gap:10px;}
+    .drop__item--admin{color:var(--brick);}
+    .drop__b{display:grid;place-items:center;min-width:20px;height:20px;padding:0 6px;border-radius:999px;
+      background:var(--brass);font-size:11px;font-weight:900;color:var(--ink-on-accent);}
+    .drop__rule{height:1px;margin:6px 4px;background:var(--panel-2);}
+    .drop__grp{position:absolute;left:-13px;width:3px;border-radius:2px;}
+
+    .callout{position:absolute;top:22px;left:calc(50% - 576px + 24px);width:560px;}
+    .cnote{display:grid;grid-template-columns:26px minmax(0,1fr);gap:14px;margin-bottom:22px;}
+    .cnote h3{margin:0 0 6px;font-size:13.5px;font-weight:900;color:var(--ink);}
+    .cnote p{margin:0;font-size:13.5px;line-height:1.66;color:var(--ink-dim);}
+    .cnote p b{color:var(--ink);font-weight:800;}
+    .cnote__n{display:grid;place-items:center;width:22px;height:22px;border-radius:999px;background:var(--brick);
+      color:#160c08;font-size:12px;font-weight:900;}
+    .cnote__n--warn{background:var(--warning);}
+
+    .legend{position:absolute;bottom:6px;left:calc(50% - 576px + 24px);width:560px;
+      border-top:1px solid rgba(74,64,48,.5);padding-top:16px;}
+    .legend p{margin:0;font-size:12.5px;line-height:1.7;color:var(--ink-faint);}
+    .legend b{color:var(--ink-dim);font-weight:800;}
+
+    .sec{padding:12px 0 0;}
+    .sec__h{display:flex;align-items:baseline;gap:16px;padding-bottom:18px;border-bottom:1px solid rgba(74,64,48,.45);}
+    .sec__h h2{margin:0;font-size:34px;}
+    .sec__h span{font-size:11px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint);}
+
+    .cols{display:grid;grid-template-columns:minmax(0,1.06fr) minmax(0,1fr);gap:34px;margin-top:24px;}
+    .panel{border:1px solid rgba(74,64,48,.6);border-radius:18px;background:rgba(33,28,21,.55);padding:22px 22px 18px;}
+    .panel h3{margin:0 0 4px;font-size:15px;font-weight:900;color:var(--ink);}
+    .panel .sub{margin:0 0 16px;font-size:12.5px;line-height:1.6;color:var(--ink-faint);}
+
+    .dests{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;}
+    .dest{border:1px solid rgba(74,64,48,.55);border-radius:9px;padding:9px 10px;font-size:11.5px;font-weight:800;
+      color:var(--ink-faint);background:rgba(11,10,7,.4);}
+    .dest--lit{border-color:rgba(224,172,74,.45);background:rgba(224,172,74,.1);color:var(--brass);}
+    .dest em{display:block;font-style:normal;margin-top:3px;font-size:9.5px;font-weight:700;letter-spacing:.06em;
+      text-transform:uppercase;color:var(--brick);}
+    .dest--lit em{color:rgba(224,172,74,.7);}
+
+    .branch{display:flex;flex-direction:column;gap:10px;margin-top:2px;}
+    .brow{display:grid;grid-template-columns:132px minmax(0,1fr);gap:14px;align-items:center;}
+    .brow__k{font-size:12px;font-weight:900;color:var(--ink);}
+    .brow__k em{display:block;font-style:normal;font-size:10px;font-weight:700;color:var(--ink-faint);
+      font-family:ui-monospace,Menlo,Consolas,monospace;margin-top:2px;}
+    .bbar{height:26px;border-radius:6px;display:flex;align-items:center;padding:0 10px;font-size:10.5px;
+      font-weight:800;letter-spacing:.08em;text-transform:uppercase;}
+    .bbar--club{background:rgba(224,172,74,.16);color:var(--brass);box-shadow:inset 0 0 0 1px rgba(224,172,74,.3);}
+    .bbar--other{background:rgba(74,64,48,.3);color:var(--ink-faint);box-shadow:inset 0 0 0 1px rgba(74,64,48,.5);}
+
+    .routes{margin-top:4px;}
+    .route{display:grid;grid-template-columns:22px minmax(0,1fr);gap:11px;padding:9px 0;
+      border-bottom:1px solid rgba(74,64,48,.3);font-size:12.5px;line-height:1.5;color:var(--ink-dim);}
+    .route:last-child{border-bottom:0;}
+    .route__n{display:grid;place-items:center;width:22px;height:22px;border-radius:6px;background:rgba(74,64,48,.4);
+      font-size:11px;font-weight:900;color:var(--ink-faint);}
+    .route__n--x{background:rgba(42,23,18,.85);color:var(--brick);box-shadow:inset 0 0 0 1px var(--brick-line);}
+    .route b{color:var(--ink);font-weight:800;}
+    .route code{color:var(--ink-faint);}
+
+    .twobadge{margin-top:16px;border:1px solid var(--brick-line);border-radius:14px;background:rgba(42,23,18,.42);padding:16px 17px;}
+    .twobadge p{margin:0;font-size:12.5px;line-height:1.65;color:var(--ink-dim);}
+    .twobadge p+p{margin-top:9px;}
+    .twobadge b{color:var(--brick);font-weight:800;}
+    .foot{margin:0;padding:34px 0 60px;font-size:12.5px;line-height:1.72;color:var(--ink-faint);max-width:920px;}
+    .foot b{color:var(--ink-dim);font-weight:800;}
+  </style>
+</helmet>
+
+<div class="wrap hd">
+  <p class="kicker">Today &middot; desktop, as shipped</p>
+  <h1 class="display">Five tabs, and<br>a word for the rest</h1>
+  <p class="lede">Rendered from <code>app-nav.tsx</code> and <code>nav-items.tsx</code> at true scale. The chrome is well built &mdash; correct focus rings, 44px targets, a real <code>aria-current</code> on the primary row. The trouble is entirely structural.</p>
+</div>
+
+<div class="barband">
+  <div class="bar">
+    <span class="mark"><i aria-hidden="true" class="clip-pennant"></i>KUT</span>
+    <nav class="tabs">
+      <span class="tab"><svg aria-hidden="true" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewBox="0 0 24 24" width="16"><path d="M4 11.5 12 4l8 7.5" /><path d="M6 10v9h12v-9" /><path d="M10 19v-5h4v5" /></svg>Home</span>
+      <span class="tab"><svg aria-hidden="true" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewBox="0 0 24 24" width="16"><rect height="15" rx="1.6" transform="rotate(8 12.5 11)" width="11" x="7" y="3.5" /><rect fill="#0b0a07" height="15" rx="1.6" width="11" x="4.5" y="6" /></svg>Collection</span>
+      <span class="tab"><svg aria-hidden="true" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewBox="0 0 24 24" width="16"><path d="M4 8.5 12 4l8 4.5v8L12 21l-8-4.5z" /><path d="M4 8.5 12 13l8-4.5" /><path d="M12 13v8" /></svg>Packs</span>
+      <span class="tab"><svg aria-hidden="true" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewBox="0 0 24 24" width="16"><path d="M3 8h13" /><path d="M13 4l4 4-4 4" /><path d="M21 16H8" /><path d="M11 20l-4-4 4-4" /></svg>Market</span>
+      <span class="tab"><svg aria-hidden="true" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewBox="0 0 24 24" width="16"><path d="M12 3l7 2.5v5.2C19 15.8 16 19 12 21c-4-2-7-5.2-7-10.3V5.5z" /><path d="M12 8v6" /><path d="M9.2 10.8h5.6" /></svg>Club</span>
+    </nav>
+    <div class="right">
+      <span class="coins"><svg aria-hidden="true" fill="none" height="14" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewBox="0 0 24 24" width="14"><circle cx="12" cy="12" r="8.5" /><path d="M12 8v8M9.5 10a2.3 2.3 0 0 1 2.5-1.6c1.4 0 2.4.7 2.4 1.8s-1 1.6-2.4 1.8c-1.4.2-2.4.8-2.4 1.8s1 1.8 2.4 1.8a2.4 2.4 0 0 0 2.5-1.6" /></svg>1,240</span>
+      <span class="more">More<i aria-hidden="true"></i><svg aria-hidden="true" fill="none" height="15" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="15"><path d="M7 10l5 5 5-5" /></svg></span>
+      <span class="avatar">MO</span>
+    </div>
+  </div>
+  <span class="ring ring--tabs"></span>
+  <span class="ring ring--more"></span>
+  <span class="ring ring--av"></span>
+</div>
+
+<div class="dropzone">
+  <div class="callout">
+    <div class="cnote">
+      <span class="cnote__n">1</span>
+      <div>
+        <h3>Nine of fifteen destinations light nothing up</h3>
+        <p>Active styling is computed for the five primary items only. Stand on <b>/leaderboard, /chronicle, /messages, /players, /settings, /club/value, /market/offers</b> or any admin page and no part of the chrome is highlighted &mdash; the &ldquo;More&rdquo; button never takes a state of its own. For most of the app, there is no &ldquo;you are here&rdquo;.</p>
+      </div>
+    </div>
+    <div class="cnote">
+      <span class="cnote__n">2</span>
+      <div>
+        <h3>The disc that looks like an account button isn&rsquo;t one</h3>
+        <p>36px, brass, your initials &mdash; and <code>aria-hidden=&quot;true&quot;</code>, no link, no handler. The actual account menu is its neighbour labelled &ldquo;More&rdquo;, whose panel opens headed by your display name. The two controls have swapped jobs.</p>
+      </div>
+    </div>
+    <div class="cnote">
+      <span class="cnote__n cnote__n--warn">3</span>
+      <div>
+        <h3>Three of the five tabs are the same branch</h3>
+        <p>Collection, Packs and Club all live under <code>/club</code>, and <code>/club</code> exists mostly to link to the first two. On a phone that spends three of five thumb slots on one branch.</p>
+      </div>
+    </div>
+    <div class="cnote">
+      <span class="cnote__n">4</span>
+      <div>
+        <h3>One menu, four unrelated jobs, no grouping</h3>
+        <p>Club-wide content (Leaderboard, Chronicle, Player directory), personal state (Club Value, Trade offers, Messages), help, and account &mdash; nine rows, one divider, filed in no order anyone could reconstruct. Weekly-use content sits next to Log out.</p>
+      </div>
+    </div>
+    <div class="cnote">
+      <span class="cnote__n">5</span>
+      <div>
+        <h3>Two badges collapse into one anonymous dot</h3>
+        <p>Unread messages and incoming trade offers each carry their own number inside the panel &mdash; but on the closed button they become a single 6px brass dot. It says something happened. It never says what, and on mobile that dot is the only signal on the whole screen.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="drop">
+    <p class="drop__who">Maarten van Oostrom</p>
+    <span class="drop__item"><span><svg aria-hidden="true" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewBox="0 0 24 24" width="16"><path d="M5 20V11" /><path d="M12 20V4" /><path d="M19 20v-7" /></svg>Leaderboard</span></span>
+    <span class="drop__item"><span><svg aria-hidden="true" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewBox="0 0 24 24" width="16"><rect height="16" rx="2" width="18" x="3" y="5" /><path d="M3 10h18M8 3v4M16 3v4" /></svg>Chronicle</span></span>
+    <span class="drop__item"><span><svg aria-hidden="true" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewBox="0 0 24 24" width="16"><path d="M12 4v16" /><path d="M7 20h10" /><path d="M5 7h14l-2.5-3h-9z" /><path d="M5 7 2.5 13a3 3 0 0 0 5 0z" /><path d="M19 7l-2.5 6a3 3 0 0 0 5 0z" /></svg>Club Value</span></span>
+    <span class="drop__item"><span><svg aria-hidden="true" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewBox="0 0 24 24" width="16"><path d="M3 7h11l4 4-6 6-4-4" /><path d="M7 11h0" /><path d="M14 14l3 3 4-4-4-4" /></svg>Trade offers</span><span class="drop__b">2</span></span>
+    <span class="drop__item"><span><svg aria-hidden="true" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewBox="0 0 24 24" width="16"><circle cx="9" cy="8" r="3" /><path d="M3.5 19c0-3 2.5-5 5.5-5s5.5 2 5.5 5" /><path d="M15.5 5.2a3 3 0 0 1 0 5.6" /><path d="M17.5 14.3c2 .4 3 1.9 3 4.7" /></svg>Player directory</span></span>
+    <span class="drop__item"><span><svg aria-hidden="true" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewBox="0 0 24 24" width="16"><path d="M4 5.5h16v10H9l-4 3.5v-3.5H4z" /></svg>Messages</span><span class="drop__b">3</span></span>
+    <span class="drop__item"><span><svg aria-hidden="true" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewBox="0 0 24 24" width="16"><circle cx="12" cy="12" r="8.5" /><path d="M12 11v5" /><path d="M12 8h0" /></svg>How KUT works</span></span>
+    <span class="drop__item"><span><svg aria-hidden="true" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewBox="0 0 24 24" width="16"><path d="M4 7h9M17 7h3M4 12h3M11 12h9M4 17h13M20 17h0" /><circle cx="15" cy="7" r="2" /><circle cx="7" cy="12" r="2" /><circle cx="17" cy="17" r="2" /></svg>Settings</span></span>
+    <span class="drop__item drop__item--admin"><span><svg aria-hidden="true" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewBox="0 0 24 24" width="16"><path d="M12 3l7 2.5v5.2C19 15.8 16 19 12 21c-4-2-7-5.2-7-10.3V5.5z" /><path d="M9 11.5l2 2 4-4.5" /></svg>Admin</span></span>
+    <div class="drop__rule"></div>
+    <span class="drop__item"><span><svg aria-hidden="true" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewBox="0 0 24 24" width="16"><path d="M15 5H6v14h9" /><path d="M13 12h8M18 9l3 3-3 3" /></svg>Log out</span></span>
+  </div>
+
+  <div class="legend">
+    <p><b>Read the panel as four unlabelled groups:</b> rows 1&ndash;2 are club-wide reading, rows 3&ndash;4 are your own economy, rows 5&ndash;6 are lists and mail, rows 7&ndash;9 are help and account. Nothing in the design says so &mdash; there is exactly one divider in the whole menu, and it is above Log out.</p>
+  </div>
+</div>
+
+<div class="wrap sec">
+  <div class="sec__h"><h2 class="display">Two ways to see the same problem</h2><span>wayfinding &middot; redundancy</span></div>
+  <div class="cols">
+    <div class="panel">
+      <h3>Where the chrome tells you where you are</h3>
+      <p class="sub">Every member-facing destination. Lit = something in the nav takes an active state while you stand there.</p>
+      <div class="dests">
+        <span class="dest dest--lit">Home</span>
+        <span class="dest dest--lit">Collection</span>
+        <span class="dest dest--lit">Packs</span>
+        <span class="dest dest--lit">Market</span>
+        <span class="dest dest--lit">Club</span>
+        <span class="dest dest--lit">Card detail<em>via Collection</em></span>
+        <span class="dest">Leaderboard<em>nothing lit</em></span>
+        <span class="dest">Chronicle<em>nothing lit</em></span>
+        <span class="dest">Club Value<em>nothing lit</em></span>
+        <span class="dest">Trade offers<em>nothing lit</em></span>
+        <span class="dest">Player directory<em>nothing lit</em></span>
+        <span class="dest">Player profile<em>nothing lit</em></span>
+        <span class="dest">Messages<em>nothing lit</em></span>
+        <span class="dest">How KUT works<em>nothing lit</em></span>
+        <span class="dest">Settings &middot; My card<em>nothing lit</em></span>
+      </div>
+      <div class="branch" style="margin-top:22px">
+        <div class="brow">
+          <span class="brow__k">Under /club<em>3 of 5 tabs</em></span>
+          <span class="bbar bbar--club" style="width:100%">Collection &middot; Packs &middot; Club</span>
+        </div>
+        <div class="brow">
+          <span class="brow__k">Everything else<em>2 of 5 tabs</em></span>
+          <span class="bbar bbar--other" style="width:66%">Home &middot; Market</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>Club Value, and the five doors to it</h3>
+      <p class="sub">Your two instincts check out. Here is the count.</p>
+      <div class="routes">
+        <div class="route"><span class="route__n">1</span><span>Home &rarr; the <b>Club Value</b> stat tile <code>page.tsx:127</code></span></div>
+        <div class="route"><span class="route__n">2</span><span>Club &rarr; the <b>Club Value</b> stat tile <code>club/page.tsx:41</code></span></div>
+        <div class="route"><span class="route__n">3</span><span>Club &rarr; &ldquo;See the full breakdown&rdquo; <code>club/page.tsx:63</code></span></div>
+        <div class="route"><span class="route__n">4</span><span>Leaderboard &rarr; &ldquo;See the full breakdown&rdquo; <code>leaderboard/page.tsx:56</code></span></div>
+        <div class="route"><span class="route__n route__n--x">5</span><span><b>The More menu</b> &mdash; the only one with no surrounding context, and the only one you pay a permanent nav slot for</span></div>
+      </div>
+      <div class="twobadge">
+        <p><b>Trade offers is the same call, with one string attached.</b> The listing detail page and the Market header both lead there, and every incoming offer already writes you a <code>trade_offer</code> message. Three routes without the menu.</p>
+        <p>But that menu row carries the only <b>incoming-offer count</b> in the app, and the button on /market that replaces it carries no number at all. One event currently increments <b>two</b> separate counters &mdash; <code>incomingOfferCount</code> and an unread notification &mdash; which then merge into one dot. Delete the row, keep the number: put it on the Market tab.</p>
+      </div>
+    </div>
+  </div>
+  <p class="foot"><b>Worth saying plainly:</b> none of this is sloppiness. The nav was overhauled deliberately (Phase B, shipped) and the details are good &mdash; <code>min-h-11</code> targets, visible focus rings, tabular coin figures, a badge that hides itself at zero. What it never got was a second pass on the <i>shape</i> once Chronicle, Trade offers, Club Value and the album had all been added on top of it. That is what this canvas is.</p>
+</div>
+</x-dc>
+</body>
+</html>

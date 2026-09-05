@@ -1,51 +1,66 @@
 import {
   IconAdmin,
-  IconClub,
   IconCollection,
-  IconDirectory,
   IconHome,
   IconInfo,
   IconLeaderboard,
   IconMarket,
-  IconMessages,
-  IconOffer,
   IconPack,
-  IconScale,
-  IconSessions,
   IconSettings,
+  IconUser,
 } from "@/components/icons";
+import { ACCOUNT_ROUTES, PRIMARY_TABS, type RouteEntry } from "@/lib/nav/routes";
 import type { ComponentType, SVGProps } from "react";
 
-export type NavItem = {
-  href: string;
-  label: string;
+/**
+ * Binds icons and per-request badge counts onto the route tables in
+ * `@/lib/nav/routes`. The tables themselves stay pure so they can be
+ * unit-tested; icons live here because this module is only ever imported from
+ * inside the client boundary (`app-nav.tsx`).
+ *
+ * Section tabs deliberately get no icons — `SectionTabs` is rendered by server
+ * pages, and a component cannot cross the RSC boundary as a prop.
+ */
+export type NavItem = RouteEntry & {
   Icon: ComponentType<SVGProps<SVGSVGElement>>;
-  isActive: (pathname: string) => boolean;
-  adminOnly?: boolean;
+  /** Absent or 0 renders no badge. */
   badgeCount?: number;
+  /** Screen-reader context for the number, e.g. "Market 2 incoming trade offers". */
+  badgeNoun?: string;
 };
 
-const exact = (target: string) => (pathname: string) => pathname === target;
-const prefixed = (target: string) => (pathname: string) => pathname === target || pathname.startsWith(`${target}/`);
+type IconMap = Record<string, ComponentType<SVGProps<SVGSVGElement>>>;
 
-export const primaryNavItems: Omit<NavItem, "badgeCount">[] = [
-  { href: "/", label: "Home", Icon: IconHome, isActive: exact("/") },
-  { href: "/club/collection", label: "Collection", Icon: IconCollection, isActive: prefixed("/club/collection") },
-  { href: "/club/packs", label: "Packs", Icon: IconPack, isActive: prefixed("/club/packs") },
-  { href: "/market", label: "Market", Icon: IconMarket, isActive: prefixed("/market") },
-  { href: "/club", label: "Club", Icon: IconClub, isActive: exact("/club") },
-];
+const PRIMARY_ICONS: IconMap = {
+  home: IconHome,
+  collection: IconCollection,
+  packs: IconPack,
+  market: IconMarket,
+  leaderboard: IconLeaderboard,
+};
 
-export function buildMoreNavItems(unreadCount: number, incomingOfferCount = 0): NavItem[] {
-  return [
-    { href: "/leaderboard", label: "Leaderboard", Icon: IconLeaderboard, isActive: prefixed("/leaderboard") },
-    { href: "/chronicle", label: "Chronicle", Icon: IconSessions, isActive: prefixed("/chronicle") },
-    { href: "/club/value", label: "Club Value", Icon: IconScale, isActive: prefixed("/club/value") },
-    { href: "/market/offers", label: "Trade offers", Icon: IconOffer, isActive: prefixed("/market/offers"), badgeCount: incomingOfferCount },
-    { href: "/players", label: "Player directory", Icon: IconDirectory, isActive: prefixed("/players") },
-    { href: "/messages", label: "Messages", Icon: IconMessages, isActive: prefixed("/messages"), badgeCount: unreadCount },
-    { href: "/how-it-works", label: "How KUT works", Icon: IconInfo, isActive: prefixed("/how-it-works") },
-    { href: "/settings", label: "Settings", Icon: IconSettings, isActive: prefixed("/settings") },
-    { href: "/admin/attendance", label: "Admin", Icon: IconAdmin, isActive: prefixed("/admin"), adminOnly: true },
-  ];
+const ACCOUNT_ICONS: IconMap = {
+  settings: IconSettings,
+  card: IconUser,
+  how: IconInfo,
+  admin: IconAdmin,
+};
+
+export function buildPrimaryNavItems(incomingOfferCount: number): NavItem[] {
+  return PRIMARY_TABS.map((entry) => ({
+    ...entry,
+    Icon: PRIMARY_ICONS[entry.key],
+    // Offers live under Market, so their count rides the Market tab rather than
+    // a menu row of their own (ADR-053).
+    ...(entry.key === "market" && incomingOfferCount > 0
+      ? { badgeCount: incomingOfferCount, badgeNoun: "incoming trade offers" }
+      : {}),
+  }));
+}
+
+export function buildAccountMenuItems(isAdmin: boolean): NavItem[] {
+  return ACCOUNT_ROUTES.filter((entry) => !entry.adminOnly || isAdmin).map((entry) => ({
+    ...entry,
+    Icon: ACCOUNT_ICONS[entry.key],
+  }));
 }

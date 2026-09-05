@@ -1,0 +1,296 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Instrument+Serif&display=swap">
+  <style>
+    :root{
+      --board:#15130f; --board-deep:#0b0a07; --panel:#211c15; --panel-2:#2a2318;
+      --line:#4a4030; --ink:#f4efe3; --ink-dim:#b3a891; --ink-faint:#8a8072; --ink-on-accent:#1c150a;
+      --brass:#e0ac4a; --brass-bg:#2b1f0a; --brass-line:#5c4419;
+      --steel:#8fb0c2; --steel-bg:#16232a; --steel-line:#3a5866;
+      --moss:#8bbd6c; --moss-line:#3c5230;
+      --brick:#dd7a55; --brick-line:#5c3221;
+      --sans:"Archivo","Helvetica Neue",Helvetica,Arial,sans-serif;
+      --serif:"Instrument Serif",Georgia,"Times New Roman",serif;
+    }
+    *{box-sizing:border-box;}
+    body{margin:0;font-family:var(--sans);color:var(--ink);
+      background:radial-gradient(120% 78% at 50% -8%, #221c13 0%, #15130f 46%, #0b0a07 100%);}
+    a{color:var(--brass);text-decoration:none;} a:hover{color:#f0c470;}
+    .display{font-family:var(--serif);font-weight:400;line-height:.94;letter-spacing:-.012em;text-wrap:pretty;}
+    .kicker{margin:0;font-size:11.2px;font-weight:800;text-transform:uppercase;letter-spacing:.26em;color:var(--brass);}
+    .clip-pennant{clip-path:polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%);}
+    .wrap{max-width:1152px;margin:0 auto;padding:0 24px;}
+    code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.92em;color:var(--ink-faint);}
+
+    .hd{padding:48px 0 34px;}
+    .hd h1{margin:14px 0 0;font-size:62px;}
+    .lede{margin:16px 0 0;max-width:760px;font-size:16px;line-height:1.65;color:var(--ink-dim);}
+
+    .barband{position:relative;border-top:1px solid rgba(74,64,48,.28);border-bottom:1px solid rgba(74,64,48,.4);
+      background:rgba(11,10,7,.8);}
+    .bar{max-width:1152px;margin:0 auto;height:64px;padding:0 24px;display:flex;align-items:center;gap:24px;}
+    .mark{display:flex;align-items:center;gap:10px;font-size:20px;font-weight:900;letter-spacing:-.02em;color:var(--ink);}
+    .mark i{display:block;width:14px;height:16px;background:var(--brass);}
+    .tabs{display:flex;flex:1;align-items:center;gap:4px;}
+    .tab{display:flex;align-items:center;gap:8px;border-radius:8px;padding:8px 12px;font-size:14px;font-weight:700;color:var(--ink-dim);}
+    .tab--on{background:rgba(224,172,74,.1);color:var(--brass);}
+    .tab__badge{display:grid;place-items:center;min-width:18px;height:18px;padding:0 5px;border-radius:999px;
+      background:var(--brass);font-size:11px;font-weight:900;color:var(--ink-on-accent);font-variant-numeric:tabular-nums;}
+    .right{display:flex;align-items:center;gap:12px;}
+    .coins{display:flex;align-items:center;gap:6px;border:1px solid rgba(224,172,74,.3);border-radius:999px;
+      background:linear-gradient(to bottom, rgba(224,172,74,.15), rgba(224,172,74,.05));padding:6px 14px;
+      font-size:14px;font-weight:900;font-variant-numeric:tabular-nums;color:var(--brass);}
+    .iconbtn{position:relative;display:grid;place-items:center;width:36px;height:36px;border-radius:999px;
+      border:1px solid var(--line);color:var(--ink-dim);}
+    .iconbtn__count{position:absolute;top:-5px;right:-5px;display:grid;place-items:center;min-width:18px;height:18px;
+      padding:0 5px;border-radius:999px;border:2px solid var(--board);background:var(--brass);
+      font-size:10.5px;font-weight:900;color:var(--ink-on-accent);font-variant-numeric:tabular-nums;}
+    .avatar{display:grid;place-items:center;width:36px;height:36px;border-radius:999px;background:var(--brass);
+      font-size:12px;font-weight:900;color:var(--ink-on-accent);box-shadow:0 0 0 2px rgba(224,172,74,.22);}
+    .avatarbtn{display:flex;align-items:center;gap:5px;color:var(--ink-dim);}
+
+    .dropzone{position:relative;height:330px;}
+    .drop{position:absolute;top:12px;right:calc(50% - 576px + 24px);width:264px;border:1px solid var(--line);
+      border-radius:16px;background:var(--panel);padding:8px;box-shadow:0 24px 48px -12px rgba(0,0,0,.75);}
+    .drop__who{padding:10px 12px 8px;}
+    .drop__name{margin:0;font-size:13.5px;font-weight:900;color:var(--ink);}
+    .drop__sub{margin:3px 0 0;font-size:11px;font-weight:700;color:var(--ink-faint);}
+    .drop__item{display:flex;align-items:center;gap:10px;min-height:44px;padding:0 12px;border-radius:8px;
+      font-size:14px;font-weight:700;color:var(--ink-dim);}
+    .drop__item--admin{color:var(--brick);}
+    .drop__rule{height:1px;margin:6px 4px;background:var(--panel-2);}
+    .callout{position:absolute;top:34px;left:calc(50% - 576px + 24px);width:520px;}
+    .callout h3{margin:0 0 10px;font-size:13.5px;font-weight:900;color:var(--ink);}
+    .callout p{margin:0 0 14px;font-size:13.5px;line-height:1.66;color:var(--ink-dim);}
+    .callout p b{color:var(--ink);font-weight:800;}
+    .hair{width:118px;height:1px;background:linear-gradient(90deg,rgba(224,172,74,.55),rgba(224,172,74,0));margin-bottom:18px;}
+
+    .sec{padding:50px 0 0;}
+    .sec__h{display:flex;align-items:baseline;gap:16px;padding-bottom:18px;border-bottom:1px solid rgba(74,64,48,.45);}
+    .sec__h h2{margin:0;font-size:34px;}
+    .sec__h span{font-size:11px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint);}
+
+    .tree{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px;margin-top:22px;}
+    .node{border:1px solid rgba(74,64,48,.6);border-radius:16px;background:rgba(33,28,21,.62);padding:16px 15px 15px;}
+    .node__t{display:flex;align-items:center;gap:8px;margin:0;font-size:14.5px;font-weight:900;color:var(--brass);}
+    .node__r{margin:4px 0 12px 24px;font-size:10.5px;font-weight:700;font-family:ui-monospace,Menlo,Consolas,monospace;color:var(--ink-faint);}
+    .node ul{margin:0;padding:0;list-style:none;}
+    .node li{display:flex;gap:8px;padding:7px 0;font-size:12.5px;line-height:1.46;color:var(--ink-dim);border-top:1px solid rgba(74,64,48,.3);}
+    .node li:first-child{border-top:0;padding-top:0;}
+    .node li i{flex:none;width:5px;height:5px;margin-top:6px;border-radius:999px;background:rgba(224,172,74,.45);}
+    .node li b{color:var(--ink);font-weight:800;}
+    .node li em{font-style:normal;color:var(--ink-faint);}
+
+    .chrome{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:14px;}
+    .node--chrome{background:rgba(22,35,42,.34);border-color:rgba(58,88,102,.55);}
+    .node--chrome .node__t{color:var(--steel);}
+    .node--chrome .node__r{margin-left:24px;}
+    .node--chrome li i{background:rgba(143,176,194,.5);}
+
+    .moved{margin-top:6px;}
+    .moved__row{display:grid;grid-template-columns:196px 190px minmax(0,1fr);gap:22px;align-items:baseline;
+      padding:15px 4px;border-bottom:1px solid rgba(74,64,48,.32);}
+    .moved__row--h{padding-bottom:10px;border-bottom:1px solid rgba(74,64,48,.6);}
+    .moved__row--h span{font-size:10px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint);}
+    .moved__from{font-size:14px;font-weight:800;color:var(--ink);}
+    .moved__from em{display:block;font-style:normal;font-size:10.5px;font-weight:700;color:var(--ink-faint);
+      font-family:ui-monospace,Menlo,Consolas,monospace;margin-top:4px;}
+    .moved__to{font-size:13px;font-weight:800;line-height:1.45;color:var(--brass);}
+    .moved__why{font-size:13px;line-height:1.62;color:var(--ink-dim);}
+    .moved__why b{color:var(--ink);font-weight:800;}
+    .tagrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:26px;}
+    .tag{display:flex;align-items:center;gap:7px;border:1px solid var(--line);border-radius:999px;padding:8px 15px;
+      font-size:12px;font-weight:800;color:var(--ink-dim);background:rgba(11,10,7,.45);}
+    .tag--moss{border-color:var(--moss-line);background:rgba(28,36,22,.5);color:var(--moss);}
+    .tag--brick{border-color:var(--brick-line);background:rgba(42,23,18,.5);color:var(--brick);}
+    .foot{margin:0;padding:40px 0 60px;font-size:12.5px;line-height:1.72;color:var(--ink-faint);max-width:920px;}
+    .foot b{color:var(--ink-dim);font-weight:800;}
+  </style>
+</helmet>
+
+<div class="wrap hd">
+  <p class="kicker">KUT navigation audit &middot; proposal</p>
+  <h1 class="display">Five tabs, one inbox,<br>one you</h1>
+  <p class="lede">The junk drawer goes away entirely. Every destination becomes one of five tabs, an in-page tab beneath one of them, the messages button, or the account menu &mdash; and every one of them can then show &ldquo;you are here&rdquo;, which nine of today&rsquo;s cannot.</p>
+</div>
+
+<div class="barband">
+  <div class="bar">
+    <span class="mark"><i aria-hidden="true" class="clip-pennant"></i>KUT</span>
+    <nav class="tabs">
+      <span class="tab tab--on"><svg aria-hidden="true" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewBox="0 0 24 24" width="16"><path d="M4 11.5 12 4l8 7.5" /><path d="M6 10v9h12v-9" /><path d="M10 19v-5h4v5" /></svg>Home</span>
+      <span class="tab"><svg aria-hidden="true" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewBox="0 0 24 24" width="16"><rect height="15" rx="1.6" transform="rotate(8 12.5 11)" width="11" x="7" y="3.5" /><rect fill="#0b0a07" height="15" rx="1.6" width="11" x="4.5" y="6" /></svg>Collection</span>
+      <span class="tab"><svg aria-hidden="true" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewBox="0 0 24 24" width="16"><path d="M4 8.5 12 4l8 4.5v8L12 21l-8-4.5z" /><path d="M4 8.5 12 13l8-4.5" /><path d="M12 13v8" /></svg>Packs</span>
+      <span class="tab"><svg aria-hidden="true" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewBox="0 0 24 24" width="16"><path d="M3 8h13" /><path d="M13 4l4 4-4 4" /><path d="M21 16H8" /><path d="M11 20l-4-4 4-4" /></svg>Market<span class="tab__badge">2</span></span>
+      <span class="tab"><svg aria-hidden="true" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewBox="0 0 24 24" width="16"><path d="M5 20V11" /><path d="M12 20V4" /><path d="M19 20v-7" /></svg>Leaderboard</span>
+    </nav>
+    <div class="right">
+      <span class="coins"><svg aria-hidden="true" fill="none" height="14" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewBox="0 0 24 24" width="14"><circle cx="12" cy="12" r="8.5" /><path d="M12 8v8M9.5 10a2.3 2.3 0 0 1 2.5-1.6c1.4 0 2.4.7 2.4 1.8s-1 1.6-2.4 1.8c-1.4.2-2.4.8-2.4 1.8s1 1.8 2.4 1.8a2.4 2.4 0 0 0 2.5-1.6" /></svg>1,240</span>
+      <span class="iconbtn"><svg aria-hidden="true" fill="none" height="17" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewBox="0 0 24 24" width="17"><path d="M4 5.5h16v10H9l-4 3.5v-3.5H4z" /></svg><span class="iconbtn__count">3</span></span>
+      <span class="avatarbtn"><span class="avatar">MO</span><svg aria-hidden="true" fill="none" height="15" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="15"><path d="M7 10l5 5 5-5" /></svg></span>
+    </div>
+  </div>
+</div>
+
+<div class="dropzone">
+  <div class="callout">
+    <div class="hair"></div>
+    <h3>The two controls on the right finally do what they look like</h3>
+    <p>Today that brass disc is <b>decorative</b> &mdash; <code>aria-hidden</code>, no link, no handler &mdash; while the real account menu sits beside it labelled &ldquo;More&rdquo; and opens headed by your name. Two neighbours: the one that looks like an account button is inert, the one that is the account menu is called something else.</p>
+    <p>Here the disc <b>is</b> the menu, and holds only account things. The speech bubble beside it is Messages with a real number on it, so an unread attendance reward and an incoming trade offer stop collapsing into one anonymous 6px dot that tells you something happened but never what.</p>
+    <p><b>Everything else moved into the tabs.</b> Nothing stays filed under a word that means &ldquo;the rest&rdquo;.</p>
+  </div>
+  <div class="drop">
+    <div class="drop__who">
+      <p class="drop__name">Maarten van Oostrom</p>
+      <p class="drop__sub">Kelderklasse Ultimate Team</p>
+    </div>
+    <span class="drop__item"><svg aria-hidden="true" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewBox="0 0 24 24" width="16"><path d="M4 7h9M17 7h3M4 12h3M11 12h9M4 17h13M20 17h0" /><circle cx="15" cy="7" r="2" /><circle cx="7" cy="12" r="2" /><circle cx="17" cy="17" r="2" /></svg>Settings</span>
+    <span class="drop__item"><svg aria-hidden="true" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewBox="0 0 24 24" width="16"><rect height="15" rx="1.6" width="11" x="4.5" y="6" /><path d="M17 10h3M17 14h3" /></svg>My card</span>
+    <span class="drop__item"><svg aria-hidden="true" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewBox="0 0 24 24" width="16"><circle cx="12" cy="12" r="8.5" /><path d="M12 11v5" /><path d="M12 8h0" /></svg>How KUT works</span>
+    <div class="drop__rule"></div>
+    <span class="drop__item drop__item--admin"><svg aria-hidden="true" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewBox="0 0 24 24" width="16"><path d="M12 3l7 2.5v5.2C19 15.8 16 19 12 21c-4-2-7-5.2-7-10.3V5.5z" /><path d="M9 11.5l2 2 4-4.5" /></svg>Admin</span>
+    <div class="drop__rule"></div>
+    <span class="drop__item"><svg aria-hidden="true" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewBox="0 0 24 24" width="16"><path d="M15 5H6v14h9" /><path d="M13 12h8M18 9l3 3-3 3" /></svg>Log out</span>
+  </div>
+</div>
+
+<div class="wrap sec">
+  <div class="sec__h"><h2 class="display">Where everything lives</h2><span>five tabs &middot; two chrome controls &middot; nothing else</span></div>
+  <div class="tree">
+    <div class="node">
+      <p class="node__t"><svg aria-hidden="true" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewBox="0 0 24 24" width="16"><path d="M4 11.5 12 4l8 7.5" /><path d="M6 10v9h12v-9" /><path d="M10 19v-5h4v5" /></svg>Home</p>
+      <p class="node__r">/</p>
+      <ul>
+        <li><i></i><span><b>Latest Chronicle issue</b> as the lead</span></li>
+        <li><i></i><span>Top 5 risers this week</span></li>
+        <li><i></i><span>Club activity</span></li>
+        <li><i></i><span>Coins &middot; Club Value &middot; Rank <em>&rarr; breakdowns</em></span></li>
+        <li><i></i><span>Back issues <em>&rarr; /chronicle</em></span></li>
+      </ul>
+    </div>
+    <div class="node">
+      <p class="node__t"><svg aria-hidden="true" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewBox="0 0 24 24" width="16"><rect height="15" rx="1.6" transform="rotate(8 12.5 11)" width="11" x="7" y="3.5" /><rect fill="#211c15" height="15" rx="1.6" width="11" x="4.5" y="6" /></svg>Collection</p>
+      <p class="node__r">/club/collection</p>
+      <ul>
+        <li><i></i><span><b>Album</b> / <b>Manage</b> toggle</span></li>
+        <li><i></i><span>Card detail &rarr; list, discard</span></li>
+        <li><i></i><span>Club Value figure <em>&rarr; the maths</em></span></li>
+        <li><i></i><span>Cards, unique players, coins</span></li>
+        <li><i></i><span><em>absorbs today&rsquo;s /club hub</em></span></li>
+      </ul>
+    </div>
+    <div class="node">
+      <p class="node__t"><svg aria-hidden="true" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewBox="0 0 24 24" width="16"><path d="M4 8.5 12 4l8 4.5v8L12 21l-8-4.5z" /><path d="M4 8.5 12 13l8-4.5" /><path d="M12 13v8" /></svg>Packs</p>
+      <p class="node__r">/club/packs</p>
+      <ul>
+        <li><i></i><span>Pack offers</span></li>
+        <li><i></i><span>The tier ladder</span></li>
+        <li><i></i><span>Opening reveal</span></li>
+        <li><i></i><span><em>unchanged</em></span></li>
+      </ul>
+    </div>
+    <div class="node">
+      <p class="node__t"><svg aria-hidden="true" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewBox="0 0 24 24" width="16"><path d="M3 8h13" /><path d="M13 4l4 4-4 4" /><path d="M21 16H8" /><path d="M11 20l-4-4 4-4" /></svg>Market</p>
+      <p class="node__r">/market</p>
+      <ul>
+        <li><i></i><span><b>Buy</b> &middot; <b>Offers</b> as in-page tabs</span></li>
+        <li><i></i><span>The offer count lives <b>here</b></span></li>
+        <li><i></i><span>Listing detail &rarr; buy, offer</span></li>
+        <li><i></i><span><em>replaces the menu row</em></span></li>
+      </ul>
+    </div>
+    <div class="node">
+      <p class="node__t"><svg aria-hidden="true" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewBox="0 0 24 24" width="16"><path d="M5 20V11" /><path d="M12 20V4" /><path d="M19 20v-7" /></svg>Leaderboard</p>
+      <p class="node__r">/leaderboard</p>
+      <ul>
+        <li><i></i><span><b>Clubs</b> &middot; <b>Players</b> as in-page tabs</span></li>
+        <li><i></i><span>Standings by Club Value</span></li>
+        <li><i></i><span>Player directory + profiles</span></li>
+        <li><i></i><span><em>takes the dead Club slot</em></span></li>
+      </ul>
+    </div>
+  </div>
+  <div class="chrome">
+    <div class="node node--chrome">
+      <p class="node__t"><svg aria-hidden="true" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewBox="0 0 24 24" width="16"><path d="M4 5.5h16v10H9l-4 3.5v-3.5H4z" /></svg>Messages &mdash; a count, not a dot</p>
+      <p class="node__r">/messages</p>
+      <ul>
+        <li><i></i><span>Attendance rewards, bibs bonus, pack opens, sales, purchases, trade offers and responses, admin notices &mdash; the one surface that tells a member something happened <b>to them</b></span></li>
+        <li><i></i><span>Today it is the eighth row of a dropdown, behind the player directory, and its unread count is flattened into an anonymous dot on &ldquo;More&rdquo;</span></li>
+      </ul>
+    </div>
+    <div class="node node--chrome">
+      <p class="node__t"><svg aria-hidden="true" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewBox="0 0 24 24" width="16"><circle cx="12" cy="8" r="3.4" /><path d="M5 20c0-3.6 3-6 7-6s7 2.4 7 6" /></svg>Account &mdash; the disc, at last clickable</p>
+      <p class="node__r">/settings &middot; /settings/card &middot; /how-it-works &middot; /admin</p>
+      <ul>
+        <li><i></i><span>Settings, My card, How KUT works, Admin (when you are one), Log out &mdash; five things that are all &ldquo;me&rdquo;, and nothing that isn&rsquo;t</span></li>
+        <li><i></i><span>A dropdown on desktop, a bottom sheet on a phone &mdash; a deliberate divergence, not an inconsistency</span></li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="wrap sec">
+  <div class="sec__h"><h2 class="display">What moved, and why</h2><span>the nine-item More menu, dismantled</span></div>
+  <div class="moved">
+    <div class="moved__row moved__row--h"><span>Was in &ldquo;More&rdquo;</span><span>Now</span><span>Reasoning</span></div>
+    <div class="moved__row">
+      <span class="moved__from">Club Value<em>/club/value</em></span>
+      <span class="moved__to">In context only &mdash; nothing in the chrome</span>
+      <span class="moved__why">Already reachable four ways: the Home stat tile, the /club stat tile, the /club prose link and the leaderboard&rsquo;s own header paragraph. A fifth, least contextual entry earns nothing. <b>Your call, and it holds.</b></span>
+    </div>
+    <div class="moved__row">
+      <span class="moved__from">Trade offers<em>/market/offers</em></span>
+      <span class="moved__to">A tab inside Market &mdash; and the badge goes with it</span>
+      <span class="moved__why">Agreed, with one condition. That menu row is today the <b>only</b> place the incoming-offer count appears, and the in-context entry &mdash; the &ldquo;Trade offers&rdquo; button on /market &mdash; carries no count at all. Move the number onto the Market tab and the Offers tab, or deleting the row quietly costs you the signal.</span>
+    </div>
+    <div class="moved__row">
+      <span class="moved__from">Messages<em>/messages</em></span>
+      <span class="moved__to">Its own button in the bar, with the number on it</span>
+      <span class="moved__why">It is the notification centre of the entire app, and it is filed eighth in a dropdown.</span>
+    </div>
+    <div class="moved__row">
+      <span class="moved__from">Leaderboard<em>/leaderboard</em></span>
+      <span class="moved__to">A primary tab</span>
+      <span class="moved__why">The competitive spine of a collecting game, and the destination Home&rsquo;s Rank tile already points at.</span>
+    </div>
+    <div class="moved__row">
+      <span class="moved__from">Player directory<em>/players</em></span>
+      <span class="moved__to">A tab inside Leaderboard</span>
+      <span class="moved__why">Both are rankings &mdash; one of clubs, one of players. Home and every empty album slot already link into it.</span>
+    </div>
+    <div class="moved__row">
+      <span class="moved__from">Chronicle<em>/chronicle</em></span>
+      <span class="moved__to">The lead block on Home; back issues one tap on</span>
+      <span class="moved__why">Home&rsquo;s headline is literally &ldquo;This week in KUT&rdquo; and the Chronicle is &ldquo;one issue per football week&rdquo;. Two addresses answering the same question &mdash; and Home never links to the current issue except through an activity row.</span>
+    </div>
+    <div class="moved__row">
+      <span class="moved__from">How KUT works &middot; Settings &middot; Admin &middot; Log out</span>
+      <span class="moved__to">The account menu</span>
+      <span class="moved__why">The only four that genuinely belonged together, and now the only four left.</span>
+    </div>
+    <div class="moved__row">
+      <span class="moved__from">Club<em>/club</em> &mdash; a primary tab today</span>
+      <span class="moved__to">Retires, redirecting to Collection</span>
+      <span class="moved__why">Its whole job is linking to Collection and Packs &mdash; both already one tap away &mdash; plus Club Value, and it closes on a &ldquo;squad building is planned&rdquo; placeholder. Redirect it the way /sessions already redirects to /chronicle.</span>
+    </div>
+  </div>
+  <div class="tagrow">
+    <span class="tag tag--moss">15 member destinations, none deeper than 2 taps</span>
+    <span class="tag tag--moss">every destination can show &ldquo;you are here&rdquo;</span>
+    <span class="tag tag--moss">one event, one badge, one place</span>
+    <span class="tag tag--brick">needs an ADR: /club retires, tabs re-point</span>
+  </div>
+  <p class="foot"><b>Not drawn, deliberately.</b> A third &ldquo;My listings&rdquo; tab under Market is the obvious next one &mdash; today a listing is cancelled from its card in the Collection, which is a reasonable place for it but leaves no way to see everything you currently have up for sale. That is a decision, not an assumption, so it is a question rather than a mockup.</p>
+</div>
+</x-dc>
+</body>
+</html>

@@ -3,6 +3,8 @@ import { IconSearch } from "@/components/icons";
 import { ARCHETYPES, ARCHETYPE_LABELS, isArchetype } from "@/game/archetypes";
 import { LiveCard, type LiveCardPlayer } from "@/components/live-card";
 import { requireUser } from "@/lib/auth/user";
+import { SectionTabs } from "@/components/app-shell/section-tabs";
+import { LEADERBOARD_TABS } from "@/lib/nav/routes";
 import { resolvePhotoUrls } from "@/lib/player-photos";
 import { createClient } from "@/lib/supabase/server";
 
@@ -65,6 +67,9 @@ export default async function PlayerDirectoryPage({ searchParams }: PlayerDirect
             Every collectible TFH player and their current Live Card. Tap a card for the full profile.
           </p>
           <p className="text-xs font-bold text-ink-faint">{players.length} {players.length === 1 ? "player" : "players"}</p>
+          <div className="pt-2">
+            <SectionTabs label="Leaderboard" tabs={LEADERBOARD_TABS} />
+          </div>
         </header>
 
         <form className="grid gap-3 rounded-2xl border border-line/60 bg-board-deep/40 p-3.5 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_10rem_12rem_10rem_auto]">

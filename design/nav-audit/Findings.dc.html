@@ -1,0 +1,273 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Instrument+Serif&display=swap">
+  <style>
+    :root{
+      --board:#15130f; --board-deep:#0b0a07; --panel:#211c15; --panel-2:#2a2318;
+      --line:#4a4030; --ink:#f4efe3; --ink-dim:#b3a891; --ink-faint:#8a8072; --ink-on-accent:#1c150a;
+      --brass:#e0ac4a; --brass-line:#5c4419;
+      --steel:#8fb0c2; --steel-line:#3a5866;
+      --moss:#8bbd6c; --moss-line:#3c5230;
+      --brick:#dd7a55; --brick-line:#5c3221;
+      --warning:#d68a3c; --warning-line:#5c3c1f;
+      --sans:"Archivo","Helvetica Neue",Helvetica,Arial,sans-serif;
+      --serif:"Instrument Serif",Georgia,"Times New Roman",serif;
+    }
+    *{box-sizing:border-box;}
+    body{margin:0;font-family:var(--sans);color:var(--ink);
+      background:radial-gradient(120% 46% at 50% 0%, #221c13 0%, #15130f 42%, #0b0a07 100%);}
+    .display{font-family:var(--serif);font-weight:400;line-height:.94;letter-spacing:-.012em;text-wrap:pretty;}
+    code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.9em;color:var(--ink-faint);}
+    .wrap{max-width:960px;margin:0 auto;padding:0 56px;}
+
+    .hd{padding:56px 0 30px;}
+    .hd p.k{margin:0;font-size:11.2px;font-weight:800;text-transform:uppercase;letter-spacing:.26em;color:var(--brass);}
+    .hd h1{margin:14px 0 0;font-size:56px;}
+    .hd .lede{margin:16px 0 0;font-size:15.5px;line-height:1.7;color:var(--ink-dim);}
+    .key{display:flex;gap:8px;flex-wrap:wrap;margin-top:24px;padding-bottom:30px;border-bottom:1px solid rgba(74,64,48,.55);}
+    .chip{border-radius:999px;padding:5px 12px;font-size:10.5px;font-weight:800;letter-spacing:.11em;text-transform:uppercase;}
+    .chip--hi{background:rgba(42,23,18,.75);color:var(--brick);box-shadow:inset 0 0 0 1px var(--brick-line);}
+    .chip--md{background:rgba(43,25,13,.75);color:var(--warning);box-shadow:inset 0 0 0 1px var(--warning-line);}
+    .chip--lo{background:rgba(11,10,7,.6);color:var(--ink-faint);box-shadow:inset 0 0 0 1px var(--line);}
+    .chip--ok{background:rgba(28,36,22,.75);color:var(--moss);box-shadow:inset 0 0 0 1px var(--moss-line);}
+
+    .grp{padding-top:40px;}
+    .grp__h{display:flex;align-items:baseline;gap:14px;padding-bottom:14px;}
+    .grp__h h2{margin:0;font-size:15px;font-weight:900;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);}
+    .grp__h span{font-size:12.5px;font-weight:600;color:var(--ink-faint);}
+
+    .f{display:grid;grid-template-columns:52px minmax(0,1fr);gap:20px;padding:20px 0;
+      border-top:1px solid rgba(74,64,48,.32);}
+    .f__n{font-family:var(--serif);font-size:28px;line-height:1;color:var(--ink-faint);font-variant-numeric:tabular-nums;}
+    .f__t{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin:0 0 8px;}
+    .f__t h3{margin:0;font-size:16px;font-weight:900;letter-spacing:-.005em;color:var(--ink);}
+    .f p{margin:0;font-size:13.5px;line-height:1.72;color:var(--ink-dim);}
+    .f p+p{margin-top:9px;}
+    .f p b{color:var(--ink);font-weight:800;}
+    .fix{margin-top:11px;padding-left:14px;border-left:2px solid rgba(224,172,74,.4);}
+    .fix p{font-size:13px;color:var(--ink-faint);}
+    .fix b{color:var(--brass);font-weight:800;}
+    .src{margin-top:9px;font-size:11px;font-weight:700;font-family:ui-monospace,Menlo,Consolas,monospace;color:rgba(138,128,114,.85);}
+
+    .out{margin-top:52px;border-top:1px solid rgba(74,64,48,.55);padding:34px 0 64px;}
+    .out h2{margin:0 0 14px;font-size:30px;}
+    .out p{margin:0 0 12px;font-size:13.5px;line-height:1.75;color:var(--ink-dim);max-width:780px;}
+    .out b{color:var(--ink);font-weight:800;}
+    .ol{margin:18px 0 0;padding:0;list-style:none;counter-reset:s;}
+    .ol li{counter-increment:s;display:grid;grid-template-columns:30px minmax(0,1fr);gap:14px;padding:11px 0;
+      border-top:1px solid rgba(74,64,48,.3);font-size:13.5px;line-height:1.68;color:var(--ink-dim);}
+    .ol li::before{content:counter(s);display:grid;place-items:center;width:24px;height:24px;border-radius:7px;
+      background:rgba(224,172,74,.13);color:var(--brass);font-size:12px;font-weight:900;}
+    .ol li b{color:var(--ink);font-weight:800;}
+  </style>
+</helmet>
+
+<div class="wrap hd">
+  <p class="k">KUT navigation audit &middot; findings</p>
+  <h1 class="display">Twenty-three things,<br>ranked honestly</h1>
+  <p class="lede">Read against <code>app-nav.tsx</code>, <code>nav-items.tsx</code>, <code>lib/nav/context.ts</code>, the <code>(app)</code> route tree and <code>globals.css</code>. Two of these are yours &mdash; both hold. Several are cosmetic and one is a genuine layout bug. Nothing here is a rewrite; the most expensive item is a redirect and a re-point of two tabs.</p>
+  <div class="key">
+    <span class="chip chip--hi">high &mdash; costs people the app</span>
+    <span class="chip chip--md">medium &mdash; friction or confusion</span>
+    <span class="chip chip--lo">low &mdash; tidy-up</span>
+    <span class="chip chip--ok">agreed with you</span>
+  </div>
+</div>
+
+<div class="wrap grp">
+  <div class="grp__h"><h2>A &mdash; Structure and wayfinding</h2><span>where things live, and whether you can tell where you are</span></div>
+
+  <div class="f"><span class="f__n">01</span><div>
+    <div class="f__t"><h3>Nine of fifteen destinations light nothing up</h3><span class="chip chip--hi">high</span></div>
+    <p>Active styling is computed only for the five <code>primaryNavItems</code>. Stand on the leaderboard, the Chronicle, Messages, the player directory, a player profile, Settings, Club Value, Trade offers or any admin page, and nothing in the chrome is highlighted &mdash; the &ldquo;More&rdquo; button has no active state of its own, and neither does the mobile hamburger. For most of the app there is no &ldquo;you are here&rdquo; at all.</p>
+    <div class="fix"><p><b>Fix:</b> every destination should map to something that can light up. That is most of the argument for the restructure &mdash; but even without it, giving &ldquo;More&rdquo; an active state when the current route is one of its children is a five-line change.</p></div>
+    <p class="src">app-nav.tsx:118, 158 &middot; nav-items.tsx:29&ndash;36</p>
+  </div></div>
+
+  <div class="f"><span class="f__n">02</span><div>
+    <div class="f__t"><h3>Three of five primary tabs are the same branch &mdash; and the branch&rsquo;s hub is the emptiest page in the app</h3><span class="chip chip--hi">high</span></div>
+    <p>Collection, Packs and Club all sit under <code>/club</code>. What <code>/club</code> itself does: repeat four stats you can see elsewhere, offer two big cards linking to Collection and Packs (already one tap away in the same bar), and close with &ldquo;Squad building is planned for a future season.&rdquo; It is a hub whose children have all outgrown it.</p>
+    <p>On a phone this is worse than on desktop: three of five thumb slots point into one branch, and one of them is a page with nothing on it.</p>
+    <div class="fix"><p><b>Fix:</b> retire <code>/club</code> with a redirect to <code>/club/collection</code>, exactly as <code>/sessions</code> already redirects to <code>/chronicle</code>. Its Club Value figure and card counts move onto Collection&rsquo;s header, which already computes most of them.</p></div>
+    <p class="src">club/page.tsx:1&ndash;80 &middot; nav-items.tsx:29&ndash;36 &middot; sessions/page.tsx</p>
+  </div></div>
+
+  <div class="f"><span class="f__n">03</span><div>
+    <div class="f__t"><h3>&ldquo;More&rdquo; is four unrelated jobs in one unlabelled list</h3><span class="chip chip--hi">high</span></div>
+    <p>Club-wide reading (Leaderboard, Chronicle, Player directory), your own economy (Club Value, Trade offers), your mail (Messages), help (How KUT works), and account (Settings, Admin, Log out). Nine rows, one divider &mdash; above Log out &mdash; and no ordering anyone could reconstruct. A member looking for the leaderboard has to open a menu named after the absence of a category.</p>
+    <div class="fix"><p><b>Fix:</b> a menu called &ldquo;More&rdquo; should hold one kind of thing. Keep the account group, promote the content.</p></div>
+    <p class="src">nav-items.tsx:38&ndash;51</p>
+  </div></div>
+
+  <div class="f"><span class="f__n">04</span><div>
+    <div class="f__t"><h3>Messages is the app&rsquo;s notification centre and it is the eighth row of a dropdown</h3><span class="chip chip--hi">high</span></div>
+    <p>It is where attendance rewards, the bibs bonus, pack opens, sales, purchases, trade offers, trade responses and admin notices land &mdash; the only surface that tells a member something happened to <b>them</b>, and the only one with a real unread count. It is filed below the player directory.</p>
+    <div class="fix"><p><b>Fix:</b> its own control in the bar with the count on it, on both platforms.</p></div>
+    <p class="src">messages/page.tsx:20&ndash;38 &middot; nav-items.tsx:45</p>
+  </div></div>
+
+  <div class="f"><span class="f__n">05</span><div>
+    <div class="f__t"><h3>Club Value holds a permanent nav slot it does not need</h3><span class="chip chip--ok">agreed &mdash; remove</span></div>
+    <p>Four in-context routes already exist: the Home stat tile, the <code>/club</code> stat tile, the <code>/club</code> prose link, and the leaderboard&rsquo;s own header paragraph. The menu row is the fifth, the least contextual, and the only one you pay a permanent slot for. Your read is right.</p>
+    <p class="src">page.tsx:127 &middot; club/page.tsx:41,63 &middot; leaderboard/page.tsx:56</p>
+  </div></div>
+
+  <div class="f"><span class="f__n">06</span><div>
+    <div class="f__t"><h3>Trade offers likewise &mdash; but it is currently carrying the only offer count in the app</h3><span class="chip chip--ok">agreed, with a condition</span></div>
+    <p>Also right: the Market header button and the How-KUT-works page both lead there, and every incoming offer already writes you a <code>trade_offer</code> notification. Three routes remain without the menu row.</p>
+    <p>The condition: that row&rsquo;s <code>badgeCount</code> is fed by <code>incomingOfferCount</code>, and the button that replaces it on <code>/market</code> renders no count at all. Delete the row as it stands and the number disappears from the product.</p>
+    <div class="fix"><p><b>Fix:</b> move the count onto the Market tab and onto an Offers tab inside Market. <code>getNavContext</code> already queries it &mdash; nothing new to fetch.</p></div>
+    <p class="src">nav-items.tsx:44 &middot; lib/nav/context.ts:36&ndash;42 &middot; market/page.tsx:85</p>
+  </div></div>
+
+  <div class="f"><span class="f__n">07</span><div>
+    <div class="f__t"><h3>One event, two counters, and then one anonymous dot</h3><span class="chip chip--md">medium-high</span></div>
+    <p>An incoming trade offer increments <code>incomingOfferCount</code> <b>and</b> inserts an unread <code>trade_offer</code> notification. Two badges, two menu rows, one event. Both then collapse on the closed control into a single 6px brass dot (<code>moreHasUnread</code>) that says something happened but never what &mdash; and on a phone that dot is the only signal on the screen.</p>
+    <div class="fix"><p><b>Fix:</b> one badge per thing. Offers count on Market; unread messages count on the messages control. Drop the merged dot.</p></div>
+    <p class="src">app-nav.tsx:110, 145, 166</p>
+  </div></div>
+
+  <div class="f"><span class="f__n">08</span><div>
+    <div class="f__t"><h3>Home and the Chronicle answer the same question at two addresses</h3><span class="chip chip--md">medium</span></div>
+    <p>Home&rsquo;s headline is &ldquo;This week in KUT&rdquo;. The Chronicle is &ldquo;one issue per football week&rdquo;. Both are the weekly report; they were built at different times and never introduced to each other. Home links to <code>/chronicle</code> only through the description text of a session row in the activity feed.</p>
+    <div class="fix"><p><b>Fix:</b> the latest issue becomes Home&rsquo;s lead block, with &ldquo;back issues&rdquo; as the route to the index. That is also what frees the fifth tab.</p></div>
+    <p class="src">page.tsx:97,192 &middot; chronicle/page.tsx</p>
+  </div></div>
+</div>
+
+<div class="wrap grp">
+  <div class="grp__h"><h2>B &mdash; Chrome and interaction</h2><span>the bar itself, and the phone</span></div>
+
+  <div class="f"><span class="f__n">09</span><div>
+    <div class="f__t"><h3>Mobile runs two primary navigations, pointing in opposite directions</h3><span class="chip chip--hi">high</span></div>
+    <p>A thumb-reachable bottom bar carries five tabs, one of which is redundant (02). Everything else &mdash; nine destinations including your mail &mdash; lives behind an icon-only hamburger in the top-right, the hardest corner of a 390&times;844 screen to reach one-handed.</p>
+    <div class="fix"><p><b>Fix:</b> nothing high-frequency should live up there. Messages and account are legitimate top-right residents because each is a single known destination; a drawer holding the other half of the app is not.</p></div>
+    <p class="src">app-nav.tsx:139&ndash;196</p>
+  </div></div>
+
+  <div class="f"><span class="f__n">10</span><div>
+    <div class="f__t"><h3>The disc that looks like an account button is decorative</h3><span class="chip chip--md">medium</span></div>
+    <p>36px, brass, your initials &mdash; and <code>aria-hidden=&quot;true&quot;</code>, no link, no handler. The real account menu is its neighbour, labelled &ldquo;More&rdquo;, whose panel opens headed by your display name. The two controls have swapped jobs, and the inert one is the one people will press.</p>
+    <div class="fix"><p><b>Fix:</b> make the avatar the trigger and drop the word &ldquo;More&rdquo;.</p></div>
+    <p class="src">app-nav.tsx:170</p>
+  </div></div>
+
+  <div class="f"><span class="f__n">11</span><div>
+    <div class="f__t"><h3>The desktop dropdown is reused verbatim as the mobile menu</h3><span class="chip chip--md">medium</span></div>
+    <p>The same <code>MoreMenu</code> component, <code>absolute right-0 top-full mt-2 w-64</code>, anchored to a 36px button in a 56px header. The touch targets are right (<code>min-h-11</code>) and dismissal is handled, so this is not broken &mdash; it is a pointer pattern on a touch device: no sheet, no drag-to-dismiss, no reachability.</p>
+    <div class="fix"><p><b>Fix:</b> a bottom sheet on mobile, the dropdown on desktop. One of the divergences worth <b>adding</b>.</p></div>
+    <p class="src">app-nav.tsx:24, 173</p>
+  </div></div>
+
+  <div class="f"><span class="f__n">12</span><div>
+    <div class="f__t"><h3>Content can be clipped behind the mobile tab bar</h3><span class="chip chip--md">medium &mdash; a real bug</span></div>
+    <p>The tab bar is ~60px of its own content <b>plus</b> <code>pb-[env(safe-area-inset-bottom)]</code>. The content wrapper reserves a flat <code>pb-16</code> = 64px. On a phone with a 34px home indicator the bar is ~94px tall against 64px of reserved space, so the last ~30px of every page sits underneath it &mdash; including the last row of the market grid and the Log out button at the foot of Settings.</p>
+    <div class="fix"><p><b>Fix:</b> <code>padding-bottom: calc(4rem + env(safe-area-inset-bottom))</code> on the wrapper, below <code>sm</code> only.</p></div>
+    <p class="src">app-nav.tsx:181 &middot; (app)/layout.tsx:12</p>
+  </div></div>
+
+  <div class="f"><span class="f__n">13</span><div>
+    <div class="f__t"><h3><code>role=&quot;menu&quot;</code> promises keyboard behaviour the menu does not implement</h3><span class="chip chip--md">medium</span></div>
+    <p>The panel sets <code>role=&quot;menu&quot;</code> with <code>role=&quot;menuitem&quot;</code> links, which tells a screen reader to expect arrow-key navigation, a roving tabindex and focus return on Escape. None of those exist &mdash; Escape closes the panel but focus is not restored to the trigger. The primary nav sets <code>aria-current</code> correctly; the menu never does, so an assistive user gets less wayfinding there, not more.</p>
+    <div class="fix"><p><b>Fix:</b> either implement the pattern, or drop the roles and let it be a labelled list of links &mdash; which is what it actually is. Add <code>aria-current</code> either way.</p></div>
+    <p class="src">app-nav.tsx:22, 40, 43</p>
+  </div></div>
+</div>
+
+<div class="wrap grp">
+  <div class="grp__h"><h2>C &mdash; Consistency</h2><span>same thing, different clothes</span></div>
+
+  <div class="f"><span class="f__n">14</span><div>
+    <div class="f__t"><h3>Three grids of the same cards, three filter vocabularies</h3><span class="chip chip--md">medium-high</span></div>
+    <p>Market and Player directory: a <code>&lt;form&gt;</code> of selects with an explicit <b>Filter</b> submit. Collection &rarr; Manage: instant-navigation chips for tier, a link row for sort, and a search box with no button. Collection &rarr; Album: a third vocabulary again &mdash; &ldquo;Lens&rdquo;, with All / Gaps / Specialists / By type / By tier. Search, tier and sort mean the same thing in all three places.</p>
+    <p>The code comment on Collection says it adopted &ldquo;the same search / tier / sort vocabulary the Market always had&rdquo;. It adopted the same <i>fields</i>, not the same controls.</p>
+    <div class="fix"><p><b>Fix:</b> one filter bar component. Chips for a short enumerated set (tier), a select for a long one (archetype), search always in the same slot, sort always at the right end. Album&rsquo;s lens stays distinct &mdash; it is genuinely a different idea &mdash; but should stop borrowing tier and type, which the shared bar already does.</p></div>
+    <p class="src">market/page.tsx:91&ndash;133 &middot; players/page.tsx:66&ndash;108 &middot; club/collection/page.tsx:157&ndash;200 &middot; album/collection-album.tsx</p>
+  </div></div>
+
+  <div class="f"><span class="f__n">15</span><div>
+    <div class="f__t"><h3>Filters apply on submit in two places and on click in the third</h3><span class="chip chip--md">medium</span></div>
+    <p>Tap a tier chip in your Collection and the grid changes. Choose a tier on the Market and nothing happens until you find the Filter button. Same user, same session, same mental model, two outcomes.</p>
+    <div class="fix"><p><b>Fix:</b> pick one. Instant is better on a phone (no second reach), and the Market&rsquo;s price bounds are the only control that genuinely wants a submit &mdash; give those an explicit Apply inside the filter sheet.</p></div>
+  </div></div>
+
+  <div class="f"><span class="f__n">16</span><div>
+    <div class="f__t"><h3>One section, three names</h3><span class="chip chip--md">medium</span></div>
+    <p>The tab says <b>Market</b>, the page kicker says <b>Transfer market</b>, the <code>h1</code> says <b>Buy Live Cards</b>, and the back link from a listing says <b>&larr; Transfer market</b>. The same split runs elsewhere: nav <b>Chronicle</b> / <code>h1</code> <b>KUT Chronicle</b>; nav <b>Collection</b> / kicker <b>My club</b>; nav <b>Club Value</b> / kicker <b>My club</b>.</p>
+    <div class="fix"><p><b>Fix:</b> one name per section, used in the tab, the <code>h1</code> and the back link. Keep the kicker for the editorial line above it &mdash; that is what a kicker is for &mdash; but stop letting it name the section.</p></div>
+    <p class="src">market/page.tsx:76,79 &middot; market/[listingId]/page.tsx:118 &middot; chronicle/page.tsx</p>
+  </div></div>
+
+  <div class="f"><span class="f__n">17</span><div>
+    <div class="f__t"><h3>Home&rsquo;s three stat tiles look identical; two of them navigate</h3><span class="chip chip--lo">low-medium</span></div>
+    <p>KUT Coins is a plain <code>div</code>. Club Value and Rank are links with a <code>&rarr;</code> hint and a hover colour. All three share the border, the ground and the type. The hint only appears on hover, which does not exist on the platform most members use.</p>
+    <div class="fix"><p><b>Fix:</b> give the two links a persistent affordance, or give Coins a destination &mdash; a wallet ledger is a real page the economy could support.</p></div>
+    <p class="src">page.tsx:113&ndash;138</p>
+  </div></div>
+
+  <div class="f"><span class="f__n">18</span><div>
+    <div class="f__t"><h3>The coin balance is stated twice within 60px of itself</h3><span class="chip chip--lo">low</span></div>
+    <p>The persistent pill in the bar, and then Home&rsquo;s first stat tile. Also restated on <code>/club</code>, on <code>/club/value</code> and in the Packs standfirst.</p>
+    <div class="fix"><p><b>Fix:</b> Home&rsquo;s tile is the one to drop; it is the only one directly under the pill. The rest are load-bearing in context.</p></div>
+  </div></div>
+
+  <div class="f"><span class="f__n">19</span><div>
+    <div class="f__t"><h3>Two ways to log out; no way to reach Settings from the primary nav</h3><span class="chip chip--lo">low</span></div>
+    <p>Log out sits in the menu and again at the foot of Settings. Meanwhile <code>/settings/card</code> &mdash; photo and archetype, the one thing a new member actually needs to do &mdash; is three levels deep.</p>
+    <p class="src">app-nav.tsx:56 &middot; settings/page.tsx:62</p>
+  </div></div>
+
+  <div class="f"><span class="f__n">20</span><div>
+    <div class="f__t"><h3><code>IconSessions</code> is a leftover</h3><span class="chip chip--lo">low</span></div>
+    <p><code>/sessions</code> permanently redirects to <code>/chronicle</code>, but the Chronicle nav item still borrows the sessions calendar icon. A newspaper or masthead mark would read as what the section became.</p>
+    <p class="src">nav-items.tsx:41 &middot; sessions/page.tsx</p>
+  </div></div>
+</div>
+
+<div class="wrap grp">
+  <div class="grp__h"><h2>D &mdash; Mobile in particular</h2><span>beyond the navigation itself</span></div>
+
+  <div class="f"><span class="f__n">21</span><div>
+    <div class="f__t"><h3>The mobile page header is the desktop header at desktop size</h3><span class="chip chip--md">medium</span></div>
+    <p>Every page opens with a kicker, a 48px serif <code>h1</code> and a two-to-three-line description. On the Market that is followed by a Trade-offers button and the filter block, and the first listing starts <b>597px</b> down a 844px screen &mdash; you see the top three-quarters of one card. KB-008 already cut the filter block from 352px to 232px; the header itself was never looked at.</p>
+    <div class="fix"><p><b>Fix:</b> below <code>sm</code>, <code>h1</code> to ~30px and drop the description on utility pages (Market, Collection, Leaderboard, Packs). Keep it on editorial ones (Chronicle, How KUT works, Club Value) where the prose <i>is</i> the page. Same change moves the first listing to ~259px and puts four cards on screen.</p></div>
+    <p class="src">market/page.tsx:74&ndash;89 &middot; collection/page.tsx:120&ndash;131 &middot; leaderboard/page.tsx:50&ndash;62</p>
+  </div></div>
+
+  <div class="f"><span class="f__n">22</span><div>
+    <div class="f__t"><h3>On a detail page the primary action is far below the fold</h3><span class="chip chip--md">medium</span></div>
+    <p>Card detail and listing detail both stack a <code>detail</code>-size card &mdash; 330px wide, ~460px tall &mdash; above the name, the attribute bars, a rule, a stats table and only then Buy, List or Discard. On desktop the two-column grid puts the action beside the card, so this is a purely mobile problem.</p>
+    <div class="fix"><p><b>Fix:</b> a sticky action bar above the tab bar below <code>sm</code>, carrying the one primary action and its price. Desktop unchanged.</p></div>
+    <p class="src">club/collection/[cardId]/page.tsx:95 &middot; market/[listingId]/page.tsx:122</p>
+  </div></div>
+
+  <div class="f"><span class="f__n">23</span><div>
+    <div class="f__t"><h3>Home&rsquo;s activity ledger becomes three rows per entry on a phone</h3><span class="chip chip--lo">low</span></div>
+    <p>The ledger is a three-track grid from <code>sm</code> up and stacks below it: kind, description, timestamp, each on its own line, twelve times. It is the last block on the most-visited page and it is the longest.</p>
+    <div class="fix"><p><b>Fix:</b> below <code>sm</code>, put the kicker and time on one line and the description under it &mdash; two rows, not three &mdash; and cap at six with a &ldquo;See all&rdquo; link.</p></div>
+    <p class="src">page.tsx:196&ndash;214</p>
+  </div></div>
+</div>
+
+<div class="wrap out">
+  <h2 class="display">If you only do five things</h2>
+  <p>Ordered by what a member would feel first, not by what is cheapest.</p>
+  <ol class="ol">
+    <li><b>Give every destination a &ldquo;you are here&rdquo;.</b> Either restructure, or &mdash; as a same-day stopgap &mdash; light &ldquo;More&rdquo; when the current route is one of its children.</li>
+    <li><b>Pull Messages out of the menu</b> and give it its own control with a real number. It is the app talking to the member and it is currently whispering.</li>
+    <li><b>Remove Club Value and Trade offers from the menu</b>, exactly as you said &mdash; and move the offer count onto Market in the same commit, so no signal is lost.</li>
+    <li><b>Retire <code>/club</code></b> with a redirect, and give the freed tab to the leaderboard. Three of five tabs stop pointing at one branch.</li>
+    <li><b>Fix the safe-area padding.</b> Two lines, and it stops eating the bottom of every page on a modern iPhone.</li>
+  </ol>
+  <p style="margin-top:26px"><b>What needs an ADR:</b> retiring <code>/club</code> and re-pointing the primary tabs is a navigation change of the kind Phase B recorded, so it wants a decision entry and a <code>BUILD_SPEC</code> touch. Nothing here changes a game rule, an economy formula or a Part L invariant &mdash; no migration, no schema work. The offer badge moves in the UI only; <code>getNavContext</code> already fetches the number it needs.</p>
+</div>
+</x-dc>
+</body>
+</html>

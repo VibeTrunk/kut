@@ -2265,3 +2265,113 @@ gate, which stays `false` for one's own row (disable/reset/delete/adjust-others
 are unaffected). `BUILD_SPEC.md` §58's `ledger_reason` list gains
 `admin_self_grant`; the "Admin adjustment" note near `admin_adjust_wallet`
 gains a one-line pointer to this RPC.
+
+## ADR-053 — Five tabs, a messages control and an account menu replace the More menu
+
+Date: 2026-09-05
+
+Status: Accepted
+
+A UX audit of the shell (desktop and mobile) found the navigation had been
+outgrown rather than designed badly: Phase B shipped five primary tabs plus a
+"More" overflow menu, and the Chronicle (ADR-049), trade offers (ADR-042),
+Club Value v2 (ADR-041) and the Panini album (ADR-048) were each added on top
+of it without a second pass on the shape. Three structural consequences, all
+measurable:
+
+- **Nine of fifteen member destinations lit nothing in the chrome.** Active
+  styling was computed only for `primaryNavItems`; the "More" button never took
+  a state of its own.
+- **Three of the five tabs pointed into `/club`**, whose own page existed
+  mostly to link to Collection and Packs — both already tabs — and closed on a
+  "squad building is planned" placeholder.
+- **One event produced two badges.** An incoming trade offer incremented
+  `incomingOfferCount` *and* wrote an unread `trade_offer` notification; both
+  then collapsed on the closed control into a single 6px dot that said
+  something had happened but never what.
+
+Decision: the overflow menu is removed entirely and every destination becomes a
+tab, a tab within a section, or one of two single-purpose chrome controls.
+
+- **Primary tabs, identical on both platforms:** Home, Collection, Packs,
+  Market, Leaderboard. `BUILD_SPEC.md` §46 is updated as the canonical record.
+- **`/club` retires** to a `permanentRedirect("/club/collection")`, following
+  the `/sessions` precedent from ADR-049. Its Club Value figure moves onto the
+  Collection header; the card and unique-player counts were already there.
+- **Section tabs** replace two menu rows: Market gains `Buy | Offers` and the
+  Leaderboard gains `Clubs | Players`. A new `SectionTabs`
+  (`src/components/app-shell/section-tabs.tsx`) serves both plus the existing
+  Admin row, which migrates onto it in the same change.
+- **Messages gets its own control** in the bar with a numeric unread count, and
+  the incoming-offer count moves onto the Market tab and the Offers section
+  tab. One event, one badge, one place. The merged dot is gone.
+- **The avatar becomes the account menu trigger.** It was previously
+  `aria-hidden="true"` with no link or handler, sitting beside a control
+  labelled "More" whose panel opened headed by the member's display name — the
+  two had swapped jobs. The menu now holds only account routes: Settings, My
+  card, How KUT works, Admin (admins only) and Log out.
+
+Two supporting changes fall out of it:
+
+- **Route matching moves to a declarative table.** `src/lib/nav/routes.ts` is
+  pure — no React, no `next/*`, no Supabase — so the matching rules are
+  unit-testable in a repo with no jsdom, following the precedent
+  `src/components/pack-reveal-state.ts` sets and documents. The per-item
+  `isActive` closures could not survive the restructure: `/market` and
+  `/market/offers` are both tabs, so an independent prefix test lights both on
+  the offers page while an independent exact test stops lighting anything on
+  `/market/[listingId]`. Only a whole-list "longest owned prefix wins"
+  resolver gets both right. Entries declare what they `owns`, which is also how
+  Leaderboard stays lit on `/players`, Home on `/chronicle`, and Collection on
+  `/club/value`.
+- **`aria-current` gains the `"page"` / `"true"` distinction**, so
+  `/market/offers` does not carry two `aria-current="page"` at once — the
+  Market tab is an ancestor, the Offers tab is the page.
+
+Rejected: **keeping `/club` as a real hub** and building it up instead. It is
+defensible — squad building is a planned Phase 3 feature that will need a home
+— but it asks the member to pay a permanent tab now for a page that is empty
+now, and BUILD_SPEC Part XV can place squad building when it exists rather
+than reserving a slot speculatively (the same reasoning PROGRESS records for
+the original nav overhaul).
+
+Rejected: **implementing the ARIA menu pattern** on the account panel. The old
+`MoreMenu` set `role="menu"` with `role="menuitem"` links while containing a
+heading, a divider and a `div`-wrapped button — none of them valid menu
+children — and implemented none of the roving focus, `tabindex` management or
+focus return the role promises. Making that true costs 50–70 lines for a
+control that should not be a `menu`: a dropdown of navigation links is a `nav`
+with links. The roles are dropped instead (three attributes deleted, one line
+of focus-return added), which also makes it consistent with `LensMenu`, the
+repo's other dropdown, which never had roles.
+
+Deferred: **a bottom sheet on mobile** instead of the reused desktop dropdown.
+It is the right end state and is filed with the rest of the mobile pass, where
+it belongs with the compressed page headers, the filter sheet and the sticky
+detail action. The dropdown shrinks from nine rows to four plus logout in this
+change, so it gets better rather than worse in the meantime.
+
+Reason: a navigation whose overflow menu holds club-wide content, personal
+economy state, the member's inbox, help and account in nine unlabelled rows is
+not an overflow menu — it is a second, worse navigation. Removing it forces
+every destination to justify a home, and the ones that could not find one
+(`/club`) turned out not to need to exist.
+
+Consequences: **front-end only — no migration, no schema, no economy value.**
+Part L invariants are untouched; nothing here changes ownership, the ledger,
+pack results, ratings or authorization. `getNavContext` is unchanged and still
+fetches both counts — `/market` and `/market/offers` now call it too, which is
+free because it is `React.cache()`d and the `(app)` layout has already called
+it in the same request, and it guarantees the tab badge and the chrome badge
+cannot disagree. Five icons lost their last consumer: `IconClub`, `IconMenu`,
+`IconDirectory` and `IconOffer` are deleted, while `IconScale` and
+`IconSessions` are reused on the Collection header and Home's Chronicle link;
+`IconUser` is new. `admin-tabs.tsx` becomes a wrapper over `SectionTabs`, which
+raises its targets from ~34px to the ~44px `BUILD_SPEC.md` §52 asks for. The
+duplicated Album/Manage toggle is resolved as a side effect: both Collection
+headers now render through one `CollectionHeader`.
+
+`BUILD_SPEC.md` §46 rewritten with the new structure; §47 gains Home's
+Chronicle link. Verification: `npm run verify:fast` (87 unit tests, up 32) +
+`next build`, then driven against a local Supabase stack with a real incoming
+trade offer at 320px, 390px and 1440px.

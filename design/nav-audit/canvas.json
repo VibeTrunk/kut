@@ -1,0 +1,76 @@
+{
+  "pages": [
+    { "id": "page-1", "name": "Navigation" },
+    { "id": "page-2", "name": "Findings & consistency" }
+  ],
+  "artboards": [
+    { "file": "Today.dc.html", "title": "Today — desktop, as shipped", "page": "page-1", "x": 0, "y": 0, "w": 1440, "h": 1760 },
+    { "file": "Main.dc.html", "title": "Proposed — desktop", "page": "page-1", "x": 1560, "y": 0, "w": 1440, "h": 1800 },
+    { "file": "MobileToday.dc.html", "title": "Today — Market on a phone", "page": "page-1", "x": 3120, "y": 0, "w": 390, "h": 844 },
+    { "file": "MobileProposed.dc.html", "title": "Proposed — Market on a phone", "page": "page-1", "x": 3620, "y": 0, "w": 390, "h": 844 },
+    { "file": "MobileMenu.dc.html", "title": "The menu — today vs proposed", "page": "page-1", "x": 3120, "y": 1020, "w": 830, "h": 930 },
+
+    { "file": "Findings.dc.html", "title": "23 findings, ranked", "page": "page-2", "print": "flow", "x": 0, "y": 0, "w": 960, "h": 2860 },
+    { "file": "Patterns.dc.html", "title": "Consistency — filters and names", "page": "page-2", "x": 1080, "y": 0, "w": 1440, "h": 1200 },
+    { "file": "MobileRules.dc.html", "title": "Where the phone should disagree", "page": "page-2", "print": "flow", "x": 2640, "y": 0, "w": 960, "h": 2020 }
+  ],
+  "annotations": [
+    {
+      "id": "note-today",
+      "page": "page-1",
+      "x": 0,
+      "y": -340,
+      "w": 600,
+      "text": "TODAY — DESKTOP\n\nEverything here is rendered from app-nav.tsx and nav-items.tsx at true scale: 64px bar, 1152px container, the real icon paths, the real More menu in its real order.\n\nThe five dotted rings and the numbered notes beside them are mine, not the app's.\n\nWorth saying up front: the chrome is well built. 44px targets, visible focus rings, a badge that hides at zero, aria-current on the primary row. What it never got was a second pass on its SHAPE after Chronicle, Trade offers, Club Value and the album were added on top."
+    },
+    {
+      "id": "note-proposed",
+      "page": "page-1",
+      "x": 1560,
+      "y": -340,
+      "w": 600,
+      "text": "PROPOSED — DESKTOP\n\nFive tabs, a messages button, an account menu. No \"More\".\n\nThe two changes you asked about are both in here, plus the one condition that comes with the second: the incoming-offer count is TODAY only rendered on the Trade offers menu row, and the /market button that replaces it has no number at all. So the row goes, and the number moves onto the Market tab in the same change.\n\nThe contentious part is the fifth tab. Club retires (its page only links to two tabs that are already there), and Leaderboard takes the slot with Players as a tab inside it. If you would rather keep a \"my club\" hub, say so — that is the one decision here I made for you."
+    },
+    {
+      "id": "note-mobile-today",
+      "page": "page-1",
+      "x": 3120,
+      "y": -340,
+      "w": 390,
+      "text": "TODAY — 390×844, THE MARKET\n\nMeasured, not guessed: the first listing starts 597px down. You see the top three-quarters of one card.\n\nAbove it: a 48px serif h1, a three-line description, a Trade offers button and the filter block — which KB-008 already cut from 352px to 232px. The header itself was never looked at.\n\nAnd note the bottom bar: Collection, Packs and Club are all the same branch."
+    },
+    {
+      "id": "note-mobile-proposed",
+      "page": "page-1",
+      "x": 3620,
+      "y": -340,
+      "w": 390,
+      "text": "PROPOSED — SAME PAGE, SAME PHONE\n\nFirst listing at ~259px. Four cards on screen instead of most of one.\n\nWhat changed: h1 to 30px and the description dropped (mobile only — editorial pages keep theirs), Buy/Offers as in-page tabs carrying the offer count, and the six filter controls collapsed to one Filters pill plus a chip for whatever is active.\n\nTop right is now two single-purpose controls — messages with a real number, and you — instead of a hamburger holding half the app."
+    },
+    {
+      "id": "note-menu",
+      "page": "page-1",
+      "x": 4060,
+      "y": 1020,
+      "w": 320,
+      "text": "THE MENU\n\nLeft: the desktop dropdown, rendered verbatim on a phone. Same component, same w-64, anchored to a 36px button in the top-right — the hardest corner of the screen to reach one-handed. Nine rows of it.\n\nRight: a sheet, and only account things in it. Everything else went into the tabs.\n\nThe green arc is comfortable one-handed thumb reach on a 390×844 device. It is not a rule, but it is why nothing high-frequency should live where that menu lives today."
+    },
+    {
+      "id": "note-findings",
+      "page": "page-2",
+      "x": -380,
+      "y": 40,
+      "w": 300,
+      "text": "THE FINDINGS\n\n23, ranked by what a member would feel rather than by what is cheapest to fix. Every one carries the file and line it came from.\n\nYour two are 05 and 06 — both confirmed, with one string attached to 06.\n\nNumber 12 is not a preference: the mobile tab bar adds env(safe-area-inset-bottom) on top of its own 60px, while the content wrapper reserves a flat 64px. On an iPhone with a home indicator the last ~30px of every page is under the bar.\n\nNothing here touches a game rule, an economy formula or a Part L invariant. No migration."
+    },
+    {
+      "id": "note-mobilerules",
+      "page": "page-2",
+      "x": 3720,
+      "y": 40,
+      "w": 300,
+      "text": "MOBILE DIVERGENCE\n\nYour question, answered in three lists: the differences already in the code that are correct and should be left alone, the ones the app has not made yet and should, and the places where letting the platforms drift would cost more than it saves.\n\nThe short version: mobile is the primary platform for this product — it is a game about turning up to football on a Monday — but the desktop layout is the considered one and the phone inherits it. That is backwards."
+    }
+  ],
+  "launch": { "view": "canvas", "page": "page-1" }
+}

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { IconPack } from "@/components/icons";
+import { IconPack, IconSessions } from "@/components/icons";
 import { LiveCard, type LiveCardPlayer } from "@/components/live-card";
 import {
   ACTIVITY_FLOOR_ISO,
@@ -93,7 +93,15 @@ export default async function Home() {
             <p className="max-w-2xl text-base leading-relaxed text-ink-dim">
               The five cards that rose most since the last published football week. Published attendance updates Live Ratings automatically.
             </p>
-            <p className="text-sm">
+            {/* The Chronicle lost its More-menu slot when that menu went (ADR-053).
+                Home is its entry point: this page and the Chronicle both answer
+                "what happened this week", and Home never linked to it before
+                except through a session row in the activity feed. */}
+            <p className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
+              <Link className="inline-flex items-center gap-2 font-bold text-brass hover:underline" href="/chronicle">
+                <IconSessions aria-hidden="true" className="h-4 w-4" />
+                Read this week&rsquo;s Chronicle issue &rarr;
+              </Link>
               <Link className="font-bold text-brass hover:underline" href="/how-it-works">
                 New here? How KUT works &rarr;
               </Link>

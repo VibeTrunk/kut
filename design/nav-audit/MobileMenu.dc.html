@@ -1,0 +1,177 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Instrument+Serif&display=swap">
+  <style>
+    :root{
+      --board:#15130f; --board-deep:#0b0a07; --panel:#211c15; --panel-2:#2a2318;
+      --line:#4a4030; --ink:#f4efe3; --ink-dim:#b3a891; --ink-faint:#8a8072; --ink-on-accent:#1c150a;
+      --brass:#e0ac4a; --brick:#dd7a55; --brick-line:#5c3221; --moss:#8bbd6c; --moss-line:#3c5230;
+      --sans:"Archivo","Helvetica Neue",Helvetica,Arial,sans-serif;
+      --serif:"Instrument Serif",Georgia,"Times New Roman",serif;
+    }
+    *{box-sizing:border-box;}
+    body{margin:0;font-family:var(--sans);color:var(--ink);width:830px;height:930px;overflow:hidden;
+      background:radial-gradient(120% 78% at 50% -8%, #221c13 0%, #15130f 46%, #0b0a07 100%);}
+    .display{font-family:var(--serif);font-weight:400;line-height:.94;letter-spacing:-.012em;}
+    .clip-pennant{clip-path:polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%);}
+
+    .stage{display:grid;grid-template-columns:390px 390px;gap:50px;padding:0;}
+    .col{display:flex;flex-direction:column;}
+    .lab{height:56px;display:flex;align-items:baseline;gap:10px;padding-bottom:12px;}
+    .lab h2{margin:0;font-size:22px;}
+    .lab span{font-size:10.5px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;}
+    .lab--now span{color:var(--brick);}
+    .lab--next span{color:var(--moss);}
+
+    .phone{position:relative;width:390px;height:844px;overflow:hidden;border-radius:2px;
+      background:radial-gradient(120% 78% at 50% -8%, #221c13 0%, #15130f 46%, #0b0a07 100%);
+      box-shadow:0 26px 60px -18px rgba(0,0,0,.85), 0 0 0 1px rgba(74,64,48,.5);}
+
+    /* the page behind the menu */
+    .top{position:relative;z-index:3;display:flex;height:56px;align-items:center;justify-content:space-between;gap:10px;
+      padding:0 16px;border-bottom:1px solid rgba(74,64,48,.4);background:rgba(11,10,7,.96);}
+    .mark{display:flex;align-items:center;gap:8px;font-size:18px;font-weight:900;color:var(--ink);}
+    .mark i{display:block;width:12px;height:14px;background:var(--brass);}
+    .topright{display:flex;align-items:center;gap:9px;}
+    .coins{display:flex;align-items:center;gap:4px;border:1px solid rgba(224,172,74,.3);border-radius:999px;
+      background:linear-gradient(to bottom, rgba(224,172,74,.15), rgba(224,172,74,.05));padding:4px 12px;
+      font-size:12px;font-weight:900;font-variant-numeric:tabular-nums;color:var(--brass);}
+    .iconbtn{position:relative;display:grid;place-items:center;width:36px;height:36px;border-radius:999px;
+      border:1px solid var(--line);color:var(--ink-dim);}
+    .iconbtn--hot{border-color:var(--brass);color:var(--brass);box-shadow:0 0 0 3px rgba(224,172,74,.16);}
+    .iconbtn i{position:absolute;top:-2px;right:-2px;width:10px;height:10px;border-radius:999px;
+      background:var(--brass);border:2px solid var(--board);}
+    .avatar{display:grid;place-items:center;width:36px;height:36px;border-radius:999px;background:var(--brass);
+      font-size:12px;font-weight:900;color:var(--ink-on-accent);}
+    .avatar--hot{box-shadow:0 0 0 3px rgba(224,172,74,.28);}
+
+    .ghost{position:absolute;top:56px;left:0;right:0;bottom:0;z-index:1;padding:24px 20px;opacity:.3;}
+    .ghost h3{margin:14px 0 0;font-size:44px;font-family:var(--serif);font-weight:400;line-height:.94;}
+    .ghost p{margin:12px 0 0;font-size:14px;line-height:1.6;color:var(--ink-dim);}
+    .ghost__grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:26px;}
+    .ghost__c{aspect-ratio:5/7;border-radius:14px;background:linear-gradient(168deg,#efece2,#cfc9b6);}
+    .scrim{position:absolute;inset:56px 0 0;z-index:2;background:rgba(4,3,2,.72);}
+
+    /* today: the desktop dropdown, on a phone */
+    .drop{position:absolute;z-index:5;top:64px;right:16px;width:256px;border:1px solid var(--line);
+      border-radius:16px;background:var(--panel);padding:8px;box-shadow:0 24px 48px -12px rgba(0,0,0,.8);}
+    .drop__who{margin:0;padding:8px 12px 4px;font-size:11px;font-weight:900;letter-spacing:.14em;
+      text-transform:uppercase;color:var(--ink-faint);}
+    .row{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:44px;padding:0 12px;
+      border-radius:8px;font-size:14px;font-weight:700;color:var(--ink-dim);}
+    .row span{display:flex;align-items:center;gap:10px;}
+    .row--admin{color:var(--brick);}
+    .row__b{display:grid;place-items:center;min-width:20px;height:20px;padding:0 6px;border-radius:999px;
+      background:var(--brass);font-size:11px;font-weight:900;color:var(--ink-on-accent);}
+    .rule{height:1px;margin:6px 4px;background:var(--panel-2);}
+
+    /* proposed: a bottom sheet */
+    .sheet{position:absolute;z-index:5;left:0;right:0;bottom:0;border-top:1px solid var(--line);
+      border-radius:22px 22px 0 0;background:var(--panel);padding:10px 10px 34px;
+      box-shadow:0 -24px 60px -12px rgba(0,0,0,.85);}
+    .grab{width:38px;height:4px;margin:4px auto 10px;border-radius:999px;background:var(--line);}
+    .sheet__who{display:flex;align-items:center;gap:12px;padding:6px 12px 14px;border-bottom:1px solid var(--panel-2);}
+    .sheet__who .avatar{width:42px;height:42px;font-size:14px;}
+    .sheet__nm{margin:0;font-size:15px;font-weight:900;color:var(--ink);}
+    .sheet__sub{margin:3px 0 0;font-size:11.5px;font-weight:700;color:var(--ink-faint);}
+    .sheet .row{min-height:52px;font-size:15px;}
+
+    /* thumb reach */
+    .reach{position:absolute;z-index:6;left:-120px;right:-120px;bottom:-260px;height:760px;border-radius:50%;
+      pointer-events:none;background:radial-gradient(closest-side, rgba(139,189,108,.16), rgba(139,189,108,.05) 66%, rgba(139,189,108,0) 100%);
+      border:1px dashed rgba(139,189,108,.34);}
+    .reachtag{position:absolute;z-index:7;bottom:14px;left:50%;transform:translateX(-50%);
+      display:flex;align-items:center;gap:7px;border:1px solid var(--moss-line);border-radius:999px;
+      background:rgba(28,36,22,.9);padding:6px 13px;font-size:10.5px;font-weight:800;letter-spacing:.1em;
+      text-transform:uppercase;color:var(--moss);}
+    .missed{position:absolute;z-index:7;top:8px;right:8px;display:flex;align-items:center;gap:6px;
+      border:1px solid var(--brick-line);border-radius:999px;background:rgba(42,23,18,.92);padding:6px 12px;
+      font-size:10.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--brick);}
+  </style>
+</helmet>
+
+<div class="stage">
+  <div class="col">
+    <div class="lab lab--now"><h2 class="display">Today</h2><span>one desktop dropdown, two platforms</span></div>
+    <div class="phone">
+      <div class="top">
+        <span class="mark"><i aria-hidden="true" class="clip-pennant"></i>KUT</span>
+        <span class="topright">
+          <span class="coins"><svg aria-hidden="true" fill="none" height="12" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewBox="0 0 24 24" width="12"><circle cx="12" cy="12" r="8.5" /><path d="M12 8v8" /></svg>1,240</span>
+          <span class="iconbtn iconbtn--hot"><svg aria-hidden="true" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="16"><path d="M4 7h16M4 12h16M4 17h16" /></svg><i aria-hidden="true"></i></span>
+        </span>
+      </div>
+      <div class="ghost">
+        <h3 class="display">Buy Live Cards</h3>
+        <p>Buy now, or make a coin-and-card offer.</p>
+        <div class="ghost__grid"><span class="ghost__c"></span><span class="ghost__c"></span></div>
+      </div>
+      <div class="scrim"></div>
+      <div class="reach"></div>
+      <div class="drop">
+        <p class="drop__who">Maarten van Oostrom</p>
+        <span class="row"><span>Leaderboard</span></span>
+        <span class="row"><span>Chronicle</span></span>
+        <span class="row"><span>Club Value</span></span>
+        <span class="row"><span>Trade offers</span><span class="row__b">2</span></span>
+        <span class="row"><span>Player directory</span></span>
+        <span class="row"><span>Messages</span><span class="row__b">3</span></span>
+        <span class="row"><span>How KUT works</span></span>
+        <span class="row"><span>Settings</span></span>
+        <span class="row row--admin"><span>Admin</span></span>
+        <div class="rule"></div>
+        <span class="row"><span>Log out</span></span>
+      </div>
+      <span class="missed">Nine rows, hardest corner</span>
+      <span class="reachtag">comfortable thumb reach</span>
+    </div>
+  </div>
+
+  <div class="col">
+    <div class="lab lab--next"><h2 class="display">Proposed</h2><span>a sheet, and only account things in it</span></div>
+    <div class="phone">
+      <div class="top">
+        <span class="mark"><i aria-hidden="true" class="clip-pennant"></i>KUT</span>
+        <span class="topright">
+          <span class="coins"><svg aria-hidden="true" fill="none" height="12" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewBox="0 0 24 24" width="12"><circle cx="12" cy="12" r="8.5" /><path d="M12 8v8" /></svg>1,240</span>
+          <span class="iconbtn"><svg aria-hidden="true" fill="none" height="17" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewBox="0 0 24 24" width="17"><path d="M4 5.5h16v10H9l-4 3.5v-3.5H4z" /></svg><i aria-hidden="true"></i></span>
+          <span class="avatar avatar--hot">MO</span>
+        </span>
+      </div>
+      <div class="ghost">
+        <h3 class="display">Market</h3>
+        <p>Buy now, or make a coin-and-card offer.</p>
+        <div class="ghost__grid"><span class="ghost__c"></span><span class="ghost__c"></span></div>
+      </div>
+      <div class="scrim"></div>
+      <div class="reach"></div>
+      <div class="sheet">
+        <div class="grab"></div>
+        <div class="sheet__who">
+          <span class="avatar">MO</span>
+          <span>
+            <p class="sheet__nm">Maarten van Oostrom</p>
+            <p class="sheet__sub">Van Oostrom United &middot; rank #4</p>
+          </span>
+        </div>
+        <span class="row"><span><svg aria-hidden="true" fill="none" height="18" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewBox="0 0 24 24" width="18"><path d="M4 7h9M17 7h3M4 12h3M11 12h9M4 17h13M20 17h0" /><circle cx="15" cy="7" r="2" /><circle cx="7" cy="12" r="2" /><circle cx="17" cy="17" r="2" /></svg>Settings</span></span>
+        <span class="row"><span><svg aria-hidden="true" fill="none" height="18" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewBox="0 0 24 24" width="18"><rect height="15" rx="1.6" width="11" x="4.5" y="6" /><path d="M17 10h3M17 14h3" /></svg>My card</span></span>
+        <span class="row"><span><svg aria-hidden="true" fill="none" height="18" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewBox="0 0 24 24" width="18"><circle cx="12" cy="12" r="8.5" /><path d="M12 11v5" /><path d="M12 8h0" /></svg>How KUT works</span></span>
+        <div class="rule"></div>
+        <span class="row row--admin"><span><svg aria-hidden="true" fill="none" height="18" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewBox="0 0 24 24" width="18"><path d="M12 3l7 2.5v5.2C19 15.8 16 19 12 21c-4-2-7-5.2-7-10.3V5.5z" /><path d="M9 11.5l2 2 4-4.5" /></svg>Admin</span></span>
+        <div class="rule"></div>
+        <span class="row"><span><svg aria-hidden="true" fill="none" height="18" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewBox="0 0 24 24" width="18"><path d="M15 5H6v14h9" /><path d="M13 12h8M18 9l3 3-3 3" /></svg>Log out</span></span>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

@@ -2376,3 +2376,41 @@ headers now render through one `CollectionHeader`.
 Chronicle link. Verification: `npm run verify:fast` (87 unit tests, up 32) +
 `next build`, then driven against a local Supabase stack with a real incoming
 trade offer at 320px, 390px and 1440px.
+
+## ADR-054 — The club activity feed excludes superadmin activity
+
+Date: 2026-09-05
+
+Status: Accepted
+
+Decision: `kut.activity_feed` (ADR-038) is `create or replace`d so each of its
+five unioned branches carries a `role <> 'superadmin'` guard on whichever
+profile(s) generated that row — seller and buyer for `sale`, seller and
+proposer for `trade`, seller for `listing`, opener for `pack`. The `session`
+branch is untouched: a published session is a club-wide fact, not one
+member's economic activity, so there is no actor role to check.
+
+Migration `20260915000000_activity_feed_excludes_superadmin.sql`: one `create
+or replace view`; no table, column or grant change.
+
+Reason (KB-009): the superadmin account is used for production demos and
+manual testing, and its pack openings, sales, listings and trades were
+appearing in the member-facing feed on Home (ADR-039), muddying the real
+club's activity history with test noise.
+
+Rejected: filtering in the query layer (`src/lib/activity.ts` /
+`src/app/(app)/page.tsx`) instead of the view. The view is the single read
+path for this projection — filtering there keeps the guarantee in one place
+rather than something every future caller has to remember to repeat.
+
+Consequences: tier is **additive** (ADR-032) — the underlying tables
+(`kut.market_sales`, `kut.trade_offers`, `kut.market_listings`,
+`kut.pack_openings`) and their RLS are unchanged, so the superadmin's ledger
+and audit history are fully retained; only this read projection is narrower.
+Reversible by restoring the view to its 20260911000000 body. Three new pgTAP
+cases in `supabase/tests/database/activity_feed.test.sql` cover a
+superadmin-authored sale, listing and pack each being excluded, alongside the
+existing member-authored fixtures that must still show. No front-end change —
+`kind`, `actor_name`, `counterparty_name`, `card_name`, `amount`,
+`session_date` and `session_type` are all unchanged, so `src/lib/activity.ts`
+and Home's rendering are untouched.

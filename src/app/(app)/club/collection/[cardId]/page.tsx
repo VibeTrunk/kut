@@ -5,6 +5,7 @@ import { LiveCard, type LiveCardPlayer } from "@/components/live-card";
 import { requireUser } from "@/lib/auth/user";
 import { resolvePhotoUrls } from "@/lib/player-photos";
 import { createClient } from "@/lib/supabase/server";
+import { isUuid } from "@/lib/uuid";
 import { DiscardCardForm } from "../discard-card-form";
 import { CreateListingForm } from "../create-listing-form";
 import { CancelListingForm } from "../cancel-listing-form";
@@ -46,6 +47,9 @@ function readable(value: string) {
 export default async function CardDetailPage({ params, searchParams }: CardPageProps) {
   await requireUser();
   const { cardId } = await params;
+  // A malformed id (a stray path segment) fails the `uuid` cast below with a
+  // query error instead of the intended "not found" (KB-007).
+  if (!isUuid(cardId)) notFound();
   const supabase = await createClient();
   const { data, error } = await supabase
     .schema("kut")

@@ -2087,3 +2087,53 @@ Verification: `npm run verify:fast` + `next build`, then measured in the running
 app at 390x844 and 1440x900 — form 232px vs 74px respectively, six controls
 present at both widths, no horizontal overflow, and two listing cards now visible
 under the form on a phone where previously only a sliver of one showed.
+
+## Reserve the safe-area inset under the mobile tab bar (KB-010) — 2026-09-05
+
+First of four PRs from the navigation UX audit. Shipped
+alone because it is a two-line bug fix and deserves its own revert.
+
+**KB-010 — content hidden behind the tab bar.** The bottom tab bar is
+`fixed inset-x-0 bottom-0` and adds `pb-[env(safe-area-inset-bottom)]` **on top
+of** its own content, so it measures **61.5px** at a zero inset and 95.5px on a
+device reporting the usual 34px. The content wrapper reserved a flat `pb-16`
+(64px) either way, so the shortfall was the inset minus 2.5px of slack — about
+**31.5px of every page** sitting under the bar on a modern iPhone, and nothing
+at all on a device without an inset. That last part is why it survived this
+long: local development, CI and every desktop width all report an inset of 0,
+so the bug is invisible everywhere it gets tested.
+
+The wrapper now reserves `calc(4rem + env(safe-area-inset-bottom,0px))` below
+`sm`. The explicit `0px` fallback is load-bearing rather than decorative: with a
+bare `env()` an unset variable invalidates the whole `calc()`, the declaration
+is dropped, and the padding falls to 0 — strictly worse than the bug being
+fixed.
+
+**KB-011 — registered, not fixed.** Signing in as a local `role = user` account
+to take the measurement showed that `login-form.tsx:30` runs
+`router.replace("/admin/attendance")` after *every* successful sign-in. Members
+are then bounced to `/` by `requireAdmin()`, so the end state is right and there
+is no authorization hole — but the landing page for the whole product is a
+hardcoded admin route. Unrelated to this layout change, so it goes in the
+register rather than into this PR; it belongs with the navigation work.
+
+Front-end only: no migration, no schema, no economy value. No ADR — a layout
+fix, per the KB-002 / KB-003 precedent.
+
+Verification: `npm run verify:fast` (55 unit tests) + `next build`, then driven
+against a local Supabase stack signed in as a real member at 390x844.
+
+- **Emitted CSS.** `.pb-\[calc\(4rem_\+_env\(safe-area-inset-bottom\,0px\)\)\]`
+  resolves to `padding-bottom: calc(4rem + env(safe-area-inset-bottom,0px))` in
+  the built stylesheet — checked because Tailwind drops an arbitrary value it
+  cannot parse silently, and a build passing proves nothing about it.
+- **No regression at a zero inset.** Computed `padding-bottom` is **64px** on
+  `/`, `/market`, `/leaderboard` and `/settings` — identical to the old
+  `pb-16`, as it must be, since every environment available here reports 0.
+- **Bar geometry.** 61.5px tall, top edge at y=782.5 in an 844px viewport, on
+  all four pages. `scrollWidth` equals `innerWidth` (390) throughout, so no
+  horizontal overflow was introduced.
+
+The 31.5px figure is arithmetic from the measured 61.5px bar, not a reading
+taken on a notched device — no such device was available here. Worth a look on
+a real iPhone when one is to hand.

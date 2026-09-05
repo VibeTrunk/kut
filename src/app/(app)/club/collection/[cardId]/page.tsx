@@ -106,7 +106,7 @@ export default async function CardDetailPage({ params, searchParams }: CardPageP
               <p className="text-[0.7rem] font-extrabold uppercase tracking-[0.26em] text-brass">
                 {card.is_live ? "Live card" : "Special card"} &middot; <span className="capitalize">{card.rarity_tier}</span>
               </p>
-              <h1 className="display text-5xl sm:text-6xl">{card.display_name}</h1>
+              <h1 className="display text-3xl sm:text-6xl">{card.display_name}</h1>
               <p className="text-base text-ink-dim">
                 {card.is_live
                   ? "This card’s rating is live and changes with published football sessions."
@@ -119,27 +119,6 @@ export default async function CardDetailPage({ params, searchParams }: CardPageP
             <Link className="block text-sm font-bold text-brass hover:underline" href={`/players/${card.player_slug}`}>
               See {card.display_name.split(" ")[0]}&rsquo;s rating history &rarr;
             </Link>
-
-            <hr className="border-line/40" />
-
-            <dl className="grid grid-cols-2 gap-x-8 gap-y-5">
-              <div>
-                <dt className="text-[0.65rem] font-extrabold uppercase tracking-[0.14em] text-ink-faint">Edition</dt>
-                <dd className="mt-1.5 text-lg font-black">{readable(card.edition_type)}</dd>
-              </div>
-              <div>
-                <dt className="text-[0.65rem] font-extrabold uppercase tracking-[0.14em] text-ink-faint">Source</dt>
-                <dd className="mt-1.5 text-lg font-black">{readable(card.source)}</dd>
-              </div>
-              <div>
-                <dt className="text-[0.65rem] font-extrabold uppercase tracking-[0.14em] text-ink-faint">Discard value</dt>
-                <dd className="mt-1.5 text-lg font-black tabular-nums">{card.discard_value} KUT Coins</dd>
-              </div>
-              <div>
-                <dt className="text-[0.65rem] font-extrabold uppercase tracking-[0.14em] text-ink-faint">Card ID</dt>
-                <dd className="mt-1.5 break-all font-mono text-xs text-ink-dim">{card.card_id}</dd>
-              </div>
-            </dl>
 
             {query.listed === "1" && (
               <p className="rounded-2xl border border-moss-line/40 bg-moss-bg/50 p-4 text-sm font-bold text-moss">
@@ -169,6 +148,28 @@ export default async function CardDetailPage({ params, searchParams }: CardPageP
                 <DiscardCardForm cardId={card.card_id} discardValue={card.discard_value} />
               </>
             )}
+
+            <hr className="border-line/40" />
+
+            <dl className="grid grid-cols-2 gap-x-8 gap-y-5">
+              <div>
+                <dt className="text-[0.65rem] font-extrabold uppercase tracking-[0.14em] text-ink-faint">Edition</dt>
+                <dd className="mt-1.5 text-lg font-black">{readable(card.edition_type)}</dd>
+              </div>
+              <div>
+                <dt className="text-[0.65rem] font-extrabold uppercase tracking-[0.14em] text-ink-faint">Source</dt>
+                <dd className="mt-1.5 text-lg font-black">{readable(card.source)}</dd>
+              </div>
+              <div>
+                <dt className="text-[0.65rem] font-extrabold uppercase tracking-[0.14em] text-ink-faint">Discard value</dt>
+                <dd className="mt-1.5 text-lg font-black tabular-nums">{card.discard_value} KUT Coins</dd>
+              </div>
+              <div>
+                <dt className="text-[0.65rem] font-extrabold uppercase tracking-[0.14em] text-ink-faint">Card ID</dt>
+                <dd className="mt-1.5 break-all font-mono text-xs text-ink-dim">{card.card_id}</dd>
+              </div>
+            </dl>
+
           </div>
         </div>
       </section>

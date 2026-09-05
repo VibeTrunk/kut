@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { IconPack, IconSessions } from "@/components/icons";
+import { IconChronicle, IconPack } from "@/components/icons";
 import { LiveCard, type LiveCardPlayer } from "@/components/live-card";
 import {
   ACTIVITY_FLOOR_ISO,
@@ -99,7 +99,7 @@ export default async function Home() {
                 except through a session row in the activity feed. */}
             <p className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
               <Link className="inline-flex items-center gap-2 font-bold text-brass hover:underline" href="/chronicle">
-                <IconSessions aria-hidden="true" className="h-4 w-4" />
+                <IconChronicle aria-hidden="true" className="h-4 w-4" />
                 Read this week&rsquo;s Chronicle issue &rarr;
               </Link>
               <Link className="font-bold text-brass hover:underline" href="/how-it-works">
@@ -195,14 +195,18 @@ export default async function Home() {
                list of records, and reads faster as one. */
             <ol>
               {activity.map((row, index) => (
+                /* Below `sm` this used to stack into three rows per entry — kind,
+                   description, timestamp — twelve times, making the longest block
+                   on the most-visited page. Two rows now: kind and time share a
+                   line, the description sits under them. Nothing is hidden. */
                 <li
-                  className="grid gap-1.5 border-b border-line/30 py-4 sm:grid-cols-[10rem_minmax(0,1fr)_7rem] sm:items-baseline sm:gap-6"
+                  className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-3 gap-y-1.5 border-b border-line/30 py-4 sm:grid-cols-[10rem_minmax(0,1fr)_7rem] sm:gap-6"
                   key={`${row.kind}-${row.ts}-${index}`}
                 >
-                  <p className="text-[0.65rem] font-extrabold uppercase tracking-[0.14em] text-brass">
+                  <p className="order-1 text-[0.65rem] font-extrabold uppercase tracking-[0.14em] text-brass sm:order-none">
                     {activityKindLabel(row.kind)}
                   </p>
-                  <p className="text-sm leading-relaxed text-ink-dim">
+                  <p className="order-3 col-span-2 text-sm leading-relaxed text-ink-dim sm:order-none sm:col-span-1">
                     {row.kind === "session" ? (
                       <Link className="hover:text-brass hover:underline" href="/chronicle">
                         {describeActivity(row)}
@@ -211,7 +215,7 @@ export default async function Home() {
                       describeActivity(row)
                     )}
                   </p>
-                  <time className="text-xs font-bold tabular-nums text-ink-faint sm:text-right" dateTime={row.ts}>
+                  <time className="order-2 text-xs font-bold tabular-nums text-ink-faint sm:order-none sm:text-right" dateTime={row.ts}>
                     {formatDate(row.ts)}
                   </time>
                 </li>

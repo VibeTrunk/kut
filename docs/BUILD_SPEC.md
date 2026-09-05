@@ -1760,7 +1760,7 @@ Chrome controls, right of the bar on both platforms:
   count. It replaces the single undifferentiated dot that previously merged
   unread messages and incoming offers on the "More" button.
 - **Account** — the avatar, now the menu trigger rather than a decorative
-  disc: Settings, My card, How KUT works, Admin (admins only), Log out.
+  disc: Settings, My card, How KUT works, Admin (admins only), Sign out.
 
 `/club` is a **permanent redirect to `/club/collection`**, as `/sessions`
 redirects to `/chronicle`. Its Club Value figure moved to the Collection

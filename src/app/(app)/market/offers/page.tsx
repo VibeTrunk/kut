@@ -147,8 +147,8 @@ export default async function TradeOffersPage({ searchParams }: OffersPageProps)
       <section className="mx-auto max-w-3xl space-y-8">
         <header>
           <p className="text-[0.7rem] font-extrabold uppercase tracking-[0.26em] text-brass">Transfer market</p>
-          <h1 className="display mt-3 text-5xl sm:text-6xl">Trade offers</h1>
-          <p className="mt-3 text-ink-dim">
+          <h1 className="display mt-3 text-3xl sm:text-6xl">Trade offers</h1>
+          <p className="mt-3 hidden text-ink-dim sm:block">
             Coin-and-card offers on market listings. Everything you offer is escrowed until the seller accepts or
             declines, or the offer expires.
           </p>

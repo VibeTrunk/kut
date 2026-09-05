@@ -34,8 +34,8 @@ export default async function PacksPage() {
       <section className="mx-auto max-w-6xl space-y-8 py-4 sm:py-8">
         <header className="space-y-3">
           <p className="text-[0.7rem] font-extrabold uppercase tracking-[0.26em] text-brass">Pack store</p>
-          <h1 className="display text-5xl sm:text-6xl">Packs</h1>
-          <p className="max-w-2xl text-base leading-relaxed text-ink-dim">
+          <h1 className="display text-3xl sm:text-6xl">Packs</h1>
+          <p className="hidden max-w-2xl text-base leading-relaxed text-ink-dim sm:block">
             Spend KUT Coins on server-selected Live Cards. You have {balance.toLocaleString()} KUT Coins.
           </p>
         </header>

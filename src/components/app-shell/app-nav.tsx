@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { IconChevronDown, IconCoin, IconMessages } from "@/components/icons";
 import { LogoutButton } from "@/components/logout-button";
+import { BottomSheet } from "@/components/bottom-sheet";
 import { activeEntryKey, ariaCurrent, formatBadgeCount, isSegmentPrefix } from "@/lib/nav/routes";
 import { buildAccountMenuItems, buildPrimaryNavItems, type NavItem } from "./nav-items";
 
@@ -91,30 +92,38 @@ function MessagesLink({ unreadCount, className }: { unreadCount: number; classNa
  * management the role promises. A dropdown of navigation links is a `nav` with
  * links, which is also what `LensMenu` already does.
  */
-function AccountMenu({ items, displayName }: { items: NavItem[]; displayName: string }) {
+function AccountLinks({ items, size }: { items: NavItem[]; size: "dropdown" | "sheet" }) {
   const pathname = usePathname();
   const activeKey = activeEntryKey(items, pathname);
+  const rowClass = size === "sheet" ? "min-h-13 gap-3 px-3 text-[0.95rem]" : "min-h-11 gap-2.5 px-3 text-sm";
+  return (
+    <nav aria-label="Account">
+      {items.map((item) => {
+        const active = item.key === activeKey;
+        return (
+          <Link
+            aria-current={ariaCurrent(item, pathname, activeKey)}
+            className={`flex items-center rounded-lg font-bold ${rowClass} ${focusRing} ${
+              active ? "bg-brass/10 text-brass" : item.adminOnly ? "text-brick hover:bg-panel-2" : "text-ink-dim hover:bg-panel-2"
+            }`}
+            href={item.href}
+            key={item.key}
+          >
+            <item.Icon className={size === "sheet" ? "h-5 w-5" : "h-4 w-4"} />
+            {item.label}
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}
+
+/** Desktop only. The phone gets a sheet — see BottomSheet's own note on why. */
+function AccountMenu({ items, displayName }: { items: NavItem[]; displayName: string }) {
   return (
     <div className="absolute right-0 top-full mt-2 w-64 rounded-2xl border border-line bg-panel p-2 shadow-2xl shadow-board/60">
       <p className="px-3 pb-1 pt-2 text-xs font-black uppercase tracking-[0.14em] text-ink-faint">{displayName}</p>
-      <nav aria-label="Account">
-        {items.map((item) => {
-          const active = item.key === activeKey;
-          return (
-            <Link
-              aria-current={ariaCurrent(item, pathname, activeKey)}
-              className={`flex min-h-11 items-center gap-2.5 rounded-lg px-3 text-sm font-bold ${focusRing} ${
-                active ? "bg-brass/10 text-brass" : item.adminOnly ? "text-brick hover:bg-panel-2" : "text-ink-dim hover:bg-panel-2"
-              }`}
-              href={item.href}
-              key={item.key}
-            >
-              <item.Icon className="h-4 w-4" />
-              {item.label}
-            </Link>
-          );
-        })}
-      </nav>
+      <AccountLinks items={items} size="dropdown" />
       <div className="my-1.5 h-px bg-panel-2" />
       <LogoutButton variant="menu-item" />
     </div>
@@ -140,6 +149,9 @@ export function AppNav({ displayName, isAdmin, balance, unreadCount, incomingOff
 
     function onPointerDown(event: PointerEvent) {
       const target = event.target as Node;
+      // The account sheet renders outside both header refs and closes itself via
+      // its scrim, so a tap inside it is not a tap outside the menu.
+      if (target instanceof Element && target.closest('[role="dialog"]')) return;
       if (desktopMenuRef.current?.contains(target)) return;
       if (mobileMenuRef.current?.contains(target)) return;
       setAccountOpen(false);
@@ -236,7 +248,7 @@ export function AppNav({ displayName, isAdmin, balance, unreadCount, incomingOff
             <span className="truncate">{balance.toLocaleString()}</span>
           </span>
           <MessagesLink className="h-11 w-11" unreadCount={unreadCount} />
-          <div className="relative shrink-0" ref={mobileMenuRef}>
+          <div className="shrink-0" ref={mobileMenuRef}>
             <button
               aria-expanded={accountOpen}
               aria-label={avatarLabel}
@@ -253,7 +265,6 @@ export function AppNav({ displayName, isAdmin, balance, unreadCount, incomingOff
                 {initials || "KUT"}
               </span>
             </button>
-            {accountOpen && <AccountMenu displayName={displayName} items={accountItems} />}
           </div>
         </div>
       </header>
@@ -280,6 +291,20 @@ export function AppNav({ displayName, isAdmin, balance, unreadCount, incomingOff
           </Link>
         ))}
       </nav>
+
+      {/* Phone: a sheet within thumb reach, rather than the desktop dropdown
+          anchored to the hardest corner of the screen to reach one-handed. */}
+      <BottomSheet label="Account" onClose={() => setAccountOpen(false)} open={accountOpen} returnFocusRef={mobileTriggerRef}>
+        <div className="flex items-center gap-3 border-b border-panel-2 pb-4">
+          <span className="grid h-11 w-11 place-items-center rounded-full bg-brass text-sm font-black text-ink-on-accent">
+            {initials || "KUT"}
+          </span>
+          <p className="text-[0.95rem] font-black text-ink">{displayName}</p>
+        </div>
+        <AccountLinks items={accountItems} size="sheet" />
+        <div className="h-px bg-panel-2" />
+        <LogoutButton variant="menu-item" />
+      </BottomSheet>
     </>
   );
 }

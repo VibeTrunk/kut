@@ -99,10 +99,10 @@ export default async function ListingPage({ params }: ListingPageProps) {
     <main className="board-ground min-h-screen p-5 text-ink sm:p-10">
       <section className="mx-auto max-w-5xl space-y-8 py-4 sm:py-8">
         <Link className="text-sm font-bold text-brass hover:underline" href="/market">
-          &larr; Transfer market
+          &larr; Market
         </Link>
 
-        <div className="grid gap-10 md:grid-cols-[minmax(240px,330px)_minmax(0,1fr)] md:items-start lg:gap-16">
+        <div className="grid gap-10 pb-24 md:grid-cols-[minmax(240px,330px)_minmax(0,1fr)] md:items-start sm:pb-0 lg:gap-16">
           <div>
             <LiveCard size="detail" player={cardPlayer} />
           </div>
@@ -113,7 +113,7 @@ export default async function ListingPage({ params }: ListingPageProps) {
                 {archetypeLabel(listing.archetype)} &middot; <span className="capitalize">{listing.rarity_tier}</span> &middot;{" "}
                 {listing.ovr} OVR
               </p>
-              <h1 className="display text-5xl sm:text-6xl">{listing.display_name}</h1>
+              <h1 className="display text-3xl sm:text-6xl">{listing.display_name}</h1>
               <p className="flex items-center gap-2 text-3xl font-black tabular-nums text-brass">
                 <IconCoin aria-hidden="true" className="h-6 w-6" />
                 {listing.price.toLocaleString()}
@@ -132,7 +132,17 @@ export default async function ListingPage({ params }: ListingPageProps) {
               </p>
             ) : (
               <div className="space-y-6">
-                <BuyListingForm canAfford={balance >= listing.price} listingId={listing.listing_id} price={listing.price} />
+                {/* On a phone the detail card is ~460px tall, so Buy sat below the
+                    fold under the name, the attribute bars and a rule. It is
+                    pinned above the tab bar instead — rendered once, never
+                    duplicated, so there is no second submit path. At `sm` it
+                    returns to the flow beside the card, where there is room.
+                    The card page next door keeps its actions in the flow: List
+                    and Discard are panels with an input and a confirm, not one
+                    button, and will not fit a bar. */}
+                <div className="fixed inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom,0px))] z-20 border-t border-line/60 bg-board-deep/95 p-4 backdrop-blur sm:static sm:border-0 sm:bg-transparent sm:p-0 sm:backdrop-blur-none">
+                  <BuyListingForm canAfford={balance >= listing.price} listingId={listing.listing_id} price={listing.price} />
+                </div>
 
                 <div className="space-y-3">
                   <h2 className="text-[0.7rem] font-extrabold uppercase tracking-[0.16em] text-ink-faint">

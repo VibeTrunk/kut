@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { IconSearch } from "@/components/icons";
+import { BottomSheet } from "@/components/bottom-sheet";
 import { buildFilterHref, countActiveFilters, type FilterValues } from "@/lib/filters";
 
 /**
@@ -76,7 +77,6 @@ export function FilterBar({
   const [draftMin, setDraftMin] = useState(values[range?.minName ?? ""] ?? "");
   const [draftMax, setDraftMax] = useState(values[range?.maxName ?? ""] ?? "");
   const triggerRef = useRef<HTMLButtonElement>(null);
-  const sheetRef = useRef<HTMLDivElement>(null);
 
   const href = (patch: FilterValues) =>
     buildFilterHref({ basePath, values, preserve, patch, defaults: { [sortName]: defaultSort } });
@@ -84,25 +84,6 @@ export function FilterBar({
   const go = (patch: FilterValues) => router.push(href(patch));
 
   const activeCount = countActiveFilters(values, [sortName]);
-
-  useEffect(() => {
-    if (!sheetOpen) return;
-    const root = document.documentElement;
-    const previousOverflow = root.style.overflow;
-    root.style.overflow = "hidden";
-    sheetRef.current?.focus();
-
-    function onKeyDown(event: KeyboardEvent) {
-      if (event.key !== "Escape") return;
-      setSheetOpen(false);
-      triggerRef.current?.focus();
-    }
-    document.addEventListener("keydown", onKeyDown);
-    return () => {
-      root.style.overflow = previousOverflow;
-      document.removeEventListener("keydown", onKeyDown);
-    };
-  }, [sheetOpen]);
 
   function submitSearch(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -258,81 +239,64 @@ export function FilterBar({
 
       {summary && <p className="text-xs font-bold text-ink-faint">{summary}</p>}
 
-      {sheetOpen && (
-        <div className="fixed inset-0 z-40 sm:hidden">
+      <BottomSheet label="Filters" onClose={() => setSheetOpen(false)} open={sheetOpen} returnFocusRef={triggerRef}>
+        {searchField("")}
+        {chips && (
+          <div className="space-y-2">
+            <p className="text-[0.65rem] font-extrabold uppercase tracking-[0.15em] text-ink-faint">{chips.allLabel}</p>
+            {chipRow}
+          </div>
+        )}
+        {(selects ?? []).length > 0 && <div className="grid gap-2">{selectFields}</div>}
+        {range && (
+          <div className="space-y-2">
+            <p className="text-[0.65rem] font-extrabold uppercase tracking-[0.15em] text-ink-faint">Price</p>
+            <div className="grid grid-cols-2 gap-2">
+              <input
+                aria-label={range.minLabel}
+                className={fieldClass}
+                inputMode="numeric"
+                onChange={(event) => setDraftMin(event.target.value)}
+                placeholder={range.minLabel}
+                value={draftMin}
+              />
+              <input
+                aria-label={range.maxLabel}
+                className={fieldClass}
+                inputMode="numeric"
+                onChange={(event) => setDraftMax(event.target.value)}
+                placeholder={range.maxLabel}
+                value={draftMax}
+              />
+            </div>
+            {/* The only Apply in the app, and the only control that wants one:
+                a half-typed price is not a filter. */}
+            <button
+              className={`min-h-11 w-full rounded-xl bg-gradient-to-b from-[#eebd63] to-[#d29a34] px-5 text-sm font-black text-ink-on-accent ${focusRing}`}
+              onClick={applyRange}
+              type="button"
+            >
+              Apply price
+            </button>
+          </div>
+        )}
+        <div className="flex gap-2 pt-1">
+          <Link
+            className={`grid min-h-11 flex-1 place-items-center rounded-xl border border-line text-sm font-bold text-ink-dim ${focusRing}`}
+            href={buildFilterHref({ basePath, values: {}, preserve, patch: {}, defaults: {} })}
+            onClick={() => setSheetOpen(false)}
+          >
+            Clear all
+          </Link>
           <button
-            aria-label="Close filters"
-            className="absolute inset-0 h-full w-full bg-board-deep/75 backdrop-blur-sm"
+            className={`grid min-h-11 flex-1 place-items-center rounded-xl border border-brass/60 text-sm font-black text-brass ${focusRing}`}
             onClick={() => setSheetOpen(false)}
             type="button"
-          />
-          <div
-            aria-label="Filters"
-            className="absolute inset-x-0 bottom-0 max-h-[80vh] space-y-5 overflow-y-auto rounded-t-3xl border-t border-line bg-panel p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom,0px))]"
-            ref={sheetRef}
-            role="dialog"
-            tabIndex={-1}
           >
-            <div aria-hidden="true" className="mx-auto h-1 w-9 rounded-full bg-line" />
-            {searchField("")}
-            {chips && (
-              <div className="space-y-2">
-                <p className="text-[0.65rem] font-extrabold uppercase tracking-[0.15em] text-ink-faint">{chips.allLabel}</p>
-                {chipRow}
-              </div>
-            )}
-            {(selects ?? []).length > 0 && <div className="grid gap-2">{selectFields}</div>}
-            {range && (
-              <div className="space-y-2">
-                <p className="text-[0.65rem] font-extrabold uppercase tracking-[0.15em] text-ink-faint">Price</p>
-                <div className="grid grid-cols-2 gap-2">
-                  <input
-                    aria-label={range.minLabel}
-                    className={fieldClass}
-                    inputMode="numeric"
-                    onChange={(event) => setDraftMin(event.target.value)}
-                    placeholder={range.minLabel}
-                    value={draftMin}
-                  />
-                  <input
-                    aria-label={range.maxLabel}
-                    className={fieldClass}
-                    inputMode="numeric"
-                    onChange={(event) => setDraftMax(event.target.value)}
-                    placeholder={range.maxLabel}
-                    value={draftMax}
-                  />
-                </div>
-                {/* The only Apply in the app, and the only control that wants one:
-                    a half-typed price is not a filter. */}
-                <button
-                  className={`min-h-11 w-full rounded-xl bg-gradient-to-b from-[#eebd63] to-[#d29a34] px-5 text-sm font-black text-ink-on-accent ${focusRing}`}
-                  onClick={applyRange}
-                  type="button"
-                >
-                  Apply price
-                </button>
-              </div>
-            )}
-            <div className="flex gap-2 pt-1">
-              <Link
-                className={`grid min-h-11 flex-1 place-items-center rounded-xl border border-line text-sm font-bold text-ink-dim ${focusRing}`}
-                href={buildFilterHref({ basePath, values: {}, preserve, patch: {}, defaults: {} })}
-                onClick={() => setSheetOpen(false)}
-              >
-                Clear all
-              </Link>
-              <button
-                className={`grid min-h-11 flex-1 place-items-center rounded-xl border border-brass/60 text-sm font-black text-brass ${focusRing}`}
-                onClick={() => setSheetOpen(false)}
-                type="button"
-              >
-                Done
-              </button>
-            </div>
-          </div>
+            Done
+          </button>
         </div>
-      )}
+      </BottomSheet>
     </div>
   );
 }

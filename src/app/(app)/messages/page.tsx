@@ -55,7 +55,7 @@ export default async function MessagesPage() {
         <header className="flex flex-wrap items-end justify-between gap-4">
           <div className="space-y-3">
             <p className="text-[0.7rem] font-extrabold uppercase tracking-[0.26em] text-brass">KUT inbox</p>
-            <h1 className="display text-5xl sm:text-6xl">Messages</h1>
+            <h1 className="display text-3xl sm:text-6xl">Messages</h1>
             <p className="text-base text-ink-dim">
               Private updates about your club and card economy.
               {unreadCount > 0 && <span className="ml-2 font-bold text-brass">{unreadCount} unread</span>}

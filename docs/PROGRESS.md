@@ -2310,3 +2310,88 @@ driven against a local Supabase stack signed in as a real member.
   tier order everywhere, archetype select present only on the directory, no
   overflow.
 - **No page errors** on any surface at any width.
+
+## Mobile page treatment and the naming sweep — 2026-09-05
+
+Last of four PRs from the navigation UX audit. The shell was fixed in ADR-053;
+this is the pages inside it. Mobile is the primary platform for a game about
+turning up to football on a Monday, but the desktop layout was the considered
+one and the phone inherited it — that is what this reverses.
+
+**Compressed headers.** Utility pages opened with a kicker, a 48px serif `h1`
+and a two-to-three-line standfirst before anything happened. Below `sm` the
+heading is now 30px and the standfirst is dropped — but only on pages where it
+is pure description. The leaderboard's carries the "See the full breakdown"
+link and Messages' carries the unread count, so both stay at every width; no
+route is lost to a hidden paragraph. Desktop is untouched at 60px. On the
+Market the first listing moves from **597px to 343px**.
+
+**One sheet, not two.** `src/components/bottom-sheet.tsx` was extracted from the
+filter sheet PR 3 shipped, and the account menu is its second consumer. Writing
+a near-copy is the mistake that produced two Album/Manage toggles and two
+Collection headers before ADR-053 merged them. It owns the scrim, the Escape
+key, body-scroll lock, focus-in and focus-return, and it clears the tab bar's
+safe-area inset the way the page wrapper does (KB-010).
+
+**The account menu is a sheet on a phone and a dropdown on desktop** — the
+divergence ADR-053 deferred. A sheet is the right idiom for a thumb, an anchored
+panel for a pointer.
+
+**Detail pages, treated differently on purpose.** On `/market/[listingId]` the
+Buy button is pinned above the tab bar below `sm`: the detail card is ~460px
+tall, so Buy sat under the name, the attribute bars and a rule. It is rendered
+**once** — moved out of flow, never duplicated — so there is no second submit
+path, and it returns to the flow at `sm` where the two-column layout has room.
+`/club/collection/[cardId]` does **not** get a bar: List and Discard are panels
+with a price input and a confirm, not one button, and will not fit one. Its
+actions moved above the metadata table instead, at every width — act first,
+reference data after. Two shapes of content, two treatments; the plan called for
+a sticky bar on both and only one could honestly have it.
+
+**Activity ledger.** Below `sm` each entry stacked into three rows — kind,
+description, timestamp — twelve times, the longest block on the most-visited
+page. Kind and time now share a line with the description under them: **78px per
+entry against ~94px**, with nothing hidden and no dead "See all" link to a page
+that does not exist.
+
+**Album swipe.** A horizontal drag turns a leaf, which is what a phone user
+tries first on something drawn as a bound album. The "‹ Page 3" buttons and the
+page index stay exactly as they were — the swipe is an addition, never the only
+route, and a gesture is claimed only once it is clearly horizontal (60px across,
+under 40px of vertical travel) so scrolling is never blocked.
+
+**Naming sweep.** One name per section, in the tab, the heading and the back
+link: "Club Value Leaderboard" → **Leaderboard**, "Player directory" →
+**Players** (heading, metadata title and the profile back link), and the listing
+back link "← Transfer market" → **← Market**. Kickers keep their editorial voice
+— "Transfer market", "KUT roster", "KUT inbox" are the clubblad register and are
+what a kicker is for; they simply stop being a second name for the section.
+
+`IconSessions`, the calendar glyph the Chronicle borrowed from the `/sessions`
+list it replaced in ADR-049, is retired for a new `IconChronicle`.
+
+**Docs correction.** ADR-053, `BUILD_SPEC.md` §46 and KB-010 all said "Log out".
+The button says **"Sign out"**, matching "Sign in". The prose was wrong, not the
+code.
+
+Front-end only: no migration, no schema, no economy value. No ADR — ADR-053
+already records the navigation decision and named this mobile pass as deferred
+work; nothing here changes a rule, an invariant or a public surface beyond the
+§46 wording fix.
+
+Verification: `npm run verify:fast` (100 unit tests) + `next build`, then driven
+against a local Supabase stack at 390×844 and 1440×900, with a listing owned by
+*another* member so the Buy path actually rendered.
+
+- **Headings** 30px on the phone and 60px on desktop, standfirsts visible only
+  at `sm`+. First content: Market 343px, Players 359px, Leaderboard 396px. No
+  horizontal overflow anywhere.
+- **Account sheet** opens, locks scroll, lists Settings / My card / How KUT
+  works plus one Sign out button, closes on Escape and restores scroll.
+- **Buy** — exactly one button in the DOM, `position: fixed` at 390px with its
+  top at 704px in an 844px viewport (visible without scrolling, clear of the tab
+  bar), and `position: static` at 1440px.
+- **Card detail** order is attributes → rating-history link → actions → rule →
+  metadata, so the actions precede the reference table.
+- **Ledger** 78px per entry, two rows, order 1/2/3 as intended.
+- **No page errors** on any surface at either width.

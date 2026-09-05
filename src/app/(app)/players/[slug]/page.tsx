@@ -101,7 +101,7 @@ export default async function PlayerProfilePage({ params }: PlayerProfilePagePro
     <main className="board-ground min-h-screen p-5 text-ink sm:p-10">
       <section className="mx-auto max-w-5xl space-y-8 py-4 sm:py-8">
         <Link className="text-sm font-bold text-brass hover:underline" href="/players">
-          &larr; Player directory
+          &larr; Players
         </Link>
 
         <div className="grid gap-10 md:grid-cols-[minmax(240px,330px)_minmax(0,1fr)] md:items-start lg:gap-16">
@@ -114,7 +114,7 @@ export default async function PlayerProfilePage({ params }: PlayerProfilePagePro
               <p className="text-[0.7rem] font-extrabold uppercase tracking-[0.26em] text-brass">
                 Live card &middot; <span className="capitalize">{player.rarity_tier}</span>
               </p>
-              <h1 className="display text-5xl sm:text-6xl">{player.display_name}</h1>
+              <h1 className="display text-3xl sm:text-6xl">{player.display_name}</h1>
               <p className="text-base text-ink-dim">
                 {archetypeLabel(player.archetype)} &middot; {player.live_ovr} OVR &middot; rises and falls with published sessions
               </p>

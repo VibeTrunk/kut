@@ -2309,7 +2309,8 @@ tab, a tab within a section, or one of two single-purpose chrome controls.
   `aria-hidden="true"` with no link or handler, sitting beside a control
   labelled "More" whose panel opened headed by the member's display name — the
   two had swapped jobs. The menu now holds only account routes: Settings, My
-  card, How KUT works, Admin (admins only) and Log out.
+  card, How KUT works, Admin (admins only) and Sign out — the label the button
+  actually carries, matching "Sign in".
 
 Two supporting changes fall out of it:
 

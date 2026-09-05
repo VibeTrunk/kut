@@ -1,0 +1,173 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Instrument+Serif&display=swap">
+  <style>
+    :root{
+      --board:#15130f; --board-deep:#0b0a07; --panel:#211c15; --panel-2:#2a2318;
+      --line:#4a4030; --ink:#f4efe3; --ink-dim:#b3a891; --ink-faint:#8a8072; --ink-on-accent:#1c150a;
+      --brass:#e0ac4a; --moss:#8bbd6c; --moss-line:#3c5230; --brick:#dd7a55; --brick-line:#5c3221;
+      --steel:#8fb0c2; --steel-line:#3a5866; --warning:#d68a3c; --warning-line:#5c3c1f;
+      --sans:"Archivo","Helvetica Neue",Helvetica,Arial,sans-serif;
+      --serif:"Instrument Serif",Georgia,"Times New Roman",serif;
+    }
+    *{box-sizing:border-box;}
+    body{margin:0;font-family:var(--sans);color:var(--ink);
+      background:radial-gradient(120% 44% at 50% 0%, #221c13 0%, #15130f 42%, #0b0a07 100%);}
+    .display{font-family:var(--serif);font-weight:400;line-height:.94;letter-spacing:-.012em;text-wrap:pretty;}
+    code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.9em;color:var(--ink-faint);}
+    .wrap{max-width:960px;margin:0 auto;padding:0 56px;}
+
+    .hd{padding:56px 0 30px;}
+    .hd p.k{margin:0;font-size:11.2px;font-weight:800;text-transform:uppercase;letter-spacing:.26em;color:var(--brass);}
+    .hd h1{margin:14px 0 0;font-size:56px;}
+    .hd .lede{margin:16px 0 0;font-size:15.5px;line-height:1.7;color:var(--ink-dim);}
+
+    .grp{padding-top:44px;}
+    .grp__h{display:flex;align-items:center;gap:13px;padding-bottom:8px;}
+    .grp__h h2{margin:0;font-size:26px;}
+    .grp__h .dot{width:9px;height:9px;border-radius:999px;}
+    .dot--keep{background:var(--moss);}
+    .dot--add{background:var(--brass);}
+    .dot--no{background:var(--brick);}
+    .grp__s{margin:0 0 20px;padding-bottom:18px;border-bottom:1px solid rgba(74,64,48,.45);
+      font-size:13.5px;line-height:1.66;color:var(--ink-faint);max-width:760px;}
+
+    .r{display:grid;grid-template-columns:230px minmax(0,1fr);gap:26px;padding:17px 0;
+      border-bottom:1px solid rgba(74,64,48,.3);}
+    .r__k{font-size:13.5px;font-weight:900;line-height:1.35;color:var(--ink);}
+    .r__k em{display:block;font-style:normal;margin-top:5px;font-size:10.5px;font-weight:700;
+      font-family:ui-monospace,Menlo,Consolas,monospace;color:var(--ink-faint);}
+    .r p{margin:0;font-size:13.5px;line-height:1.7;color:var(--ink-dim);}
+    .r p+p{margin-top:8px;}
+    .r p b{color:var(--ink);font-weight:800;}
+    .r p i{font-style:normal;color:var(--moss);font-weight:800;}
+    .r p u{text-decoration:none;color:var(--brass);font-weight:800;}
+
+    .bug{margin-top:34px;border:1px solid var(--brick-line);border-radius:18px;background:rgba(42,23,18,.34);padding:22px 24px;}
+    .bug h3{margin:0 0 10px;font-size:16px;font-weight:900;color:var(--brick);}
+    .bug p{margin:0 0 10px;font-size:13.5px;line-height:1.72;color:var(--ink-dim);}
+    .bug p:last-child{margin-bottom:0;}
+    .bug b{color:var(--ink);font-weight:800;}
+    .math{display:inline-flex;align-items:center;gap:8px;margin-top:4px;border-radius:10px;
+      background:rgba(11,10,7,.6);padding:9px 14px;font-family:ui-monospace,Menlo,Consolas,monospace;
+      font-size:12px;color:var(--ink-dim);}
+    .math span{color:var(--brick);font-weight:700;}
+
+    .out{margin-top:52px;border-top:1px solid rgba(74,64,48,.55);padding:34px 0 64px;}
+    .out h2{margin:0 0 14px;font-size:28px;}
+    .out p{margin:0 0 12px;font-size:13.5px;line-height:1.75;color:var(--ink-dim);}
+    .out b{color:var(--ink);font-weight:800;}
+  </style>
+</helmet>
+
+<div class="wrap hd">
+  <p class="k">KUT navigation audit &middot; mobile</p>
+  <h1 class="display">Where the phone<br>should disagree</h1>
+  <p class="lede">You asked which differences are legitimate. Most of the ones already in the code are &mdash; they were argued for in <code>KNOWN_BUGS</code> and the album spec, and they should be left alone. What is missing is a second set: divergences the app has not made yet, and one place where it diverges by accident.</p>
+</div>
+
+<div class="wrap grp">
+  <div class="grp__h"><span class="dot dot--keep"></span><h2 class="display">Keep &mdash; these are right</h2></div>
+  <p class="grp__s">Already in the code, already reasoned about. None of these is an inconsistency to iron out.</p>
+
+  <div class="r">
+    <span class="r__k">Bottom tab bar on a phone, top bar on desktop<em>app-nav.tsx:139&ndash;196</em></span>
+    <div><p>The correct split. A phone navigates with a thumb at the bottom of the screen; a desktop pointer navigates from a persistent header. Keeping one bar in one place on both would be worse on one of them.</p></div>
+  </div>
+  <div class="r">
+    <span class="r__k">Album: a two-page spread on desktop, one leaf on a phone<em>collection-album.tsx</em></span>
+    <div><p>A bound album only reads as bound when both leaves and the gutter are visible, and there is no width for that at 390px. <i>And the page numbers stay identical at both widths</i> &mdash; a slot is slot 14 wherever you look at it. Keep that rule exactly as it is.</p></div>
+  </div>
+  <div class="r">
+    <span class="r__k">Leaderboard: card and player counts as columns on desktop, as a meta line on a phone<em>leaderboard/page.tsx:20</em></span>
+    <div><p>The KB-005 fix, and it holds: one table shape at every width, ~63px per club, six or seven visible instead of three. Demoting the counts rather than hiding them keeps both spec-listed fields on screen.</p></div>
+  </div>
+  <div class="r">
+    <span class="r__k">Card grids: two columns on a phone, three to five above<em>market, collection, players, home</em></span>
+    <div><p>The KB-006 fix. Two columns is the right density for a 5:7 card at 390px &mdash; browsable without becoming thumbnails.</p></div>
+  </div>
+  <div class="r">
+    <span class="r__k">Packs: the tier ladder as a side panel on desktop, stacked below on a phone<em>club/packs/page.tsx:47</em></span>
+    <div><p>Reference material next to the action where there is room, under it where there is not. Standard, and correct.</p></div>
+  </div>
+  <div class="r">
+    <span class="r__k">Offers built on the listing detail page, not on the grid tile<em>ADR-051</em></span>
+    <div><p>A coin input and a scrollable card list do not fit a 167px column. Moving the whole interaction to its own page rather than trying to shrink it was the right call, and it happens to help desktop too.</p></div>
+  </div>
+</div>
+
+<div class="wrap grp">
+  <div class="grp__h"><span class="dot dot--add"></span><h2 class="display">Add &mdash; divergences worth making</h2></div>
+  <p class="grp__s">Places the app currently treats both platforms the same and should not.</p>
+
+  <div class="r">
+    <span class="r__k">A bottom sheet instead of the dropdown<em>app-nav.tsx:24, 173</em></span>
+    <div><p>Today the desktop dropdown is rendered verbatim on the phone, anchored to a 36px button in the top-right corner. Same component, same <code>w-64</code>, same anchoring.</p><p><u>Instead:</u> the account menu opens as a sheet from the bottom &mdash; reachable, dismissible by drag, and sized to the content rather than to a pointer anchor. Desktop keeps the dropdown.</p></div>
+  </div>
+  <div class="r">
+    <span class="r__k">A compressed page header<em>every page</em></span>
+    <div><p>Kicker, a 48px serif <code>h1</code> and a two-to-three-line description is a fine editorial opening on a 1440px page. On a 390px one it is a third of the first screen before anything happens &mdash; the first market listing starts <b>597px</b> down.</p><p><u>Instead:</u> below <code>sm</code>, <code>h1</code> to ~30px and the description dropped on utility pages (Market, Collection, Leaderboard, Packs), kept on editorial ones (Chronicle, How KUT works, Club Value) where the prose is the point. That alone moves the first listing to <b>~259px</b> and puts four cards on screen instead of most of one.</p></div>
+  </div>
+  <div class="r">
+    <span class="r__k">Filters behind a sheet, with the active ones as chips<em>market/page.tsx:91</em></span>
+    <div><p>Six controls in a two-column block still costs 232px after the KB-008 fix, and it is paid on every visit whether or not you intend to filter.</p><p><u>Instead:</u> one <b>Filters</b> pill carrying a count, plus a chip per active filter, plus sort. Tapping opens a sheet with the full set &mdash; and that sheet is the one honest home for an Apply button, because the price bounds genuinely want one. Desktop keeps the inline row; it has the width.</p></div>
+  </div>
+  <div class="r">
+    <span class="r__k">A sticky action bar on detail pages<em>collection/[cardId], market/[listingId]</em></span>
+    <div><p>Both stack a 330&times;460 detail card above the name, the attribute bars, a rule and a stats table before reaching Buy, List or Discard. On desktop the two-column grid puts the card and its actions side by side, so this is purely a phone problem.</p><p><u>Instead:</u> the one primary action and its price pinned above the tab bar below <code>sm</code>. Everything else stays where it is.</p></div>
+  </div>
+  <div class="r">
+    <span class="r__k">Swipe between album leaves<em>collection-album.tsx</em></span>
+    <div><p>Desktop already has keyboard arrows and the two chevrons flanking the spread. A phone gets two &ldquo;&lsaquo; Page 3 / Page 5 &rsaquo;&rdquo; buttons under the leaf.</p><p><u>Instead:</u> a horizontal swipe, which is what a bound album invites and what every phone user will try first. Keep the buttons as the visible affordance and the accessible route.</p></div>
+  </div>
+  <div class="r">
+    <span class="r__k">Cap the activity ledger and give it two rows, not three<em>page.tsx:196</em></span>
+    <div><p>Twelve entries, each stacking kind, description and timestamp onto separate lines below <code>sm</code>. It is the last block on the most-visited page and the longest thing on it.</p><p><u>Instead:</u> kicker and time share a line, description under it, six entries and a &ldquo;See all&rdquo;. Desktop keeps all twelve in its three-track grid.</p></div>
+  </div>
+</div>
+
+<div class="wrap grp">
+  <div class="grp__h"><span class="dot dot--no"></span><h2 class="display">Do not diverge here</h2></div>
+  <p class="grp__s">Tempting places to let the platforms drift, where drifting would cost more than it saves.</p>
+
+  <div class="r">
+    <span class="r__k">Album page numbers</span>
+    <div><p>Slot 14 is slot 14 at every width. Members compare albums with each other; renumbering on a phone would break the only shared reference the feature has. The spec already requires this &mdash; it is worth restating because the &ldquo;one leaf&rdquo; layout makes renumbering look tempting.</p></div>
+  </div>
+  <div class="r">
+    <span class="r__k">Section names</span>
+    <div><p>Whatever the tab says is what the heading says, on both platforms. A phone abbreviating &ldquo;Leaderboard&rdquo; to &ldquo;Ranks&rdquo; would give the same place two names again, which is the problem being fixed.</p></div>
+  </div>
+  <div class="r">
+    <span class="r__k">Badge meaning</span>
+    <div><p>A number on Market means incoming offers on both platforms; a number on Messages means unread messages on both. The current mobile behaviour &mdash; two different counters merged into one dot on a hamburger &mdash; is exactly the divergence to remove.</p></div>
+  </div>
+  <div class="r">
+    <span class="r__k">Which filters exist</span>
+    <div><p>The sheet may present them differently. It should not offer fewer &mdash; a member who filtered by tier on a laptop should find tier on their phone, in the same words and the same order.</p></div>
+  </div>
+
+  <div class="bug">
+    <h3>And one divergence that is not a decision &mdash; it is a bug</h3>
+    <p>The tab bar carries <code>pb-[env(safe-area-inset-bottom)]</code> on top of about 60px of its own content. The content wrapper reserves a flat <code>pb-16</code>.</p>
+    <p class="math">bar &asymp; 60px + <span>34px indicator</span> = 94px &nbsp;&nbsp;vs&nbsp;&nbsp; reserved 64px</p>
+    <p>On any phone with a home indicator the last <b>~30px of every page</b> sits under the bar: the bottom row of the market grid, the last club on the leaderboard, the Log out button at the foot of Settings.</p>
+    <p><b>Fix:</b> <code>padding-bottom: calc(4rem + env(safe-area-inset-bottom))</code> on the wrapper below <code>sm</code>. Two lines, and it is the cheapest item in this whole canvas.</p>
+  </div>
+</div>
+
+<div class="wrap out">
+  <h2 class="display">The shape of it</h2>
+  <p><b>Mobile is not a narrower desktop here &mdash; it is the primary platform.</b> This is a game about turning up to football on a Monday and a Friday; the phone is where a member checks whether their rating moved, opens a pack on the tram, and answers a trade offer. The desktop layout is the considered one and the phone inherits it, which is backwards for this product.</p>
+  <p>None of the above changes a rule, a formula or an invariant. The header compression, the filter sheet, the sticky action bar and the safe-area fix are all CSS and layout; the sheet and the swipe are one component each.</p>
+</div>
+</x-dc>
+</body>
+</html>

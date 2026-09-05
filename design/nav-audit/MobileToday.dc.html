@@ -1,0 +1,139 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Instrument+Serif&display=swap">
+  <style>
+    :root{
+      --board:#15130f; --board-deep:#0b0a07; --panel:#211c15; --panel-2:#2a2318;
+      --line:#4a4030; --ink:#f4efe3; --ink-dim:#b3a891; --ink-faint:#8a8072; --ink-on-accent:#1c150a;
+      --brass:#e0ac4a;
+      --sans:"Archivo","Helvetica Neue",Helvetica,Arial,sans-serif;
+      --serif:"Instrument Serif",Georgia,"Times New Roman",serif;
+    }
+    *{box-sizing:border-box;}
+    body{margin:0;font-family:var(--sans);color:var(--ink);width:390px;height:844px;overflow:hidden;
+      background:radial-gradient(120% 78% at 50% -8%, #221c13 0%, #15130f 46%, #0b0a07 100%);}
+    .display{font-family:var(--serif);font-weight:400;line-height:.94;letter-spacing:-.012em;text-wrap:pretty;}
+    .kicker{margin:0;font-size:11.2px;font-weight:800;text-transform:uppercase;letter-spacing:.26em;color:var(--brass);}
+    .clip-pennant{clip-path:polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%);}
+
+    .top{position:relative;display:flex;height:56px;align-items:center;justify-content:space-between;gap:12px;
+      padding:0 16px;border-bottom:1px solid rgba(74,64,48,.4);background:rgba(11,10,7,.85);}
+    .mark{display:flex;align-items:center;gap:8px;font-size:18px;font-weight:900;color:var(--ink);}
+    .mark i{display:block;width:12px;height:14px;background:var(--brass);}
+    .topright{display:flex;align-items:center;gap:8px;}
+    .coins{display:flex;align-items:center;gap:4px;border:1px solid rgba(224,172,74,.3);border-radius:999px;
+      background:linear-gradient(to bottom, rgba(224,172,74,.15), rgba(224,172,74,.05));padding:4px 12px;
+      font-size:12px;font-weight:900;font-variant-numeric:tabular-nums;color:var(--brass);}
+    .burger{position:relative;display:grid;place-items:center;width:36px;height:36px;border-radius:999px;
+      border:1px solid var(--line);color:var(--ink-dim);}
+    .burger i{position:absolute;top:-2px;right:-2px;width:10px;height:10px;border-radius:999px;
+      background:var(--brass);border:2px solid var(--board);}
+
+    main{padding:20px 20px 0;}
+    .head{padding-top:16px;}
+    .head h1{margin:12px 0 0;font-size:48px;}
+    .head p{margin:12px 0 0;font-size:16px;line-height:1.65;color:var(--ink-dim);}
+    .offersbtn{display:flex;align-items:center;justify-content:center;gap:8px;height:44px;margin-top:16px;
+      border:1px solid var(--line);border-radius:12px;font-size:14px;font-weight:700;color:var(--ink-dim);}
+
+    .filters{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:32px;padding:12px;
+      border:1px solid rgba(74,64,48,.6);border-radius:16px;background:rgba(11,10,7,.4);}
+    .fi{display:flex;align-items:center;gap:8px;height:44px;padding:0 14px;border:1px solid var(--line);
+      border-radius:12px;background:rgba(11,10,7,.6);font-size:14px;font-weight:600;color:var(--ink-faint);}
+    .fi--wide{grid-column:span 2;}
+    .fi--sel{justify-content:space-between;color:var(--ink);}
+    .fbtn{grid-column:span 2;display:grid;place-items:center;height:44px;border-radius:12px;
+      background:linear-gradient(to bottom,#eebd63,#d29a34);font-size:14px;font-weight:900;color:var(--ink-on-accent);}
+
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:32px;}
+    .card{position:relative;aspect-ratio:5/7;border-radius:14px;overflow:hidden;
+      background:linear-gradient(168deg,#efece2 0%,#e2ddcd 62%,#d6d0bd 100%);box-shadow:0 14px 26px -10px rgba(0,0,0,.7);}
+    .card__art{position:absolute;inset:0;background:
+      radial-gradient(58% 44% at 30% 24%, rgba(255,255,255,.5), transparent 70%),
+      linear-gradient(200deg,#8a9a86 0%,#5f6f63 48%,#3f4a44 100%);}
+    .card__ovr{position:absolute;top:9px;left:10px;font-family:var(--serif);font-size:26px;line-height:1;color:#2f2b24;}
+    .card__ovr span{display:block;font-family:var(--sans);font-size:7px;font-weight:900;letter-spacing:.16em;color:#5c564a;}
+    .card__plate{position:absolute;left:0;right:0;bottom:0;padding:7px 9px;background:#3b3830;}
+    .card__nm{margin:0;font-size:10px;font-weight:900;letter-spacing:.02em;color:#f7f4ec;}
+    .card__tier{margin:2px 0 0;font-size:6.5px;font-weight:900;letter-spacing:.18em;text-transform:uppercase;color:rgba(247,244,236,.62);}
+    .card__price{position:absolute;top:9px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:4px;
+      border:1px solid rgba(224,172,74,.55);border-radius:999px;background:rgba(11,10,7,.9);padding:3px 10px;
+      font-size:11px;font-weight:900;font-variant-numeric:tabular-nums;color:var(--brass);}
+    .seller{margin:9px 0 0;font-size:11px;font-weight:700;color:var(--ink-faint);}
+    .buy{display:grid;place-items:center;height:44px;margin-top:9px;border-radius:12px;
+      background:linear-gradient(to bottom,#eebd63,#d29a34);font-size:13px;font-weight:900;color:var(--ink-on-accent);}
+
+    .tabbar{position:absolute;left:0;right:0;bottom:0;display:flex;border-top:1px solid rgba(74,64,48,.4);
+      background:rgba(11,10,7,.95);padding-bottom:34px;}
+    .tabbar span{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 0;
+      font-size:11px;font-weight:700;color:var(--ink-faint);}
+    .tabbar span.on{color:var(--brass);}
+  </style>
+</helmet>
+
+<div class="top">
+  <span class="mark"><i aria-hidden="true" class="clip-pennant"></i>KUT</span>
+  <span class="topright">
+    <span class="coins"><svg aria-hidden="true" fill="none" height="12" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewBox="0 0 24 24" width="12"><circle cx="12" cy="12" r="8.5" /><path d="M12 8v8M9.5 10a2.3 2.3 0 0 1 2.5-1.6c1.4 0 2.4.7 2.4 1.8s-1 1.6-2.4 1.8c-1.4.2-2.4.8-2.4 1.8s1 1.8 2.4 1.8a2.4 2.4 0 0 0 2.5-1.6" /></svg>1,240</span>
+    <span class="burger"><svg aria-hidden="true" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="16"><path d="M4 7h16M4 12h16M4 17h16" /></svg><i aria-hidden="true"></i></span>
+  </span>
+</div>
+
+<main>
+  <div class="head">
+    <p class="kicker">Transfer market</p>
+    <h1 class="display">Buy Live Cards</h1>
+    <p>Buy now, or make a coin-and-card offer. Buy-now prices are paid in KUT Coins; a 5% tax is burned.</p>
+    <span class="offersbtn"><svg aria-hidden="true" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewBox="0 0 24 24" width="16"><path d="M3 7h11l4 4-6 6-4-4" /><path d="M7 11h0" /><path d="M14 14l3 3 4-4-4-4" /></svg>Trade offers</span>
+  </div>
+
+  <div class="filters">
+    <span class="fi fi--wide"><svg aria-hidden="true" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewBox="0 0 24 24" width="16"><circle cx="11" cy="11" r="6.5" /><path d="M16 16l4 4" /></svg>Search player</span>
+    <span class="fi fi--sel">Any tier<svg aria-hidden="true" fill="none" height="15" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="15"><path d="M7 10l5 5 5-5" /></svg></span>
+    <span class="fi fi--sel">Newest<svg aria-hidden="true" fill="none" height="15" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="15"><path d="M7 10l5 5 5-5" /></svg></span>
+    <span class="fi">Min</span>
+    <span class="fi">Max</span>
+    <span class="fbtn">Filter</span>
+  </div>
+
+  <div class="grid">
+    <div>
+      <div class="card">
+        <span class="card__art"></span>
+        <span class="card__ovr">62<span>OVR</span></span>
+        <span class="card__plate"><span class="card__nm">DARRYL KOENDERS</span><span class="card__tier">Gold &middot; All-rounder</span></span>
+        <span class="card__price"><svg aria-hidden="true" fill="none" height="11" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewBox="0 0 24 24" width="11"><circle cx="12" cy="12" r="8.5" /><path d="M12 8v8" /></svg>430</span>
+      </div>
+      <p class="seller">Sold by Joris B.</p>
+      <span class="buy">430</span>
+    </div>
+    <div>
+      <div class="card">
+        <span class="card__art" style="background:radial-gradient(58% 44% at 30% 24%, rgba(255,255,255,.45), transparent 70%),linear-gradient(200deg,#9a8f86 0%,#6f6459 48%,#4a423a 100%)"></span>
+        <span class="card__ovr">54<span>OVR</span></span>
+        <span class="card__plate"><span class="card__nm">SANDER DE WIT</span><span class="card__tier">Silver &middot; Finisher</span></span>
+        <span class="card__price"><svg aria-hidden="true" fill="none" height="11" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewBox="0 0 24 24" width="11"><circle cx="12" cy="12" r="8.5" /><path d="M12 8v8" /></svg>210</span>
+      </div>
+      <p class="seller">Sold by Ruben V.</p>
+      <span class="buy">210</span>
+    </div>
+  </div>
+</main>
+
+<nav class="tabbar">
+  <span><svg aria-hidden="true" fill="none" height="20" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewBox="0 0 24 24" width="20"><path d="M4 11.5 12 4l8 7.5" /><path d="M6 10v9h12v-9" /><path d="M10 19v-5h4v5" /></svg>Home</span>
+  <span><svg aria-hidden="true" fill="none" height="20" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewBox="0 0 24 24" width="20"><rect height="15" rx="1.6" transform="rotate(8 12.5 11)" width="11" x="7" y="3.5" /><rect fill="#0b0a07" height="15" rx="1.6" width="11" x="4.5" y="6" /></svg>Collection</span>
+  <span><svg aria-hidden="true" fill="none" height="20" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewBox="0 0 24 24" width="20"><path d="M4 8.5 12 4l8 4.5v8L12 21l-8-4.5z" /><path d="M4 8.5 12 13l8-4.5" /><path d="M12 13v8" /></svg>Packs</span>
+  <span class="on"><svg aria-hidden="true" fill="none" height="20" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewBox="0 0 24 24" width="20"><path d="M3 8h13" /><path d="M13 4l4 4-4 4" /><path d="M21 16H8" /><path d="M11 20l-4-4 4-4" /></svg>Market</span>
+  <span><svg aria-hidden="true" fill="none" height="20" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewBox="0 0 24 24" width="20"><path d="M12 3l7 2.5v5.2C19 15.8 16 19 12 21c-4-2-7-5.2-7-10.3V5.5z" /><path d="M12 8v6" /><path d="M9.2 10.8h5.6" /></svg>Club</span>
+</nav>
+</x-dc>
+</body>
+</html>

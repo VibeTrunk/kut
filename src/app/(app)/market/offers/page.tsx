@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { formatDate } from "@/lib/format";
 import { requireUser } from "@/lib/auth/user";
+import { getNavContext } from "@/lib/nav/context";
+import { buildMarketTabs } from "@/lib/nav/routes";
+import { SectionTabs } from "@/components/app-shell/section-tabs";
 import { createClient } from "@/lib/supabase/server";
 import { RespondToOfferForms, WithdrawOfferForm } from "./offer-response-forms";
 
@@ -123,6 +126,8 @@ export default async function TradeOffersPage({ searchParams }: OffersPageProps)
     searchParams,
   ]);
   if (error) throw new Error("Could not load your trade offers.");
+  const { incomingOfferCount } = await getNavContext();
+  const marketTabs = buildMarketTabs(incomingOfferCount);
   const offers = (data ?? []) as TradeOffer[];
   const incoming = offers.filter((offer) => !offer.is_outgoing);
   const outgoing = offers.filter((offer) => offer.is_outgoing);
@@ -145,8 +150,12 @@ export default async function TradeOffersPage({ searchParams }: OffersPageProps)
           <h1 className="display mt-3 text-5xl sm:text-6xl">Trade offers</h1>
           <p className="mt-3 text-ink-dim">
             Coin-and-card offers on market listings. Everything you offer is escrowed until the seller accepts or
-            declines, or the offer expires. <Link className="text-brass underline" href="/market">Back to the market</Link>.
+            declines, or the offer expires.
           </p>
+          {/* The Buy tab replaces the old "Back to the market" link. */}
+          <div className="mt-5">
+            <SectionTabs label="Market" tabs={marketTabs} />
+          </div>
         </header>
 
         {flash && <p className="rounded-2xl border border-moss-line/40 bg-moss-bg/50 p-4 font-bold text-moss">{flash}</p>}

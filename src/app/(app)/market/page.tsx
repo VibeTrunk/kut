@@ -1,7 +1,10 @@
 import Link from "next/link";
-import { IconCoin, IconOffer, IconSearch } from "@/components/icons";
+import { IconCoin, IconSearch } from "@/components/icons";
+import { SectionTabs } from "@/components/app-shell/section-tabs";
 import { LiveCard, type LiveCardPlayer } from "@/components/live-card";
 import { requireUser } from "@/lib/auth/user";
+import { getNavContext } from "@/lib/nav/context";
+import { buildMarketTabs } from "@/lib/nav/routes";
 import { resolvePhotoUrls } from "@/lib/player-photos";
 import { createClient } from "@/lib/supabase/server";
 import { BuyListingForm } from "./buy-listing-form";
@@ -67,26 +70,26 @@ export default async function MarketPage({ searchParams }: MarketPageProps) {
   const listings = (data ?? []) as Listing[];
   const balance = wallet?.balance ?? 0;
   const photoUrls = await resolvePhotoUrls(supabase, listings.map((listing) => listing.photo_path));
+  // getNavContext is React.cache()d and the (app) layout already called it this
+  // request, so this is free and guarantees the tab badge matches the chrome one.
+  const { incomingOfferCount } = await getNavContext();
+  const marketTabs = buildMarketTabs(incomingOfferCount);
 
   return (
     <main className="board-ground min-h-screen p-5 text-ink sm:p-10">
       <section className="mx-auto max-w-6xl space-y-8 py-4 sm:py-8">
-        <header className="flex flex-wrap items-end justify-between gap-4">
-          <div className="space-y-3">
-            <p className="text-[0.7rem] font-extrabold uppercase tracking-[0.26em] text-brass">Transfer market</p>
-            <h1 className="display text-5xl sm:text-6xl">Buy Live Cards</h1>
-            <p className="max-w-2xl text-base leading-relaxed text-ink-dim">
-              Buy now, or make a coin-and-card offer. Buy-now prices are paid in KUT Coins; a 5% tax is burned.
-            </p>
-          </div>
-          <Link
-            className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-line px-4 py-2 text-sm font-bold text-ink-dim hover:border-brass hover:text-brass"
-            href="/market/offers"
-          >
-            <IconOffer aria-hidden="true" className="h-4 w-4" />
-            Trade offers
-          </Link>
+        <header className="space-y-3">
+          <p className="text-[0.7rem] font-extrabold uppercase tracking-[0.26em] text-brass">Transfer market</p>
+          {/* "Market" everywhere — the tab, this heading and the back link from a
+              listing. The old "Buy Live Cards" named an action rather than a place,
+              and now sits above a tab that also says Buy (ADR-053). */}
+          <h1 className="display text-5xl sm:text-6xl">Market</h1>
+          <p className="max-w-2xl text-base leading-relaxed text-ink-dim">
+            Buy now, or make a coin-and-card offer. Buy-now prices are paid in KUT Coins; a 5% tax is burned.
+          </p>
         </header>
+
+        <SectionTabs label="Market" tabs={marketTabs} />
 
         {/* Six stacked full-width controls cost ~352px on a phone — more than the
             viewport had left after the page header, so the first listing sat below

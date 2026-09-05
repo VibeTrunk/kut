@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth/user";
+import { SectionTabs } from "@/components/app-shell/section-tabs";
+import { LEADERBOARD_TABS } from "@/lib/nav/routes";
 import { createClient } from "@/lib/supabase/server";
 
 type LeaderboardClub = {
@@ -53,6 +55,11 @@ export default async function LeaderboardPage() {
             </Link>
             .
           </p>
+          {/* Clubs and Players are two rankings of the same season, so they are
+              tabs of one section rather than two menu rows (ADR-053). */}
+          <div className="pt-2">
+            <SectionTabs label="Leaderboard" tabs={LEADERBOARD_TABS} />
+          </div>
         </header>
 
         {clubs.length === 0 ? (

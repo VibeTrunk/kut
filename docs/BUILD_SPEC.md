@@ -1733,6 +1733,42 @@ issue per football week — the rating engine's own unit (§9) — with each
 session in that week as a matchday report inside it. Because the navigation is
 a public surface, this list is the canonical record of it.
 
+**Update (2026-09-05, ADR-053).** The More menu is **removed**. Every
+destination is now a primary tab, a tab within a section, or one of two
+single-purpose chrome controls, so that each one can show "you are here" —
+nine of fifteen previously could not.
+
+Primary navigation, **identical on desktop and mobile**:
+
+1. **Home** (`/`) — also owns the Chronicle (`/chronicle`)
+2. **Collection** (`/club/collection`) — also owns Club Value (`/club/value`)
+3. **Packs** (`/club/packs`)
+4. **Market** (`/market`) — badge: incoming trade offers
+5. **Leaderboard** (`/leaderboard`) — also owns the player directory
+   (`/players`)
+
+Section tabs, inside a primary destination:
+
+- Market: **Buy** (`/market`) · **Offers** (`/market/offers`, badged)
+- Leaderboard: **Clubs** (`/leaderboard`) · **Players** (`/players`)
+- Collection: **Album** · **Manage** (`?view=manage`, unchanged from §41)
+- Admin: the existing six-tab row
+
+Chrome controls, right of the bar on both platforms:
+
+- **Messages** (`/messages`) — its own control, carrying a numeric unread
+  count. It replaces the single undifferentiated dot that previously merged
+  unread messages and incoming offers on the "More" button.
+- **Account** — the avatar, now the menu trigger rather than a decorative
+  disc: Settings, My card, How KUT works, Admin (admins only), Log out.
+
+`/club` is a **permanent redirect to `/club/collection`**, as `/sessions`
+redirects to `/chronicle`. Its Club Value figure moved to the Collection
+header; its card and unique-player counts were already there.
+
+Desktop may use side/top navigation. Because the navigation is a public
+surface, this list remains the canonical record of it.
+
 ---
 
 ## 47. Home screen
@@ -1769,6 +1805,13 @@ Home should answer "what changed?" quickly.
 > `ts >= 2026-08-30` floor (no pager, no `?before=` cursor); dates render
 > date-only. The `kut.activity_feed` view is unchanged.
 >
+> **Amended (ADR-053):** Home carries a direct link to the current Chronicle
+> issue. Home and the Chronicle both answer "what happened this week" — Home's
+> own heading is "This week in KUT" — but Home previously reached it only
+> through a session row in the activity feed, and the Chronicle lost its More
+> menu entry when that menu was removed. A fuller Matchday Update hero (below)
+> remains Phase 2 scope.
+
 > **Amended (ADR-044):** `kut.activity_feed` also emits `kind = 'trade'` (added
 > with trade offers, ADR-042); `src/lib/activity.ts` renders it as
 > "X traded Y to Z for N KUT Coins." and carries a `default` arm so an

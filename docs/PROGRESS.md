@@ -2137,3 +2137,99 @@ against a local Supabase stack signed in as a real member at 390x844.
 The 31.5px figure is arithmetic from the measured 61.5px bar, not a reading
 taken on a notched device — no such device was available here. Worth a look on
 a real iPhone when one is to hand.
+
+## Five tabs, a messages control and an account menu (ADR-053) — 2026-09-05
+
+Second of four PRs from the navigation UX audit, and the substantial one. The
+"More" overflow menu is removed entirely; every destination is now a primary
+tab, a tab within a section, or one of two single-purpose chrome controls.
+
+**The headline, and it is measured.** Nine of fifteen member destinations lit
+nothing in the chrome before this change — active styling was computed only
+for `primaryNavItems`, and the "More" button never took a state of its own.
+Driven through all fourteen member routes at 390px afterwards: **unlit
+destinations: none.**
+
+**Primary tabs** are now Home, Collection, Packs, Market, Leaderboard, the same
+on the desktop bar and the mobile bottom bar. `/club` retires to a
+`permanentRedirect("/club/collection")`, following `/sessions`. Its whole job
+was linking to Collection and Packs — both already tabs — plus Club Value, and
+it closed on a "squad building is planned" placeholder.
+
+**Section tabs** replace two menu rows: Market gains `Buy` / `Offers` and the
+Leaderboard gains `Clubs` / `Players`. The new `SectionTabs` serves both plus
+the Admin row, which migrated onto it in the same change — three consumers, so
+the abstraction was proved against a third shape rather than assumed. Admin's
+targets grew from ~34px to ~44px as a result, which `BUILD_SPEC.md` §52 asks
+for and which makes the admin header slightly taller.
+
+**One event, one badge, one place.** An incoming trade offer used to increment
+`incomingOfferCount` *and* write an unread notification, and both then merged
+into a single 6px dot. The offer count now sits on the Market tab and the
+Offers section tab; unread messages sit on a Messages control of their own. The
+dot is gone. Both market pages read the count from `getNavContext()`, which is
+`React.cache()`d and already called by the `(app)` layout in the same request —
+free, and it makes a disagreement between the two badges impossible.
+
+**The avatar became the account menu.** It was `aria-hidden="true"` with no
+link or handler, next to a control labelled "More" whose panel opened headed by
+the member's display name; the two had swapped jobs.
+
+**Route matching moved to a pure table.** `src/lib/nav/routes.ts` has no React,
+no `next/*` and no Supabase imports, so the rules are unit-testable in a repo
+with no jsdom — the precedent `src/components/pack-reveal-state.ts` sets and
+documents in its own header. The per-item `isActive` closures could not survive
+this: `/market` and `/market/offers` are both tabs, so an independent prefix
+test lights both on the offers page while an independent exact test stops
+lighting anything on `/market/[listingId]`. Only a whole-list longest-prefix
+resolver gets both right.
+
+**Two destinations needed an owner, found during verification.** The first pass
+left `/chronicle` and `/club/value` lighting nothing — both had lost their menu
+row and neither belonged to a tab. Home now owns the Chronicle (both answer
+"what happened this week"; Home's own heading is "This week in KUT") and
+Collection owns Club Value, which is also where its figure now lives. A test
+asserts every member destination resolves to some tab, so this cannot regress
+quietly.
+
+Also: the duplicated Album/Manage toggle is resolved — both Collection headers
+render through one `CollectionHeader` — and five icons lost their last
+consumer, so `IconClub`, `IconMenu`, `IconDirectory` and `IconOffer` are
+deleted while `IconScale` and `IconSessions` are reused and `IconUser` is new.
+
+Front-end only: no migration, no schema, no economy value. Part L untouched.
+
+Spec updated with this entry: §46 rewritten as the canonical nav record, §47
+amended for Home's Chronicle link.
+
+Verification: `npm run verify:fast` (87 unit tests, up 32 from 55) +
+`next build` — the build is not optional here, since `verify:fast` never
+compiles and this moved code across the server/client boundary in three
+places. Then driven against a local Supabase stack signed in as a real member,
+with a real incoming trade offer created through `create_listing` +
+`propose_trade` rather than fabricated rows, so both badges had live data.
+
+- **Wayfinding, 390px.** All fourteen member destinations light something:
+  eleven light a tab, three (`/settings`, `/settings/card`, `/how-it-works`)
+  light the avatar ring. `aria-current` resolves as designed — on
+  `/market/offers` the Market tab is `"true"` and the Offers tab is `"page"`,
+  so the screen never carries two `aria-current="page"`.
+- **Badges.** Market tab and Offers section tab both render `1`; the messages
+  control announces `"Messages, 1 unread"`.
+- **Bottom bar, 320px and 390px.** Five equal tracks (64px / 78px), no
+  horizontal overflow, no label clipping — "Leaderboard" is the longest label
+  the bar has carried and measures 61.1px in a 64px track at 320px, which is
+  what the `text-[10px] min-[360px]:text-[11px]` step is for. Tab height 54px,
+  above the 44px target. The badge is absolutely positioned against the icon,
+  so it does not widen a track or grow the row.
+- **`/club`** redirects to `/club/collection`. `club/loading.tsx` is
+  deliberately kept: it is the Suspense boundary for `/club/collection`,
+  `/club/packs` and `/club/value`, not just the retired page.
+- **Keyboard.** Enter opens the account menu, Escape closes it and returns
+  focus to the trigger; no `role="menu"` remains in the document.
+- **No page errors** on any route at any width.
+
+Note for KB-010's numbers: the bottom bar now measures 55–56px rather than the
+61.5px recorded there, because the labels gained `leading-none` and the 320px
+size step. The safe-area reservation is unchanged and still clears it, with
+more slack than before.

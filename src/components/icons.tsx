@@ -63,35 +63,12 @@ export function IconMarket(props: IconProps) {
   );
 }
 
-export function IconClub(props: IconProps) {
-  return base(
-    <>
-      <path d="M12 3l7 2.5v5.2C19 15.8 16 19 12 21c-4-2-7-5.2-7-10.3V5.5z" />
-      <path d="M12 8v6" />
-      <path d="M9.2 10.8h5.6" />
-    </>,
-    props,
-  );
-}
-
 export function IconLeaderboard(props: IconProps) {
   return base(
     <>
       <path d="M5 20V11" />
       <path d="M12 20V4" />
       <path d="M19 20v-7" />
-    </>,
-    props,
-  );
-}
-
-export function IconDirectory(props: IconProps) {
-  return base(
-    <>
-      <circle cx="9" cy="8" r="3" />
-      <path d="M3.5 19c0-3 2.5-5 5.5-5s5.5 2 5.5 5" />
-      <path d="M15.5 5.2a3 3 0 0 1 0 5.6" />
-      <path d="M17.5 14.3c2 .4 3 1.9 3 4.7" />
     </>,
     props,
   );
@@ -118,6 +95,16 @@ export function IconAdmin(props: IconProps) {
     <>
       <path d="M12 3l7 2.5v5.2C19 15.8 16 19 12 21c-4-2-7-5.2-7-10.3V5.5z" />
       <path d="M9 11.5l2 2 4-4.5" />
+    </>,
+    props,
+  );
+}
+
+export function IconUser(props: IconProps) {
+  return base(
+    <>
+      <circle cx="12" cy="8" r="3.4" />
+      <path d="M5 20c0-3.6 3-6 7-6s7 2.4 7 6" />
     </>,
     props,
   );
@@ -157,23 +144,8 @@ export function IconScale(props: IconProps) {
   );
 }
 
-export function IconOffer(props: IconProps) {
-  return base(
-    <>
-      <path d="M3 7h11l4 4-6 6-4-4" />
-      <path d="M7 11h0" />
-      <path d="M14 14l3 3 4-4-4-4" />
-    </>,
-    props,
-  );
-}
-
 export function IconChevronDown(props: IconProps) {
   return base(<path d="M7 10l5 5 5-5" />, { strokeWidth: 2, ...props });
-}
-
-export function IconMenu(props: IconProps) {
-  return base(<path d="M4 7h16M4 12h16M4 17h16" />, { strokeWidth: 2, ...props });
 }
 
 export function IconSearch(props: IconProps) {

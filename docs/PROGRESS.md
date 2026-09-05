@@ -2233,3 +2233,80 @@ Note for KB-010's numbers: the bottom bar now measures 55–56px rather than the
 61.5px recorded there, because the labels gained `leading-none` and the 320px
 size step. The safe-area reservation is unchanged and still clears it, with
 more slack than before.
+
+## One filter bar across the three card grids, and KB-011 — 2026-09-05
+
+Third of four PRs from the navigation UX audit.
+
+**Three grids, three vocabularies, two behaviours.** The Market, the player
+directory and the Collection's Manage grid show the same cards filtered by the
+same three fields, and each did it differently: the Market and the directory
+used a `<form>` of selects behind an explicit **Filter** submit; Manage used
+instant-navigation chips for tier, a link row for sort, and a search box with no
+button. Tapping a tier chip in your Collection changed the grid; choosing a tier
+on the Market did nothing until you found the submit button.
+
+They now share `src/components/filter-bar.tsx`: search on the left, chips for a
+short enumerated set (tier), a select for a long one (archetype), sort on the
+right, and **everything applies on click**. The Market's min/max price pair and
+the directory's archetype select join the same bar without changing its grammar.
+
+**Below `sm` the bar collapses to a Filters pill plus a chip per active filter,
+with the full set in a sheet.** That sheet is also the one honest home for an
+Apply button — the price bounds are the only control here that genuinely wants
+one, because a half-typed number is not a filter. On the Market this replaces
+the two-column block KB-008 cut to 232px; the bar is now one row at every width.
+
+**URL rules are pure and tested.** `src/lib/filters.ts` holds `buildFilterHref`
+and `countActiveFilters` with no React or `next/*` imports, the same boundary
+`src/lib/nav/routes.ts` uses. Defaults stay out of the URL, so the canonical
+address is `/market` rather than `/market?sort=newest`; preserved params survive
+every change, which is what keeps `?view=manage` from throwing a member back
+into the album when they pick a tier.
+
+**Two inconsistencies fixed while here.** The Collection's Manage grid listed
+tiers highest-first (Elite → Common) while the Market, the directory *and* the
+album's own lens menu list them ascending; it now matches. And its empty-state
+"Clear them" link dropped `view=manage`, so clearing a filter silently switched
+you to the album view.
+
+**KB-011 — the landing page.** `login-form.tsx` ran
+`router.replace("/admin/attendance")` after every successful sign-in regardless
+of role; `requireAdmin()` then bounced members to `/`, so the end state was
+right and there was never an authorization hole, but every member paid a
+navigation through a page they could not open. Everyone now lands on `/`,
+admins included — Home is the page built to answer "what changed since I was
+last here", and there is no reason for an admin's first screen to be attendance
+either.
+
+Deviation from the plan, deliberately: the album's **Lens** was to stop carrying
+its own By type / By tier menus "once the shared bar offers them". The shared
+bar is not rendered in album mode — the Lens *is* the album's filter — so
+removing them would delete the capability rather than move it. Left alone.
+
+Note: the bar renders twice in the DOM, once for each breakpoint, in the same
+`hidden sm:flex` / `sm:hidden` pattern `AppNav` already uses for its two
+headers. Only one is ever visible, and `display: none` keeps the hidden copy out
+of the accessibility tree.
+
+Front-end only: no migration, no schema, no economy value. No ADR: `BUILD_SPEC`
+§36 lists which filters must exist — player search, rarity, min/max price and
+the three sorts — and every one is preserved; it does not specify how they are
+presented.
+
+Verification: `npm run verify:fast` (100 unit tests, up 13) + `next build`, then
+driven against a local Supabase stack signed in as a real member.
+
+- **Sign-in lands on `/`** for a `role = user` account.
+- **One grammar at 390px** — all three surfaces render the Filters pill and the
+  sort control, with the desktop row hidden and no horizontal overflow.
+- **Sheet** opens, locks body scroll, offers Apply price, closes on Escape and
+  restores scroll.
+- **Applies on click** — tapping Gold on the Market gives `?rarity=gold` and the
+  pill reads "Filters 1"; choosing a sort gives `?rarity=gold&sort=price`, and
+  choosing the default again drops `sort=` from the URL entirely.
+- **`?view=manage` survives** a tier change on the Collection.
+- **Desktop 1440** — the inline row on all three, chips in the same ascending
+  tier order everywhere, archetype select present only on the directory, no
+  overflow.
+- **No page errors** on any surface at any width.

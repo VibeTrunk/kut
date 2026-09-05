@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { IconCoin, IconSearch } from "@/components/icons";
+import { IconCoin } from "@/components/icons";
+import { FilterBar } from "@/components/filter-bar";
 import { SectionTabs } from "@/components/app-shell/section-tabs";
 import { LiveCard, type LiveCardPlayer } from "@/components/live-card";
 import { requireUser } from "@/lib/auth/user";
@@ -30,7 +31,12 @@ type Listing = {
 };
 
 const rarities = ["common", "bronze", "silver", "gold", "holo", "elite"] as const;
-const fieldClass = "min-h-11 rounded-xl border border-line bg-board-deep/60 px-3.5 text-sm font-semibold text-ink placeholder:text-ink-faint focus:border-brass/60 focus:outline-none";
+const TIER_OPTIONS = rarities.map((tier) => ({ value: tier, label: tier[0].toUpperCase() + tier.slice(1) }));
+const SORT_OPTIONS = [
+  { value: "newest", label: "Newest" },
+  { value: "price", label: "Price" },
+  { value: "ovr", label: "OVR" },
+];
 
 export default async function MarketPage({ searchParams }: MarketPageProps) {
   const user = await requireUser();
@@ -91,42 +97,21 @@ export default async function MarketPage({ searchParams }: MarketPageProps) {
 
         <SectionTabs label="Market" tabs={marketTabs} />
 
-        {/* Six stacked full-width controls cost ~352px on a phone — more than the
-            viewport had left after the page header, so the first listing sat below
-            the fold. Two columns instead: search across the top, the two selects
-            paired, the price bounds paired, then Filter. Four rows, ~230px. DOM
-            order groups them the same way the rows do, so the `lg:` track order
-            follows it (sort ahead of the price pair). */}
-        <form className="grid grid-cols-2 gap-2.5 rounded-2xl border border-line/60 bg-board-deep/40 p-3 sm:gap-3 sm:p-3.5 lg:grid-cols-[minmax(0,1fr)_10rem_9rem_7rem_7rem_auto]">
-          <label className={`${fieldClass} col-span-2 flex items-center gap-2 lg:col-span-1`}>
-            <IconSearch aria-hidden="true" className="h-4 w-4 shrink-0 text-ink-faint" />
-            <input
-              aria-label="Search player"
-              className="w-full bg-transparent focus:outline-none"
-              defaultValue={query.q}
-              name="q"
-              placeholder="Search player"
-            />
-          </label>
-          <select aria-label="Tier" className={`${fieldClass} capitalize`} defaultValue={query.rarity} name="rarity">
-            <option value="">Any tier</option>
-            {rarities.map((rarity) => (
-              <option className="capitalize" key={rarity} value={rarity}>
-                {rarity}
-              </option>
-            ))}
-          </select>
-          <select aria-label="Sort" className={fieldClass} defaultValue={query.sort} name="sort">
-            <option value="newest">Newest</option>
-            <option value="price">Price</option>
-            <option value="ovr">OVR</option>
-          </select>
-          <input aria-label="Minimum price" className={fieldClass} defaultValue={query.min} inputMode="numeric" name="min" placeholder="Min" />
-          <input aria-label="Maximum price" className={fieldClass} defaultValue={query.max} inputMode="numeric" name="max" placeholder="Max" />
-          <button className="col-span-2 min-h-11 rounded-xl bg-gradient-to-b from-[#eebd63] to-[#d29a34] px-5 text-sm font-black text-ink-on-accent hover:brightness-105 lg:col-span-1" type="submit">
-            Filter
-          </button>
-        </form>
+        {/* The six controls used to stack full width on a phone (~352px), which
+            pushed the first listing below the fold; KB-008 cut that to a
+            two-column grid at ~232px. They now collapse to a Filters pill and a
+            sheet instead, so the bar costs one row at every width, and the price
+            bounds get the sheet's Apply button — the one control here that
+            genuinely wants a submit. */}
+        <FilterBar
+          basePath="/market"
+          chips={{ name: "rarity", allLabel: "All tiers", options: TIER_OPTIONS }}
+          defaultSort="newest"
+          range={{ minName: "min", maxName: "max", minLabel: "Min", maxLabel: "Max" }}
+          searchPlaceholder="Search player"
+          sorts={SORT_OPTIONS}
+          values={{ q: query.q, rarity: query.rarity, sort: query.sort, min: query.min, max: query.max }}
+        />
 
         {listings.length === 0 ? (
           <p className="rounded-2xl border border-dashed border-line p-10 text-center text-ink-dim">

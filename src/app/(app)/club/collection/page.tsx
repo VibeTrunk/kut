@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { IconSearch, IconSort } from "@/components/icons";
+import { FilterBar } from "@/components/filter-bar";
 import { LiveCard, type LiveCardPlayer } from "@/components/live-card";
 import { requireUser } from "@/lib/auth/user";
 import { resolvePhotoUrls } from "@/lib/player-photos";
@@ -38,22 +38,17 @@ type CollectionPageProps = {
   searchParams: Promise<{ discard?: string; purchase?: string; q?: string; rarity?: string; sort?: string; view?: string; page?: string; lens?: string }>;
 };
 
-const RARITIES = ["elite", "holo", "gold", "silver", "bronze", "common"] as const;
+// Ascending, matching the Market, the player directory and the album's own lens
+// menu. This grid was the only surface listing tiers highest-first.
+const RARITIES = ["common", "bronze", "silver", "gold", "holo", "elite"] as const;
 const SORTS = {
   ovr: "Rating, high to low",
   name: "Name, A to Z",
   value: "Discard value",
 } as const;
 type SortKey = keyof typeof SORTS;
-
-function href(base: Record<string, string | undefined>, patch: Record<string, string | undefined>) {
-  const params = new URLSearchParams();
-  for (const [key, value] of Object.entries({ ...base, ...patch })) {
-    if (value) params.set(key, value);
-  }
-  const query = params.toString();
-  return query ? `/club/collection?${query}` : "/club/collection";
-}
+const TIER_OPTIONS = RARITIES.map((tier) => ({ value: tier, label: tier[0].toUpperCase() + tier.slice(1) }));
+const SORT_OPTIONS = (Object.keys(SORTS) as SortKey[]).map((key) => ({ value: key, label: SORTS[key] }));
 
 export default async function CollectionPage({ searchParams }: CollectionPageProps) {
   const user = await requireUser();
@@ -104,7 +99,6 @@ export default async function CollectionPage({ searchParams }: CollectionPagePro
   const term = query.q?.trim().slice(0, 80) ?? "";
   const rarity = RARITIES.includes(query.rarity as (typeof RARITIES)[number]) ? query.rarity : undefined;
   const sort: SortKey = query.sort && query.sort in SORTS ? (query.sort as SortKey) : "ovr";
-  const base = { q: term || undefined, rarity, sort: sort === "ovr" ? undefined : sort };
 
   const cards = all
     .filter((card) => (rarity ? card.rarity_tier === rarity : true))
@@ -153,73 +147,30 @@ export default async function CollectionPage({ searchParams }: CollectionPagePro
           </div>
         ) : (
           <>
-            {/* Collection now carries the same search / tier / sort vocabulary the
-                Market always had, so the two grids stop behaving differently. */}
-            <div className="flex flex-wrap items-center gap-3 border-b border-line/40 pb-6">
-              <form action="/club/collection" className="flex min-h-11 items-center gap-2 rounded-xl border border-line bg-board-deep/60 px-3.5" >
-                <IconSearch aria-hidden="true" className="h-4 w-4 shrink-0 text-ink-faint" />
-                <input
-                  aria-label="Search your cards"
-                  className="w-44 bg-transparent text-sm font-semibold text-ink placeholder:text-ink-faint focus:outline-none"
-                  defaultValue={term}
-                  name="q"
-                  placeholder="Search your cards"
-                />
-                {rarity && <input name="rarity" type="hidden" value={rarity} />}
-                {sort !== "ovr" && <input name="sort" type="hidden" value={sort} />}
-              </form>
-
-              <Link
-                className={`min-h-9 rounded-full border px-3.5 py-1.5 text-xs font-extrabold capitalize ${
-                  rarity ? "border-line bg-board-deep/50 text-ink-dim hover:text-ink" : "border-brass/50 bg-brass/12 text-brass"
-                }`}
-                href={href(base, { rarity: undefined })}
-              >
-                All tiers
-              </Link>
-              {RARITIES.map((tier) => (
-                <Link
-                  className={`min-h-9 rounded-full border px-3.5 py-1.5 text-xs font-extrabold capitalize ${
-                    rarity === tier ? "border-brass/50 bg-brass/12 text-brass" : "border-line bg-board-deep/50 text-ink-dim hover:text-ink"
-                  }`}
-                  href={href(base, { rarity: tier })}
-                  key={tier}
-                >
-                  {tier}
-                </Link>
-              ))}
-
-              <span className="grow" />
-
-              <div className="flex items-center gap-1.5 rounded-xl border border-line bg-board-deep/60 px-2">
-                <IconSort aria-hidden="true" className="h-4 w-4 shrink-0 text-ink-faint" />
-                {(Object.keys(SORTS) as SortKey[]).map((key) => (
-                  <Link
-                    className={`min-h-11 px-2 py-2.5 text-xs font-bold ${sort === key ? "text-brass" : "text-ink-faint hover:text-ink"}`}
-                    href={href(base, { sort: key === "ovr" ? undefined : key })}
-                    key={key}
-                  >
-                    {SORTS[key]}
-                  </Link>
-                ))}
-              </div>
-            </div>
+            {/* The same bar the Market and the player directory use. This grid
+                had its own vocabulary for exactly the same three fields: chips
+                for tier, a link row for sort, and a search box with no button. */}
+            <FilterBar
+              basePath="/club/collection"
+              chips={{ name: "rarity", allLabel: "All tiers", options: TIER_OPTIONS }}
+              defaultSort="ovr"
+              preserve={{ view: "manage" }}
+              searchPlaceholder="Search your cards"
+              sorts={SORT_OPTIONS}
+              summary={filtered ? `${cards.length} of ${all.length} shown` : undefined}
+              values={{ q: term || undefined, rarity, sort }}
+            />
 
             {cards.length === 0 ? (
               <p className="rounded-2xl border border-dashed border-line p-8 text-center text-ink-dim">
                 No cards match these filters.{" "}
-                <Link className="font-bold text-brass hover:underline" href="/club/collection">
+                <Link className="font-bold text-brass hover:underline" href="/club/collection?view=manage">
                   Clear them
                 </Link>
                 .
               </p>
             ) : (
               <>
-                {filtered && (
-                  <p className="text-xs font-bold text-ink-faint">
-                    {cards.length} of {all.length} shown
-                  </p>
-                )}
                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5 lg:gap-6">
                   {cards.map((card) => {
                     const cardPlayer: LiveCardPlayer = {

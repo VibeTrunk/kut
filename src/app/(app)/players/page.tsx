@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { IconSearch } from "@/components/icons";
+import { FilterBar } from "@/components/filter-bar";
 import { ARCHETYPES, ARCHETYPE_LABELS, isArchetype } from "@/game/archetypes";
 import { LiveCard, type LiveCardPlayer } from "@/components/live-card";
 import { requireUser } from "@/lib/auth/user";
@@ -27,7 +27,12 @@ type DirectoryRow = {
 };
 
 const RARITIES = ["common", "bronze", "silver", "gold", "holo", "elite"] as const;
-const fieldClass = "min-h-11 rounded-xl border border-line bg-board-deep/60 px-3.5 text-sm font-semibold text-ink placeholder:text-ink-faint focus:border-brass/60 focus:outline-none";
+const TIER_OPTIONS = RARITIES.map((tier) => ({ value: tier, label: tier[0].toUpperCase() + tier.slice(1) }));
+const SORT_OPTIONS = [
+  { value: "ovr", label: "Highest OVR" },
+  { value: "name", label: "Name" },
+  { value: "newest", label: "Newest" },
+];
 
 type PlayerDirectoryPageProps = {
   searchParams: Promise<{ q?: string; rarity?: string; archetype?: string; sort?: string }>;
@@ -72,42 +77,21 @@ export default async function PlayerDirectoryPage({ searchParams }: PlayerDirect
           </div>
         </header>
 
-        <form className="grid gap-3 rounded-2xl border border-line/60 bg-board-deep/40 p-3.5 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_10rem_12rem_10rem_auto]">
-          <label className={`${fieldClass} flex items-center gap-2`}>
-            <IconSearch aria-hidden="true" className="h-4 w-4 shrink-0 text-ink-faint" />
-            <input
-              aria-label="Search player"
-              className="w-full bg-transparent focus:outline-none"
-              defaultValue={query.q}
-              name="q"
-              placeholder="Search player"
-            />
-          </label>
-          <select aria-label="Tier" className={`${fieldClass} capitalize`} defaultValue={query.rarity} name="rarity">
-            <option value="">Any tier</option>
-            {RARITIES.map((rarity) => (
-              <option className="capitalize" key={rarity} value={rarity}>
-                {rarity}
-              </option>
-            ))}
-          </select>
-          <select aria-label="Archetype" className={fieldClass} defaultValue={query.archetype} name="archetype">
-            <option value="">Any archetype</option>
-            {ARCHETYPES.map((archetype) => (
-              <option key={archetype} value={archetype}>
-                {ARCHETYPE_LABELS[archetype]}
-              </option>
-            ))}
-          </select>
-          <select aria-label="Sort" className={fieldClass} defaultValue={query.sort} name="sort">
-            <option value="ovr">Highest OVR</option>
-            <option value="name">Name</option>
-            <option value="newest">Newest</option>
-          </select>
-          <button className="min-h-11 rounded-xl bg-gradient-to-b from-[#eebd63] to-[#d29a34] px-5 text-sm font-black text-ink-on-accent hover:brightness-105" type="submit">
-            Filter
-          </button>
-        </form>
+        <FilterBar
+          basePath="/players"
+          chips={{ name: "rarity", allLabel: "All tiers", options: TIER_OPTIONS }}
+          defaultSort="ovr"
+          searchPlaceholder="Search player"
+          selects={[
+            {
+              name: "archetype",
+              anyLabel: "Any archetype",
+              options: ARCHETYPES.map((archetype) => ({ value: archetype, label: ARCHETYPE_LABELS[archetype] })),
+            },
+          ]}
+          sorts={SORT_OPTIONS}
+          values={{ q: query.q, rarity: query.rarity, archetype: query.archetype, sort: query.sort }}
+        />
 
         {players.length === 0 ? (
           <p className="rounded-2xl border border-dashed border-line p-8 text-center text-ink-dim">

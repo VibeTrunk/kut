@@ -27,7 +27,12 @@ export function LoginForm() {
       return;
     }
 
-    router.replace("/admin/attendance");
+    // Everyone lands on Home, admins included (KB-011). Home is the page built
+    // to answer "what changed since I was last here" — the week's risers, club
+    // activity, coins, Club Value, rank and the current Chronicle issue. This
+    // used to be a hardcoded "/admin/attendance" for every member, which
+    // requireAdmin() then bounced non-admins away from.
+    router.replace("/");
     router.refresh();
   }
 

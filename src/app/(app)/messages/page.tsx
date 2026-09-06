@@ -11,7 +11,11 @@ type NotificationEventType =
   | "pack_opened"
   | "admin_notice"
   | "trade_offer"
-  | "trade_response";
+  | "trade_response"
+  | "session_report"
+  | "session_results"
+  | "report_correction"
+  | "kudos_awarded";
 
 type UserNotification = {
   id: string;
@@ -33,6 +37,10 @@ const EVENT_LABELS: Record<NotificationEventType, string> = {
   admin_notice: "Club notice",
   trade_offer: "Trade offer",
   trade_response: "Trade update",
+  session_report: "Session report",
+  session_results: "Session results",
+  report_correction: "Report correction",
+  kudos_awarded: "Kudos awarded",
 };
 
 export default async function MessagesPage() {

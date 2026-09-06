@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth/user";
 import { formatChronicleDate, isMonday, issueStandfirst } from "@/lib/chronicle";
+import { finalizeDueSurveys } from "@/lib/session-reports/finalize-due-surveys";
 import { createClient } from "@/lib/supabase/server";
 
 type Week = { week_start: string; week_end: string; session_count: number; appearance_count: number; goal_count: number };
@@ -33,6 +34,9 @@ export default async function ChronicleIssuePage({ params }: { params: Promise<{
   await requireUser();
   const { week } = await params;
   if (!isMonday(week)) notFound();
+  // Finalize any survey whose window has closed before we read this issue, so a
+  // just-closed session shows finalized results rather than "being prepared".
+  await finalizeDueSurveys();
   const supabase = await createClient();
   const { data: issue, error } = await supabase
     .schema("kut")

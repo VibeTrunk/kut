@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth/user";
+import { finalizeDueSurveys } from "@/lib/session-reports/finalize-due-surveys";
 import { createClient } from "@/lib/supabase/server";
 import { ReportForm } from "./report-form";
 
@@ -8,7 +9,10 @@ type Props = { params: Promise<{ sessionId: string }> };
 type Context = { session_id:string; session_date:string; session_type:string; survey_status:string; closes_at:string; category_ids:string[]; reward_amount:number; player_id:string; goals:number|null; report_status:string|null; revision:number; reward_received:boolean };
 
 export default async function SessionReportPage({params}:Props){
-  await requireUser(); const {sessionId}=await params; const supabase=await createClient();
+  await requireUser(); const {sessionId}=await params;
+  // Opening a just-closed report is a natural trigger to finalize it.
+  await finalizeDueSurveys();
+  const supabase=await createClient();
   const {data:context,error}=await supabase.schema("kut").from("my_session_reports").select("*").eq("session_id",sessionId).maybeSingle();
   if(error) throw new Error("Could not load this session report."); if(!context) notFound(); const report=context as Context;
   const [categoriesResponse,attendanceResponse,kudosResponse]=await Promise.all([

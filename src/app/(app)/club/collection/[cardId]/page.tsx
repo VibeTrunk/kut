@@ -68,15 +68,19 @@ export default async function CardDetailPage({ params, searchParams }: CardPageP
 
   const card = data as CollectionCard;
   const photoUrls = await resolvePhotoUrls(supabase, [card.photo_path]);
-  const [query, boundsResponse] = await Promise.all([
+  const [query, boundsResponse, valueResponse] = await Promise.all([
     searchParams,
     !card.active_listing_id
       ? supabase.schema("kut").rpc("get_listing_bounds", { p_card_id: card.card_id })
       : Promise.resolve({ data: null, error: null }),
+    supabase.schema("kut").from("my_club_value_copies")
+      .select("weight_percent,club_value_contribution,club_value_change_if_discarded")
+      .eq("card_id", card.card_id).maybeSingle(),
   ]);
   const bounds = boundsResponse.data && typeof boundsResponse.data === "object" ? boundsResponse.data : null;
   const minimumPrice = bounds && "minimum_price" in bounds ? Number(bounds.minimum_price) : null;
   const maximumPrice = bounds && "maximum_price" in bounds ? Number(bounds.maximum_price) : null;
+  const copyValue = valueResponse.data as { weight_percent:number;club_value_contribution:number;club_value_change_if_discarded:number } | null;
 
   const cardPlayer: LiveCardPlayer = {
     id: card.card_id,
@@ -165,8 +169,12 @@ export default async function CardDetailPage({ params, searchParams }: CardPageP
                 <dd className="mt-1.5 text-lg font-black">{readable(card.source)}</dd>
               </div>
               <div>
-                <dt className="text-[0.65rem] font-extrabold uppercase tracking-[0.14em] text-ink-faint">Discard value</dt>
+                <dt className="text-[0.65rem] font-extrabold uppercase tracking-[0.14em] text-ink-faint">Discard payout</dt>
                 <dd className="mt-1.5 text-lg font-black tabular-nums">{card.discard_value} KUT Coins</dd>
+              </div>
+              <div>
+                <dt className="text-[0.65rem] font-extrabold uppercase tracking-[0.14em] text-ink-faint">Adds to Club Value</dt>
+                <dd className="mt-1.5 text-lg font-black tabular-nums">{copyValue?.club_value_contribution ?? 0} <span className="text-xs text-ink-dim">({copyValue?.weight_percent ?? 0}%)</span></dd>
               </div>
               <div>
                 <dt className="text-[0.65rem] font-extrabold uppercase tracking-[0.14em] text-ink-faint">Card ID</dt>

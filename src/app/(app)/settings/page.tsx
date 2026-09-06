@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { LogoutButton } from "@/components/logout-button";
 import { requireUser } from "@/lib/auth/user";
+import { isAdminRole } from "@/lib/auth/roles";
 import { createClient } from "@/lib/supabase/server";
 import { ClubNameForm } from "./club-name-form";
 
@@ -10,7 +11,7 @@ export default async function SettingsPage() {
   const { data: profile } = await supabase
     .schema("kut")
     .from("profiles")
-    .select("username, club_name, display_name")
+    .select("username, club_name, display_name, role")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -53,6 +54,16 @@ export default async function SettingsPage() {
             &rarr;
           </span>
         </Link>
+
+        <Link className="group flex min-h-16 items-center justify-between rounded-2xl border border-line/60 bg-panel/60 px-6 py-4 hover:border-brass/60" href="/how-it-works">
+          <span className="font-black">How KUT works</span><span aria-hidden="true" className="text-brass">&rarr;</span>
+        </Link>
+
+        {isAdminRole(profile?.role) && (
+          <Link className="group flex min-h-16 items-center justify-between rounded-2xl border border-brick-line/50 bg-panel/60 px-6 py-4 hover:border-brick" href="/admin/attendance">
+            <span><span className="block font-black text-brick">Admin tools</span><span className="mt-1 block text-xs text-ink-faint">Attendance, reports, roster and economy</span></span><span aria-hidden="true" className="text-brick">&rarr;</span>
+          </Link>
+        )}
 
         <p className="rounded-2xl border border-dashed border-line bg-panel/40 p-5 text-center text-sm text-ink-faint">
           Notification preferences are planned for a later polish pass.

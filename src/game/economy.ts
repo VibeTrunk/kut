@@ -13,8 +13,9 @@ export const ECONOMY = {
   // the SQL `v_amount` constant in 20260907000000_bibs_bonus.sql and
   // BUILD_SPEC Part 145.
   bibsCoinBonus: 100,
+  sessionReportReward: 50,
   starterCoinGrant: 250,
-  basicPackPrice: 250,
+  basicPackPrice: 175,
   basicPackCardCount: 3,
   marketTaxPercent: 5,
   listingDurationHours: 24,
@@ -22,7 +23,7 @@ export const ECONOMY = {
   // (kut.admin_adjust_wallet, ADR-035). Mirrored by the SQL guard in
   // 20260905000000_admin_economy_tools.sql.
   adminWalletAdjustMax: 100_000,
-  // Club Value v2 (ADR-041): your linked player's Live-card discard value counts
+  // Club Value v3 (ADR-056): your linked player's Live-card discard value counts
   // this many times, on top of the plain discard value of every card you own.
   // Mirrored by the `4` literals in 20260910000000_club_value_v2.sql and
   // BUILD_SPEC Part XII.
@@ -35,22 +36,35 @@ export const ECONOMY = {
 } as const;
 
 /**
- * Club Value v2 (ADR-041). A deliberately transparent sum so a member can
- * reconstruct their own number by hand: wallet coins, plus the plain discard
- * value of every card they own, plus their linked player's Live-card discard
- * value counted `personalCardClubWeight` times. Mirrors the arithmetic in
- * kut.my_club_value / kut.club_value_leaderboard.
+ * Club Value v3 (ADR-056). Owned copies are grouped per edition and weighted
+ * 100/20/5/0; wallet coins and the four-times personal-card bonus are unchanged.
  */
+export type OwnedEditionValue = { editionId: string; discardValue: number; count: number };
+
+export function calculateDuplicateEditionValue(discardValue: number, count: number): number {
+  if (!Number.isSafeInteger(discardValue) || discardValue < 0 || !Number.isSafeInteger(count) || count < 0) {
+    throw new Error("Edition value needs a non-negative integer discard value and copy count.");
+  }
+  return (count >= 1 ? discardValue : 0)
+    + (count >= 2 ? Math.floor(discardValue * 20 / 100) : 0)
+    + (count >= 3 ? Math.floor(discardValue * 5 / 100) : 0);
+}
+
 export function calculateClubValue(input: {
   coins: number;
-  ownedCardDiscardValues: number[];
+  ownedEditions: OwnedEditionValue[];
   personalCardBaseValue: number | null;
 }): {
   ownedCardsValue: number;
   personalCardBonus: number;
   clubValue: number;
 } {
-  const ownedCardsValue = input.ownedCardDiscardValues.reduce((sum, value) => sum + value, 0);
+  const seen = new Set<string>();
+  const ownedCardsValue = input.ownedEditions.reduce((sum, edition) => {
+    if (seen.has(edition.editionId)) throw new Error("Each edition must be grouped exactly once.");
+    seen.add(edition.editionId);
+    return sum + calculateDuplicateEditionValue(edition.discardValue, edition.count);
+  }, 0);
   const personalCardBonus = (input.personalCardBaseValue ?? 0) * ECONOMY.personalCardClubWeight;
   return {
     ownedCardsValue,

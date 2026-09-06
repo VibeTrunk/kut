@@ -77,7 +77,7 @@ select has_function(
 select has_function(
   'kut',
   'open_pack',
-  array['text', 'uuid'],
+  array['text', 'bigint', 'uuid'],
   'server-authoritative pack opening function exists'
 );
 select has_function('kut', 'get_listing_bounds', array['uuid'], 'listing-bound calculation function exists');
@@ -418,14 +418,15 @@ select is(
 insert into kut.card_editions (
   id, player_id, edition_type, title, is_live,
   snapshot_ovr, snapshot_pac, snapshot_sho, snapshot_pas, snapshot_dri, snapshot_def, snapshot_phy,
-  special_discard_multiplier
+  special_discard_multiplier, snapshot_archetype, snapshot_rarity_tier,
+  description, artwork_key, artwork_version, issued_at
 )
 values (
   '00000000-0000-4000-8000-000000000050',
   '00000000-0000-4000-8000-000000000001',
   'totw', 'Discard Fixture', false,
   40, 40, 40, 40, 40, 40, 40,
-  1.5
+  1.5, 'all_rounder', 'bronze', 'Discard fixture.', 'tests/discard', 1, now()
 );
 insert into kut.user_cards (id, edition_id, owner_id, source)
 values (
@@ -490,7 +491,7 @@ select is(
 set local role authenticated;
 set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000000099';
 select lives_ok(
-  $$ select kut.open_pack('tfh-pack', '00000000-0000-4000-8000-000000000092'); $$,
+  $$ select kut.open_pack('tfh-pack', 175, '00000000-0000-4000-8000-000000000092'); $$,
   'opening a pack persists its result before it is returned to the client'
 );
 reset role;
@@ -513,19 +514,19 @@ select is(
 );
 select is(
   (select balance from kut.wallets where user_id = '00000000-0000-4000-8000-000000000099'),
-  32::bigint,
+  107::bigint,
   'opening a pack debits its server-defined price exactly once'
 );
 select is(
   (select amount from kut.wallet_ledger where user_id = '00000000-0000-4000-8000-000000000099' and reason = 'pack_purchase'),
-  (-250)::bigint,
+  (-175)::bigint,
   'pack payment has a matching negative immutable ledger entry'
 );
 
 set local role authenticated;
 set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000000099';
 select ok(
-  (select (kut.open_pack('tfh-pack', '00000000-0000-4000-8000-000000000092') ->> 'opening_id')::uuid =
+  (select (kut.open_pack('tfh-pack', 999, '00000000-0000-4000-8000-000000000092') ->> 'opening_id')::uuid =
     (select id from kut.pack_openings where user_id = auth.uid() and idempotency_key = '00000000-0000-4000-8000-000000000092')),
   'repeating a pack key returns the saved opening rather than rerolling'
 );
@@ -534,14 +535,14 @@ select set_config('request.jwt.claim.sub', '', true);
 
 select is(
   (select balance from kut.wallets where user_id = '00000000-0000-4000-8000-000000000099'),
-  32::bigint,
+  107::bigint,
   'a repeated pack key cannot debit coins twice'
 );
 
 set local role authenticated;
 set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000000099';
 select throws_ok(
-  $$ select kut.open_pack('tfh-pack', '00000000-0000-4000-8000-000000000093'); $$,
+  $$ select kut.open_pack('tfh-pack', 175, '00000000-0000-4000-8000-000000000093'); $$,
   'P0001',
   'insufficient KUT Coins for this pack',
   'insufficient balance cannot create a second pack opening'
@@ -558,11 +559,12 @@ select is(
 insert into kut.card_editions (
   id, player_id, edition_type, title, is_live,
   snapshot_ovr, snapshot_pac, snapshot_sho, snapshot_pas, snapshot_dri, snapshot_def, snapshot_phy,
-  special_discard_multiplier
+  special_discard_multiplier, snapshot_archetype, snapshot_rarity_tier,
+  description, artwork_key, artwork_version, issued_at
 ) values (
   '00000000-0000-4000-8000-000000000060',
   '00000000-0000-4000-8000-000000000001', 'totw', 'Market Fixture', false,
-  40, 40, 40, 40, 40, 40, 40, 1
+  40, 40, 40, 40, 40, 40, 40, 1, 'all_rounder', 'bronze', 'Market fixture.', 'tests/market', 1, now()
 );
 insert into kut.user_cards (id, edition_id, owner_id, source)
 values ('00000000-0000-4000-8000-000000000061', '00000000-0000-4000-8000-000000000060', '00000000-0000-4000-8000-000000000099', 'pack');
@@ -645,7 +647,7 @@ select is((select status from kut.market_listings where card_id = '00000000-0000
 select is((select owner_id from kut.user_cards where id = '00000000-0000-4000-8000-000000000061'), '00000000-0000-4000-8000-000000000098'::uuid, 'purchase transfers the one card copy to the buyer');
 select ok((select tax_amount = 1 and seller_receipt = 19 from kut.market_sales where card_id = '00000000-0000-4000-8000-000000000061'), 'market tax rounds up to five percent with a one-coin minimum');
 select is((select balance from kut.wallets where user_id = '00000000-0000-4000-8000-000000000098'), 55::bigint, 'buyer wallet is debited the full sale price');
-select is((select balance from kut.wallets where user_id = '00000000-0000-4000-8000-000000000099'), 51::bigint, 'seller receives sale price minus tax');
+select is((select balance from kut.wallets where user_id = '00000000-0000-4000-8000-000000000099'), 126::bigint, 'seller receives sale price minus tax after the 175-coin pack debit');
 select is((select sum(amount)::bigint from kut.wallet_ledger where reference_type = 'market_sale' and reference_id = (select id from kut.market_sales where card_id = '00000000-0000-4000-8000-000000000061')), (-1)::bigint, 'market ledgers reconcile the one-coin tax burn');
 
 set local role authenticated;

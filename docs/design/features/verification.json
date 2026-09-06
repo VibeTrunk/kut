@@ -1,0 +1,382 @@
+{
+  "kind": "design-prototype-only",
+  "viewports": [
+    {
+      "screen": "wanted",
+      "width": 320,
+      "overflow": 0
+    },
+    {
+      "screen": "tradecards",
+      "width": 320,
+      "overflow": 0
+    },
+    {
+      "screen": "adminreports",
+      "width": 320,
+      "overflow": 0
+    },
+    {
+      "screen": "home",
+      "width": 320,
+      "overflow": 0
+    },
+    {
+      "screen": "report",
+      "width": 320,
+      "overflow": 0
+    },
+    {
+      "screen": "saved",
+      "width": 320,
+      "overflow": 0
+    },
+    {
+      "screen": "recap",
+      "width": 320,
+      "overflow": 0
+    },
+    {
+      "screen": "attendance",
+      "width": 320,
+      "overflow": 0
+    },
+    {
+      "screen": "packs",
+      "width": 320,
+      "overflow": 0
+    },
+    {
+      "screen": "value",
+      "width": 320,
+      "overflow": 0
+    },
+    {
+      "screen": "copies",
+      "width": 320,
+      "overflow": 0
+    },
+    {
+      "screen": "editions",
+      "width": 320,
+      "overflow": 0
+    },
+    {
+      "screen": "wanted",
+      "width": 360,
+      "overflow": 0
+    },
+    {
+      "screen": "tradecards",
+      "width": 360,
+      "overflow": 0
+    },
+    {
+      "screen": "adminreports",
+      "width": 360,
+      "overflow": 0
+    },
+    {
+      "screen": "home",
+      "width": 360,
+      "overflow": 0
+    },
+    {
+      "screen": "report",
+      "width": 360,
+      "overflow": 0
+    },
+    {
+      "screen": "saved",
+      "width": 360,
+      "overflow": 0
+    },
+    {
+      "screen": "recap",
+      "width": 360,
+      "overflow": 0
+    },
+    {
+      "screen": "attendance",
+      "width": 360,
+      "overflow": 0
+    },
+    {
+      "screen": "packs",
+      "width": 360,
+      "overflow": 0
+    },
+    {
+      "screen": "value",
+      "width": 360,
+      "overflow": 0
+    },
+    {
+      "screen": "copies",
+      "width": 360,
+      "overflow": 0
+    },
+    {
+      "screen": "editions",
+      "width": 360,
+      "overflow": 0
+    },
+    {
+      "screen": "wanted",
+      "width": 390,
+      "overflow": 0
+    },
+    {
+      "screen": "tradecards",
+      "width": 390,
+      "overflow": 0
+    },
+    {
+      "screen": "adminreports",
+      "width": 390,
+      "overflow": 0
+    },
+    {
+      "screen": "home",
+      "width": 390,
+      "overflow": 0
+    },
+    {
+      "screen": "report",
+      "width": 390,
+      "overflow": 0
+    },
+    {
+      "screen": "saved",
+      "width": 390,
+      "overflow": 0
+    },
+    {
+      "screen": "recap",
+      "width": 390,
+      "overflow": 0
+    },
+    {
+      "screen": "attendance",
+      "width": 390,
+      "overflow": 0
+    },
+    {
+      "screen": "packs",
+      "width": 390,
+      "overflow": 0
+    },
+    {
+      "screen": "value",
+      "width": 390,
+      "overflow": 0
+    },
+    {
+      "screen": "copies",
+      "width": 390,
+      "overflow": 0
+    },
+    {
+      "screen": "editions",
+      "width": 390,
+      "overflow": 0
+    },
+    {
+      "screen": "wanted",
+      "width": 430,
+      "overflow": 0
+    },
+    {
+      "screen": "tradecards",
+      "width": 430,
+      "overflow": 0
+    },
+    {
+      "screen": "adminreports",
+      "width": 430,
+      "overflow": 0
+    },
+    {
+      "screen": "home",
+      "width": 430,
+      "overflow": 0
+    },
+    {
+      "screen": "report",
+      "width": 430,
+      "overflow": 0
+    },
+    {
+      "screen": "saved",
+      "width": 430,
+      "overflow": 0
+    },
+    {
+      "screen": "recap",
+      "width": 430,
+      "overflow": 0
+    },
+    {
+      "screen": "attendance",
+      "width": 430,
+      "overflow": 0
+    },
+    {
+      "screen": "packs",
+      "width": 430,
+      "overflow": 0
+    },
+    {
+      "screen": "value",
+      "width": 430,
+      "overflow": 0
+    },
+    {
+      "screen": "copies",
+      "width": 430,
+      "overflow": 0
+    },
+    {
+      "screen": "editions",
+      "width": 430,
+      "overflow": 0
+    },
+    {
+      "screen": "wanted",
+      "width": 768,
+      "overflow": 0
+    },
+    {
+      "screen": "tradecards",
+      "width": 768,
+      "overflow": 0
+    },
+    {
+      "screen": "adminreports",
+      "width": 768,
+      "overflow": 0
+    },
+    {
+      "screen": "home",
+      "width": 768,
+      "overflow": 0
+    },
+    {
+      "screen": "report",
+      "width": 768,
+      "overflow": 0
+    },
+    {
+      "screen": "saved",
+      "width": 768,
+      "overflow": 0
+    },
+    {
+      "screen": "recap",
+      "width": 768,
+      "overflow": 0
+    },
+    {
+      "screen": "attendance",
+      "width": 768,
+      "overflow": 0
+    },
+    {
+      "screen": "packs",
+      "width": 768,
+      "overflow": 0
+    },
+    {
+      "screen": "value",
+      "width": 768,
+      "overflow": 0
+    },
+    {
+      "screen": "copies",
+      "width": 768,
+      "overflow": 0
+    },
+    {
+      "screen": "editions",
+      "width": 768,
+      "overflow": 0
+    },
+    {
+      "screen": "wanted",
+      "width": 1440,
+      "overflow": 0
+    },
+    {
+      "screen": "tradecards",
+      "width": 1440,
+      "overflow": 0
+    },
+    {
+      "screen": "adminreports",
+      "width": 1440,
+      "overflow": 0
+    },
+    {
+      "screen": "home",
+      "width": 1440,
+      "overflow": 0
+    },
+    {
+      "screen": "report",
+      "width": 1440,
+      "overflow": 0
+    },
+    {
+      "screen": "saved",
+      "width": 1440,
+      "overflow": 0
+    },
+    {
+      "screen": "recap",
+      "width": 1440,
+      "overflow": 0
+    },
+    {
+      "screen": "attendance",
+      "width": 1440,
+      "overflow": 0
+    },
+    {
+      "screen": "packs",
+      "width": 1440,
+      "overflow": 0
+    },
+    {
+      "screen": "value",
+      "width": 1440,
+      "overflow": 0
+    },
+    {
+      "screen": "copies",
+      "width": 1440,
+      "overflow": 0
+    },
+    {
+      "screen": "editions",
+      "width": 1440,
+      "overflow": 0
+    }
+  ],
+  "interactions": [
+    "wishlist add/remove/search",
+    "picker Escape",
+    "goals save/edit/clear/zero",
+    "distinct nominee selection",
+    "closed report",
+    "empty report validation",
+    "175 pack confirm and 325 balance",
+    "174 insufficient",
+    "duplicate arithmetic",
+    "simple availability and trade instructions",
+    "zero goals / all skips rewarded",
+    "completion edit not rewarded twice",
+    "admin guest goals and member correction"
+  ],
+  "pageErrors": [],
+  "databaseTestsRun": false
+}

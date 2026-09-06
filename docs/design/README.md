@@ -1,5 +1,12 @@
 # Design reference — album, Chronicle, rating history
 
+**New feature design package (2026-09-05):** see
+[`features/README.md`](features/README.md) for wanted cards/trade matching,
+goals and kudos, 175-coin packs, duplicate Club Value and Special-edition
+scaffolding. It includes an interactive gallery and mobile/desktop renders.
+Those are proposed, unbuilt screens; the references below describe the older
+album/Chronicle/history design that has already shipped.
+
 Rendered mockups for the three features specified in
 [`../archive/SPEC_ALBUM_CHRONICLE_GRAPH.md`](../archive/SPEC_ALBUM_CHRONICLE_GRAPH.md) and
 built per [`../archive/PLAN_ALBUM_CHRONICLE_GRAPH.md`](../archive/PLAN_ALBUM_CHRONICLE_GRAPH.md).

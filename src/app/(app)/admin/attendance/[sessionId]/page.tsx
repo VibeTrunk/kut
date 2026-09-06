@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/auth/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -14,6 +15,7 @@ type PublishedSession = {
   session_date: string;
   session_type: string;
   status: "published" | "cancelled";
+  rating_rules_version: number;
   bibs_washed_by: string | null;
   attendance: Array<{ goals: number; player_id: string }> | null;
 };
@@ -31,7 +33,7 @@ export default async function CorrectionPage({ params }: CorrectionPageProps) {
     supabase
       .schema("kut")
       .from("match_sessions")
-      .select("id, session_date, session_type, status, bibs_washed_by, attendance(player_id, goals)")
+      .select("id, session_date, session_type, status, rating_rules_version, bibs_washed_by, attendance(player_id, goals)")
       .eq("id", sessionId)
       .in("status", ["published", "cancelled"])
       .maybeSingle(),
@@ -81,12 +83,19 @@ export default async function CorrectionPage({ params }: CorrectionPageProps) {
           </p>
         </header>
 
+        {session.status === "published" && (
+          <Link className="flex min-h-13 items-center justify-between rounded-xl border border-brass/50 bg-brass-bg/20 px-5 font-black text-brass" href={`/admin/attendance/${session.id}/reports`}>
+            Session reports <span aria-hidden="true">&rarr;</span>
+          </Link>
+        )}
+
         <AttendanceForm
           correctionSession={{
             id: session.id,
             sessionDate: session.session_date,
             sessionType: session.session_type,
             status: session.status,
+            ratingRulesVersion: session.rating_rules_version,
             bibsWashedBy: session.bibs_washed_by,
             attendance: session.attendance ?? [],
           }}

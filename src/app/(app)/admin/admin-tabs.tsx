@@ -14,6 +14,7 @@ const tabs: RouteEntry[] = [
   { key: "links", href: "/admin/links", label: "Accounts" },
   { key: "accounts", href: "/admin/accounts", label: "Recovery" },
   { key: "economy", href: "/admin/economy", label: "Economy" },
+  { key: "editions", href: "/admin/editions", label: "Editions" },
   { key: "invites", href: "/admin/invites", label: "Invites" },
 ];
 

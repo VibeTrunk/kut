@@ -4744,3 +4744,37 @@ Use this when starting implementation:
 ---
 
 **End of specification.**
+
+---
+
+# IMPLEMENTED FEATURE AMENDMENTS — 2026-09-06
+
+These accepted amendments supersede conflicting earlier MVP text; their
+implementation ADRs are ADR-055 through ADR-059.
+
+- **Special editions:** are scaffolded with immutable frozen identity, rating,
+  rarity, description and artwork fields; no Special edition or copy is issued
+  and packs draw Live editions only.
+- **Club Value:** duplicate copies of the same edition contribute 100%, 20%,
+  5%, then 0% of discard value. Selling or discarding still uses the full card
+  value and is not discounted by this projection.
+- **Basic packs:** contain three Live cards and cost **175 coins**. The server
+  requires the caller's expected price and an idempotency key; stale quotes do
+  not debit a wallet.
+- **Trading discovery:** a member may have at most 100 private wants and 30
+  explicitly available owned copies. Discovery returns only the owner display
+  name for a wanted available card and supports a channel-neutral conversation prompt;
+  it adds no reciprocal match, direct trade, escrow or automatic transfer.
+- **Reports, kudos and ratings:** publishing attendance opens a 24-hour report
+  for each eligible linked member. One completed form pays **50 coins** once,
+  including zero goals/all skipped kudos. Three positive kudos categories are
+  selected deterministically. Goals score 0/1/1.25/1.5 for null-or-0/1/2/3+;
+  qualifying kudos score 0/1/1.25/1.5; the per-session Form input is capped at
+  3 and v2 Form at 8. During an open survey Chronicle may expose only aggregate
+  submission progress and aggregate goals, clearly marked provisional; player
+  results and ballots stay private until finalization. Session-age weights are
+  1/.75/.5/.25/0. A per-season
+  published-session cutover preserves legacy history, while finalization
+  records versioned results and rating snapshots. Admin goal corrections for
+  members or guests require a reason, recalculate final results and never pay
+  a reward.

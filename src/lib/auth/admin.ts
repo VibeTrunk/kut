@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
+import { isAdminRole } from "./roles";
 
 export type AdminIdentity = {
   id: string;
@@ -29,7 +30,7 @@ export const requireAdmin = cache(async (): Promise<AdminIdentity> => {
     profileError ||
     !profile ||
     profile.is_disabled ||
-    (profile.role !== "admin" && profile.role !== "superadmin")
+    !isAdminRole(profile.role)
   ) {
     redirect("/");
   }

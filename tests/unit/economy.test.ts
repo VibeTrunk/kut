@@ -1,24 +1,25 @@
 import { describe, expect, it } from "vitest";
-import { calculateClubValue, calculateExpectedPackEconomy, ECONOMY, getPackReturnStatus } from "@/game/economy";
+import { calculateClubValue, calculateDuplicateEditionValue, calculateExpectedPackEconomy, ECONOMY, getPackReturnStatus } from "@/game/economy";
 import { calculateLiveDiscardValue } from "@/game/rating-engine";
 
 describe("pack economy", () => {
   it("calculates an all-common pack from the documented discard formula", () => {
-    const result = calculateExpectedPackEconomy([{ liveOvr: 30, rarityTier: "common" }], 3, 250);
+    const result = calculateExpectedPackEconomy([{ liveOvr: 30, rarityTier: "common" }], 3, ECONOMY.basicPackPrice);
     expect(result.expectedDiscardPerSlot).toBe(10);
     expect(result.expectedDiscardPerPack).toBe(30);
-    expect(result.expectedDiscardReturnRatio).toBeCloseTo(0.12);
+    expect(result.expectedDiscardReturnRatio).toBeCloseTo(30 / 175);
   });
 
   it("uses rarity weights instead of treating high-value cards as equally likely", () => {
-    const result = calculateExpectedPackEconomy([{ liveOvr: 30, rarityTier: "common" }, { liveOvr: 80, rarityTier: "elite" }], 3, 250);
+    const result = calculateExpectedPackEconomy([{ liveOvr: 30, rarityTier: "common" }, { liveOvr: 80, rarityTier: "elite" }], 3, ECONOMY.basicPackPrice);
     expect(result.expectedDiscardPerSlot).toBeCloseTo((1000 + 469) / 101);
-    expect(result.expectedDiscardReturnRatio).toBeLessThan(0.2);
+    expect(result.expectedDiscardReturnRatio).toBeCloseTo(((1000 + 469) / 101 * 3) / 175);
+    expect(result.expectedDiscardReturnRatio).toBeLessThan(0.3);
   });
 
   it("rejects incomplete economy inputs", () => {
-    expect(() => calculateExpectedPackEconomy([], 3, 250)).toThrow();
-    expect(() => calculateExpectedPackEconomy([{ liveOvr: 30, rarityTier: "common" }], 0, 250)).toThrow();
+    expect(() => calculateExpectedPackEconomy([], 3, ECONOMY.basicPackPrice)).toThrow();
+    expect(() => calculateExpectedPackEconomy([{ liveOvr: 30, rarityTier: "common" }], 0, ECONOMY.basicPackPrice)).toThrow();
   });
 
   it("uses the documented target, warning, and critical thresholds", () => {
@@ -29,11 +30,20 @@ describe("pack economy", () => {
   });
 });
 
-describe("club value v2 (ADR-041)", () => {
+describe("club value v3 duplicate weighting", () => {
+  it("weights first, second, third and later copies at 100/20/5/0 percent", () => {
+    expect([0, 1, 2, 3, 4, 1000].map((count) => calculateDuplicateEditionValue(101, count)))
+      .toEqual([0, 101, 121, 126, 126, 126]);
+    expect(calculateDuplicateEditionValue(10, 3)).toBe(12);
+  });
+
   it("sums coins, owned-card discard value, and the weighted personal card", () => {
     const personalBase = calculateLiveDiscardValue(60); // 101
     const owned = [calculateLiveDiscardValue(40), calculateLiveDiscardValue(50)]; // 22 + 47
-    const result = calculateClubValue({ coins: 500, ownedCardDiscardValues: owned, personalCardBaseValue: personalBase });
+    const result = calculateClubValue({ coins: 500, ownedEditions: [
+      { editionId: "a", discardValue: owned[0], count: 1 },
+      { editionId: "b", discardValue: owned[1], count: 1 },
+    ], personalCardBaseValue: personalBase });
 
     expect(result.ownedCardsValue).toBe(owned[0] + owned[1]);
     expect(result.personalCardBonus).toBe(personalBase * ECONOMY.personalCardClubWeight);
@@ -41,20 +51,20 @@ describe("club value v2 (ADR-041)", () => {
   });
 
   it("treats a missing linked player as a zero personal-card bonus", () => {
-    const result = calculateClubValue({ coins: 100, ownedCardDiscardValues: [10], personalCardBaseValue: null });
+    const result = calculateClubValue({ coins: 100, ownedEditions: [{ editionId: "a", discardValue: 10, count: 1 }], personalCardBaseValue: null });
     expect(result.personalCardBonus).toBe(0);
     expect(result.clubValue).toBe(110);
   });
 
   it("handles an empty collection", () => {
-    const result = calculateClubValue({ coins: 250, ownedCardDiscardValues: [], personalCardBaseValue: calculateLiveDiscardValue(30) });
+    const result = calculateClubValue({ coins: 250, ownedEditions: [], personalCardBaseValue: calculateLiveDiscardValue(30) });
     expect(result.ownedCardsValue).toBe(0);
     expect(result.clubValue).toBe(250 + 10 * ECONOMY.personalCardClubWeight);
   });
 
   it("weights the personal card heavier than a single owned copy of the same rating", () => {
     const base = calculateLiveDiscardValue(55);
-    const result = calculateClubValue({ coins: 0, ownedCardDiscardValues: [base], personalCardBaseValue: base });
+    const result = calculateClubValue({ coins: 0, ownedEditions: [{ editionId: "own", discardValue: base, count: 1 }], personalCardBaseValue: base });
     expect(result.personalCardBonus).toBeGreaterThan(result.ownedCardsValue);
   });
 });

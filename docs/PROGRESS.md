@@ -2395,3 +2395,151 @@ against a local Supabase stack at 390×844 and 1440×900, with a listing owned b
   metadata, so the actions precede the reference table.
 - **Ledger** 78px per entry, two rows, order 1/2/3 as intended.
 - **No page errors** on any surface at either width.
+
+## Five-feature specs and screen designs — 2026-09-05
+
+**Design complete for review; features remain unimplemented.** Added
+`docs/SPEC_NEXT_FEATURES.md` with concrete product rules, UX, data/RPC boundaries,
+privacy, economy implications, failure/correction states, release sequence and
+future acceptance tests for the five requested additions:
+
+- private wanted-card lists and mutual trade matching, including the necessary
+  direct-card extension to the existing listing-based escrow contract;
+- Special-edition scaffolding only, issuing no editions/copies and leaving
+  the member pack experience Live-only;
+- member-submitted goals and optional positive kudos, a 24-hour report window,
+  automated finalization, deterministic session-based Form decay and versioned
+  historical cutover; routine admin attendance no longer asks for goals;
+- 175-coin basic packs, preserving the three cards, weights and 250-coin awards;
+- per-edition duplicate Club Value weights of 100% / 20% / 5% / 0% thereafter,
+  with full discard payouts explicitly distinguished from weighted contribution.
+
+`design/features/index.html` is an offline interactive review gallery with
+13 primary screens, supporting routes, pickers, confirmations and error/closed
+states. It exports the actual LiveCard/icon components, material CSS and existing
+self-hosted fonts, with fictional fixtures. `docs/design/features/` contains
+mobile/desktop PNGs, an overview, screen guide and verification record. Updated
+the roadmap/documentation map to point to this design; it does not silently
+replace the currently shipped BUILD_SPEC rules or mark an implementation ADR
+accepted.
+
+Verification: `npm run verify:fast` passed (lint, typecheck, 100 tests across
+14 files); local artifact rendering passed 78 no-overflow layout checks
+(13 screens × 320/360/390/430/768/1440px), ten interaction groups and no browser
+page errors. Visually reviewed mobile and desktop renders. The Browser plugin
+had no connected browser, so used the installed local Playwright Chromium for
+artifact rendering. No DB tests/build necessary for this design-only work.
+
+Next implementation work should adopt/revise each proposal in a separate ADR
+and PR where migrations or RPC/invariant changes are involved. The 175-coin
+price needs actual-roster pack expected-discard-value review before activation;
+the spec explains that duplicate Club Value discounts do not lower discard EV.
+No app behavior, database, hosted configuration, environment variables or live
+economy changed. Nothing pushed or deployed.
+
+
+## Feature design review revisions — 2026-09-06
+
+Revised `SPEC_NEXT_FEATURES.md` and the interactive gallery after user feedback.
+These are still design artifacts, not game/database implementations.
+
+- Replaced reciprocal matching/direct-card offers with private wants and
+  explicit trade availability: a wanted card names members open to trading it,
+  offers copyable conversation text, and encourages discussion in WhatsApp.
+  Existing Market/Offers completes exchanges. No new transfer/escrow contract,
+  Matches tab, matching preference or new notification machinery.
+- Added 50 KUT Coins once per Player/session for a completed self-report.
+  Explicit zero goals and all three kudos categories skipped are valid; drafts,
+  edits and admin entry do not pay. Spec includes atomic ledger/idempotency,
+  cancellation/relink/reset rules and the cumulative faucet effect with 175 packs.
+- Added the Admin Reports screen, completion/accountless/pending distinctions,
+  reward status, and Add/Edit goals with required reason. Guest goal entry and
+  member corrections preserve completion/rewards. Spec covers immutable audit,
+  member-vs-admin precedence and closed-session historical recalculation.
+- Added `RATING_BALANCE_REVIEW.md` and a repeatable calculation against the actual
+  existing rating engine. Verified +1.5 goal/+1.5 kudos caps, +3 session maximum,
+  +8 overall ceiling, decay/cadence, old hat-trick comparison, SHO and discard
+  effects. Synthetic turnout simulations explicitly do not predict real votes.
+
+Validation: 72 responsive checks (12 primary screens, six widths), 13 interaction
+checks, zero browser page errors; visually reviewed wanted, admin reports and
+reward confirmation. `npm run verify:fast` passed lint, typecheck and 100 tests.
+No game code, migrations, production data or deployment changed. Refreshed the
+local review server's artifact copy so the existing localhost gallery link
+shows the revised screens. Former swap/matching images are superseded and are
+not linked by the current gallery or screen guide.
+
+## Five-feature implementation handoff — 2026-09-06
+
+Added `docs/IMPLEMENTATION_PLAN_NEXT_FEATURES.md` and
+`docs/START_NEXT_FEATURES.md` for a fresh 5.6 Terra / High session to build the
+whole revised package. The plan maps existing code and SQL contracts, orders
+five separately reviewable feature units, and specifies local database,
+concurrency, authenticated browser, history/parity and mobile acceptance gates.
+It includes the simplified WhatsApp trading handoff, 50-coin atomic reward,
+admin member/guest goal corrections, cutover/legacy rating treatment, scheduler
+and fallback, quote-aware 175 packs, duplicate value and zero Special issuance.
+
+Inspected current attendance/pack/economy/rating code, migration definitions,
+snapshot trigger and test/CI setup. The plan calls out the current final-state-only
+rating rebuild, missing authenticated journey coverage, untracked design files
+that must survive a new session, and actual-roster EV as a hosted activation gate.
+Linked the plan/prompt from the documentation map, feature spec, roadmap and
+screen guide. Verified local document links and patch whitespace. Documentation
+only in this step; application tests were not rerun. No game code, migration,
+database record, environment, push or deployment changed.
+
+## Five-feature local implementation — 2026-09-06
+
+Implemented the five feature slices locally: zero-issuance Special scaffolding;
+duplicate-aware Club Value; 175-coin quote-safe basic packs; private wants and
+explicit availability with a channel-neutral contact handoff; and self-reported goals/kudos,
+once-only rewards, corrections, versioned ratings, finalization and Chronicle
+results. The concrete defaults and migration follow-ups are recorded in
+ADR-055–ADR-059 and `BUILD_SPEC.md`'s implemented amendments.
+
+Local database verification passes 14 pgTAP files / 435 assertions, including
+privacy, reward, correction, SQL/TypeScript Form fixture and snapshot history
+checks. The focused local concurrency suite passed pack idempotency/stale-price
+and report reward races. A local pack-EV measurement is 87.46 expected discard
+coins per 175-coin pack; a fresh hosted roster measurement, scheduler setup and
+operator activation are still required before release. No hosted Supabase
+project, deployment, push, PR or merge was changed.
+
+## Mobile walkthrough feedback fixes — 2026-09-06
+
+Resolved seven local walkthrough findings. Trading preferences now combines
+wanted editions and available owned copies; all contact copy is channel-neutral.
+Wanted-card listing status now uses the public Market projection and has pgTAP
+coverage for an admin-owned active listing. Superadmins again see the Settings
+Admin destination. Attendance has a visible calendar control, explains the
+stored legacy/v2 cutover, retains admin goals for legacy sessions and links a
+new v2 publication to its reports. Eligible `/sessions/[sessionId]` visits open
+the member report. Chronicle promotion tier labels no longer overflow their
+swatches.
+
+Added migrations `20260920060000` and `20260920070000`; both were applied only
+to local Supabase. Verification: fast gate 17 files / 110 tests, pgTAP 14 files
+/ 438 assertions, concurrency 3 tests, production build passed. The in-app
+browser was not connected and Playwright hung before emitting a report, so the
+signed-in visual walkthrough still needs confirmation in the user's working
+browser. Nothing hosted was mutated or deployed.
+
+## Chronicle reporting-progress and kudos follow-up — 2026-09-06
+
+Open v2 surveys now render as open in Chronicle, including the deadline,
+submitted/eligible count, aggregate reported goals and the current member's
+report action. A security-definer projection exposes only those aggregates;
+individual provisional goals and ballots remain private. Finalized results
+remain the only per-player Chronicle output.
+
+Local ballot inspection confirmed the reported four votes for Alex Example and
+three (not four) for Charlie Fixture, each in one category. Adopted the revised
+kudos Form ladder 0 / 1 / 1.25 / 1.5 for 0 / 1 / 2 / 3 recognized categories,
+preserving the +1.5 kudos and +3 combined caps. Migrations `20260920080000` and
+`20260920090000` update finalization, keep deadline state database-authoritative
+and deterministically replay derived results without changing reports, ballots,
+rewards, transaction history or survey audit times.
+
+Verification after this follow-up: fast gate 17 files / 110 tests, pgTAP 14
+files / 444 assertions, focused concurrency 3 tests and production build pass.

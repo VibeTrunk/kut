@@ -107,13 +107,13 @@ export default async function HowItWorksPage() {
           </table>
         </Section>
 
-        <Section title="3. Goals give you Form (a temporary boost)">
+        <Section title="3. Goals and kudos give temporary Form">
           <p>
-            Form is a short-lived hidden score (0&ndash;{GAME_CONFIG.formCap}). Each football week it decays to{" "}
-            {Math.round(GAME_CONFIG.formWeeklyDecay * 100)}% of its previous value, then you add{" "}
-            {GAME_CONFIG.formGoalPoints} per goal (up to {GAME_CONFIG.formGoalCap} goals), plus a{" "}
-            +{GAME_CONFIG.formHatTrickBonus} hat-trick bonus for 3 or more. Rounded Form is added straight onto
-            your OVR, and recent goals also spike your Shooting stat. It fades over the following weeks.
+            For new-rule sessions, attendees privately report goals and may recognize teammates in three positive
+            categories. Goals add up to 1.5 Form. One recognized kudos category gives 1 Form; two give 1.25 and three give 1.5. Each session contribution fades
+            across the next four published sessions at 100%, 75%, 50%, 25%, then zero; total Form is capped at {GAME_CONFIG.formCap}.
+            Completing every field, including an explicit zero and Skip choices, pays {ECONOMY.sessionReportReward} KUT Coins once.
+            Earlier sessions retain their original weekly goal formula, so historical ratings do not silently change.
           </p>
         </Section>
 
@@ -242,8 +242,8 @@ export default async function HowItWorksPage() {
           <ul className="ml-5 list-disc space-y-1">
             <li>your wallet balance in KUT Coins;</li>
             <li>
-              plus the <strong>discard value</strong> of every unburned card you own (
-              <code>round(10 &times; 1.08 <sup>OVR&minus;30</sup>)</code>);
+              plus each edition&rsquo;s weighted copies: the first contributes 100% of discard value, the second 20%,
+              the third 5%, and later copies 0%;
             </li>
             <li>
               plus your linked player&rsquo;s own Live-card discard value, counted{" "}

@@ -53,7 +53,7 @@ export async function publishAttendanceSession(
     return { error: "There is no active season to publish this session into." };
   }
 
-  const { error } = await supabase.schema("kut").rpc("publish_attendance_session", {
+  const { data: sessionId, error } = await supabase.schema("kut").rpc("publish_attendance_session", {
     p_attendance: input.attendance,
     p_bibs_washed_by: input.bibsWashedBy,
     p_season_id: activeSeason.id,
@@ -69,7 +69,7 @@ export async function publishAttendanceSession(
   }
 
   revalidatePath("/");
-  redirect("/admin/attendance?published=1");
+  redirect(`/admin/attendance?published=${sessionId}`);
 }
 
 export async function correctPublishedAttendanceSession(

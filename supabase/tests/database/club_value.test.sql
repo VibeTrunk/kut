@@ -51,8 +51,8 @@ values
   ('00000000-0000-4000-8000-0000000d0202', 500);
 
 -- A special edition of Owned A frozen at OVR 40 -> discard round(10 * 1.08^10 * 1) = 22.
-insert into kut.card_editions (id, player_id, edition_type, title, is_live, snapshot_ovr, snapshot_pac, snapshot_sho, snapshot_pas, snapshot_dri, snapshot_def, snapshot_phy, special_discard_multiplier)
-values ('00000000-0000-4000-8000-0000000d0301', '00000000-0000-4000-8000-0000000d0102', 'other', 'CV Owned A Special', false, 40, 40, 40, 40, 40, 40, 40, 1);
+insert into kut.card_editions (id, player_id, edition_type, title, is_live, snapshot_ovr, snapshot_pac, snapshot_sho, snapshot_pas, snapshot_dri, snapshot_def, snapshot_phy, special_discard_multiplier, snapshot_archetype, snapshot_rarity_tier, description, artwork_key, artwork_version, issued_at)
+values ('00000000-0000-4000-8000-0000000d0301', '00000000-0000-4000-8000-0000000d0102', 'other', 'CV Owned A Special', false, 40, 40, 40, 40, 40, 40, 40, 1, 'all_rounder', 'bronze', 'Club Value test fixture.', 'tests/club-value', 1, now());
 -- A live edition of Owned B (rating comes from player_season_state above).
 insert into kut.card_editions (id, player_id, edition_type, title, is_live)
 values ('00000000-0000-4000-8000-0000000d0302', '00000000-0000-4000-8000-0000000d0103', 'live', 'CV Owned B Live', true);

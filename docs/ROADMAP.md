@@ -12,14 +12,14 @@ Everything **not yet built**, in one place. For the rest:
 
 The user requested feature specs and matching mobile-first screens for the five
 items below. The concrete review proposal is in
-[`SPEC_NEXT_FEATURES.md`](SPEC_NEXT_FEATURES.md), with an
+[`SPEC_NEXT_FEATURES.md`](archive/SPEC_NEXT_FEATURES.md), with an
 [interactive gallery](../design/features/index.html) and
 [rendered screen guide](design/features/README.md). **Design only: none of these
 changes has been implemented or deployed.** Numerical design defaults remain
 proposals until adopted in the individual implementation ADRs.
 
-The [implementation plan](IMPLEMENTATION_PLAN_NEXT_FEATURES.md) and
-[new-session prompt](START_NEXT_FEATURES.md) now cover building the full package
+The [implementation plan](archive/IMPLEMENTATION_PLAN_NEXT_FEATURES.md) and
+[new-session prompt](archive/START_NEXT_FEATURES.md) now cover building the full package
 serially in one 5.6 Terra / High session, with separate reviewable feature units.
 This handoff does not mark any feature implemented or authorize deployment.
 

@@ -13,7 +13,7 @@ export default async function SessionReportPage({params}:Props){
   // Opening a just-closed report is a natural trigger to finalize it.
   await finalizeDueSurveys();
   const supabase=await createClient();
-  const {data:context,error}=await supabase.schema("kut").from("my_session_reports").select("*").eq("session_id",sessionId).maybeSingle();
+  const {data:context,error}=await supabase.schema("kut").from("my_session_reports").select("session_id,session_date,session_type,survey_status,closes_at,category_ids,reward_amount,player_id,goals,report_status,revision,reward_received").eq("session_id",sessionId).maybeSingle();
   if(error) throw new Error("Could not load this session report."); if(!context) notFound(); const report=context as Context;
   const [categoriesResponse,attendanceResponse,kudosResponse]=await Promise.all([
     supabase.schema("kut").from("kudos_categories").select("id,title,description").in("id",report.category_ids),

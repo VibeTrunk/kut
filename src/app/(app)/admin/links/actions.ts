@@ -5,8 +5,7 @@ import { requireAdmin } from "@/lib/auth/admin";
 import { ECONOMY } from "@/game/economy";
 import { createServiceClient } from "@/lib/supabase/service";
 import { createClient } from "@/lib/supabase/server";
-
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+import { isUuid } from "@/lib/uuid";
 
 export type LinkActionState = { ok: true; message: string } | { ok: false; error: string } | null;
 
@@ -54,7 +53,7 @@ export async function manageAccount(_prev: LinkActionState, formData: FormData):
 
   const intent = String(formData.get("intent") ?? "");
   const userId = String(formData.get("user_id") ?? "");
-  if (!UUID_RE.test(userId)) return { ok: false, error: "Invalid account." };
+  if (!isUuid(userId)) return { ok: false, error: "Invalid account." };
 
   const supabase = await createClient();
 
@@ -62,7 +61,7 @@ export async function manageAccount(_prev: LinkActionState, formData: FormData):
     let playerId: string | null = null;
     if (intent === "link") {
       playerId = String(formData.get("player_id") ?? "");
-      if (!UUID_RE.test(playerId)) return { ok: false, error: "Pick a player to link." };
+      if (!isUuid(playerId)) return { ok: false, error: "Pick a player to link." };
     }
     const { data, error } = await supabase.schema("kut").rpc("admin_set_profile_player", {
       p_user_id: userId,
@@ -139,7 +138,7 @@ export async function manageAccount(_prev: LinkActionState, formData: FormData):
       return { ok: false, error: "Give a reason of 1–200 characters." };
     }
     const idempotencyKey = String(formData.get("idempotency_key") ?? "");
-    if (!UUID_RE.test(idempotencyKey)) return { ok: false, error: "Could not start the grant. Reload and try again." };
+    if (!isUuid(idempotencyKey)) return { ok: false, error: "Could not start the grant. Reload and try again." };
 
     const { data, error } = await supabase.schema("kut").rpc("admin_grant_self_wallet", {
       p_amount: amount,
@@ -161,7 +160,7 @@ export async function manageAccount(_prev: LinkActionState, formData: FormData):
 
   if (intent === "reset_account") {
     const idempotencyKey = String(formData.get("idempotency_key") ?? "");
-    if (!UUID_RE.test(idempotencyKey)) return { ok: false, error: "Could not start the reset. Reload and try again." };
+    if (!isUuid(idempotencyKey)) return { ok: false, error: "Could not start the reset. Reload and try again." };
     const { data, error } = await supabase.schema("kut").rpc("admin_reset_account", {
       p_user_id: userId,
       p_idempotency_key: idempotencyKey,

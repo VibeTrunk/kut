@@ -2570,3 +2570,54 @@ and `design/features/check-rating-balance.mjs` mirror the ladder/cap; the
 balance JSON and `RATING_BALANCE_REVIEW.md` are regenerated. Verification: pgTAP
 14 files / 449 assertions PASS (5 new), fast gate 17 files / 110 tests PASS,
 `npm run build` PASS.
+
+## Consistency sweep: one UUID guard, batched Chronicle reads, dead formulas removed — 2026-09-07
+
+No migration, no schema or game-rule change. A cleanup pass over the weekend's
+feature set, from a codebase review.
+
+**One UUID guard.** `src/lib/uuid.ts` (`isUuid`, added for KB-007) was adopted
+in 4 files while 16 others kept their own copy of the same regex under four
+different names — `UUID_RE`, `uuidPattern`, `uuid`, and inline literals. All 16
+now import the helper; zero raw copies remain outside `src/lib/uuid.ts`.
+
+**Chronicle N+1 removed.** `/chronicle/[week]` fanned out one `attendance` and
+one `chronicle_session_reports` query *per session*, sitting in the same
+`Promise.all` as two correctly batched `.in("session_id", sessionIds)` reads.
+Both now batch and group through a `groupBySession` helper, matching the shape
+`progressBySession` already used. Two queries per week instead of 2 + 2N.
+
+**Dead formulas deleted (ADR-064).** The TypeScript rating engine and economy
+formulas were reachable only from their own unit tests — a second
+implementation asserted against itself while the real engine is SQL.
+`src/game/` drops 589 → 228 lines. `rating-engine.ts` keeps only display
+helpers; `economy.ts` is constants. `card-editions.ts` and `demo-players.ts`
+are gone, as is `design/features/check-rating-balance.mjs` (the one non-test
+consumer). Special-edition scaffolding is untouched in SQL and pgTAP.
+
+**Smaller fixes.** `ECONOMY.duplicateEditionWeights` replaces a literal
+100/20/5/0 array in the Club Value screen and the stale `club_value_v2.sql`
+comment reference. `scripts/measure-pack-ev.mjs` now reads
+`kut.pack_economy_health` — the admin projection that already computed pack EV
+— instead of a fifth copy of the rarity weights, discard curve and pack price;
+it resolves an admin and reads the view as that member (the view is
+`security_invoker`, gated on `kut.is_admin()`). `VIEW_TABS` is exported and the
+duplicated collection-tabs array deleted. Chronicle's `TIERS` derives from
+`RARITY_BANDS` and is typed `RarityTier[]`. Two `select("*")` calls name their
+columns. A malformed kudos nominee is now rejected instead of being silently
+recorded as a Skip. `value.personal_card_weight || …` → `??`. Empty
+`sessions/[id]/` route directories removed.
+
+**Docs.** ADR-062 recorded as a tombstone (withdrawn, never shipped — hosted
+already held the intended cutover; see the entry for the
+`_rebuild_season_core` week-vs-cutover trap it got wrong). The four spent
+`*_NEXT_FEATURES.md` planning docs moved to `docs/archive/` and `docs/README.md`
+no longer points the next session at them as future work; all relative doc
+links verified to resolve. New design renders are gitignored going forward.
+
+Verification: dependencies resynced to the merged Dependabot bumps (Next
+16.3.4, vitest 4.1.11 — the local tree had been running the pre-bump versions),
+then lint PASS, typecheck PASS, unit 17 files / 110 tests → 14 files / 85 tests
+PASS (the drop is the deleted formula suites), pgTAP 14 files / 449 assertions
+PASS, `npm run build` PASS. The integration race suite was also run and is
+unaffected; it remains outside CI pending the Wave 2 fixture fix.

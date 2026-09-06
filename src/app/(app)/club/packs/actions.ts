@@ -4,14 +4,13 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth/user";
 import { createClient } from "@/lib/supabase/server";
+import { isUuid } from "@/lib/uuid";
 
 export type OpenPackState = {
   error: string | null;
   priceChanged?: boolean;
   currentPrice?: number;
 };
-
-const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 export async function openPack(
@@ -23,7 +22,7 @@ export async function openPack(
   const idempotencyKey = String(formData.get("idempotencyKey") ?? "");
   const expectedPrice = Number(formData.get("expectedPrice"));
 
-  if (!slugPattern.test(packSlug) || !uuidPattern.test(idempotencyKey) || !Number.isSafeInteger(expectedPrice) || expectedPrice <= 0) {
+  if (!slugPattern.test(packSlug) || !isUuid(idempotencyKey) || !Number.isSafeInteger(expectedPrice) || expectedPrice <= 0) {
     return { error: "This pack request was invalid. Please refresh and try again." };
   }
 

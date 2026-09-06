@@ -5,10 +5,10 @@
 - [Interactive gallery](http://127.0.0.1:4173/design/features/index.html) (local preview must be running)
 - [Gallery source](../../../design/features/index.html)
 - [Mobile overview](overview.png)
-- [Feature specs](../../SPEC_NEXT_FEATURES.md)
+- [Feature specs](../../archive/SPEC_NEXT_FEATURES.md)
 - [Rating balance review](../../RATING_BALANCE_REVIEW.md)
-- [Implementation plan](../../IMPLEMENTATION_PLAN_NEXT_FEATURES.md)
-- [New-session prompt](../../START_NEXT_FEATURES.md)
+- [Implementation plan](../../archive/IMPLEMENTATION_PLAN_NEXT_FEATURES.md)
+- [New-session prompt](../../archive/START_NEXT_FEATURES.md)
 
 Filesystem HTML links may open source in your editor. Use the localhost link,
 which serves design artifacts from `test-results/design-preview`, or open the

@@ -2,12 +2,11 @@ import Link from "next/link";
 import { requireAdmin } from "@/lib/auth/admin";
 import { createClient } from "@/lib/supabase/server";
 import { AttendanceForm } from "./attendance-form";
+import { isUuid } from "@/lib/uuid";
 
 type AttendancePageProps = {
   searchParams: Promise<{ cancelled?: string; corrected?: string; published?: string; reactivated?: string }>;
 };
-
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export default async function AttendancePage({ searchParams }: AttendancePageProps) {
   const [admin, supabase, query] = await Promise.all([
@@ -45,7 +44,7 @@ export default async function AttendancePage({ searchParams }: AttendancePagePro
     activeSeason
       ? supabase.schema("kut").from("season_rating_rules").select("v2_starts_week").eq("season_id", activeSeason.id).maybeSingle()
       : Promise.resolve({ data: null, error: null }),
-    query.published && UUID_RE.test(query.published)
+    query.published && isUuid(query.published)
       ? supabase.schema("kut").from("match_sessions").select("id, rating_rules_version").eq("id", query.published).eq("status", "published").maybeSingle()
       : Promise.resolve({ data: null, error: null }),
   ]);

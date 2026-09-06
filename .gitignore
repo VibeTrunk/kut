@@ -51,3 +51,11 @@ supabase/snippets/
 # The artboard sources (design/*.dc.html, design/canvas.json) are kept so the
 # docs/design/ PNGs can be regenerated.
 design/kut-feature-designs.html
+
+# Design verification renders. These are point-in-time screenshots of a
+# build, regenerable from design/*.dc.html and design/features/, and they are
+# stale within a week — keep them out of history from here on (ADR-064).
+# The committed ones predate this rule and are left alone; rewriting history
+# to purge them is not worth it on a repo with open branches.
+docs/design/features/*.png
+design/features/assets/

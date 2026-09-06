@@ -2569,6 +2569,50 @@ event-type union and label map gain `session_report`, `session_results`,
 operator may still install a scheduled runner later for punctuality; this
 fallback and the manual bounded RPC remain the supported paths meanwhile.
 
+## ADR-062 — Member-reporting cutover move: withdrawn, never shipped
+
+Date: 2026-09-07 (recorded after the fact; the withdrawn work was dated 2026-09-06)
+
+Status: Withdrawn — superseded by evidence, no migration shipped
+
+Decision: the proposed migration `20260921000000_kudos_cutover_2026_09_07.sql`,
+which would have moved `kut.season_rating_rules.v2_starts_week` from
+`2026-09-28` to `2026-09-07`, is withdrawn and its branch deleted. No schema or
+data change was made. The ADR number is retained as a tombstone so the gap
+between ADR-061 and ADR-063 is explained rather than looking like a lost record.
+
+Reason: hosted never held `2026-09-28`. The base migration
+`20260920000000_session_reports_rating_v2.sql` seeds the cutover as
+`coalesce(max(published session week) + 7, this week + 7)`, evaluated at deploy
+time. Hosted's last published session was `2026-09-04`, whose football week
+begins `2026-08-31`; `+ 7` gives `2026-09-07` — already the intended value.
+Verified on hosted 2026-09-07: the active season `TFH 2026` reads
+`v2_starts_week = 2026-09-07`, and the two published sessions (`2026-08-31`,
+`2026-09-04`) are correctly stamped `rating_rules_version = 1`. The `2026-09-28`
+figure came from the local seed environment, whose fixture data contains
+future-dated published sessions that push the same formula three weeks out. The
+withdrawn migration was guarded (`where v2_starts_week = date '2026-09-28'`), so
+it would have matched zero rows and done nothing.
+
+Consequences: none to the schema. Two things are worth carrying forward.
+
+First, a correctness note the withdrawn migration got wrong in its own header.
+It claimed that because `rating_rules_version` is stamped per session at publish
+time, "sessions already published keep their version" and a cutover move is
+therefore safe. `kut._rebuild_season_core` does not work that way: it branches on
+`if v_week.week_start < v_cutover`, the week against the cutover date, not the
+session's stamped version. Moving a cutover *backwards* past an already-published
+week therefore flips that week to the v2 branch, which reads
+`session_report_results` filtered on `rating_rules_version = 2`. A v1 session
+contributes nothing, `v_v2_count` is 0 so the legacy carry multiplier is also 0,
+and Form collapses to 0 for every player that week. Any future cutover change
+must check for published sessions in the affected weeks first.
+
+Second, an ADR that asserts a hosted verification should record the value it
+observed. This one stated "Precondition verified on hosted before deploy" while
+the matching `PROGRESS.md` entry recorded only a local `npm run test:db` run —
+which is what let a local seed artifact be mistaken for hosted state.
+
 ## ADR-063 — Kudos Form ladder rises to +2, combined session cap to +3.5, and recognised players are notified
 
 Date: 2026-09-06
@@ -2602,3 +2646,69 @@ unchanged; historical finalised sessions do not emit `kudos_awarded`.
 `src/game/rating-engine.ts` mirrors the ladder and the 3.5 cap; `BUILD_SPEC.md`
 amendments and `RATING_BALANCE_REVIEW.md` are updated. The kudos and combined
 caps remain review numbers, not Part L invariants.
+
+## ADR-064 — The TypeScript rating and economy formulas are deleted, not mirrored
+
+Date: 2026-09-07
+
+Status: Accepted
+
+Decision: the TypeScript re-implementations of the rating engine and the
+economy formulas are removed. `src/game/rating-engine.ts` keeps only what a
+screen actually renders — `RARITY_BANDS`, `getRarityTier`, `ARCHETYPE_OFFSETS`,
+`calculateActivityOvr` and `calculateLiveDiscardValue`. `src/game/economy.ts`
+becomes constants only (`ECONOMY`). Deleted: `calculateFormScore`,
+`calculateWeeklyPerformance`, `calculateActivityScore`, `calculateLiveOvr`,
+`calculateAttributes`, `createInitialRatingState`, `calculateRatingStateForWeek`,
+`rebuildRatingState`, the v2 group (`calculateGoalForm`, `calculateKudosForm`,
+`calculateSessionInput`, `calculateVersion2FormScore`), the Club Value and
+pack-EV helpers (`calculateClubValue`, `calculateDuplicateEditionValue`,
+`calculateExpectedPackEconomy`, `getPackReturnStatus`, `LIVE_PACK_WEIGHTS`),
+`src/game/card-editions.ts` (`resolveCardEdition`), and `src/game/demo-players.ts`.
+This supersedes the sentence in ADR-063 that says `rating-engine.ts` mirrors the
+kudos ladder and the 3.5 cap — it no longer does, and does not need to.
+
+Reason: none of it was reachable from `src/`. Every one of those exports was
+imported only by its own unit test, and `demo-players.ts` was imported by
+nothing at all. The engine that actually runs is `kut._rebuild_season_core` and
+the economy RPCs; the TypeScript was a parallel implementation asserted only
+against itself. That is worse than no coverage, because a green unit suite
+implied the rules were verified while SQL could change underneath it without
+turning anything red. The same numbers already have real assertions against the
+database in `next_features_contracts.test.sql` (the 100/20/5/0 duplicate ladder)
+and the rest of the pgTAP suite.
+
+The alternative considered was building a parity harness that runs SQL and
+TypeScript over shared fixtures and asserts equality. That is the only thing
+that would make a mirror trustworthy, but it is a real piece of infrastructure
+and it is only worth building if the TypeScript is going to serve the UI. It is
+not, so the mirror was deleted instead. If a screen later needs to compute a
+rating client-side, add the function back together with that harness — not on
+its own.
+
+Consequences: `src/game/` drops from 589 to 228 lines.
+`tests/unit/economy.test.ts`, `tests/unit/rating-v2.test.ts`,
+`tests/unit/card-editions.test.ts` and `tests/fixtures/rating-scenarios.json`
+are deleted; `tests/unit/rating-engine.test.ts` keeps the display-helper
+invariants and gains an archetype-offsets-sum-to-zero check (BUILD_SPEC §589).
+`ECONOMY` gains `duplicateEditionWeights`, so the Club Value screen renders the
+100/20/5/0 ladder from the same constant the comments point at instead of a
+literal array. `scripts/measure-pack-ev.mjs` now reads `kut.pack_economy_health`
+— the admin projection that already computed expected pack value — instead of
+keeping a fifth copy of the rarity weights, the discard curve and the pack
+price; it resolves an admin profile and reads the view as that member, because
+the view is `security_invoker` and gated on `kut.is_admin()`.
+
+`design/features/check-rating-balance.mjs` is retired in the same change. It
+was the one consumer of the deleted formulas outside the unit tests — a
+design-time balance harness for ADR-063, a decision already shipped — so
+keeping it working would have meant keeping the mirror. Its outputs
+(`RATING_BALANCE_REVIEW.md`, `design/features/rating-balance.json`) stay as the
+record, marked as point-in-time. A future balance exercise should measure
+`kut._rebuild_season_core` directly.
+
+The Special-edition scaffolding is unaffected at the database level:
+`20260916000000_special_edition_scaffolding.sql` and `special_editions.test.sql`
+still hold the frozen-snapshot and immutability rules, and issuance is still
+zero. Only the unused TypeScript resolver went. Whoever builds Special editions
+writes the resolver against the SQL contract then, with a consumer attached.

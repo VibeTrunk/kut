@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { RARITY_BANDS, type RarityTier } from "@/game/rating-engine";
 import { requireUser } from "@/lib/auth/user";
 import { formatChronicleDate, isMonday, issueStandfirst } from "@/lib/chronicle";
 import { finalizeDueSurveys } from "@/lib/session-reports/finalize-due-surveys";
@@ -7,19 +8,31 @@ import { createClient } from "@/lib/supabase/server";
 
 type Week = { week_start: string; week_end: string; session_count: number; appearance_count: number; goal_count: number };
 type Session = { id: string; session_date: string; session_type: string; bibs_washed_by: string | null; rating_rules_version: number };
-type Attendance = { player_id: string; goals: number; players: { display_name: string; slug: string } | null };
-type ReportResult = { player_id: string; display_name: string; slug: string; effective_goals: number | null; recognized_categories: string[]; submitted_reports: number; eligible_accounts: number; attendee_count: number };
+type Attendance = { session_id: string; player_id: string; goals: number; players: { display_name: string; slug: string } | null };
+type ReportResult = { session_id: string; player_id: string; display_name: string; slug: string; effective_goals: number | null; recognized_categories: string[]; submitted_reports: number; eligible_accounts: number; attendee_count: number };
 type ReportProgress = { session_id: string; survey_status: string; closes_at: string; attendee_count: number; submitted_reports: number; eligible_accounts: number; goal_total: number; accepting_reports: boolean };
 type MyReport = { session_id: string; report_status: string | null };
-type Crossing = { player_id: string; slug: string; display_name: string; from_tier: string; to_tier: string; live_ovr: number };
+type Crossing = { player_id: string; slug: string; display_name: string; from_tier: RarityTier; to_tier: RarityTier; live_ovr: number };
 
 const TYPE: Record<string, string> = { monday: "Monday", friday: "Friday", other: "Session" };
-const TIERS = ["common", "bronze", "silver", "gold", "holo", "elite"];
+// Tier order for "did this player move up?" — derived so it cannot drift from the
+// rarity bands the rest of the app renders.
+const TIERS: RarityTier[] = RARITY_BANDS.map((band) => band.tier);
 
 export const metadata = { title: "Chronicle issue" };
 
-function TierLabel({ tier }: { tier: string }) {
+function TierLabel({ tier }: { tier: RarityTier }) {
   return <span className="inline-flex items-center gap-1.5 whitespace-nowrap"><span aria-hidden="true" className="tier-chip" data-rarity={tier}><span /></span><span>{tier}</span></span>;
+}
+
+function groupBySession<T extends { session_id: string }>(rows: T[]): Map<string, T[]> {
+  const grouped = new Map<string, T[]>();
+  for (const row of rows) {
+    const bucket = grouped.get(row.session_id);
+    if (bucket) bucket.push(row);
+    else grouped.set(row.session_id, [row]);
+  }
+  return grouped;
 }
 
 function reportCloseLabel(value: string) {
@@ -56,16 +69,18 @@ export default async function ChronicleIssuePage({ params }: { params: Promise<{
   const sessions = (sessionsResponse.data ?? []) as Session[];
   const sessionIds = sessions.map((session) => session.id);
 
-  const [attendanceResponses, resultResponses, progressResponse, myReportsResponse] = await Promise.all([
-    Promise.all(sessions.map((session) => supabase.schema("kut").from("attendance").select("player_id,goals,players(display_name,slug)").eq("session_id", session.id))),
-    Promise.all(sessions.map((session) => supabase.schema("kut").from("chronicle_session_reports").select("player_id,display_name,slug,effective_goals,recognized_categories,submitted_reports,eligible_accounts,attendee_count").eq("session_id", session.id))),
+  const [attendanceResponse, resultsResponse, progressResponse, myReportsResponse] = await Promise.all([
+    supabase.schema("kut").from("attendance").select("session_id,player_id,goals,players(display_name,slug)").in("session_id", sessionIds),
+    supabase.schema("kut").from("chronicle_session_reports").select("session_id,player_id,display_name,slug,effective_goals,recognized_categories,submitted_reports,eligible_accounts,attendee_count").in("session_id", sessionIds),
     supabase.schema("kut").from("chronicle_session_report_status").select("session_id,survey_status,closes_at,attendee_count,submitted_reports,eligible_accounts,goal_total,accepting_reports").in("session_id", sessionIds),
     supabase.schema("kut").from("my_session_reports").select("session_id,report_status").in("session_id", sessionIds),
   ]);
-  if (attendanceResponses.some((response) => response.error) || resultResponses.some((response) => response.error) || progressResponse.error || myReportsResponse.error) {
+  if (attendanceResponse.error || resultsResponse.error || progressResponse.error || myReportsResponse.error) {
     throw new Error("Could not load session reporting progress.");
   }
 
+  const attendanceBySession = groupBySession((attendanceResponse.data ?? []) as unknown as Attendance[]);
+  const resultsBySession = groupBySession((resultsResponse.data ?? []) as ReportResult[]);
   const progressBySession = new Map(((progressResponse.data ?? []) as ReportProgress[]).map((row) => [row.session_id, row]));
   const myReportBySession = new Map(((myReportsResponse.data ?? []) as MyReport[]).map((row) => [row.session_id, row]));
   const hasUnfinalizedReports = ((progressResponse.data ?? []) as ReportProgress[]).some((row) => row.survey_status !== "finalized");
@@ -76,8 +91,8 @@ export default async function ChronicleIssuePage({ params }: { params: Promise<{
     <header className="border-y-4 border-brass py-5"><div className="flex items-end justify-between gap-4"><h1 className="display text-5xl sm:text-6xl">KUT Chronicle</h1><p className="text-right font-black text-brass">Week of {formatChronicleDate(current.week_start)}</p></div><p className="mt-4 text-[0.65rem] font-extrabold uppercase tracking-[0.18em] text-ink-faint">{formatChronicleDate(current.week_start)} &ndash; {formatChronicleDate(current.week_end, { day: "numeric", month: "long", year: "numeric" })}</p><p className="display mt-7 text-3xl text-ink-dim">{issueStandfirst(current.session_count, current.appearance_count, current.goal_count)}</p>{hasUnfinalizedReports && <p className="mt-3 text-sm font-bold text-brass">The goal total is provisional until reporting is finalized.</p>}</header>
 
     {sessions.map((session, index) => {
-      const attendance = ((attendanceResponses[index].data ?? []) as unknown as Attendance[]).sort((a, b) => b.goals - a.goals || (a.players?.display_name ?? "").localeCompare(b.players?.display_name ?? ""));
-      const results = ((resultResponses[index].data ?? []) as ReportResult[]).sort((a, b) => (b.effective_goals ?? 0) - (a.effective_goals ?? 0) || a.display_name.localeCompare(b.display_name));
+      const attendance = (attendanceBySession.get(session.id) ?? []).sort((a, b) => b.goals - a.goals || (a.players?.display_name ?? "").localeCompare(b.players?.display_name ?? ""));
+      const results = (resultsBySession.get(session.id) ?? []).sort((a, b) => (b.effective_goals ?? 0) - (a.effective_goals ?? 0) || a.display_name.localeCompare(b.display_name));
       const progress = progressBySession.get(session.id);
       const myReport = myReportBySession.get(session.id);
       const reportsOpen = progress?.accepting_reports === true;

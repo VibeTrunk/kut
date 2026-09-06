@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { AttendanceForm } from "../attendance-form";
 import { CancelSessionForm } from "./cancel-session-form";
 import { ReactivateSessionForm } from "./reactivate-session-form";
+import { isUuid } from "@/lib/uuid";
 
 type CorrectionPageProps = {
   params: Promise<{ sessionId: string }>;
@@ -24,7 +25,7 @@ export default async function CorrectionPage({ params }: CorrectionPageProps) {
   await requireAdmin();
   const { sessionId } = await params;
 
-  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(sessionId)) {
+  if (!isUuid(sessionId)) {
     notFound();
   }
 

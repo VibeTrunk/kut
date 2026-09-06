@@ -1,46 +1,18 @@
-import scenarios from "../fixtures/rating-scenarios.json";
 import { describe, expect, it } from "vitest";
 import {
   ARCHETYPES,
+  ARCHETYPE_OFFSETS,
   RARITY_BANDS,
   calculateActivityOvr,
-  calculateAttributes,
   calculateLiveDiscardValue,
-  calculateLiveOvr,
-  calculateWeeklyPerformance,
   getRarityTier,
-  rebuildRatingState,
-  type Archetype,
-  type FootballWeek,
-  type RarityTier,
 } from "@/game/rating-engine";
 
-type Scenario = {
-  name: string;
-  archetype: Archetype;
-  weeks: FootballWeek[];
-  expected: {
-    activityScore: number;
-    formScore: number;
-    liveOvr: number;
-    rarityTier: RarityTier;
-  };
-};
+// The rating engine itself is SQL (kut._rebuild_season_core) and is covered by
+// the pgTAP suite. These cover only the display-side helpers this module still
+// exports — see ADR-064 for why the TypeScript formula mirrors were removed.
 
-describe("rating engine fixtures", () => {
-  for (const scenario of scenarios as Scenario[]) {
-    it(scenario.name, () => {
-      const state = rebuildRatingState(scenario.weeks, scenario.archetype);
-
-      expect(state.activityScore).toBeCloseTo(scenario.expected.activityScore, 4);
-      expect(state.formScore).toBeCloseTo(scenario.expected.formScore, 4);
-      expect(state.liveOvr).toBe(scenario.expected.liveOvr);
-      expect(state.rarityTier).toBe(scenario.expected.rarityTier);
-    });
-  }
-});
-
-describe("rating engine invariants", () => {
+describe("rating display helpers", () => {
   it("never lowers activity OVR as activity rises", () => {
     let previous = calculateActivityOvr(0);
 
@@ -48,29 +20,6 @@ describe("rating engine invariants", () => {
       const current = calculateActivityOvr(activity);
       expect(current).toBeGreaterThanOrEqual(previous);
       previous = current;
-    }
-  });
-
-  it("caps all attributes for every archetype", () => {
-    for (const archetype of ARCHETYPES) {
-      for (const liveOvr of [30, 83]) {
-        const attributes = calculateAttributes(liveOvr, archetype, 4);
-
-        for (const attribute of Object.values(attributes)) {
-          expect(attribute).toBeGreaterThanOrEqual(1);
-          expect(attribute).toBeLessThanOrEqual(99);
-        }
-      }
-    }
-  });
-
-  it("keeps Live OVR within the documented bounds", () => {
-    for (let activity = 0; activity <= 100; activity += 1) {
-      for (let form = 0; form <= 8; form += 1) {
-        const liveOvr = calculateLiveOvr(calculateActivityOvr(activity), form);
-        expect(liveOvr).toBeGreaterThanOrEqual(30);
-        expect(liveOvr).toBeLessThanOrEqual(83);
-      }
     }
   });
 
@@ -93,11 +42,13 @@ describe("rating engine invariants", () => {
     expect(RARITY_BANDS[RARITY_BANDS.length - 1].max).toBe(83);
   });
 
-  it("caps weekly goal points and gives the hat-trick bonus", () => {
-    expect(calculateWeeklyPerformance(0)).toBe(0);
-    expect(calculateWeeklyPerformance(2)).toBe(2.5);
-    expect(calculateWeeklyPerformance(3)).toBe(4.75);
-    expect(calculateWeeklyPerformance(9)).toBe(6);
+  it("gives every archetype offsets that sum to zero", () => {
+    // BUILD_SPEC §589 / ADR-036: an archetype redistributes attributes, it must
+    // never hand out a hidden overall advantage.
+    for (const archetype of ARCHETYPES) {
+      const offsets = Object.values(ARCHETYPE_OFFSETS[archetype]);
+      expect(offsets.reduce((total, value) => total + value, 0)).toBe(0);
+    }
   });
 
   it("never lowers discard value as OVR rises", () => {

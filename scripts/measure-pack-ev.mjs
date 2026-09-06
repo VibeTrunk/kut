@@ -1,24 +1,40 @@
+// Pack expected-value measurement for release evidence (operator handoff, C).
+//
+// This reads kut.pack_economy_health — the same admin projection the Economy
+// screen renders — rather than re-deriving the rarity weights, the discard
+// curve and the pack price. Those live in SQL and must have exactly one
+// definition; an earlier version of this script kept a fifth copy of them and
+// could drift from the odds the game actually ships (ADR-064).
+//
+// The view is security_invoker and gated on kut.is_admin(), so we resolve an
+// admin profile first and then run the read as that member.
 import pg from "pg";
 
 const connectionString = process.env.KUT_LOCAL_DATABASE_URL ?? "postgresql://postgres:postgres@127.0.0.1:54322/postgres";
 const client = new pg.Client({ connectionString });
 await client.connect();
 try {
+  await client.query("begin");
+  const { rows: admins } = await client.query(
+    "select id::text from kut.profiles where role in ('admin','superadmin') order by role limit 1",
+  );
+  if (admins.length === 0) throw new Error("No admin or superadmin profile exists; kut.pack_economy_health cannot be read.");
+
+  // Claim first, then drop to authenticated — RLS hides kut.profiles once the
+  // role is switched, so the lookup above has to happen as the connecting role.
+  await client.query("select set_config('request.jwt.claim.sub',$1,true)", [admins[0].id]);
+  await client.query("set local role authenticated");
+
   const { rows } = await client.query(`
-    with eligible as (
-      select case coalesce(state.rarity_tier,'common') when 'common' then 100 when 'bronze' then 60 when 'silver' then 30 when 'gold' then 12 when 'holo' then 4 when 'elite' then 1 end::numeric weight,
-        round(10*power(1.08::numeric,coalesce(state.live_ovr,30)-30))::numeric discard_value
-      from kut.card_editions edition join kut.players player on player.id=edition.player_id
-      left join kut.seasons season on season.is_active
-      left join kut.player_season_state state on state.player_id=player.id and state.season_id=season.id
-      where edition.is_live and edition.edition_type='live' and player.is_active and player.is_collectible
-    ), measured as (
-      select count(*)::integer eligible_live_count,sum(weight*discard_value)/nullif(sum(weight),0) expected_slot from eligible
-    ) select eligible_live_count,round(expected_slot,2) expected_discard_per_slot,
-      round(expected_slot*3,2) expected_discard_per_pack,round(expected_slot*3/175,4) expected_discard_return_ratio
-    from measured
+    select slug, title, price, cards_per_pack, eligible_live_count,
+           expected_discard_per_slot, expected_discard_per_pack, expected_discard_return_ratio
+      from kut.pack_economy_health
+     order by slug
   `);
-  console.log(JSON.stringify({ measuredAt: new Date().toISOString(), source: "local active roster", packPrice: 175, cardsPerPack: 3, ...rows[0] }, null, 2));
+  if (rows.length === 0) throw new Error("kut.pack_economy_health returned no active pack; nothing to measure.");
+
+  console.log(JSON.stringify({ measuredAt: new Date().toISOString(), source: "kut.pack_economy_health", packs: rows }, null, 2));
 } finally {
+  await client.query("rollback").catch(() => {});
   await client.end();
 }

@@ -3,7 +3,9 @@
 Production release record, 2026-09-06. This document is deliberately split by
 the repository's migration/RPC/invariant review boundary. The reviewed PRs are
 merged, the hosted Supabase catalogue is applied, and the Vercel production
-smoke check is green. No finalizer scheduler has been installed yet.
+smoke check is green. Survey finalization now runs as a server-side lazy
+fallback on Chronicle / session-report page loads (ADR-061); a dedicated
+scheduled runner is optional and has not been installed.
 
 ## A — Special scaffolding
 
@@ -54,10 +56,12 @@ smoke check is green. No finalizer scheduler has been installed yet.
   screens, rating unit tests and pgTAP contracts.
 - Confirm 24-hour survey, 50 coins once per player/session, explicit zero/skip
   validity, audit-only corrections, v2 cutover and snapshots.
-- Operator action: install a bounded service-role scheduler calling
-  `kut.finalize_session_surveys(20)` on the agreed cadence; monitor failed jobs
-  and use the same RPC as a manual bounded fallback. Do not grant member roles
-  access to the finalizer.
+- Finalization: a server-side lazy fallback calls `kut.finalize_session_surveys(20)`
+  from the Chronicle week issue and session-report page renders (ADR-061), so no
+  scheduler is required to keep surveys finalizing. Installing a bounded
+  service-role scheduler on a cadence remains an option for punctuality; the same
+  RPC is the manual bounded fallback. Do not grant member roles access to the
+  finalizer. Monitor `kut.session_survey_jobs.error_text`.
 
 ## Local evidence and outstanding release gates
 
@@ -74,7 +78,7 @@ smoke check is green. No finalizer scheduler has been installed yet.
 - Release status: central catalogue PR #28 merged; hosted `db push` applied all
   14 migrations; KUT PR #60 merged; post-merge fast/database/E2E/gitleaks and
   Vercel checks passed; `https://kut.vibetrunk.com` returned HTTP 200.
-- Remaining operator action: install a bounded service-role scheduler calling
-  `kut.finalize_session_surveys(20)` on the agreed cadence, then perform the
-  authenticated mobile walkthrough against production. Until the scheduler is
-  installed, manual bounded finalization remains the supported fallback.
+- Remaining operator action: perform the authenticated mobile walkthrough against
+  production. Survey finalization is covered by the ADR-061 lazy fallback; a
+  scheduled runner is optional, and manual bounded finalization via
+  `kut.finalize_session_surveys(20)` remains available.

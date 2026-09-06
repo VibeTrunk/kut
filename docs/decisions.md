@@ -2540,6 +2540,35 @@ Raw reports, ballots, rewards, transactions, survey timestamps and audit records
 are unchanged. TypeScript uses the same ladder and the balance simulation is
 rerun.
 
+## ADR-061 — Survey finalization runs as a server-side lazy fallback
+
+Date: 2026-09-06
+
+Status: Accepted
+
+Decision: `kut.finalize_session_surveys(20)` — the bounded, service-role-only
+finalizer — is invoked from the server render of the Chronicle week issue
+(`/chronicle/[week]`) and a member's session report (`/sessions/[sessionId]/report`)
+via `finalizeDueSurveys()` in `src/lib/session-reports/finalize-due-surveys.ts`.
+The helper first runs one `count` query for surveys that are `open` with
+`closes_at <= now()`, calls the RPC only when that count is non-zero, throttles
+repeat attempts to once per 60s per warm process, and swallows every error. No
+scheduled runner (Vercel Cron, pg_cron) is added.
+
+Reason: the club is small and the Chronicle is opened routinely, so a
+visit-driven trigger finalizes closed surveys within hours without a scheduler,
+a cron secret, or a Vercel plan dependency. `finalize_session_surveys` already
+claims due rows `for update skip locked` and re-checks status, and
+`_finalize_one_session` re-locks the survey, so concurrent page loads at worst
+add an empty `session_survey_jobs` row. The RPC and its grants are unchanged.
+
+Consequences: no migration. `src/lib/session-reports/finalize-due-surveys.ts` is
+new; the two page components call it after `requireUser()`. The Messages page
+event-type union and label map gain `session_report`, `session_results`,
+`report_correction` (already emitted server-side) and `kudos_awarded`. An
+operator may still install a scheduled runner later for punctuality; this
+fallback and the manual bounded RPC remain the supported paths meanwhile.
+
 ## ADR-063 — Kudos Form ladder rises to +2, combined session cap to +3.5, and recognised players are notified
 
 Date: 2026-09-06

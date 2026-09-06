@@ -2544,6 +2544,17 @@ rewards, transaction history or survey audit times.
 Verification after this follow-up: fast gate 17 files / 110 tests, pgTAP 14
 files / 444 assertions, focused concurrency 3 tests and production build pass.
 
+## Survey finalization lazy fallback — 2026-09-06
+
+The bounded finalizer `kut.finalize_session_surveys(20)` had no runner. Added
+`finalizeDueSurveys()` (`src/lib/session-reports/finalize-due-surveys.ts`),
+invoked from the Chronicle week issue and session-report page renders: it counts
+`open` surveys past `closes_at`, calls the service-role RPC only when some exist,
+throttles to once per 60s per process and never throws into the page. No
+migration; the RPC and its grants are unchanged (ADR-061). The Messages page
+event-type union/labels also gained the already-emitted `session_report`,
+`session_results`, `report_correction` and the forthcoming `kudos_awarded`.
+
 ## Kudos cap to +2, +3.5 combined cap, and a kudos-awarded notice — 2026-09-06
 
 Migration `20260922000000_kudos_cap_two_and_award_notice.sql` (ADR-063): kudos

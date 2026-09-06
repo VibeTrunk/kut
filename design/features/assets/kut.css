@@ -1,0 +1,804 @@
+
+
+:root {
+  --background: #15130f;
+  --foreground: #f4efe3;
+}
+
+/* "Clubblad" app chrome palette — pulled from the card system's own tiers
+   rather than stock Tailwind swatches: --board is the Elite pennant's tone,
+   --brass is drawn from the Gold pennant, --steel from Silver, so the app
+   and the cards it displays now come from one swatch. ADR-022 set these and
+   the redesign keeps every value; only the typography and the card face
+   changed. */
+:root {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  --color-board: #15130f;
+  --color-board-deep: #0b0a07;
+  --color-panel: #211c15;
+  --color-panel-2: #2a2318;
+  --color-line: #4a4030;
+  --color-ink: #f4efe3;
+  --color-ink-dim: #b3a891;
+  --color-ink-faint: #8a8072;
+  --color-ink-on-accent: #1c150a;
+
+  --color-brass: #e0ac4a;
+  --color-brass-deep: #a3711d;
+  --color-brass-bg: #2b1f0a;
+  --color-brass-line: #5c4419;
+  --color-warning: #d68a3c;
+  --color-warning-bg: #2b190d;
+  --color-warning-line: #5c3c1f;
+  --color-steel: #8fb0c2;
+  --color-steel-bg: #16232a;
+  --color-steel-line: #3a5866;
+  --color-moss: #8bbd6c;
+  --color-moss-bg: #1c2416;
+  --color-moss-line: #3c5230;
+  --color-brick: #dd7a55;
+  --color-brick-bg: #2a1712;
+  --color-brick-line: #5c3221;
+
+  /* Instrument Serif carries the clubblad voice in page headings; Archivo
+     does every interface job and every number. Both are self-hosted through
+     next/font — production CSP is `font-src 'self'`, so a webfont CDN would
+     be blocked. Fallbacks are metric-close on purpose. */
+  --font-sans: var(--font-archivo), "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-serif: var(--font-instrument), Georgia, "Times New Roman", serif;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+}
+
+/* The board is not a flat fill: a low vignette gives the cards something to
+   sit on. Applied by the page shell, not by `body`, so modals and the reveal
+   stage can opt out. */
+.board-ground {
+  background: radial-gradient(120% 78% at 50% -8%, #221c13 0%, #15130f 46%, #0b0a07 100%);
+}
+
+/* Page headings. `font-serif` alone leaves the default weight and leading
+   too loose for a display face at these sizes. */
+.display {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  line-height: 0.94;
+  letter-spacing: -0.012em;
+  text-wrap: pretty;
+}
+
+/* ===========================================================================
+   LIVE CARD — "the material ladder"
+
+   Six tiers, one skeleton. Each tier ADDS a physical property to the one
+   below and takes nothing away, so a Common reads as a well-printed card
+   rather than a cheap one:
+
+     common  uncoated newsprint      no gloss layer, so nothing can move
+     bronze  coated stock            one specular pass, on hover
+     silver  cold-foil stamped       brushed metal plate with anisotropy
+     gold    hot foil, embossed      continuous 9s foil cycle, raised OVR
+     holo    refraction film         two layers drifting at 17s and 23s
+     elite   lacquer and gold leaf   the only inverted card; tilts to pointer
+
+   Rarity stays readable three ways at once (hue, pennant shape, tier word on
+   the nameplate), so it never depends on colour alone.
+
+   Scaling: the card is an inline-size container and each region sets its own
+   base with `4cqi` (4% of card width), then uses `em` beneath that. One card
+   width therefore drives every measurement inside it. Container-query units
+   cannot address their own container, so the card's own radius and shadow
+   are in rem.
+   =========================================================================== */
+
+.live-card {
+  --stock: #e9e5d9;
+  --ci: #3f3b33;
+  --plate: #3b3830;
+  --plate-ink: #f7f4ec;
+  --rule: rgb(63 59 51 / 20%);
+  --edge: rgb(255 255 255 / 50%);
+  --shirt: var(--plate);
+  --shirt-ink: var(--plate-ink);
+  --lift: 0 1rem 2rem -0.7rem rgb(0 0 0 / 66%), 0 0.15rem 0.45rem rgb(0 0 0 / 40%);
+  container-type: inline-size;
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  grid-template-rows: 1fr auto auto;
+  width: 100%;
+  aspect-ratio: 5 / 7;
+  overflow: hidden;
+  border-radius: 0.9rem;
+  background: var(--stock);
+  box-shadow: var(--lift);
+  color: var(--ci);
+  transition: transform 340ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.live-card:hover {
+  transform: translateY(-0.4rem);
+}
+
+.live-card[data-size="detail"] {
+  width: 330px;
+  max-width: 100%;
+  border-radius: 1.1rem;
+}
+
+/* ---- layers -------------------------------------------------------------- */
+.live-card__grain,
+.live-card__sheen,
+.live-card__film,
+.live-card__glow,
+.live-card__frame {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+/* Press grain sits over everything but the frame — the whole card is printed,
+   the photo included. This is the layer that stops an uploaded photo reading
+   as a JPEG pasted onto a design. */
+.live-card__grain {
+  z-index: 4;
+  opacity: 0.5;
+  background-image: radial-gradient(rgb(0 0 0 / 17%) 0.5px, transparent 0.6px);
+  background-size: 3px 3px;
+  mix-blend-mode: multiply;
+}
+
+.live-card__sheen { z-index: 5; opacity: 0; }
+.live-card__film { z-index: 3; opacity: 0; }
+.live-card__glow { z-index: 0; opacity: 0; }
+
+.live-card__frame {
+  z-index: 6;
+  font-size: 4cqi;
+  box-shadow: inset 0 0 0 0.1em var(--edge), inset 0 0 0 0.34em rgb(0 0 0 / 5.5%);
+}
+
+/* ---- art ----------------------------------------------------------------- */
+.live-card__art {
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+  font-size: 4cqi;
+}
+
+.live-card__portrait {
+  position: absolute;
+  inset: 0;
+}
+
+.live-card__portrait img,
+.live-card__portrait svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Puts a ground under the rating so it stays readable over a light photo.
+   Tinted with the card's own stock, so it darkens on Elite and lightens
+   everywhere else. A radial falloff from the top-left corner: it reaches full
+   transparency (~84% of the box) before the box's right and bottom edges, so
+   the ground melts into the photo on every exposed side instead of clipping
+   as a rectangle (KB-002). */
+.live-card__topscrim {
+  position: absolute;
+  inset: 0 auto auto 0;
+  z-index: 2;
+  width: 66%;
+  height: 46%;
+  background: radial-gradient(120% 120% at top left, color-mix(in srgb, var(--stock) 88%, transparent) 0%, color-mix(in srgb, var(--stock) 32%, transparent) 38%, transparent 70%);
+}
+
+/* Hands any photograph, however busy, cleanly off to the nameplate. */
+.live-card__scrim {
+  position: absolute;
+  inset: auto 0 0;
+  z-index: 2;
+  height: 46%;
+  background: linear-gradient(180deg, rgb(0 0 0 / 0%) 0%, color-mix(in srgb, var(--stock) 82%, transparent) 100%);
+}
+
+.live-card__ovr {
+  position: absolute;
+  top: 0.85em;
+  left: 1.05em;
+  z-index: 3;
+  display: grid;
+  margin: 0;
+  line-height: 0.8;
+}
+
+.live-card__ovr b {
+  font-size: 3.5em;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.045em;
+}
+
+.live-card__ovr span {
+  margin-top: 0.5em;
+  font-size: 0.82em;
+  font-weight: 800;
+  letter-spacing: 0.24em;
+  opacity: 0.62;
+}
+
+/* Tier pennant: colour plus a distinct silhouette, so tier survives without
+   colour vision. The tier WORD moved to the nameplate, where it is legible —
+   it used to be set at 0.42rem inside this pennant. */
+.live-card__pennant {
+  position: absolute;
+  top: 0;
+  right: 1.15em;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  width: 2.5em;
+  height: 3.1em;
+  padding-bottom: 0.5em;
+  font-size: 4cqi;
+  background: var(--plate);
+  clip-path: polygon(0 0, 100% 0, 100% 84%, 50% 100%, 0 84%);
+  box-shadow: 0 0.3em 0.6em rgb(0 0 0 / 30%);
+  color: var(--plate-ink);
+}
+
+.live-card__tier-icon {
+  display: block;
+  width: 0.95em;
+  height: 0.95em;
+  background: currentColor;
+}
+
+.live-card__tier-icon--common { border-radius: 50%; }
+.live-card__tier-icon--bronze { clip-path: polygon(50% 6%, 6% 94%, 94% 94%); }
+.live-card__tier-icon--silver { clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }
+.live-card__tier-icon--gold { clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%); }
+.live-card__tier-icon--holo {
+  clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+}
+.live-card__tier-icon--elite { clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%); }
+
+/* Week-over-week riser pill (Home "Top risers"), opposite the pennant. */
+.live-card__trend {
+  position: absolute;
+  top: 0.9em;
+  right: 4.6em;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
+  margin: 0;
+  padding: 0.3em 0.65em;
+  border-radius: 999px;
+  font-size: 4cqi;
+  font-weight: 900;
+  background: var(--color-moss);
+  color: #16240e;
+  box-shadow: 0 0.3em 0.6em rgb(0 0 0 / 32%);
+}
+
+.live-card__trend-unit {
+  font-size: 0.72em;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0.75;
+}
+
+/* ---- nameplate ----------------------------------------------------------- */
+.live-card__plate {
+  position: relative;
+  z-index: 2;
+  padding: 0.78em 1.15em 0.72em;
+  font-size: 4cqi;
+  background: var(--plate);
+  color: var(--plate-ink);
+}
+
+.live-card__plate h2 {
+  overflow: hidden;
+  margin: 0;
+  font-size: 1.62em;
+  font-weight: 800;
+  line-height: 1.04;
+  letter-spacing: -0.018em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.live-card__plate p {
+  margin: 0.35em 0 0;
+  font-size: 0.82em;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  opacity: 0.74;
+}
+
+/* ---- ruled stat table ---------------------------------------------------- */
+/* Replaces six rotated circles that cost roughly a third of the card's lower
+   area and were the least legible element on the card at grid size. */
+.live-card__stats {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.55em 0.7em;
+  margin: 0;
+  padding: 0.95em 1.1em 1.15em;
+  font-size: 4cqi;
+}
+
+.live-card__stats div {
+  display: flex;
+  align-items: baseline;
+  justify-content: flex-start;
+  gap: 0.45em;
+  padding-bottom: 0.32em;
+  border-bottom: 0.1em solid var(--rule);
+}
+
+.live-card__stats dt {
+  min-width: 2.9em;
+  margin: 0;
+  font-size: 0.8em;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  opacity: 0.55;
+}
+
+.live-card__stats dd {
+  margin: 0;
+  font-size: 1.3em;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ===== TIER 1 — COMMON: uncoated newsprint =================================
+   Flat ink on open stock with the press grain left visible. There is no
+   varnish layer, so there is nothing for light to travel across: still at
+   rest, still on hover. */
+.live-card[data-rarity="common"] .live-card__grain { opacity: 0.66; }
+
+/* ===== TIER 2 — BRONZE: coated stock ======================================= */
+.live-card[data-rarity="bronze"] {
+  --stock: #ecd8b1;
+  --ci: #57390f;
+  --plate: #8a5326;
+  --plate-ink: #fdf3e2;
+  --rule: rgb(87 57 15 / 24%);
+  --edge: rgb(255 247 232 / 62%);
+}
+
+.live-card[data-rarity="bronze"] .live-card__sheen {
+  background: linear-gradient(104deg, transparent 38%, rgb(255 255 255 / 50%) 50%, transparent 62%);
+  transform: translateX(-125%);
+}
+
+.live-card[data-rarity="bronze"]:hover .live-card__sheen {
+  animation: card-sweep 1150ms cubic-bezier(0.35, 0, 0.2, 1);
+}
+
+/* ===== TIER 3 — SILVER: cold-foil stamped ================================== */
+.live-card[data-rarity="silver"] {
+  --stock: #e3e8eb;
+  --ci: #313b45;
+  --plate: #4b5761;
+  --plate-ink: #f5f8fa;
+  --rule: rgb(49 59 69 / 22%);
+  --edge: rgb(255 255 255 / 72%);
+}
+
+.live-card[data-rarity="silver"] .live-card__plate,
+.live-card[data-rarity="silver"] .live-card__pennant {
+  background-image:
+    repeating-linear-gradient(96deg, rgb(255 255 255 / 16%) 0 1px, rgb(0 0 0 / 7%) 1px 3px),
+    linear-gradient(178deg, #5e6b77 0%, #414b55 55%, #59646f 100%);
+}
+
+.live-card[data-rarity="silver"] .live-card__sheen {
+  background: linear-gradient(102deg, transparent 34%, rgb(255 255 255 / 66%) 49%, rgb(213 231 240 / 30%) 55%, transparent 66%);
+  transform: translateX(-125%);
+}
+
+.live-card[data-rarity="silver"]:hover .live-card__sheen {
+  animation: card-sweep 1250ms cubic-bezier(0.35, 0, 0.2, 1);
+}
+
+/* ===== TIER 4 — GOLD: hot foil, embossed =================================== */
+.live-card[data-rarity="gold"] {
+  --stock: #f7e7b2;
+  --ci: #543609;
+  --plate: #8a6414;
+  --plate-ink: #fff6df;
+  --rule: rgb(84 54 9 / 24%);
+  --edge: rgb(255 246 222 / 75%);
+  box-shadow: var(--lift), 0 0 1.4rem rgb(224 172 74 / 12%);
+}
+
+.live-card[data-rarity="gold"] .live-card__plate,
+.live-card[data-rarity="gold"] .live-card__pennant {
+  background-image: linear-gradient(100deg, #6b4a0d 0%, #b98f33 18%, #f2dd9a 30%, #c79b3d 44%, #7a560f 62%, #d8b45c 82%, #6b4a0d 100%);
+  background-size: 260% 100%;
+  animation: card-foil 9s linear infinite;
+}
+
+.live-card[data-rarity="gold"] .live-card__plate h2 {
+  text-shadow: 0 0.04em 0.02em rgb(66 42 6 / 50%);
+}
+
+/* The rating is physically raised off the stock. */
+.live-card[data-rarity="gold"] .live-card__ovr b {
+  text-shadow:
+    0 0.045em 0 rgb(255 251 232 / 80%),
+    0 -0.03em 0 rgb(84 54 9 / 30%),
+    0 0.09em 0.12em rgb(84 54 9 / 25%);
+}
+
+.live-card[data-rarity="gold"] .live-card__sheen {
+  opacity: 0.85;
+  background: linear-gradient(104deg, transparent 40%, rgb(255 255 255 / 42%) 50%, transparent 60%);
+  transform: translateX(-125%);
+  animation: card-glide 9s linear infinite;
+}
+
+/* ===== TIER 5 — HOLO: refraction film ======================================
+   Two diffraction layers drifting at 17s and 23s, so the pattern beats slowly
+   and never visibly loops. */
+.live-card[data-rarity="holo"] {
+  --stock: #ece7f4;
+  --ci: #3a2a52;
+  --plate: #574481;
+  --plate-ink: #ffffff;
+  --rule: rgb(58 42 82 / 20%);
+  --edge: rgb(255 255 255 / 80%);
+  box-shadow: var(--lift), 0 0 1.8rem rgb(140 110 230 / 22%);
+}
+
+.live-card[data-rarity="holo"] .live-card__grain {
+  opacity: 0.5;
+  background-image:
+    repeating-linear-gradient(78deg, rgb(255 255 255 / 16%) 0 1px, transparent 1px 2.5px),
+    radial-gradient(rgb(0 0 0 / 14%) 0.5px, transparent 0.6px);
+  background-size: auto, 3px 3px;
+  mix-blend-mode: overlay;
+}
+
+/* Refraction. A real holographic card only fires when the light catches it,
+   so this is periodic rather than continuous: a band of thin coloured lines
+   sweeps across the card in about 2.5s, then the card rests for six. The
+   lines are a repeating-linear-gradient; the band is a single-layer
+   `mask-image` envelope, so the lines fade in and out at its edges instead of
+   showing as a moving rectangle. (Single-layer masks are well supported —
+   it was `mask-composite` that failed here, see the prism-edge note below.)
+   The layer is wider than the card so it can travel without its own edges
+   ever entering frame. */
+.live-card[data-rarity="holo"] .live-card__film {
+  inset: -14% -50%;
+  opacity: 0;
+  border-radius: 0;
+  background-image: repeating-linear-gradient(
+    100deg,
+    transparent 0 13px,
+    rgb(64 214 200 / 62%) 13px 14.4px,
+    transparent 14.4px 20px,
+    rgb(150 138 255 / 58%) 20px 21.3px,
+    transparent 21.3px 31px,
+    rgb(206 104 220 / 55%) 31px 32.4px,
+    transparent 32.4px 40px,
+    rgb(255 206 104 / 50%) 40px 41.2px,
+    transparent 41.2px 52px,
+    rgb(126 226 158 / 48%) 52px 53.2px,
+    transparent 53.2px 68px
+  );
+  -webkit-mask-image: linear-gradient(100deg, transparent 30%, #000 44%, #000 56%, transparent 70%);
+  mask-image: linear-gradient(100deg, transparent 30%, #000 44%, #000 56%, transparent 70%);
+  animation: card-prism 9s cubic-bezier(0.42, 0, 0.3, 1) infinite;
+}
+
+/* A soft, slow shimmer over the top of it. */
+.live-card[data-rarity="holo"] .live-card__sheen {
+  opacity: 0.5;
+  background: linear-gradient(104deg, transparent 38%, rgb(255 255 255 / 46%) 50%, transparent 62%);
+  transform: translateX(-125%);
+  mix-blend-mode: screen;
+  animation: card-glide 11s linear infinite;
+}
+
+/* Prism edge. This was a conic-gradient ring masked to the border with
+   `mask-composite: exclude`; Chromium never excluded the interior, so the
+   gradient's colour-stop boundaries painted as stray diagonals across the
+   whole card. Layered inset shadows split the light at the four edges
+   instead — same read, no masking, and supported everywhere. */
+.live-card[data-rarity="holo"] .live-card__frame {
+  box-shadow:
+    inset 0 0 0 0.1em rgb(255 255 255 / 80%),
+    inset 0 0.14em 0.45em rgb(94 211 200 / 30%),
+    inset 0 -0.14em 0.45em rgb(199 111 214 / 30%),
+    inset 0.16em 0 0.45em rgb(123 126 224 / 26%),
+    inset -0.16em 0 0.45em rgb(255 214 120 / 22%),
+    inset 0 0 1.4em rgb(150 120 255 / 20%);
+}
+
+/* ===== TIER 6 — ELITE: lacquer and gold leaf ===============================
+   No longer paper. The only inverted card in the set, which is what makes an
+   Elite pull unmistakable across a room. */
+.live-card[data-rarity="elite"] {
+  --stock: #131009;
+  --ci: #f2e6cb;
+  --plate: #0d0b07;
+  --plate-ink: #191204;
+  --rule: rgb(233 196 106 / 24%);
+  --edge: rgb(233 196 106 / 42%);
+  --shirt: #7c5f19;
+  --shirt-ink: #f8ecc6;
+  background: radial-gradient(126% 92% at 50% -6%, #2c2314 0%, #141109 52%, #090806 100%);
+  box-shadow:
+    0 1.4rem 2.6rem -0.75rem rgb(0 0 0 / 82%),
+    0 0 0 1px rgb(233 196 106 / 32%),
+    0 0 2.2rem rgb(224 172 74 / 20%);
+  transform-style: preserve-3d;
+  transform: perspective(1200px) rotateY(var(--card-tilt-y, 0deg)) rotateX(var(--card-tilt-x, 0deg));
+}
+
+/* The pointer tilt replaces the shared hover lift for this tier. */
+.live-card[data-rarity="elite"]:hover {
+  transform: perspective(1200px) rotateY(var(--card-tilt-y, 0deg)) rotateX(var(--card-tilt-x, 0deg)) translateY(-0.4rem);
+}
+
+.live-card[data-rarity="elite"] .live-card__grain {
+  opacity: 0.34;
+  background-image: radial-gradient(rgb(233 196 106 / 40%) 0.5px, transparent 0.6px);
+  mix-blend-mode: screen;
+}
+
+.live-card[data-rarity="elite"] .live-card__glow {
+  inset: -25%;
+  border-radius: 50%;
+  opacity: 1;
+  background: radial-gradient(closest-side, rgb(224 172 74 / 30%), rgb(224 172 74 / 0%) 72%);
+  animation: card-breathe 6500ms ease-in-out infinite;
+}
+
+.live-card[data-rarity="elite"] .live-card__scrim {
+  height: 50%;
+  background: linear-gradient(180deg, rgb(9 8 6 / 0%) 0%, rgb(12 10 7 / 72%) 58%, #100d08 100%);
+}
+
+.live-card[data-rarity="elite"] .live-card__plate,
+.live-card[data-rarity="elite"] .live-card__pennant {
+  background-image: linear-gradient(100deg, #7c5f19 0%, #c8a147 16%, #f6e6b4 30%, #e9c46a 44%, #8a6a1f 62%, #dcbc6b 82%, #7c5f19 100%);
+  background-size: 250% 100%;
+  animation: card-foil 11s linear infinite;
+}
+
+.live-card[data-rarity="elite"] .live-card__pennant { color: #191204; }
+
+.live-card[data-rarity="elite"] .live-card__ovr b {
+  color: #f6e6b4;
+  text-shadow: 0 0 0.5em rgb(233 196 106 / 55%), 0 0.05em 0.06em rgb(0 0 0 / 60%);
+}
+
+.live-card[data-rarity="elite"] .live-card__ovr span { color: #e9c46a; opacity: 0.8; }
+.live-card[data-rarity="elite"] .live-card__stats dd { color: #f6e6b4; }
+
+.live-card[data-rarity="elite"] .live-card__frame {
+  box-shadow: inset 0 0 0 0.1em rgb(233 196 106 / 42%), inset 0 0 1.8em rgb(224 172 74 / 20%);
+}
+
+.live-card[data-rarity="elite"] .live-card__sheen {
+  opacity: 0.5;
+  background: linear-gradient(108deg, transparent 36%, rgb(255 236 183 / 36%) 48%, transparent 60%);
+  transform: translateX(-125%);
+  mix-blend-mode: screen;
+  animation: card-glide 7500ms linear infinite;
+}
+
+/* Depth planes — only meaningful while the card is being tilted. */
+.live-card[data-rarity="elite"] .live-card__ovr { transform: translateZ(26px); }
+.live-card[data-rarity="elite"] .live-card__plate { transform: translateZ(16px); }
+.live-card[data-rarity="elite"] .live-card__pennant { transform: translateZ(30px); }
+
+/* ---- no-photo card ------------------------------------------------------- */
+/* The shirt back: surname across the shoulders, live rating as the squad
+   number. Drawn in the tier's own material, so it inherits the foil, the film
+   and the lacquer for free — and unlike a monogram it differs per player. */
+.live-card__shirt-ground { fill: color-mix(in srgb, var(--ci) 16%, var(--stock)); }
+.live-card__shirt-body { fill: var(--shirt); }
+.live-card__shirt-seam { stroke: var(--shirt-ink); stroke-opacity: 0.16; stroke-width: 2; }
+.live-card__shirt-name {
+  fill: var(--shirt-ink);
+  font-family: var(--font-sans);
+  font-weight: 800;
+  letter-spacing: 0.16em;
+}
+.live-card__shirt-number {
+  fill: var(--shirt-ink);
+  font-family: var(--font-sans);
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+.live-card__shirt-halftone {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(color-mix(in srgb, var(--ci) 14%, transparent) 1.05px, transparent 1.15px);
+  background-size: 6px 6px;
+}
+
+/* Fallback bust for surnames too long to set on the shoulder arc. Drawn in
+   the app icon set's own stroke language — no face, no skin tone. */
+.live-card__bust {
+  fill: none;
+  stroke: color-mix(in srgb, var(--ci) 72%, var(--stock));
+  stroke-width: 7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* ---- keyframes ----------------------------------------------------------- */
+@keyframes card-sweep {
+  0% { opacity: 0; transform: translateX(-125%); }
+  14% { opacity: 0.95; }
+  100% { opacity: 0; transform: translateX(125%); }
+}
+
+@keyframes card-glide {
+  0%, 58% { transform: translateX(-125%); }
+  100% { transform: translateX(125%); }
+}
+
+@keyframes card-foil {
+  from { background-position: 0% 50%; }
+  to { background-position: 250% 50%; }
+}
+
+@keyframes card-drift-a {
+  from { background-position: 0% 50%; }
+  to { background-position: 240% 50%; }
+}
+
+@keyframes card-drift-b {
+  from { background-position: 220% 50%; }
+  to { background-position: 0% 50%; }
+}
+
+/* Long rest, then one pass. The transform holds at the start position for
+   the whole idle stretch, so nothing drifts between sweeps. */
+@keyframes card-prism {
+  0%, 70% { opacity: 0; transform: translate3d(-46%, 0, 0); }
+  76% { opacity: 0.62; }
+  93% { opacity: 0.58; }
+  100% { opacity: 0; transform: translate3d(46%, 0, 0); }
+}
+
+@keyframes card-breathe {
+  0%, 100% { opacity: 0.42; transform: scale(0.93); }
+  50% { opacity: 0.9; transform: scale(1.07); }
+}
+
+/* Motion is a courtesy, not a requirement: the ladder still reads through
+   material alone when the OS asks for stillness. */
+@media (prefers-reduced-motion: reduce) {
+  .live-card,
+  .live-card * {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .live-card:hover { transform: none; }
+
+  .live-card[data-rarity="elite"],
+  .live-card[data-rarity="elite"]:hover {
+    transform: none;
+  }
+}
+
+/* Small tier swatch for use outside a card (the pack store's ladder panel).
+   Same six silhouettes as the card pennant, same stock colours. */
+.tier-chip {
+  display: grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 2.1rem;
+  flex: none;
+  border-radius: 0.3rem;
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 14%);
+}
+
+.tier-chip span {
+  display: block;
+  width: 0.75rem;
+  height: 0.75rem;
+}
+
+.tier-chip[data-rarity="common"] { background: #e9e5d9; }
+.tier-chip[data-rarity="common"] span { background: #3b3830; }
+.tier-chip[data-rarity="bronze"] { background: #ecd8b1; }
+.tier-chip[data-rarity="bronze"] span { background: #8a5326; }
+.tier-chip[data-rarity="silver"] { background: #e3e8eb; }
+.tier-chip[data-rarity="silver"] span { background: #4b5761; }
+.tier-chip[data-rarity="gold"] { background: linear-gradient(140deg, #f7e7b2, #e2c069); }
+.tier-chip[data-rarity="gold"] span { background: #8a6414; }
+.tier-chip[data-rarity="holo"] { background: linear-gradient(140deg, #d9f2ee, #e6dcf6 45%, #f5dcf0); }
+.tier-chip[data-rarity="holo"] span { background: #574481; }
+.tier-chip[data-rarity="elite"] {
+  background: radial-gradient(120% 100% at 50% 0%, #2c2314, #0f0c08);
+  box-shadow: inset 0 0 0 1px rgb(233 196 106 / 45%);
+}
+.tier-chip[data-rarity="elite"] span { background: #e9c46a; }
+
+/* ---- Pack / starter reveal animation --------------------------------------- */
+.pack-reveal__stage {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 22rem;
+  padding: 1rem;
+}
+
+.pack-reveal__seal,
+.pack-reveal__focus {
+  animation: pack-card-rise 460ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.pack-reveal__rarity {
+  animation: pack-rarity-flare 520ms ease-out both;
+}
+
+.pack-reveal__ovr {
+  display: inline-block;
+  animation: pack-ovr-pop 420ms cubic-bezier(0.2, 1.4, 0.3, 1) both;
+}
+
+.pack-reveal__summary-card {
+  animation: pack-card-rise 420ms ease-out both;
+}
+
+.pack-reveal__summary-card:nth-child(2) { animation-delay: 90ms; }
+.pack-reveal__summary-card:nth-child(3) { animation-delay: 180ms; }
+
+@keyframes pack-card-rise {
+  from { opacity: 0; transform: translateY(1.4rem) scale(0.96); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes pack-rarity-flare {
+  0% { opacity: 0; transform: scale(0.7); }
+  55% { opacity: 1; transform: scale(1.08); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes pack-ovr-pop {
+  from { opacity: 0; transform: scale(0.4); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pack-reveal__seal,
+  .pack-reveal__focus,
+  .pack-reveal__rarity,
+  .pack-reveal__ovr,
+  .pack-reveal__summary-card {
+    animation: none;
+  }
+}
+
+/* App-chrome pennant glyph (nav wordmark + active tab marker). A stylesheet
+   rule, not an inline style attribute — production CSP is style-src nonce-only,
+   which strips inline `style`. Shape matches the Gold tier pennant. */
+.clip-pennant {
+  clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%);
+}

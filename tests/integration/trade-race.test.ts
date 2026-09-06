@@ -71,7 +71,7 @@ describe("local two-client trade-offer accept race", () => {
       fx.proposerB,
     ]);
     await admin.query(
-      "insert into kut.card_editions (id, player_id, edition_type, title, is_live, snapshot_ovr, snapshot_pac, snapshot_sho, snapshot_pas, snapshot_dri, snapshot_def, snapshot_phy, special_discard_multiplier) values ($1,$2,'other','Trade race fixture',false,50,50,50,50,50,50,50,1)",
+      "insert into kut.card_editions (id, player_id, edition_type, title, is_live, snapshot_ovr, snapshot_pac, snapshot_sho, snapshot_pas, snapshot_dri, snapshot_def, snapshot_phy, special_discard_multiplier, snapshot_archetype, snapshot_rarity_tier, description, artwork_key, artwork_version, issued_at) values ($1,$2,'other','Trade race fixture',false,50,50,50,50,50,50,50,1,'all_rounder','silver','Trade race fixture.','tests/trade-race',1,now())",
       [fx.edition, fx.player],
     );
     await admin.query("insert into kut.user_cards (id, edition_id, owner_id, source) values ($1,$2,$3,'pack')", [

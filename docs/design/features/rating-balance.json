@@ -1,0 +1,160 @@
+{
+  "source": "src/game/rating-engine.ts",
+  "seed": 20260906,
+  "rows": [
+    {
+      "goals": 0,
+      "oldWeeklyForm": 0,
+      "newGoalForm": 0,
+      "newGoalOvr": 0,
+      "shootingExtra": 0
+    },
+    {
+      "goals": 1,
+      "oldWeeklyForm": 1.25,
+      "newGoalForm": 1,
+      "newGoalOvr": 1,
+      "shootingExtra": 2
+    },
+    {
+      "goals": 2,
+      "oldWeeklyForm": 2.5,
+      "newGoalForm": 1.25,
+      "newGoalOvr": 1,
+      "shootingExtra": 4
+    },
+    {
+      "goals": 3,
+      "oldWeeklyForm": 4.75,
+      "newGoalForm": 1.5,
+      "newGoalOvr": 2,
+      "shootingExtra": 6
+    },
+    {
+      "goals": 4,
+      "oldWeeklyForm": 6,
+      "newGoalForm": 1.5,
+      "newGoalOvr": 2,
+      "shootingExtra": 8
+    }
+  ],
+  "isolated": [
+    {
+      "age": 0,
+      "goalOrKudosForm": 1.5,
+      "combinedForm": 3
+    },
+    {
+      "age": 1,
+      "goalOrKudosForm": 1.125,
+      "combinedForm": 2.25
+    },
+    {
+      "age": 2,
+      "goalOrKudosForm": 0.75,
+      "combinedForm": 1.5
+    },
+    {
+      "age": 3,
+      "goalOrKudosForm": 0.375,
+      "combinedForm": 0.75
+    },
+    {
+      "age": 4,
+      "goalOrKudosForm": 0,
+      "combinedForm": 0
+    }
+  ],
+  "oldHatTrickWeeklyDecay": [
+    4.75,
+    2.6125,
+    1.436875,
+    0.790281,
+    0.434655
+  ],
+  "turnout": [
+    {
+      "attendees": 3,
+      "voters": 3,
+      "meanKudosForm": 0.4982666666666667,
+      "recognizedPercent": 49.82666666666667,
+      "maxKudosPercent": 0
+    },
+    {
+      "attendees": 5,
+      "voters": 5,
+      "meanKudosForm": 0.7297575,
+      "recognizedPercent": 71.236,
+      "maxKudosPercent": 0
+    },
+    {
+      "attendees": 20,
+      "voters": 5,
+      "meanKudosForm": 0.06725,
+      "recognizedPercent": 6.712,
+      "maxKudosPercent": 0
+    },
+    {
+      "attendees": 20,
+      "voters": 10,
+      "meanKudosForm": 0.24701875,
+      "recognizedPercent": 24.321,
+      "maxKudosPercent": 0.016
+    },
+    {
+      "attendees": 20,
+      "voters": 20,
+      "meanKudosForm": 0.66178375,
+      "recognizedPercent": 61.82425,
+      "maxKudosPercent": 1.3085
+    }
+  ],
+  "values": [
+    {
+      "boost": 0,
+      "ovr": 60,
+      "discard": 101
+    },
+    {
+      "boost": 1,
+      "ovr": 61,
+      "discard": 109
+    },
+    {
+      "boost": 2,
+      "ovr": 62,
+      "discard": 117
+    },
+    {
+      "boost": 3,
+      "ovr": 63,
+      "discard": 127
+    },
+    {
+      "boost": 4,
+      "ovr": 64,
+      "discard": 137
+    },
+    {
+      "boost": 8,
+      "ovr": 68,
+      "discard": 186
+    }
+  ],
+  "steady": {
+    "oldThreeGoalsWeekly": 8,
+    "newMaxGoalsEverySession": 3.75,
+    "newMaxKudosEverySession": 3.75,
+    "newBothEverySession": 7.5,
+    "newBothAlternateSessionsAfterAppearance": 4.5,
+    "newBothAlternateSessionsBetweenAppearances": 3
+  },
+  "coins": {
+    "attendance": 250,
+    "completion": 50,
+    "total": 300,
+    "packPrice": 175,
+    "packsPerReportingSession": 1.7142857142857142,
+    "increaseFromOriginalPercent": 71.42857142857142
+  }
+}

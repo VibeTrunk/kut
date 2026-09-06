@@ -79,6 +79,36 @@ test("requires sign-in before showing the Club Value breakdown", async ({ page }
   await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
 });
 
+test("keeps trading preferences private at a phone viewport", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 568 });
+  await page.goto("/club/collection/wanted");
+
+  await expect(page).toHaveURL(/\/login$/);
+  await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
+  expect(await page.locator("body").evaluate((body) => body.scrollWidth <= window.innerWidth)).toBeTruthy();
+});
+
+test("requires sign-in before showing a member session report", async ({ page }) => {
+  await page.goto("/sessions/00000000-0000-4000-8000-000000000001/report");
+
+  await expect(page).toHaveURL(/\/login$/);
+  await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
+});
+
+test("requires sign-in before showing admin session reports", async ({ page }) => {
+  await page.goto("/admin/attendance/00000000-0000-4000-8000-000000000001/reports");
+
+  await expect(page).toHaveURL(/\/login$/);
+  await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
+});
+
+test("requires sign-in before showing edition administration", async ({ page }) => {
+  await page.goto("/admin/editions");
+
+  await expect(page).toHaveURL(/\/login$/);
+  await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
+});
+
 test("keeps a protected route usable at a phone viewport", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/messages");

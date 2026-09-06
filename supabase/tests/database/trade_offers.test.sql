@@ -1,5 +1,8 @@
 begin;
 
+-- Isolate the sweep count from overdue offers in a persistent local stack.
+do $$ begin perform kut.expire_trade_offers(); end $$;
+
 create extension if not exists pgtap with schema extensions;
 set local search_path to extensions, kut, public;
 

@@ -8,6 +8,33 @@ Everything **not yet built**, in one place. For the rest:
 - the canonical spec, including its own Phase 2–4 scope → `BUILD_SPEC.md`
 - raw tester feedback and how each item was triaged → `TESTER_FEEDBACK_BATCHES.md`
 
+## Five-feature design package — 2026-09-05
+
+The user requested feature specs and matching mobile-first screens for the five
+items below. The concrete review proposal is in
+[`SPEC_NEXT_FEATURES.md`](SPEC_NEXT_FEATURES.md), with an
+[interactive gallery](../design/features/index.html) and
+[rendered screen guide](design/features/README.md). **Design only: none of these
+changes has been implemented or deployed.** Numerical design defaults remain
+proposals until adopted in the individual implementation ADRs.
+
+The [implementation plan](IMPLEMENTATION_PLAN_NEXT_FEATURES.md) and
+[new-session prompt](START_NEXT_FEATURES.md) now cover building the full package
+serially in one 5.6 Terra / High session, with separate reviewable feature units.
+This handoff does not mark any feature implemented or authorize deployment.
+
+| Feature | Design proposal |
+|---|---|
+| Wanted cards and trade availability | Revised 2026-09-06: private wants plus explicitly shared copies; show who is open to trading and encourage direct contact through any channel. No reciprocal matching or new escrow flow. |
+| Special-edition scaffolding only | Frozen edition contracts/rendering/constraints, dormant integrations, an admin empty archive; zero Special rows/copies and Live-only packs. |
+| Attendance + goals + kudos | Members self-report within 24h and earn 50 KUT Coins once for completing the form (zero/skips valid). Admin sees completion, corrects submitted goals and records goals for accountless attendees. Balance review in `RATING_BALANCE_REVIEW.md`. |
+| Basic pack price 175 | Three Live cards, same weights and attendance reward; actual roster expected-discard-value check required before activation (§6). |
+| Duplicate-sensitive Club Value | Per-edition copy contributions 100%, 20%, 5%, 0% thereafter, with transparent breakdown and unchanged full discard payouts (§7). |
+
+The detailed package resolves the older brainstorm's open questions as a **v1
+proposal**, including choosing a +1.5 goal-Form cap. The older discussion below
+is retained as rationale, not a second conflicting implementation instruction.
+
 ## Status vocabulary
 
 - **idea** — raised, not yet evaluated or committed
@@ -157,7 +184,7 @@ Raw triage (who asked, de-duplication, disposition) lives in
 |---|---|---|
 | Rating-history backfill | idea | The graph itself shipped 2026-09-02 (ADR-047) with **no** backfill, so each player's series starts at one or two points and accumulates weekly. `BUILD_SPEC.md` §10 guarantees a season is rebuildable from published sessions, so a deterministic backfill of `player_rating_snapshots` remains possible if the sparse start proves unsatisfying. Data-changing; needs an ADR. Design note in `archive/SPEC_ALBUM_CHRONICLE_GRAPH.md` §7. |
 | See other members' squads / teams | blocked | Needs a card-ownership privacy decision + an ADR — the codebase deliberately hides who owns which card (`my_collection_cards` is owner-scoped; `player_directory` hides who claimed a player). Build sketch in ADR-044 / `TESTER_FEEDBACK_BATCHES.md` round-2 💡03. The **admin** view of a member's cards under "Admin tooling" below is a separate, operator-only item and does not unblock this one — admins already hold an `admins read all cards` RLS policy, members do not. |
-| Duplicate copies weigh less for Club Value | blocked | Changes a published economy formula (Club Value v2, ADR-041) — data-changing migration + ADR + a re-balance against the Part L faucet/sink invariants. Intent: reward collecting breadth and make the transfer market more active. |
+| Duplicate copies weigh less for Club Value | planned | Explicitly requested for design 2026-09-05. Concrete v3 proposal and mobile breakdown in `SPEC_NEXT_FEATURES.md` §7: 100% / 20% / 5% / 0% per edition. Requires a data-changing migration + ADR. Full discard payouts remain; the spec explains why this reduces holding incentives rather than capping coin wealth. |
 | Prestige + collections — hand in N cards for a reward | idea | Two related card-sink mechanics: a permanent cosmetic medal for turning in 30 distinct cards; themed sets (e.g. ≥80% of a session's attendees) handed in for a coin payout. New tables + a sink and/or faucet + UI. `BUILD_SPEC.md` Part XXXV already sketches collection challenges. |
 | "Store" instead of "Packs" | idea | Rename the section and add variety: multiple pack types, sub-250-coin items, cosmetics that pimp your personal card. Today there is one 250-coin basic pack. New product surface + a cosmetics model; ADR + migration. |
 | Player / Team of the Season ("TOTS" = Terrible of the Season) | idea | End-of-season award from most team-of-the-week appearances / most goals, plus a Team of the Season XI. Season-boundary aggregation over existing snapshot + goal data; no economy change if purely cosmetic. |
@@ -174,7 +201,7 @@ New ideas identified during roadmap review. They are deliberately **not scoped**
 
 | Item | Status | Notes / next step |
 |---|---|---|
-| Wanted-card lists and trade matching | idea | Members can privately mark cards as **wanted** or **available to trade**. Surface compatible swaps and optionally notify a member when a wanted card is listed. Builds on fixed-price listings and ADR-042 escrow trade offers, without exposing collections by default or changing card/coin balances. Needs an opt-in privacy model, notification preferences, matching-query design, and anti-spam limits. |
+| Wanted-card lists and trade matching | planned | Simplified by user feedback 2026-09-06: `SPEC_NEXT_FEATURES.md` §3 now specifies private wants, copy-level availability and a notice naming members open to trading. Contact each other and agree terms; complete through existing Market/Offers. No reciprocal matcher, new offer target, or new notification machinery. |
 | Session Recap / "TFH Chronicle" | partial | v1 shipped 2026-09-02 (ADR-049, migration `20260913000000`): one issue per football week at `/chronicle`, matchday reports plus tier crossings, member-only. **Open remainder**, designed but deliberately unbuilt (`archive/SPEC_ALBUM_CHRONICLE_GRAPH.md` §4.4): a **club desk** block for the week's sales, listings, trades and pack opens — all already in `kut.activity_feed`, so it is a rendering job, not a data one — and a **kudos & goals** block that only becomes possible if "Real-life play → ratings" above ships. The issue layout already reserves room for both. |
 | Opt-in community collection goals | idea | A TFH-wide seasonal album or themed goal that members can contribute toward while retaining their own cards. Completion unlocks a cosmetic club-wide badge, card frame, or Chronicle moment — **not** coins, packs, ratings, or ownership disclosure. This complements the personal Panini album and collection challenges; needs opt-in contribution semantics, a privacy-safe aggregate-progress design, and an ADR. |
 | Market "My listings" tab | idea | Raised by the 2026-09-05 navigation audit and deliberately not built with ADR-053. Market now has `Buy` / `Offers` section tabs; a third **My listings** tab would show everything you currently have up for sale. Today a listing is cancelled from its card in the Collection, which works, but there is no single view of your own active listings. `kut.my_collection_cards` already carries `active_listing_id` and `active_listing_price`, so it is a filter over data the Collection already fetches — no new query shape, but it is new scope and a product decision about whether the Collection or the Market owns that job. |

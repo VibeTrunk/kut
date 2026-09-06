@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
+import { isAdminRole } from "@/lib/auth/roles";
 
 export type NavContext = {
   displayName: string;
@@ -54,7 +55,7 @@ export const getNavContext = cache(async (): Promise<NavContext> => {
 
   return {
     displayName: profile.display_name,
-    isAdmin: profile.role === "admin" || profile.role === "superadmin",
+    isAdmin: isAdminRole(profile.role),
     balance: walletResponse.data?.balance ?? 0,
     unreadCount: notificationsResponse.count ?? 0,
     incomingOfferCount: offersResponse.count ?? 0,

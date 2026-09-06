@@ -107,6 +107,50 @@ export function calculateWeeklyPerformance(goals: number): number {
   return goalPoints + hatTrickBonus;
 }
 
+export type SessionFormContribution = {
+  sessionInput: number;
+  /** Number of later published v2 sessions at the snapshot being calculated. */
+  age: number;
+};
+
+export function calculateGoalForm(goals: number | null): number {
+  if (goals === null) return 0;
+  if (!Number.isInteger(goals) || goals < 0 || goals > 99) {
+    throw new Error("Goals must be an integer from 0 to 99.");
+  }
+  if (goals === 0) return 0;
+  return goals === 1 ? 1 : goals === 2 ? 1.25 : 1.5;
+}
+
+export function calculateKudosForm(qualifiedCategories: number): number {
+  if (!Number.isInteger(qualifiedCategories) || qualifiedCategories < 0 || qualifiedCategories > 3) {
+    throw new Error("Qualified kudos categories must be from 0 to 3.");
+  }
+  if (qualifiedCategories === 0) return 0;
+  return qualifiedCategories === 1 ? 1 : qualifiedCategories === 2 ? 1.25 : 1.5;
+}
+
+export function calculateSessionInput(goals: number | null, qualifiedCategories: number): number {
+  return Math.min(3, calculateGoalForm(goals) + calculateKudosForm(qualifiedCategories));
+}
+
+export function calculateVersion2FormScore(
+  contributions: SessionFormContribution[],
+  legacyForm: number,
+  publishedV2SessionCount: number,
+): number {
+  const weights = [1, 0.75, 0.5, 0.25] as const;
+  const legacyWeights = [0, 0.75, 0.5, 0.25, 0] as const;
+  const carry = clamp(legacyForm, 0, GAME_CONFIG.formCap) * (legacyWeights[Math.min(4, Math.max(0, publishedV2SessionCount))] ?? 0);
+  const active = contributions.reduce((total, contribution) => {
+    if (!Number.isFinite(contribution.sessionInput) || contribution.sessionInput < 0 || contribution.sessionInput > 3) {
+      throw new Error("Session Form input must be from 0 to 3.");
+    }
+    return total + contribution.sessionInput * (weights[contribution.age] ?? 0);
+  }, 0);
+  return clamp(carry + active, 0, GAME_CONFIG.formCap);
+}
+
 export function calculateFormScore(previousFormScore: number, goals: number): number {
   return clamp(
     previousFormScore * GAME_CONFIG.formWeeklyDecay + calculateWeeklyPerformance(goals),

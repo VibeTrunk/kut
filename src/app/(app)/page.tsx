@@ -45,6 +45,7 @@ export default async function Home() {
     clubValueResponse,
     rankResponse,
     activityResponse,
+    reportResponse,
   ] = await Promise.all([
     supabase.schema("kut").from("profiles").select("is_disabled").eq("id", userId).maybeSingle(),
     supabase
@@ -62,6 +63,7 @@ export default async function Home() {
       .gte("ts", ACTIVITY_FLOOR_ISO)
       .order("ts", { ascending: false })
       .limit(12),
+    supabase.schema("kut").from("my_session_reports").select("session_id, session_date, report_status, reward_received, closes_at").eq("survey_status", "open").order("closes_at").limit(1).maybeSingle(),
   ]);
 
   if (profileError) {
@@ -73,6 +75,9 @@ export default async function Home() {
   if (risersResponse.error) {
     throw new Error("Could not load this week's movers.");
   }
+  if (reportResponse.error) {
+    throw new Error("Could not load your open session report.");
+  }
 
   const risers = (risersResponse.data ?? []) as TopRiser[];
   const photoUrls = await resolvePhotoUrls(supabase, risers.map((player) => player.photo_path));
@@ -81,6 +86,7 @@ export default async function Home() {
   const rank = rankResponse.data?.rank ?? null;
   // The activity feed is a non-critical widget — never fail the Home page over it.
   const activity = (activityResponse.data ?? []) as ActivityRow[];
+  const openReport = reportResponse.data;
 
   return (
     <main className="board-ground min-h-screen p-5 text-ink sm:p-10">
@@ -117,6 +123,12 @@ export default async function Home() {
             Open a pack
           </Link>
         </header>
+
+        {openReport && (
+          <Link className="flex min-h-20 items-center justify-between gap-4 rounded-2xl border border-brass/50 bg-brass-bg/25 p-5 hover:bg-brass-bg/40" href={`/sessions/${openReport.session_id}/report`}>
+            <span><span className="text-xs font-black uppercase tracking-wider text-brass">Your report → +50 KUT Coins</span><span className="display mt-1 block text-2xl">{openReport.report_status === "submitted" ? "View your report" : "Add goals & kudos"}</span></span><span aria-hidden="true" className="text-2xl text-brass">&rarr;</span>
+          </Link>
+        )}
 
         <dl className="grid grid-cols-1 overflow-hidden rounded-2xl border border-line/60 bg-gradient-to-b from-panel-2/70 to-panel/70 sm:grid-cols-3">
           <div className="border-b border-line/50 px-6 py-5 sm:border-b-0 sm:border-l sm:first:border-l-0">

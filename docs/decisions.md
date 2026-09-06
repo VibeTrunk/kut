@@ -2414,3 +2414,128 @@ existing member-authored fixtures that must still show. No front-end change —
 `kind`, `actor_name`, `counterparty_name`, `card_name`, `amount`,
 `session_date` and `session_type` are all unchanged, so `src/lib/activity.ts`
 and Home's rendering are untouched.
+
+## ADR-055 — Special editions are scaffolded but not issued
+
+Date: 2026-09-06
+
+Status: Accepted
+
+Decision: Special editions now require frozen player identity, rating, rarity,
+description and artwork metadata. Their 30–95 OVR range is intentionally
+separate from a Live card's 30–83 range. The migration issues no Special
+edition or copy, and packs remain Live-only.
+
+Reason: this establishes an auditable immutable model without inventing an
+issuance event before its product rules exist.
+
+Consequences: `20260916000000_special_edition_scaffolding.sql` adds only the
+schema and integrity boundaries. Activation needs a separately reviewed
+issuance migration and product decision.
+
+## ADR-056 — Club Value discounts duplicate copies by edition
+
+Date: 2026-09-06
+
+Status: Accepted
+
+Decision: copies 1/2/3/4+ of one edition contribute 100% / 20% / 5% / 0% of
+that edition's discard value to Club Value. Discarding a copy still pays its
+full discard value; Club Value is not a payout rule.
+
+Reason: the concrete values from the revised feature package reward collection
+breadth while preserving existing ownership and discard invariants.
+
+Consequences: `20260917000000_duplicate_club_value.sql` rebuilds the member
+and leaderboard projections through one SQL helper; `20260920020000` grants
+that projection helper to the intended read roles after local compatibility
+testing.
+
+## ADR-057 — Basic packs cost 175 coins and require a quoted price
+
+Date: 2026-09-06
+
+Status: Accepted
+
+Decision: the basic three-card Live-only pack costs exactly 175 KUT Coins.
+`open_pack(slug, expected_price, idempotency_key)` rejects a stale quote before
+any debit and preserves replay-safe prior outcomes.
+
+Reason: price is a server-side economic contract, not client authority.
+
+Consequences: `20260918000000_basic_pack_175.sql` changes the price and RPC
+contract. Local active-roster measurement is 87.46 expected discard coins per
+pack (49.98% of price); a fresh hosted-roster measurement is still required
+before activation and does not authorize changing the requested price or odds.
+
+## ADR-058 — Wants are private; availability starts a conversation
+
+Date: 2026-09-06
+
+Status: Accepted
+
+Decision: members may keep up to 100 private wants and mark up to 30 owned
+copies explicitly available. Wanted and available selectors share one screen.
+A want sees only relevant owner display names and a channel-neutral copyable
+prompt. There is no reciprocal matcher, offer engine, or
+new escrow path.
+
+Reason: this is the revised social handoff, using the existing exchange paths
+without exposing private lists or creating a second transaction system.
+
+Consequences: `20260919000000_wants_trade_availability.sql` enforces owner
+RLS, caps, cleanup and fulfillment. `20260920030000` is a local compatibility
+correction for the established pack availability column names; `20260920060000`
+routes listing visibility through the same public projection as Market.
+
+## ADR-059 — Member reports are versioned, rewarded once, and finalized reliably
+
+Date: 2026-09-06
+
+Status: Accepted
+
+Decision: published attendance opens a 24-hour self-report form. A valid
+completed form, including explicit zero goals and skipped kudos, earns 50
+coins once per player/session. Admins may correct member or guest goals with a
+reason and immutable audit; corrections never pay. Rating v2 is selected per
+published session from a season cutover and writes historical snapshots when
+the survey finalizes.
+
+Reason: the reward, ratings and history must be database-authoritative and
+remain explainable after edits or legacy sessions.
+
+Consequences: `20260920000000_session_reports_rating_v2.sql` adds the report,
+receipt, survey, results, correction and versioned rebuild model.
+`20260920010000`, `20260920040000` and `20260920050000` harden service
+finalization, persisted submit state and Chronicle reads. Scheduled hosted
+finalization is an operator activation step; the bounded service RPC is the
+safe fallback.
+
+## ADR-060 — Chronicle shows aggregate open progress; first kudos recognition is +1 Form
+
+Date: 2026-09-06
+
+Status: Accepted
+
+Decision: During an open v2 survey, Chronicle shows the number of submitted
+forms, eligible accounts, aggregate goals reported so far, the actual deadline,
+and the current member's report action. It does not expose individual
+provisional goals, nominees, ballots, or raw vote counts. Finalized Chronicle
+rows remain the only player-level results. Qualified kudos categories now score
+0 / 1 / 1.25 / 1.5 Form for 0 / 1 / 2 / 3 recognized categories, preserving
+the existing +1.5 kudos cap and +3 combined session cap.
+
+Reason: The prior Chronicle inferred survey state from the absence of finalized
+rows, which falsely labelled open reporting as closed and displayed zero goals.
+The original +0.5 first-category award also made a clear four-person consensus
+feel incidental. A +1 first recognition is legible, while diminishing returns
+keep broader recognition valuable without increasing the balance-review caps.
+
+Consequences: `20260920080000_chronicle_open_progress_and_kudos_ladder.sql`
+adds a security-definer aggregate-only Chronicle projection, rebuilds the weekly
+goal aggregate, replaces the finalizer's kudos ladder, re-scores existing
+derived local result rows and deterministically replays affected seasons.
+`20260920090000` makes the accepting-reports decision database-authoritative.
+Raw reports, ballots, rewards, transactions, survey timestamps and audit records
+are unchanged. TypeScript uses the same ladder and the balance simulation is
+rerun.

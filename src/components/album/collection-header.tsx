@@ -20,6 +20,7 @@ import type { RouteEntry } from "@/lib/nav/routes";
 const VIEW_TABS: RouteEntry[] = [
   { key: "album", href: "/club/collection", label: "Album" },
   { key: "manage", href: "/club/collection?view=manage", label: "Manage" },
+  { key: "trading", href: "/club/collection/wanted", label: "Trading" },
 ];
 
 /** The completion bar. Also used for the album's per-page index chips. */

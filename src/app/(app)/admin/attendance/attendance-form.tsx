@@ -1,11 +1,12 @@
 "use client";
 
-import { useActionState, useMemo, useState } from "react";
+import { useActionState, useMemo, useRef, useState } from "react";
 import {
   correctPublishedAttendanceSession,
   publishAttendanceSession,
   type PublishAttendanceState,
 } from "./actions";
+import { sessionUsesMemberReports } from "@/game/session-reporting";
 
 type Player = { id: string; display_name: string };
 type CorrectionSession = {
@@ -13,6 +14,7 @@ type CorrectionSession = {
   sessionDate: string;
   sessionType: string;
   status: "published" | "cancelled";
+  ratingRulesVersion: number;
   bibsWashedBy: string | null;
   attendance: Array<{ player_id: string; goals: number }>;
 };
@@ -22,17 +24,20 @@ const initialState: PublishAttendanceState = { error: null };
 export function AttendanceForm({
   correctionSession,
   players,
+  v2StartsWeek,
 }: {
   correctionSession?: CorrectionSession;
   players: Player[];
+  v2StartsWeek?: string | null;
 }) {
   const isCorrection = Boolean(correctionSession);
   const isCancelledSession = correctionSession?.status === "cancelled";
   const [selected, setSelected] = useState<string[]>(() => correctionSession?.attendance.map((entry) => entry.player_id) ?? []);
-  const [goals, setGoals] = useState<Record<string, number>>(() =>
-    Object.fromEntries(correctionSession?.attendance.map((entry) => [entry.player_id, entry.goals]) ?? []),
+  const [goals, setGoals] = useState<Record<string, number>>(
+    () => Object.fromEntries(correctionSession?.attendance.map((entry) => [entry.player_id, entry.goals]) ?? []),
   );
-  const [step, setStep] = useState<"attendance" | "goals" | "review">("attendance");
+  const dateInput = useRef<HTMLInputElement>(null);
+  const [step, setStep] = useState<"attendance" | "review">("attendance");
   const [sessionDate, setSessionDate] = useState(() => correctionSession?.sessionDate ?? new Date().toISOString().slice(0, 10));
   const [sessionType, setSessionType] = useState(() => correctionSession?.sessionType ?? "friday");
   const [bibsWashedBy, setBibsWashedBy] = useState<string>(() => correctionSession?.bibsWashedBy ?? "");
@@ -53,6 +58,12 @@ export function AttendanceForm({
   // A bibs bringer who was removed from attendance falls back to "Nobody"
   // without touching state (the raw pick is kept in case they are re-added).
   const effectiveBibsWashedBy = bibsWashedBy && selected.includes(bibsWashedBy) ? bibsWashedBy : "";
+  const usesMemberReports = correctionSession
+    ? correctionSession.ratingRulesVersion === 2
+    : sessionUsesMemberReports(sessionDate, v2StartsWeek);
+  const formattedCutover = v2StartsWeek
+    ? new Intl.DateTimeFormat("en-GB", { dateStyle: "long", timeZone: "Europe/Amsterdam" }).format(new Date(`${v2StartsWeek}T12:00:00`))
+    : null;
 
   function togglePlayer(playerId: string) {
     setSelected((current) =>
@@ -77,8 +88,7 @@ export function AttendanceForm({
       <div className="flex gap-2 text-sm font-semibold">
         {[
           ["attendance", "1. Attendance"],
-          ["goals", "2. Goals"],
-          ["review", isCorrection ? "3. Correct" : "3. Publish"],
+          ["review", isCorrection ? "2. Correct" : "2. Publish"],
         ].map(([value, label]) => (
           <span
             className={`rounded-full px-3 py-1 ${step === value ? "bg-brass text-ink-on-accent" : "bg-panel-2 text-ink-dim"}`}
@@ -95,13 +105,24 @@ export function AttendanceForm({
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="space-y-2">
               <span className="font-semibold">Date</span>
-              <input
-                className="min-h-12 w-full rounded-xl border border-line bg-board-deep/60 px-4"
-                onChange={(event) => setSessionDate(event.target.value)}
-                required
-                type="date"
-                value={sessionDate}
-              />
+              <span className="relative block">
+                <input
+                  className="min-h-12 w-full rounded-xl border border-line bg-board-deep/60 px-4 pr-14 [color-scheme:dark]"
+                  onChange={(event) => setSessionDate(event.target.value)}
+                  ref={dateInput}
+                  required
+                  type="date"
+                  value={sessionDate}
+                />
+                <button
+                  aria-label="Open date picker"
+                  className="absolute inset-y-1 right-1 grid w-11 place-items-center rounded-lg text-xl text-brass hover:bg-brass/10"
+                  onClick={() => { try { dateInput.current?.showPicker(); } catch { dateInput.current?.focus(); } }}
+                  type="button"
+                >
+                  <svg aria-hidden="true" className="h-5 w-5" fill="none" viewBox="0 0 24 24"><path d="M7 3v3m10-3v3M4 9h16M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8"/></svg>
+                </button>
+              </span>
             </label>
             <label className="space-y-2">
               <span className="font-semibold">Session</span>
@@ -116,6 +137,13 @@ export function AttendanceForm({
               </select>
             </label>
           </div>
+          {!isCorrection && formattedCutover && (
+            <p className={`rounded-xl border p-3 text-sm ${usesMemberReports ? "border-moss-line bg-moss-bg text-moss" : "border-brass-line bg-brass-bg/30 text-brass"}`}>
+              {usesMemberReports
+                ? "This date uses member reports. Publishing opens goals & kudos for linked attendees for 24 hours."
+                : `This is a legacy date. Member reports begin with the week of ${formattedCutover}; enter goals during review instead.`}
+            </p>
+          )}
           <legend className="pt-4 text-xl font-bold">Who played?</legend>
           <p className="text-ink-dim">Tap each attendee. Large targets are intentional for pitch-side use.</p>
           <div className="grid gap-3 sm:grid-cols-2">
@@ -137,38 +165,11 @@ export function AttendanceForm({
           <button
             className="min-h-12 w-full rounded-xl bg-brass px-4 py-3 font-bold text-ink-on-accent disabled:cursor-not-allowed disabled:bg-line disabled:text-ink-faint"
             disabled={selected.length === 0 || !sessionDate}
-            onClick={() => setStep("goals")}
+            onClick={() => setStep("review")}
             type="button"
           >
-            {selected.length} selected — enter goals
+            {selected.length} selected — review
           </button>
-        </fieldset>
-      )}
-
-      {step === "goals" && (
-        <fieldset className="space-y-3">
-          <legend className="text-xl font-bold">Goals</legend>
-          <p className="text-ink-dim">Goals are optional and default to zero.</p>
-          {selectedPlayers.map((player) => (
-            <label className="flex items-center justify-between rounded-xl bg-panel p-4" key={player.id}>
-              <span className="font-semibold">{player.display_name}</span>
-              <input
-                className="w-20 rounded-lg border border-line bg-board-deep/60 p-2 text-center"
-                min="0"
-                onChange={(event) => setGoals((current) => ({ ...current, [player.id]: Number(event.target.value) }))}
-                type="number"
-                value={goals[player.id] ?? 0}
-              />
-            </label>
-          ))}
-          <div className="flex gap-3">
-            <button className="min-h-12 flex-1 rounded-xl bg-panel-2 px-4 py-3 font-bold" onClick={() => setStep("attendance")} type="button">
-              Back
-            </button>
-            <button className="min-h-12 flex-1 rounded-xl bg-brass px-4 py-3 font-bold text-ink-on-accent" onClick={() => setStep("review")} type="button">
-              {isCorrection ? "Review correction" : "Review publication"}
-            </button>
-          </div>
         </fieldset>
       )}
 
@@ -199,6 +200,28 @@ export function AttendanceForm({
               correction pays the new bringer; the previous one keeps their bonus.
             </span>
           </label>
+          {!usesMemberReports && (
+            <fieldset className="space-y-3 rounded-xl border border-line bg-board/50 p-4">
+              <legend className="px-1 font-black">Goals for this legacy session</legend>
+              <p className="text-sm text-ink-dim">Sessions before the reporting cutover keep the original admin-entered goal totals.</p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {selectedPlayers.map((player) => (
+                  <label className="flex min-h-12 items-center justify-between gap-4 rounded-xl border border-line/50 bg-panel px-3" key={player.id}>
+                    <span className="min-w-0 truncate text-sm font-bold">{player.display_name}</span>
+                    <input
+                      aria-label={`${player.display_name} goals`}
+                      className="h-10 w-20 rounded-lg border border-line bg-board px-3 text-right font-black tabular-nums"
+                      max="99"
+                      min="0"
+                      onChange={(event) => setGoals((current) => ({ ...current, [player.id]: Math.max(0, Math.min(99, Number(event.target.value) || 0)) }))}
+                      type="number"
+                      value={goals[player.id] ?? 0}
+                    />
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+          )}
           {isCorrection ? (
             <label className="block space-y-2">
               <span className="font-semibold">Why is this being corrected?</span>
@@ -216,12 +239,12 @@ export function AttendanceForm({
               </span>
             </label>
           ) : (
-            <p className="text-sm text-brass">Check the date, session type, attendees, and goals carefully. Published sessions affect ratings immediately.</p>
+            <p className="text-sm text-brass">{usesMemberReports ? "Check the date, session type and attendees carefully. Publishing opens member reports for 24 hours." : "Check the legacy goal totals carefully. This date does not open member reports."}</p>
           )}
           {state.error && <p className="rounded-xl bg-brick-bg p-3 text-sm text-brick">{state.error}</p>}
           <div className="flex gap-3">
-            <button className="min-h-12 flex-1 rounded-xl bg-panel-2 px-4 py-3 font-bold" disabled={isPending} onClick={() => setStep("goals")} type="button">
-              Back to goals
+            <button className="min-h-12 flex-1 rounded-xl bg-panel-2 px-4 py-3 font-bold" disabled={isPending} onClick={() => setStep("attendance")} type="button">
+              Back to attendance
             </button>
             <button className="min-h-12 flex-1 rounded-xl bg-brass px-4 py-3 font-bold text-ink-on-accent disabled:bg-line disabled:text-ink-faint" disabled={isPending} type="submit">
               {isPending ? (isCorrection ? "Saving..." : "Publishing...") : (isCorrection ? "Save correction" : "Publish session")}

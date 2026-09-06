@@ -52,8 +52,19 @@ don't add cross-repo coupling beyond the shared Supabase project.
 
 ## Current hosted deployment
 
-KUT is live at `https://kut.vibetrunk.com` as Vercel project `kut`. The
-hosted `kut` schema is applied through
+KUT is live at `https://kut.vibetrunk.com` as Vercel project `kut`.
+
+On top of the rating-v2 / member-reporting batch (`20260916000000` &hellip;
+`20260920090000`, deployed 2026-09-06 from `VibeTrunk/supabase`):
+
+- `20260921000000_kudos_cutover_2026_09_07.sql` (ADR-062, data-changing) &mdash;
+  moves the live season's `kut.season_rating_rules.v2_starts_week` from the
+  football week beginning 2026-09-28 to 2026-09-07, so self-reported goals +
+  kudos start a week earlier. Rewrites only the exact stale value; no-op
+  otherwise. No schema change, no rebuild. Precondition: no session published in
+  a week `>= 2026-09-07`. Rollback is the inverse `update`.
+
+The hosted `kut` schema was previously applied through
 `20260914000000_admin_self_wallet_grant.sql` &mdash; a second,
 superadmin-only coin faucet (ADR-052), deployed 2026-09-04 from
 `VibeTrunk/supabase` (PR #24 + #25 there):

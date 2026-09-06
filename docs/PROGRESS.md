@@ -2543,3 +2543,14 @@ rewards, transaction history or survey audit times.
 
 Verification after this follow-up: fast gate 17 files / 110 tests, pgTAP 14
 files / 444 assertions, focused concurrency 3 tests and production build pass.
+
+## Member-reporting cutover moved to 2026-09-07 — 2026-09-06
+
+`kut.season_rating_rules.v2_starts_week` for the live season was seeded on the
+football week beginning 2026-09-28; the club wants member reporting live now.
+Migration `20260921000000_kudos_cutover_2026_09_07.sql` rewrites that one stale
+value to `2026-09-07` (no-op for any other value), with no schema change and no
+season rebuild — `rating_rules_version` is frozen per session at publish time
+and no session is published in a week `>= 2026-09-07` (ADR-062). Verified
+locally: `npm run test:db` 14 files / 444 assertions PASS with the migration in
+the chain; the seeded "TFH 2026" season moves 2026-09-28 → 2026-09-07.

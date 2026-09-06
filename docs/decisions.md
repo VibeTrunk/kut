@@ -2539,3 +2539,31 @@ derived local result rows and deterministically replays affected seasons.
 Raw reports, ballots, rewards, transactions, survey timestamps and audit records
 are unchanged. TypeScript uses the same ladder and the balance simulation is
 rerun.
+
+## ADR-062 — Member-reporting cutover moves to the week of 2026-09-07
+
+Date: 2026-09-06
+
+Status: Accepted
+
+Decision: `kut.season_rating_rules.v2_starts_week` for the live season moves from
+the football week beginning 2026-09-28 to the week beginning 2026-09-07, so
+self-reported goals + kudos (rating v2) start a week earlier. Migration
+`20260921000000_kudos_cutover_2026_09_07.sql` rewrites only the exact stale
+value (`date '2026-09-28'` → `date '2026-09-07'`); any other stored value is
+left untouched, making the statement a safe no-op if the cutover was already
+moved.
+
+Reason: the club wants member reporting live immediately rather than after a
+three-week wait. `v2_starts_week` was seeded from season data at deploy and
+landed on 2026-09-28.
+
+Consequences: no schema change and no rebuild call. Precondition verified on
+hosted before deploy — no session is published in a football week
+`>= 2026-09-07`; moving the cutover past an already-published session would make
+`kut._rebuild_season_core` treat that v1 week as a v2 week with no
+`session_report_results` and zero its Form contribution. `rating_rules_version`
+is stamped per session by `kut._version_and_open_session_survey` at publish
+time, so sessions already published keep their version and goal history.
+Sessions published from 2026-09-07 onward now open a 24-hour survey. Rollback is
+the inverse `update`.

@@ -2554,3 +2554,19 @@ throttles to once per 60s per process and never throws into the page. No
 migration; the RPC and its grants are unchanged (ADR-061). The Messages page
 event-type union/labels also gained the already-emitted `session_report`,
 `session_results`, `report_correction` and the forthcoming `kudos_awarded`.
+
+## Kudos cap to +2, +3.5 combined cap, and a kudos-awarded notice — 2026-09-06
+
+Migration `20260922000000_kudos_cap_two_and_award_notice.sql` (ADR-063): kudos
+Form ladder 0 / 1 / 1.5 / 2; combined per-session Form input cap 3 → 3.5
+(`session_input` check widened); `user_notifications.event_type` gains
+`kudos_awarded`. `kut._finalize_one_session` now snapshots each player's OVR
+before the season rebuild and, for every player with ≥ 1 recognised category,
+inserts an idempotent `kudos_awarded` notice — no nominator named, stating the
+OVR change (goals + kudos) or nothing when it is not positive. Existing derived
+result rows are re-scored and affected seasons replayed; reports, ballots,
+rewards, transactions and audit times are untouched. `src/game/rating-engine.ts`
+and `design/features/check-rating-balance.mjs` mirror the ladder/cap; the
+balance JSON and `RATING_BALANCE_REVIEW.md` are regenerated. Verification: pgTAP
+14 files / 449 assertions PASS (5 new), fast gate 17 files / 110 tests PASS,
+`npm run build` PASS.

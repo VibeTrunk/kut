@@ -23,12 +23,12 @@ const categories=counts=>live.calculateKudosForm(counts.filter(n=>n>=2).length);
 const rows=[];
 for(const g of [0,1,2,3,4])rows.push({goals:g,oldWeeklyForm:live.calculateWeeklyPerformance(g),newGoalForm:goal(g),newGoalOvr:Math.round(goal(g)),shootingExtra:live.calculateAttributes(60,'all_rounder',g).sho-60});
 assert.equal(form([3,3,3,3]),7.5);assert.equal(form([1.5,1.5,1.5,1.5]),3.75);
-assert.equal(form([3,0,3,0]),4.5);assert.equal(categories([1,1,1]),0);assert.equal(categories([2,2,2]),1.5);
+assert.equal(form([3,0,3,0]),4.5);assert.equal(categories([1,1,1]),0);assert.equal(categories([2,2,2]),2);
 for(let g=0;g<=99;g++)for(let qualified=0;qualified<=3;qualified++){
-  assert.ok(goal(g)+live.calculateKudosForm(qualified)<=3);
+  assert.ok(goal(g)+live.calculateKudosForm(qualified)<=3.5);
   for(const activity of [0,14,50,80,100])assert.ok(live.calculateLiveOvr(live.calculateActivityOvr(activity),form(Array(4).fill(goal(g)+live.calculateKudosForm(qualified))))<=83);
 }
-const isolated=Array.from({length:5},(_,age)=>({age,goalOrKudosForm:age<4?1.5*weights[age]:0,combinedForm:age<4?3*weights[age]:0}));
+const isolated=Array.from({length:5},(_,age)=>({age,goalOrKudosForm:age<4?1.5*weights[age]:0,maxKudosForm:age<4?2*weights[age]:0,combinedForm:age<4?3.5*weights[age]:0}));
 const oldDecay=Array.from({length:5},(_,age)=>Number((live.calculateWeeklyPerformance(3)*(.55**age)).toFixed(6)));
 // Illustrative uniform nominations: everyone answers every category, each
 // nominates three distinct teammates (or as many as exist), never themselves.
@@ -45,12 +45,13 @@ for(const [attendees,voters] of [[3,3],[5,5],[20,5],[20,10],[20,20]]){
         const pick=Math.floor(random()*options.length);tally[options.splice(pick,1)[0]][c]++;
       }
     }
-    for(const t of tally){const f=voters>=3?categories(t):0;total+=f;recognized+=f>0?1:0;maxed+=f===1.5?1:0;}
+    for(const t of tally){const f=voters>=3?categories(t):0;total+=f;recognized+=f>0?1:0;maxed+=f===2?1:0;}
   }
   turnout.push({attendees,voters,meanKudosForm:total/(runs*attendees),recognizedPercent:100*recognized/(runs*attendees),maxKudosPercent:100*maxed/(runs*attendees)});
 }
 const values=[0,1,2,3,4,8].map(boost=>({boost,ovr:60+boost,discard:live.calculateLiveDiscardValue(60+boost)}));
-const out={source:'src/game/rating-engine.ts',seed:20260906,rows,isolated,oldHatTrickWeeklyDecay:oldDecay,turnout,values,steady:{oldThreeGoalsWeekly:8,newMaxGoalsEverySession:3.75,newMaxKudosEverySession:3.75,newBothEverySession:7.5,newBothAlternateSessionsAfterAppearance:4.5,newBothAlternateSessionsBetweenAppearances:3},coins:{attendance:250,completion:50,total:300,packPrice:175,packsPerReportingSession:300/175,increaseFromOriginalPercent:(300/175-1)*100}};
+const maxGoal=goal(4),maxKudos=live.calculateKudosForm(3),maxBoth=Math.min(3.5,maxGoal+maxKudos);
+const out={source:'src/game/rating-engine.ts',seed:20260906,rows,isolated,oldHatTrickWeeklyDecay:oldDecay,turnout,values,steady:{oldThreeGoalsWeekly:8,newMaxGoalsEverySession:form([maxGoal,maxGoal,maxGoal,maxGoal]),newMaxKudosEverySession:form([maxKudos,maxKudos,maxKudos,maxKudos]),newBothEverySession:form([maxBoth,maxBoth,maxBoth,maxBoth]),newBothAlternateSessionsAfterAppearance:form([maxBoth,0,maxBoth,0]),newBothAlternateSessionsBetweenAppearances:form([0,maxBoth,0,maxBoth])},coins:{attendance:250,completion:50,total:300,packPrice:175,packsPerReportingSession:300/175,increaseFromOriginalPercent:(300/175-1)*100}};
 fs.mkdirSync(path.join(root,'docs/design/features'),{recursive:true});
 fs.writeFileSync(path.join(root,'docs/design/features/rating-balance.json'),JSON.stringify(out,null,2)+'\n');
 console.log(JSON.stringify(out,null,2));

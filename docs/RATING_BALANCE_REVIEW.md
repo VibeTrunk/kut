@@ -1,7 +1,7 @@
 # Goals, kudos and participation reward — balance review
 
-2026-09-06. Updated after the local Chronicle/kudos walkthrough; implemented
-locally but not deployed. Reproduce with
+2026-09-06. Updated for ADR-063 — kudos Form ladder 0 / 1 / 1.5 / 2 and a
++3.5 combined per-session cap. Reproduce with
 `node design/features/check-rating-balance.mjs`. Machine-readable results:
 [`design/features/rating-balance.json`](design/features/rating-balance.json).
 The script loads the actual TypeScript rating engine and checks the formulas;
@@ -9,11 +9,14 @@ it does not edit game configuration or access members.
 
 ## Conclusion
 
-**Keep the proposed +1.5 goals / +1.5 kudos per-session caps and shared +8 Form
-ceiling.** Kudos is bounded against goals, and the strongest combined input is
-smaller than today's isolated hat-trick boost. It gives non-scorers a meaningful
-route to temporary OVR. Do not stack it on top of today's old goal formula,
-add category-specific stat bonuses, or turn the new 50 coins into rating points.
+**+1.5 goals / +2 kudos per-session caps, a +3.5 combined per-session cap and
+the shared +8 Form ceiling (ADR-063).** Kudos stays bounded against goals — the
+strongest isolated combined input (3.5) is still smaller than today's isolated
+hat-trick boost (4.75) — while broad multi-category recognition is now worth
+distinctly more than a single category and a strong goal night no longer
+crowds kudos out. It gives non-scorers a meaningful route to temporary OVR. Do
+not stack it on top of today's old goal formula, add category-specific stat
+bonuses, or turn the new 50 coins into rating points.
 
 This is a bounds/relative-strength verification, not proof of equal outcomes in
 the real group. The material tradeoffs are a deliberate reduction of large
@@ -33,9 +36,9 @@ otherwise empty football week, no prior Form and no OVR cap clipping.
 | 3 goals | 4.75 | 1.50 | +6 |
 | 4+ goals | 6.00 | 1.50 | +8 cap |
 | 1 qualified kudos category | — | 1.00 | 0 |
-| 2 qualified categories | — | 1.25 | 0 |
-| 3 qualified categories | — | 1.50 | 0 |
-| 3+ goals and 3 qualified categories | — | 3.00 | +6 to +8 |
+| 2 qualified categories | — | 1.50 | 0 |
+| 3 qualified categories | — | 2.00 | 0 |
+| 3+ goals and 3 qualified categories | — | 3.50 | +6 to +8 |
 | Submit a complete form | — | **0** | **0** |
 | Bring bibs | 0 | 0 | 0 |
 
@@ -57,19 +60,20 @@ separate collectibles and are not introduced by this scaffolding release.
 | Pattern, after buildup | Proposed Form | Rounded OVR contribution |
 |---|---:|---:|
 | Maximum goals, every published session | 3.75 | +4 |
-| Maximum kudos, every published session | 3.75 | +4 |
-| Maximum both, every published session | 7.50 | +8 |
-| Maximum both, every other session, just after playing | 4.50 | +5 |
-| Same pattern, after the intervening missed session | 3.00 | +3 |
+| Maximum kudos, every published session | 5.00 | +5 |
+| Maximum both, every published session | 8.00 | +8 |
+| Maximum both, every other session, just after playing | 5.25 | +5 |
+| Same pattern, after the intervening missed session | 3.50 | +4 |
 
 The first three need four contributing sessions. Under today's engine, three
 goals every football week eventually saturate +8 without any kudos. Under the
-proposal, scoring alone caps at +4 after buildup; reaching +8 requires sustained
-goals **and** broad recognition. This is a deliberate inclusive rebalance, not
-a claim that old goals-only strength is unchanged.
+proposal, scoring alone caps at +4 after buildup and kudos alone at +5;
+reaching +8 requires sustained goals **and** broad recognition. This is a
+deliberate inclusive rebalance, not a claim that old goals-only strength is
+unchanged.
 
-An isolated maximum kudos event contributes 1.5 → 1.125 → .75 → .375 → 0 at
-session ages 0–4. An isolated combined maximum is 3 → 2.25 → 1.5 → .75 → 0.
+An isolated maximum kudos event contributes 2 → 1.5 → 1 → .5 → 0 at
+session ages 0–4. An isolated combined maximum is 3.5 → 2.625 → 1.75 → .875 → 0.
 Today's isolated hat trick is 4.75 → 2.6125 → 1.436875 → .790281 → .434655 at
 **weekly** ages 0–4. Sessions with no finalized report still age existing Form;
 no-game/cancelled periods never do. Never equate four sessions with four weeks.
@@ -102,18 +106,18 @@ vote for themselves. Small groups nominate as many distinct peers as exist.
 This is a neutral dispersion scenario, not a forecast of real friendships,
 consensus, football performance, category suitability or collusion.
 
-| Attendees / submitting nominators | Mean kudos Form per attendee | Any recognition | Maximum +1.5 |
+| Attendees / submitting nominators | Mean kudos Form per attendee | Any recognition | Maximum +2 |
 |---|---:|---:|---:|
 | 3 / 3 | .498 | 49.83% | 0% |
-| 5 / 5 | .730 | 71.24% | 0% |
+| 5 / 5 | .747 | 71.24% | 0% |
 | 20 / 5 | .067 | 6.71% | 0% |
-| 20 / 10 | .247 | 24.32% | .02% |
-| 20 / 20 | .662 | 61.82% | 1.31% |
+| 20 / 10 | .251 | 24.32% | .02% |
+| 20 / 20 | .705 | 61.82% | 1.31% |
 
 Maximum kudos is mathematically impossible with fewer than six other supporting
 people. Do **not** scale small-group rewards upward automatically; that would
 give a small clique an easier path to the same maximum. At typical ~20-person
-sessions, +1.5 should be a standout result, not the default. Skips reduce
+sessions, +2 should be a standout result, not the default. Skips reduce
 recognition; real consensus can increase it. Completion rewards do not require
 a nomination, so three completed forms containing only skips still produce
 zero kudos, not a manufactured quorum.

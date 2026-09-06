@@ -127,11 +127,11 @@ export function calculateKudosForm(qualifiedCategories: number): number {
     throw new Error("Qualified kudos categories must be from 0 to 3.");
   }
   if (qualifiedCategories === 0) return 0;
-  return qualifiedCategories === 1 ? 1 : qualifiedCategories === 2 ? 1.25 : 1.5;
+  return qualifiedCategories === 1 ? 1 : qualifiedCategories === 2 ? 1.5 : 2;
 }
 
 export function calculateSessionInput(goals: number | null, qualifiedCategories: number): number {
-  return Math.min(3, calculateGoalForm(goals) + calculateKudosForm(qualifiedCategories));
+  return Math.min(3.5, calculateGoalForm(goals) + calculateKudosForm(qualifiedCategories));
 }
 
 export function calculateVersion2FormScore(
@@ -143,8 +143,8 @@ export function calculateVersion2FormScore(
   const legacyWeights = [0, 0.75, 0.5, 0.25, 0] as const;
   const carry = clamp(legacyForm, 0, GAME_CONFIG.formCap) * (legacyWeights[Math.min(4, Math.max(0, publishedV2SessionCount))] ?? 0);
   const active = contributions.reduce((total, contribution) => {
-    if (!Number.isFinite(contribution.sessionInput) || contribution.sessionInput < 0 || contribution.sessionInput > 3) {
-      throw new Error("Session Form input must be from 0 to 3.");
+    if (!Number.isFinite(contribution.sessionInput) || contribution.sessionInput < 0 || contribution.sessionInput > 3.5) {
+      throw new Error("Session Form input must be from 0 to 3.5.");
     }
     return total + contribution.sessionInput * (weights[contribution.age] ?? 0);
   }, 0);

@@ -4,14 +4,13 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/auth/admin";
 import { createClient } from "@/lib/supabase/server";
+import { isUuid } from "@/lib/uuid";
 
 export type PublishAttendanceState = { error: string | null };
 
 const INVALID_REQUEST: PublishAttendanceState = {
   error: "The attendance details were invalid. Please review them and try again.",
 };
-
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function readAttendanceForm(formData: FormData) {
   const sessionDate = String(formData.get("sessionDate") ?? "");
@@ -20,7 +19,7 @@ function readAttendanceForm(formData: FormData) {
   const rawBibsWashedBy = String(formData.get("bibsWashedBy") ?? "").trim();
 
   if (!/^\d{4}-\d{2}-\d{2}$/.test(sessionDate)) return null;
-  if (rawBibsWashedBy !== "" && !UUID_RE.test(rawBibsWashedBy)) return null;
+  if (rawBibsWashedBy !== "" && !isUuid(rawBibsWashedBy)) return null;
   const bibsWashedBy = rawBibsWashedBy === "" ? null : rawBibsWashedBy;
 
   try {
@@ -84,7 +83,7 @@ export async function correctPublishedAttendanceSession(
 
   if (
     !input ||
-    !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(sessionId) ||
+    !isUuid(sessionId) ||
     reason.length < 3 ||
     reason.length > 500
   ) {
@@ -123,7 +122,7 @@ export async function cancelPublishedSession(
   const reason = String(formData.get("cancellationReason") ?? "").trim();
 
   if (
-    !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(sessionId) ||
+    !isUuid(sessionId) ||
     reason.length < 3 ||
     reason.length > 500
   ) {
@@ -155,7 +154,7 @@ export async function reactivateCancelledSession(
   const reason = String(formData.get("reactivationReason") ?? "").trim();
 
   if (
-    !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(sessionId) ||
+    !isUuid(sessionId) ||
     reason.length < 3 ||
     reason.length > 500
   ) {

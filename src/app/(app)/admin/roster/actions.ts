@@ -4,8 +4,7 @@ import { revalidatePath } from "next/cache";
 import { isArchetype } from "@/game/archetypes";
 import { requireAdmin } from "@/lib/auth/admin";
 import { createClient } from "@/lib/supabase/server";
-
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+import { isUuid } from "@/lib/uuid";
 
 export type AddPlayerState =
   | { ok: true; player: { slug: string; display_name: string } }
@@ -59,7 +58,7 @@ export async function manageRoster(_prev: RosterActionState, formData: FormData)
 
   const intent = String(formData.get("intent") ?? "");
   const playerId = String(formData.get("player_id") ?? "");
-  if (!UUID_RE.test(playerId)) return { ok: false, error: "Invalid player." };
+  if (!isUuid(playerId)) return { ok: false, error: "Invalid player." };
 
   const supabase = await createClient();
 

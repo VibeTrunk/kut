@@ -10,7 +10,7 @@ implementation ADRs land. Proposed defaults below are concrete design choices,
 not a claim of prior user approval for every formula.
 
 Screen source: [`../design/features/index.html`](../design/features/index.html).
-Screen guide and renders: [`design/features/README.md`](design/features/README.md).
+Screen guide and renders: [`design/features/README.md`](../design/features/README.md).
 The prototype uses fictional members and performs no real transactions.
 
 Implementation guide: [IMPLEMENTATION_PLAN_NEXT_FEATURES.md](IMPLEMENTATION_PLAN_NEXT_FEATURES.md).
@@ -528,7 +528,7 @@ entry/correction, no cloned attendance faucet and historical replay stability.
 
 ### 5.8 Balance verification
 
-See [`RATING_BALANCE_REVIEW.md`](RATING_BALANCE_REVIEW.md) and its repeatable
+See [`RATING_BALANCE_REVIEW.md`](../RATING_BALANCE_REVIEW.md) and its repeatable
 `design/features/check-rating-balance.mjs` calculations. The review compares
 against the **actual current rating-engine functions**, not the stale example
 calculations in the original build spec. It covers isolated/repeated inputs,

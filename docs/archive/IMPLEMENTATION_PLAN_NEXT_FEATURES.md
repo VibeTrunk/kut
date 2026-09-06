@@ -17,8 +17,8 @@ most coupled slice is reports, rewards and the versioned rating rebuild.
    `decisions.md`, recent git history, `ROADMAP.md` and `KNOWN_BUGS.md` as required
    by the repository. Do not mistake old roadmap brainstorming for this design.
 2. Read this plan, [SPEC_NEXT_FEATURES.md](SPEC_NEXT_FEATURES.md) in full,
-   [RATING_BALANCE_REVIEW.md](RATING_BALANCE_REVIEW.md), and the
-   [screen guide](design/features/README.md). Inspect the current prototype
+   [RATING_BALANCE_REVIEW.md](../RATING_BALANCE_REVIEW.md), and the
+   [screen guide](../design/features/README.md). Inspect the current prototype
    and mobile/desktop PNGs before changing the UI.
 3. Read `OPERATIONS.md` and `BACKUP.md` before preparing migrations. Read relevant
    installed Next.js guides in `node_modules/next/dist/docs/` before Next code;

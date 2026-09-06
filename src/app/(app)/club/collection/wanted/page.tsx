@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth/user";
 import { createClient } from "@/lib/supabase/server";
+import { VIEW_TABS } from "@/components/album/collection-header";
 import { SectionTabs } from "@/components/app-shell/section-tabs";
 import { setCardWant, setTradeAvailability } from "../discovery-actions";
 import { CopyMessageButton } from "./copy-message-button";
@@ -9,12 +10,6 @@ type Wanted = { edition_id: string; state: string; edition_title: string; is_liv
 type Availability = { edition_id: string; owner_display_name: string };
 type Edition = { id: string; title: string; players: { display_name: string } | { display_name: string }[] | null };
 type TradeCard = { card_id: string; edition_id: string; edition_title: string; display_name: string; is_available: boolean; availability_state: string; acquired_at: string };
-
-const tabs = [
-  { key: "album", href: "/club/collection", label: "Album" },
-  { key: "manage", href: "/club/collection?view=manage", label: "Manage" },
-  { key: "trading", href: "/club/collection/wanted", label: "Trading" },
-];
 
 export default async function WantedPage() {
   await requireUser();
@@ -37,7 +32,7 @@ export default async function WantedPage() {
   const editionSeen = new Map<string, number>();
 
   return <main className="board-ground min-h-screen p-5 text-ink sm:p-10"><section className="mx-auto max-w-4xl space-y-8 py-4 sm:py-8">
-    <header className="space-y-4"><p className="text-[0.7rem] font-extrabold uppercase tracking-[0.26em] text-brass">My club</p><h1 className="display text-4xl sm:text-6xl">Trading preferences</h1><p className="max-w-2xl text-sm leading-relaxed text-ink-dim">Choose the cards you want and the owned copies you are open to trading. Wanted cards stay private; another member sees your name only when you make a matching copy available.</p><SectionTabs activeKey="trading" label="Collection view" tabs={tabs} /></header>
+    <header className="space-y-4"><p className="text-[0.7rem] font-extrabold uppercase tracking-[0.26em] text-brass">My club</p><h1 className="display text-4xl sm:text-6xl">Trading preferences</h1><p className="max-w-2xl text-sm leading-relaxed text-ink-dim">Choose the cards you want and the owned copies you are open to trading. Wanted cards stay private; another member sees your name only when you make a matching copy available.</p><SectionTabs activeKey="trading" label="Collection view" tabs={VIEW_TABS} /></header>
 
     <div className="grid gap-4 md:grid-cols-2">
       <details className="group rounded-2xl border border-line bg-panel/60 p-5">

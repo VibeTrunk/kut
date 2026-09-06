@@ -3,9 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth/user";
 import { createClient } from "@/lib/supabase/server";
+import { isUuid } from "@/lib/uuid";
 
 export type ReportState = { error: string | null; saved?: boolean; rewarded?: boolean; revision?: number };
-const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export async function saveSessionReport(_previous: ReportState, formData: FormData): Promise<ReportState> {
   await requireUser();
@@ -15,13 +15,16 @@ export async function saveSessionReport(_previous: ReportState, formData: FormDa
   const revision = Number(formData.get("revision"));
   const rawGoals = String(formData.get("goals") ?? "").trim();
   const goals = rawGoals === "" ? null : Number(rawGoals);
-  if (!uuid.test(sessionId) || !uuid.test(idempotencyKey) || !Number.isInteger(revision) || revision < 0 || (goals !== null && (!Number.isInteger(goals) || goals < 0 || goals > 99))) return { error: "Check the report fields and try again." };
+  if (!isUuid(sessionId) || !isUuid(idempotencyKey) || !Number.isInteger(revision) || revision < 0 || (goals !== null && (!Number.isInteger(goals) || goals < 0 || goals > 99))) return { error: "Check the report fields and try again." };
   if (intent === "submit" && goals !== null && goals >= 10 && formData.get("confirmGoals") !== "yes") return { error: `Confirm ${goals} goals before submitting.` };
   const nominations: Record<string, string | null> = {};
   for (const categoryId of String(formData.get("categoryIds") ?? "").split(",")) {
-    if (!uuid.test(categoryId)) return { error: "The report categories changed. Refresh and try again." };
+    if (!isUuid(categoryId)) return { error: "The report categories changed. Refresh and try again." };
     const value = String(formData.get(`category-${categoryId}`) ?? "");
-    nominations[categoryId] = value && uuid.test(value) ? value : null;
+    // An empty value is a deliberate Skip; a malformed one is a stale or tampered
+    // form and must not be silently recorded as a Skip the member did not choose.
+    if (value && !isUuid(value)) return { error: "That nomination is no longer valid. Refresh and try again." };
+    nominations[categoryId] = value || null;
   }
   const supabase = await createClient();
   const { data, error } = await supabase.schema("kut").rpc("submit_session_report", { p_session_id: sessionId, p_goals: goals, p_nominations: nominations, p_expected_revision: revision, p_idempotency_key: idempotencyKey, p_intent: intent });

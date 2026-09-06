@@ -3,6 +3,7 @@
 import { requireAdmin } from "@/lib/auth/admin";
 import { createServiceClient } from "@/lib/supabase/service";
 import { createClient } from "@/lib/supabase/server";
+import { isUuid } from "@/lib/uuid";
 
 export type PasswordResetState = { error: string | null; success: string | null };
 
@@ -21,7 +22,7 @@ export async function resetMemberPassword(
   const reason = String(formData.get("reason") ?? "").trim();
 
   if (
-    !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(targetUserId) ||
+    !isUuid(targetUserId) ||
     password.length < 12 ||
     password.length > 72 ||
     reason.length < 3 ||

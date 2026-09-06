@@ -2615,6 +2615,17 @@ already held the intended cutover; see the entry for the
 no longer points the next session at them as future work; all relative doc
 links verified to resolve. New design renders are gitignored going forward.
 
+`ROADMAP.md` — whose stated job is "everything **not yet built**" — was carrying
+the five-feature package as "**Design only: none of these changes has been
+implemented or deployed**" a day after all five shipped. That section is now
+marked shipped with each feature's ADR and migration; the two rows still reading
+`planned` (duplicate Club Value, wanted cards) are `shipped`; the peer-scoring
+cluster moves `favored` → `partial` with its real remainder (assists, defensive
+play, 1–5 ratings, goalie saves, player-count goal scaling) spelled out; the
+Chronicle row records that its kudos & goals block shipped with member reporting
+and only the club-desk block is still open; and `shipped` — used six times but
+never defined — is added to the status vocabulary.
+
 Verification: dependencies resynced to the merged Dependabot bumps (Next
 16.3.4, vitest 4.1.11 — the local tree had been running the pre-bump versions),
 then lint PASS, typecheck PASS, unit 17 files / 110 tests → 14 files / 85 tests

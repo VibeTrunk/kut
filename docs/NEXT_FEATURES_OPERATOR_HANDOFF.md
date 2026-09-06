@@ -1,8 +1,9 @@
 # Next features: review and operator handoff
 
-Local implementation only, 2026-09-06. This document is deliberately split by
-the repository's migration/RPC/invariant review boundary. No PR, push, hosted
-Supabase mutation, deployment or scheduler installation has occurred.
+Production release record, 2026-09-06. This document is deliberately split by
+the repository's migration/RPC/invariant review boundary. The reviewed PRs are
+merged, the hosted Supabase catalogue is applied, and the Vercel production
+smoke check is green. No finalizer scheduler has been installed yet.
 
 ## A — Special scaffolding
 
@@ -70,7 +71,10 @@ Supabase mutation, deployment or scheduler installation has occurred.
   (SHA-256 `D57E2E45DFCFAE05EB21AFFA06E59902915F5E201DDB6AA4326BEEF5B0646559`),
   and hosted-roster EV measured 32 live cards, 108.62 expected discard coins
   per pack, 62.07% return at the requested price of 175.
-- Remaining before release: central catalogue PR/dry-run, bounded finalizer
-  scheduler setup, and the authenticated browser/mobile walkthrough. Hosted
-  Supabase activation and application merge remain separately reviewable
-  operator actions; no hosted mutation has occurred.
+- Release status: central catalogue PR #28 merged; hosted `db push` applied all
+  14 migrations; KUT PR #60 merged; post-merge fast/database/E2E/gitleaks and
+  Vercel checks passed; `https://kut.vibetrunk.com` returned HTTP 200.
+- Remaining operator action: install a bounded service-role scheduler calling
+  `kut.finalize_session_surveys(20)` on the agreed cadence, then perform the
+  authenticated mobile walkthrough against production. Until the scheduler is
+  installed, manual bounded finalization remains the supported fallback.

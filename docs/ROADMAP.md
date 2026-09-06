@@ -48,13 +48,17 @@ is retained as rationale, not a second conflicting implementation instruction.
 
 ## Real-life play → ratings: attendance backbone + goals + kudos survey
 
-**Status: favored.** Endorsed direction for connecting more of what happens
-during a Terrible Football Haarlem session to KUT, without KUT becoming a
-ranking of who is best at football. Supersedes the "player-of-the-week peer
-vote" brainstorm below and is the considered design for the round-3
-"performance / peer scoring" cluster in the table further down. Building it
-needs its own ADR and a `BUILD_SPEC.md` Part V (§11–15) + Part 145 update; it
-touches the Part L rating-determinism and faucet invariants.
+**Status: shipped** (ADR-059, ADR-060, ADR-063). Published attendance opens a
+24-hour self-report survey for goals + three deterministically chosen kudos
+categories; a completed form pays 50 KUT Coins once; qualified kudos score
+0 / 1 / 1.5 / 2 Form, goals 0 / 1 / 1.25 / 1.5, combined per-session input
+capped at 3.5 and v2 Form at 8; a per-season published-week cutover preserves
+legacy history; finalization is a bounded service-role worker (with the ADR-061
+lazy fallback) that writes versioned results, rating snapshots and per-player
+notifications. Live behaviour is in `BUILD_SPEC.md`'s "Implemented feature
+amendments" and `RATING_BALANCE_REVIEW.md`. The brainstorm below is the
+original proposal, kept for history — its open questions are answered by the
+ADRs and its cap figures predate ADR-063.
 
 ### Design principle (as proposed — recorded, not adopted as gospel)
 

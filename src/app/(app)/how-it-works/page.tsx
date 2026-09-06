@@ -110,7 +110,8 @@ export default async function HowItWorksPage() {
         <Section title="3. Goals and kudos give temporary Form">
           <p>
             For new-rule sessions, attendees privately report goals and may recognize teammates in three positive
-            categories. Goals add up to 1.5 Form. One recognized kudos category gives 1 Form; two give 1.25 and three give 1.5. Each session contribution fades
+            categories. Goals add up to 1.5 Form. One recognized kudos category gives 1 Form; two give 1.5 and three give 2.
+            A single session contributes at most 3.5 Form combined. Each session contribution fades
             across the next four published sessions at 100%, 75%, 50%, 25%, then zero; total Form is capped at {GAME_CONFIG.formCap}.
             Completing every field, including an explicit zero and Skip choices, pays {ECONOMY.sessionReportReward} KUT Coins once.
             Earlier sessions retain their original weekly goal formula, so historical ratings do not silently change.

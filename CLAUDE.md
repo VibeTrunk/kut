@@ -52,8 +52,24 @@ don't add cross-repo coupling beyond the shared Supabase project.
 
 ## Current hosted deployment
 
-KUT is live at `https://kut.vibetrunk.com` as Vercel project `kut`. The
-hosted `kut` schema is applied through
+KUT is live at `https://kut.vibetrunk.com` as Vercel project `kut`.
+
+On top of the rating-v2 / member-reporting batch (`20260916000000` &hellip;
+`20260920090000`, deployed 2026-09-06 from `VibeTrunk/supabase`):
+
+- `20260922000000_kudos_cap_two_and_award_notice.sql` (ADR-063, data-changing)
+  &mdash; kudos Form ladder becomes 0 / 1 / 1.5 / 2 for 0 / 1 / 2 / 3 recognised
+  categories; the combined per-session Form input cap rises 3 &rarr; 3.5
+  (`session_report_results.session_input` check widened to `0..3.5`); goals and
+  the +8 v2 ceiling unchanged. `user_notifications.event_type` gains
+  `kudos_awarded`; `kut._finalize_one_session` is `create or replace`d to apply
+  the ladder, snapshot each player's OVR before the season rebuild, and send a
+  nominator-free `kudos_awarded` notice stating the OVR change. Existing
+  `session_report_results` rows are re-scored and affected seasons replayed;
+  raw reports, ballots, rewards, transactions and survey audit times are
+  untouched. Rollback restores the narrower ladder/cap and drops the notice.
+
+The hosted `kut` schema was previously applied through
 `20260914000000_admin_self_wallet_grant.sql` &mdash; a second,
 superadmin-only coin faucet (ADR-052), deployed 2026-09-04 from
 `VibeTrunk/supabase` (PR #24 + #25 there):

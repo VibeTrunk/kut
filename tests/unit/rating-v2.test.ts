@@ -4,9 +4,10 @@ import { calculateGoalForm, calculateKudosForm, calculateSessionInput, calculate
 describe("rating v2 Form", () => {
   it("uses the specified goal and kudos ladders", () => {
     expect([null, 0, 1, 2, 3, 99].map(calculateGoalForm)).toEqual([0, 0, 1, 1.25, 1.5, 1.5]);
-    expect([0, 1, 2, 3].map(calculateKudosForm)).toEqual([0, 1, 1.25, 1.5]);
+    expect([0, 1, 2, 3].map(calculateKudosForm)).toEqual([0, 1, 1.5, 2]);
     expect(calculateSessionInput(1, 1)).toBe(2);
-    expect(calculateSessionInput(3, 3)).toBe(3);
+    // Goals cap at 1.5, kudos at 2; the combined per-session input caps at 3.5.
+    expect(calculateSessionInput(3, 3)).toBe(3.5);
     expect(() => calculateGoalForm(-1)).toThrow("Goals must be an integer from 0 to 99.");
   });
 

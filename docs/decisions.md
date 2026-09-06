@@ -2539,3 +2539,37 @@ derived local result rows and deterministically replays affected seasons.
 Raw reports, ballots, rewards, transactions, survey timestamps and audit records
 are unchanged. TypeScript uses the same ladder and the balance simulation is
 rerun.
+
+## ADR-063 — Kudos Form ladder rises to +2, combined session cap to +3.5, and recognised players are notified
+
+Date: 2026-09-06
+
+Status: Accepted
+
+Decision: qualified kudos categories now score 0 / 1 / 1.5 / 2 Form for
+0 / 1 / 2 / 3 recognised categories (was 0 / 1 / 1.25 / 1.5). The combined
+per-session Form input cap rises from 3 to 3.5, so a hat-trick scorer who also
+earns full kudos banks the whole bonus; goals still cap at 1.5 and the v2 Form
+ceiling stays 8. At finalization every player with at least one recognised
+category also receives a `kudos_awarded` notification. It never names a
+nominator and reports the player's OVR movement from finalising that session
+(goals + kudos combined), or no number when the movement is not positive. It is
+sent in addition to the club-wide `session_results` notice and is idempotent per
+player/session, so an admin goal correction that re-finalises does not resend or
+restate it.
+
+Reason: the +1.5 kudos ceiling made broad multi-category recognition worth
+little more than a single category, and a strong goal night left no room for
+kudos at all under the +3 combined cap. Players recognised by teammates had no
+signal that it happened or that their card moved.
+
+Consequences: `20260922000000_kudos_cap_two_and_award_notice.sql` widens the
+`session_report_results` `session_input` check to `0..3.5`, adds `kudos_awarded`
+to `user_notifications.event_type`, `create or replace`s `kut._finalize_one_session`
+(new ladder, `least(3.5, …)`, pre-rebuild OVR snapshot, the extra insert), then
+re-scores existing derived result rows and deterministically replays affected
+seasons. Reports, ballots, rewards, transactions and survey audit times are
+unchanged; historical finalised sessions do not emit `kudos_awarded`.
+`src/game/rating-engine.ts` mirrors the ladder and the 3.5 cap; `BUILD_SPEC.md`
+amendments and `RATING_BALANCE_REVIEW.md` are updated. The kudos and combined
+caps remain review numbers, not Part L invariants.

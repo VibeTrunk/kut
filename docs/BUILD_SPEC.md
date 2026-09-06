@@ -4769,12 +4769,15 @@ implementation ADRs are ADR-055 through ADR-059.
   for each eligible linked member. One completed form pays **50 coins** once,
   including zero goals/all skipped kudos. Three positive kudos categories are
   selected deterministically. Goals score 0/1/1.25/1.5 for null-or-0/1/2/3+;
-  qualifying kudos score 0/1/1.25/1.5; the per-session Form input is capped at
-  3 and v2 Form at 8. During an open survey Chronicle may expose only aggregate
+  qualifying kudos score 0/1/1.5/2 for 0/1/2/3 recognised categories; the
+  per-session Form input is capped at 3.5 and v2 Form at 8 (ADR-063). During an
+  open survey Chronicle may expose only aggregate
   submission progress and aggregate goals, clearly marked provisional; player
   results and ballots stay private until finalization. Session-age weights are
   1/.75/.5/.25/0. A per-season
   published-session cutover preserves legacy history, while finalization
-  records versioned results and rating snapshots. Admin goal corrections for
+  records versioned results and rating snapshots and, for each recognised
+  player, a `kudos_awarded` notification that omits the nominator and states the
+  OVR change. Admin goal corrections for
   members or guests require a reason, recalculate final results and never pay
   a reward.

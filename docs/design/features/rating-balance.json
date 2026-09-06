@@ -42,26 +42,31 @@
     {
       "age": 0,
       "goalOrKudosForm": 1.5,
-      "combinedForm": 3
+      "maxKudosForm": 2,
+      "combinedForm": 3.5
     },
     {
       "age": 1,
       "goalOrKudosForm": 1.125,
-      "combinedForm": 2.25
+      "maxKudosForm": 1.5,
+      "combinedForm": 2.625
     },
     {
       "age": 2,
       "goalOrKudosForm": 0.75,
-      "combinedForm": 1.5
+      "maxKudosForm": 1,
+      "combinedForm": 1.75
     },
     {
       "age": 3,
       "goalOrKudosForm": 0.375,
-      "combinedForm": 0.75
+      "maxKudosForm": 0.5,
+      "combinedForm": 0.875
     },
     {
       "age": 4,
       "goalOrKudosForm": 0,
+      "maxKudosForm": 0,
       "combinedForm": 0
     }
   ],
@@ -83,28 +88,28 @@
     {
       "attendees": 5,
       "voters": 5,
-      "meanKudosForm": 0.7297575,
+      "meanKudosForm": 0.747155,
       "recognizedPercent": 71.236,
       "maxKudosPercent": 0
     },
     {
       "attendees": 20,
       "voters": 5,
-      "meanKudosForm": 0.06725,
+      "meanKudosForm": 0.06738,
       "recognizedPercent": 6.712,
       "maxKudosPercent": 0
     },
     {
       "attendees": 20,
       "voters": 10,
-      "meanKudosForm": 0.24701875,
+      "meanKudosForm": 0.2508275,
       "recognizedPercent": 24.321,
       "maxKudosPercent": 0.016
     },
     {
       "attendees": 20,
       "voters": 20,
-      "meanKudosForm": 0.66178375,
+      "meanKudosForm": 0.705325,
       "recognizedPercent": 61.82425,
       "maxKudosPercent": 1.3085
     }
@@ -144,10 +149,10 @@
   "steady": {
     "oldThreeGoalsWeekly": 8,
     "newMaxGoalsEverySession": 3.75,
-    "newMaxKudosEverySession": 3.75,
-    "newBothEverySession": 7.5,
-    "newBothAlternateSessionsAfterAppearance": 4.5,
-    "newBothAlternateSessionsBetweenAppearances": 3
+    "newMaxKudosEverySession": 5,
+    "newBothEverySession": 8,
+    "newBothAlternateSessionsAfterAppearance": 5.25,
+    "newBothAlternateSessionsBetweenAppearances": 3.5
   },
   "coins": {
     "attendance": 250,

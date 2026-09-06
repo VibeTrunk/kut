@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path to extensions,kut,public;
-select plan(35);
+select plan(40);
 
 select is((select price from kut.pack_definitions where slug='tfh-pack'),175::bigint,'basic pack price is exactly 175');
 select has_function('kut','open_pack',array['text','bigint','uuid'],'pack opening requires an expected price');
@@ -89,7 +89,12 @@ select is((select effective_goals from kut.session_report_results where session_
 select is((select kudos_form from kut.session_report_results where session_id='20000000-0000-4000-8000-000000000041' and player_id='20000000-0000-4000-8000-000000000011'),1::numeric,'one recognized kudos category awards one Form');
 select is((select form_score from kut.player_season_state where season_id='20000000-0000-4000-8000-000000000040' and player_id='20000000-0000-4000-8000-000000000011'),2::numeric,'SQL v2 form score combines one goal and one recognized kudos category');
 select is((select snapshot.live_ovr from kut.player_rating_snapshots snapshot join kut.player_season_state state on state.player_id=snapshot.player_id and state.season_id=snapshot.season_id where snapshot.season_id='20000000-0000-4000-8000-000000000040' and snapshot.player_id='20000000-0000-4000-8000-000000000011' and snapshot.week_start=date_trunc('week',current_date)::date), (select live_ovr from kut.player_season_state where season_id='20000000-0000-4000-8000-000000000040' and player_id='20000000-0000-4000-8000-000000000011'),'finalization writes a history snapshot equal to the rebuilt current state');
+select is((select count(*) from kut.user_notifications where user_id='20000000-0000-4000-8000-000000000001' and event_type='kudos_awarded' and reference_type='match_session' and reference_id='20000000-0000-4000-8000-000000000041'),1::bigint,'a recognized player is told they were awarded kudos');
+select is((select count(*) from kut.user_notifications where user_id='20000000-0000-4000-8000-000000000002' and event_type='kudos_awarded'),0::bigint,'an attendee with no recognized category gets no kudos-awarded notice');
+select ok((select body not ilike '%next %' from kut.user_notifications where user_id='20000000-0000-4000-8000-000000000001' and event_type='kudos_awarded' and reference_id='20000000-0000-4000-8000-000000000041'),'the kudos-awarded notice never names a nominator');
 reset role; select set_config('request.jwt.claim.role','',true);
+select lives_ok($$update kut.session_report_results set session_input=3.5 where session_id='20000000-0000-4000-8000-000000000041' and player_id='20000000-0000-4000-8000-000000000011'$$,'the combined per-session Form input may reach 3.5');
+select throws_ok($$update kut.session_report_results set session_input=3.6 where session_id='20000000-0000-4000-8000-000000000041' and player_id='20000000-0000-4000-8000-000000000011'$$,'23514',NULL,'the combined per-session Form input cannot exceed 3.5');
 set local role authenticated; set local request.jwt.claim.sub='20000000-0000-4000-8000-000000000003';
 select kut.admin_correct_session_goals('20000000-0000-4000-8000-000000000041','20000000-0000-4000-8000-000000000013',2,false,'Guest reported after the session');
 select is((select effective_goals from kut.session_report_results where session_id='20000000-0000-4000-8000-000000000041' and player_id='20000000-0000-4000-8000-000000000013'),2,'admin may add accountless attendee goals after finalization');

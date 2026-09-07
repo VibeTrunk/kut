@@ -1,0 +1,24 @@
+# Revisions to skip when running `git blame`.
+#
+# Bulk mechanical reformats only. A commit belongs here when it changed no
+# behaviour and no meaning — otherwise blame stops telling the truth about
+# who decided what.
+#
+# GitHub honours this file automatically in its blame view. Locally it is
+# one-time opt-in per clone:
+#
+#     git config blame.ignoreRevsFile .git-blame-ignore-revs
+#
+# Every entry must be a full 40-character SHA that exists on `main`. Git
+# fails blame outright on a revision it cannot resolve, so a wrong or
+# short SHA here is worse than no file at all.
+#
+# NOTE: `main` is squash-merge only (merge commits and rebase merges are
+# both disabled, and branches auto-delete). A commit SHA from a feature
+# branch therefore never lands on `main` and must not be listed here — the
+# SHA to record is the squashed commit `main` actually gets. That is why
+# the Prettier reformat below is registered by a follow-up PR opened after
+# the merge rather than inside the PR that did the reformatting.
+
+# Prettier adoption, ADR-065 — reformatted 111 files across src/, tests/,
+# scripts/ and the root configs. SHA added by the follow-up PR.

@@ -13,7 +13,9 @@ test("keeps the sign-in page usable at a phone viewport", async ({ page }) => {
 
   await expect(page).toHaveURL(/\/login$/);
   await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
-  expect(await page.locator("body").evaluate((body) => body.scrollWidth <= window.innerWidth)).toBeTruthy();
+  expect(
+    await page.locator("body").evaluate((body) => body.scrollWidth <= window.innerWidth),
+  ).toBeTruthy();
 });
 
 test("requires sign-in before showing the admin attendance flow", async ({ page }) => {
@@ -85,7 +87,9 @@ test("keeps trading preferences private at a phone viewport", async ({ page }) =
 
   await expect(page).toHaveURL(/\/login$/);
   await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
-  expect(await page.locator("body").evaluate((body) => body.scrollWidth <= window.innerWidth)).toBeTruthy();
+  expect(
+    await page.locator("body").evaluate((body) => body.scrollWidth <= window.innerWidth),
+  ).toBeTruthy();
 });
 
 test("requires sign-in before showing a member session report", async ({ page }) => {
@@ -115,7 +119,9 @@ test("keeps a protected route usable at a phone viewport", async ({ page }) => {
 
   await expect(page).toHaveURL(/\/login$/);
   await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
-  expect(await page.locator("body").evaluate((body) => body.scrollWidth <= window.innerWidth)).toBeTruthy();
+  expect(
+    await page.locator("body").evaluate((body) => body.scrollWidth <= window.innerWidth),
+  ).toBeTruthy();
 });
 
 test("requires sign-in before showing a saved pack result", async ({ page }) => {
@@ -188,5 +194,7 @@ test("rejects a malformed invite token without exposing an account flow", async 
   await page.getByLabel("Choose a password").fill("valid-password-123");
   await page.getByRole("button", { name: "Create KUT account" }).click();
 
-  await expect(page.getByText("This invitation is invalid, expired, or has already been used.")).toBeVisible();
+  await expect(
+    page.getByText("This invitation is invalid, expired, or has already been used."),
+  ).toBeVisible();
 });

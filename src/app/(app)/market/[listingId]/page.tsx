@@ -77,12 +77,19 @@ export default async function ListingPage({ params }: ListingPageProps) {
   const isOwnListing = listing.seller_id === user.id;
   const photoUrls = await resolvePhotoUrls(supabase, [listing.photo_path]);
 
-  const offerableCards: OfferableCard[] = ((ownCards ?? []) as (OfferableCard & {
-    active_listing_id: string | null;
-    held_by_offer_id: string | null;
-  })[])
+  const offerableCards: OfferableCard[] = (
+    (ownCards ?? []) as (OfferableCard & {
+      active_listing_id: string | null;
+      held_by_offer_id: string | null;
+    })[]
+  )
     .filter((card) => !card.active_listing_id && !card.held_by_offer_id)
-    .map((card) => ({ card_id: card.card_id, display_name: card.display_name, ovr: card.ovr, rarity_tier: card.rarity_tier }));
+    .map((card) => ({
+      card_id: card.card_id,
+      display_name: card.display_name,
+      ovr: card.ovr,
+      rarity_tier: card.rarity_tier,
+    }));
 
   const cardPlayer: LiveCardPlayer = {
     id: listing.listing_id,
@@ -96,7 +103,7 @@ export default async function ListingPage({ params }: ListingPageProps) {
     def: listing.def,
     phy: listing.phy,
     rarityTier: listing.rarity_tier,
-    photoUrl: listing.photo_path ? photoUrls.get(listing.photo_path) ?? null : null,
+    photoUrl: listing.photo_path ? (photoUrls.get(listing.photo_path) ?? null) : null,
   };
 
   return (
@@ -114,16 +121,20 @@ export default async function ListingPage({ params }: ListingPageProps) {
           <div className="space-y-8">
             <div className="space-y-3">
               <p className="text-[0.7rem] font-extrabold uppercase tracking-[0.26em] text-brass">
-                {archetypeLabel(listing.archetype)} &middot; <span className="capitalize">{listing.rarity_tier}</span> &middot;{" "}
-                {listing.ovr} OVR
+                {archetypeLabel(listing.archetype)} &middot;{" "}
+                <span className="capitalize">{listing.rarity_tier}</span> &middot; {listing.ovr} OVR
               </p>
               <h1 className="display text-3xl sm:text-6xl">{listing.display_name}</h1>
               <p className="flex items-center gap-2 text-3xl font-black tabular-nums text-brass">
                 <IconCoin aria-hidden="true" className="h-6 w-6" />
                 {listing.price.toLocaleString()}
-                <span className="text-xs font-extrabold uppercase tracking-[0.16em] text-ink-dim">KUT Coins</span>
+                <span className="text-xs font-extrabold uppercase tracking-[0.16em] text-ink-dim">
+                  KUT Coins
+                </span>
               </p>
-              <p className="text-sm font-bold text-ink-faint">Sold by {listing.seller_display_name}</p>
+              <p className="text-sm font-bold text-ink-faint">
+                Sold by {listing.seller_display_name}
+              </p>
             </div>
 
             <AttributeBars player={listing} />
@@ -145,7 +156,11 @@ export default async function ListingPage({ params }: ListingPageProps) {
                     and Discard are panels with an input and a confirm, not one
                     button, and will not fit a bar. */}
                 <div className="fixed inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom,0px))] z-20 border-t border-line/60 bg-board-deep/95 p-4 backdrop-blur sm:static sm:border-0 sm:bg-transparent sm:p-0 sm:backdrop-blur-none">
-                  <BuyListingForm canAfford={balance >= listing.price} listingId={listing.listing_id} price={listing.price} />
+                  <BuyListingForm
+                    canAfford={balance >= listing.price}
+                    listingId={listing.listing_id}
+                    price={listing.price}
+                  />
                 </div>
 
                 <div className="space-y-3">

@@ -54,7 +54,9 @@ export default async function CardDetailPage({ params, searchParams }: CardPageP
   const { data, error } = await supabase
     .schema("kut")
     .from("my_collection_cards")
-    .select("card_id, edition_id, edition_title, edition_type, is_live, source, player_slug, display_name, archetype, ovr, pac, sho, pas, dri, def, phy, rarity_tier, discard_value, active_listing_id, active_listing_price, held_by_offer_id, photo_path")
+    .select(
+      "card_id, edition_id, edition_title, edition_type, is_live, source, player_slug, display_name, archetype, ovr, pac, sho, pas, dri, def, phy, rarity_tier, discard_value, active_listing_id, active_listing_price, held_by_offer_id, photo_path",
+    )
     .eq("card_id", cardId)
     .maybeSingle();
 
@@ -73,14 +75,22 @@ export default async function CardDetailPage({ params, searchParams }: CardPageP
     !card.active_listing_id
       ? supabase.schema("kut").rpc("get_listing_bounds", { p_card_id: card.card_id })
       : Promise.resolve({ data: null, error: null }),
-    supabase.schema("kut").from("my_club_value_copies")
+    supabase
+      .schema("kut")
+      .from("my_club_value_copies")
       .select("weight_percent,club_value_contribution,club_value_change_if_discarded")
-      .eq("card_id", card.card_id).maybeSingle(),
+      .eq("card_id", card.card_id)
+      .maybeSingle(),
   ]);
-  const bounds = boundsResponse.data && typeof boundsResponse.data === "object" ? boundsResponse.data : null;
+  const bounds =
+    boundsResponse.data && typeof boundsResponse.data === "object" ? boundsResponse.data : null;
   const minimumPrice = bounds && "minimum_price" in bounds ? Number(bounds.minimum_price) : null;
   const maximumPrice = bounds && "maximum_price" in bounds ? Number(bounds.maximum_price) : null;
-  const copyValue = valueResponse.data as { weight_percent:number;club_value_contribution:number;club_value_change_if_discarded:number } | null;
+  const copyValue = valueResponse.data as {
+    weight_percent: number;
+    club_value_contribution: number;
+    club_value_change_if_discarded: number;
+  } | null;
 
   const cardPlayer: LiveCardPlayer = {
     id: card.card_id,
@@ -94,7 +104,7 @@ export default async function CardDetailPage({ params, searchParams }: CardPageP
     def: card.def,
     phy: card.phy,
     rarityTier: card.rarity_tier,
-    photoUrl: card.photo_path ? photoUrls.get(card.photo_path) ?? null : null,
+    photoUrl: card.photo_path ? (photoUrls.get(card.photo_path) ?? null) : null,
   };
 
   return (
@@ -112,7 +122,8 @@ export default async function CardDetailPage({ params, searchParams }: CardPageP
           <div className="space-y-8">
             <div className="space-y-3">
               <p className="text-[0.7rem] font-extrabold uppercase tracking-[0.26em] text-brass">
-                {card.is_live ? "Live card" : "Special card"} &middot; <span className="capitalize">{card.rarity_tier}</span>
+                {card.is_live ? "Live card" : "Special card"} &middot;{" "}
+                <span className="capitalize">{card.rarity_tier}</span>
               </p>
               <h1 className="display text-3xl sm:text-6xl">{card.display_name}</h1>
               <p className="text-base text-ink-dim">
@@ -124,7 +135,10 @@ export default async function CardDetailPage({ params, searchParams }: CardPageP
 
             <AttributeBars player={card} />
 
-            <Link className="block text-sm font-bold text-brass hover:underline" href={`/players/${card.player_slug}`}>
+            <Link
+              className="block text-sm font-bold text-brass hover:underline"
+              href={`/players/${card.player_slug}`}
+            >
               See {card.display_name.split(" ")[0]}&rsquo;s rating history &rarr;
             </Link>
 
@@ -141,17 +155,25 @@ export default async function CardDetailPage({ params, searchParams }: CardPageP
 
             {card.held_by_offer_id && (
               <p className="rounded-2xl border border-brass/40 bg-brass/10 p-4 text-sm font-bold text-brass">
-                This card is committed to a pending trade offer. It can&rsquo;t be listed or discarded until that
-                offer is accepted, declined, or expires.
+                This card is committed to a pending trade offer. It can&rsquo;t be listed or
+                discarded until that offer is accepted, declined, or expires.
               </p>
             )}
             {!card.held_by_offer_id && card.active_listing_id && card.active_listing_price && (
-              <CancelListingForm cardId={card.card_id} listingId={card.active_listing_id} price={card.active_listing_price} />
+              <CancelListingForm
+                cardId={card.card_id}
+                listingId={card.active_listing_id}
+                price={card.active_listing_price}
+              />
             )}
             {!card.held_by_offer_id && !card.active_listing_id && (
               <>
                 {minimumPrice !== null && maximumPrice !== null && (
-                  <CreateListingForm cardId={card.card_id} maximumPrice={maximumPrice} minimumPrice={minimumPrice} />
+                  <CreateListingForm
+                    cardId={card.card_id}
+                    maximumPrice={maximumPrice}
+                    minimumPrice={minimumPrice}
+                  />
                 )}
                 <DiscardCardForm cardId={card.card_id} discardValue={card.discard_value} />
               </>
@@ -161,27 +183,41 @@ export default async function CardDetailPage({ params, searchParams }: CardPageP
 
             <dl className="grid grid-cols-2 gap-x-8 gap-y-5">
               <div>
-                <dt className="text-[0.65rem] font-extrabold uppercase tracking-[0.14em] text-ink-faint">Edition</dt>
+                <dt className="text-[0.65rem] font-extrabold uppercase tracking-[0.14em] text-ink-faint">
+                  Edition
+                </dt>
                 <dd className="mt-1.5 text-lg font-black">{readable(card.edition_type)}</dd>
               </div>
               <div>
-                <dt className="text-[0.65rem] font-extrabold uppercase tracking-[0.14em] text-ink-faint">Source</dt>
+                <dt className="text-[0.65rem] font-extrabold uppercase tracking-[0.14em] text-ink-faint">
+                  Source
+                </dt>
                 <dd className="mt-1.5 text-lg font-black">{readable(card.source)}</dd>
               </div>
               <div>
-                <dt className="text-[0.65rem] font-extrabold uppercase tracking-[0.14em] text-ink-faint">Discard payout</dt>
-                <dd className="mt-1.5 text-lg font-black tabular-nums">{card.discard_value} KUT Coins</dd>
+                <dt className="text-[0.65rem] font-extrabold uppercase tracking-[0.14em] text-ink-faint">
+                  Discard payout
+                </dt>
+                <dd className="mt-1.5 text-lg font-black tabular-nums">
+                  {card.discard_value} KUT Coins
+                </dd>
               </div>
               <div>
-                <dt className="text-[0.65rem] font-extrabold uppercase tracking-[0.14em] text-ink-faint">Adds to Club Value</dt>
-                <dd className="mt-1.5 text-lg font-black tabular-nums">{copyValue?.club_value_contribution ?? 0} <span className="text-xs text-ink-dim">({copyValue?.weight_percent ?? 0}%)</span></dd>
+                <dt className="text-[0.65rem] font-extrabold uppercase tracking-[0.14em] text-ink-faint">
+                  Adds to Club Value
+                </dt>
+                <dd className="mt-1.5 text-lg font-black tabular-nums">
+                  {copyValue?.club_value_contribution ?? 0}{" "}
+                  <span className="text-xs text-ink-dim">({copyValue?.weight_percent ?? 0}%)</span>
+                </dd>
               </div>
               <div>
-                <dt className="text-[0.65rem] font-extrabold uppercase tracking-[0.14em] text-ink-faint">Card ID</dt>
+                <dt className="text-[0.65rem] font-extrabold uppercase tracking-[0.14em] text-ink-faint">
+                  Card ID
+                </dt>
                 <dd className="mt-1.5 break-all font-mono text-xs text-ink-dim">{card.card_id}</dd>
               </div>
             </dl>
-
           </div>
         </div>
       </section>

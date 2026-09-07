@@ -47,12 +47,19 @@ production database.
 ## Verification
 
 ```powershell
-npm run verify:fast  # lint, typecheck, unit tests
+npm run format       # Prettier: rewrite src/, tests/, scripts/ and root configs
+npm run format:check # the same check verify:fast and CI run
+npm run verify:fast  # format, lint, typecheck, unit tests
 npm run test:e2e     # requires Playwright Chromium once installed
 npm run test:db      # requires `npx supabase start`
 npm run test:market-race # two concurrent local PostgreSQL buyers; requires `npx supabase start`
 npm run verify:full  # all checks plus production build
 ```
+
+Formatting is Prettier (ADR-065), pinned and configured in
+`.prettierrc.json`. `.prettierignore` defines what it may touch — `docs/`,
+`design/` and `supabase/` are deliberately outside it, so documentation and
+deployed migrations are never reflowed.
 
 Install the local browser once with:
 

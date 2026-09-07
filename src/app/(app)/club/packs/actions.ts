@@ -22,7 +22,12 @@ export async function openPack(
   const idempotencyKey = String(formData.get("idempotencyKey") ?? "");
   const expectedPrice = Number(formData.get("expectedPrice"));
 
-  if (!slugPattern.test(packSlug) || !isUuid(idempotencyKey) || !Number.isSafeInteger(expectedPrice) || expectedPrice <= 0) {
+  if (
+    !slugPattern.test(packSlug) ||
+    !isUuid(idempotencyKey) ||
+    !Number.isSafeInteger(expectedPrice) ||
+    expectedPrice <= 0
+  ) {
     return { error: "This pack request was invalid. Please refresh and try again." };
   }
 
@@ -33,14 +38,26 @@ export async function openPack(
     p_idempotency_key: idempotencyKey,
   });
 
-  if (!error && data && typeof data === "object" && "price_changed" in data && data.price_changed === true) {
+  if (
+    !error &&
+    data &&
+    typeof data === "object" &&
+    "price_changed" in data &&
+    data.price_changed === true
+  ) {
     const currentPrice = "current_price" in data ? Number(data.current_price) : Number.NaN;
     return Number.isSafeInteger(currentPrice) && currentPrice > 0
       ? { error: null, priceChanged: true, currentPrice }
       : { error: "The pack price changed. Refresh and confirm the new price." };
   }
 
-  if (error || !data || typeof data !== "object" || !("opening_id" in data) || typeof data.opening_id !== "string") {
+  if (
+    error ||
+    !data ||
+    typeof data !== "object" ||
+    !("opening_id" in data) ||
+    typeof data.opening_id !== "string"
+  ) {
     return { error: "The pack could not be opened. Check your KUT Coin balance and try again." };
   }
 

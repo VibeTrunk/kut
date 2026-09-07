@@ -21,7 +21,8 @@ export default defineConfig({
       // Auth-boundary tests do not need a real Supabase project, but Proxy
       // initializes the public client for every request.
       NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL ?? "http://127.0.0.1:54321",
-      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? "sb_publishable_test",
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:
+        process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? "sb_publishable_test",
     },
     url: "http://127.0.0.1:3100",
     reuseExistingServer: !process.env.CI,

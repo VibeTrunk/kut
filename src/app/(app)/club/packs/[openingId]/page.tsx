@@ -44,7 +44,10 @@ export default async function PackResultPage({ params }: PackResultPageProps) {
   if (!data || data.length === 0) notFound();
 
   const cards = data as PackResultCard[];
-  const photoUrls = await resolvePhotoUrls(supabase, cards.map((card) => card.photo_path));
+  const photoUrls = await resolvePhotoUrls(
+    supabase,
+    cards.map((card) => card.photo_path),
+  );
 
   const players: LiveCardPlayer[] = cards.map((card) => ({
     id: card.card_id,
@@ -58,13 +61,15 @@ export default async function PackResultPage({ params }: PackResultPageProps) {
     def: card.def,
     phy: card.phy,
     rarityTier: card.rarity_tier,
-    photoUrl: card.photo_path ? photoUrls.get(card.photo_path) ?? null : null,
+    photoUrl: card.photo_path ? (photoUrls.get(card.photo_path) ?? null) : null,
   }));
 
   return (
     <main className="board-ground min-h-screen p-5 text-ink sm:p-10">
       <section className="mx-auto max-w-5xl space-y-4">
-        <p className="text-sm font-bold text-ink-faint">Pack opening saved — the result was fixed before this reveal.</p>
+        <p className="text-sm font-bold text-ink-faint">
+          Pack opening saved — the result was fixed before this reveal.
+        </p>
         <PackReveal
           cards={players}
           cardHrefBase="/club/collection/"

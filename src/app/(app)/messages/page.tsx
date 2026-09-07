@@ -62,11 +62,15 @@ export default async function MessagesPage() {
       <section className="mx-auto max-w-3xl space-y-8 py-4 sm:py-8">
         <header className="flex flex-wrap items-end justify-between gap-4">
           <div className="space-y-3">
-            <p className="text-[0.7rem] font-extrabold uppercase tracking-[0.26em] text-brass">KUT inbox</p>
+            <p className="text-[0.7rem] font-extrabold uppercase tracking-[0.26em] text-brass">
+              KUT inbox
+            </p>
             <h1 className="display text-3xl sm:text-6xl">Messages</h1>
             <p className="text-base text-ink-dim">
               Private updates about your club and card economy.
-              {unreadCount > 0 && <span className="ml-2 font-bold text-brass">{unreadCount} unread</span>}
+              {unreadCount > 0 && (
+                <span className="ml-2 font-bold text-brass">{unreadCount} unread</span>
+              )}
             </p>
           </div>
           {unreadCount > 0 && <MarkAllMessagesReadForm />}
@@ -89,7 +93,10 @@ export default async function MessagesPage() {
                     {EVENT_LABELS[message.event_type] ?? "Club notice"}
                     {!message.read_at && <span className="ml-2 text-ink-faint">New</span>}
                   </p>
-                  <time className="text-xs font-bold tabular-nums text-ink-faint" dateTime={message.created_at}>
+                  <time
+                    className="text-xs font-bold tabular-nums text-ink-faint"
+                    dateTime={message.created_at}
+                  >
                     {formatDate(message.created_at)}
                   </time>
                 </div>

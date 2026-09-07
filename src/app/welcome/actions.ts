@@ -6,8 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { loadStarterCards } from "./starter-cards";
 
 export type StarterOpenResult =
-  | { ok: true; players: LiveCardPlayer[] }
-  | { ok: false; error: string };
+  { ok: true; players: LiveCardPlayer[] } | { ok: false; error: string };
 
 export async function markStarterOpened(): Promise<StarterOpenResult> {
   const supabase = await createClient();
@@ -29,7 +28,7 @@ export async function markStarterOpened(): Promise<StarterOpenResult> {
   );
   const players: LiveCardPlayer[] = cards.map(({ photo_path, ...card }) => ({
     ...card,
-    photoUrl: photo_path ? photoUrls.get(photo_path) ?? null : null,
+    photoUrl: photo_path ? (photoUrls.get(photo_path) ?? null) : null,
   }));
 
   // No revalidatePath here: the reveal runs client-side and "Enter KUT" links

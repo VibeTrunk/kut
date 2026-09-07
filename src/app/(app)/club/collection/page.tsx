@@ -6,7 +6,14 @@ import { resolvePhotoUrls } from "@/lib/player-photos";
 import { createClient } from "@/lib/supabase/server";
 import { CollectionAlbum } from "@/components/album/collection-album";
 import { CollectionHeader } from "@/components/album/collection-header";
-import { applyLens, buildSlots, paginate, parseLens, type AlbumCollectionCard, type AlbumDirectoryPlayer } from "@/lib/album";
+import {
+  applyLens,
+  buildSlots,
+  paginate,
+  parseLens,
+  type AlbumCollectionCard,
+  type AlbumDirectoryPlayer,
+} from "@/lib/album";
 import { notFound } from "next/navigation";
 
 type CollectionCard = {
@@ -35,7 +42,16 @@ type CollectionCard = {
 };
 
 type CollectionPageProps = {
-  searchParams: Promise<{ discard?: string; purchase?: string; q?: string; rarity?: string; sort?: string; view?: string; page?: string; lens?: string }>;
+  searchParams: Promise<{
+    discard?: string;
+    purchase?: string;
+    q?: string;
+    rarity?: string;
+    sort?: string;
+    view?: string;
+    page?: string;
+    lens?: string;
+  }>;
 };
 
 // Ascending, matching the Market, the player directory and the album's own lens
@@ -47,26 +63,41 @@ const SORTS = {
   value: "Discard value",
 } as const;
 type SortKey = keyof typeof SORTS;
-const TIER_OPTIONS = RARITIES.map((tier) => ({ value: tier, label: tier[0].toUpperCase() + tier.slice(1) }));
-const SORT_OPTIONS = (Object.keys(SORTS) as SortKey[]).map((key) => ({ value: key, label: SORTS[key] }));
+const TIER_OPTIONS = RARITIES.map((tier) => ({
+  value: tier,
+  label: tier[0].toUpperCase() + tier.slice(1),
+}));
+const SORT_OPTIONS = (Object.keys(SORTS) as SortKey[]).map((key) => ({
+  value: key,
+  label: SORTS[key],
+}));
 
 export default async function CollectionPage({ searchParams }: CollectionPageProps) {
   const user = await requireUser();
   const supabase = await createClient();
-  const [{ data, error }, rosterResponse, profileResponse, clubValueResponse, query] = await Promise.all([
-    supabase
-      .schema("kut")
-      .from("my_collection_cards")
-      .select("card_id, edition_id, edition_title, edition_type, is_live, source, player_id, player_slug, display_name, archetype, ovr, pac, sho, pas, dri, def, phy, rarity_tier, discard_value, active_listing_id, held_by_offer_id, photo_path")
-      .order("ovr", { ascending: false })
-      .order("display_name"),
-    supabase.schema("kut").from("player_directory").select("id, slug, display_name, archetype, photo_path, live_ovr, pac, sho, pas, dri, def, phy, rarity_tier").order("display_name"),
-    supabase.schema("kut").from("profiles").select("player_id").eq("id", user.id).maybeSingle(),
-    // Club Value moved onto this header when /club retired (ADR-053). Non-critical:
-    // the page's own throw below stays reserved for the cards query.
-    supabase.schema("kut").from("my_club_value").select("club_value").maybeSingle(),
-    searchParams,
-  ]);
+  const [{ data, error }, rosterResponse, profileResponse, clubValueResponse, query] =
+    await Promise.all([
+      supabase
+        .schema("kut")
+        .from("my_collection_cards")
+        .select(
+          "card_id, edition_id, edition_title, edition_type, is_live, source, player_id, player_slug, display_name, archetype, ovr, pac, sho, pas, dri, def, phy, rarity_tier, discard_value, active_listing_id, held_by_offer_id, photo_path",
+        )
+        .order("ovr", { ascending: false })
+        .order("display_name"),
+      supabase
+        .schema("kut")
+        .from("player_directory")
+        .select(
+          "id, slug, display_name, archetype, photo_path, live_ovr, pac, sho, pas, dri, def, phy, rarity_tier",
+        )
+        .order("display_name"),
+      supabase.schema("kut").from("profiles").select("player_id").eq("id", user.id).maybeSingle(),
+      // Club Value moved onto this header when /club retired (ADR-053). Non-critical:
+      // the page's own throw below stays reserved for the cards query.
+      supabase.schema("kut").from("my_club_value").select("club_value").maybeSingle(),
+      searchParams,
+    ]);
 
   if (error) {
     throw new Error("Could not load your collection.");
@@ -78,26 +109,58 @@ export default async function CollectionPage({ searchParams }: CollectionPagePro
   const all = (data ?? []) as CollectionCard[];
   const clubValue = clubValueResponse.data?.club_value ?? null;
   const directory = (rosterResponse.data ?? []) as AlbumDirectoryPlayer[];
-  const ownPlayer = profileResponse.data?.player_id ? directory.find((player) => player.id === profileResponse.data?.player_id) : null;
+  const ownPlayer = profileResponse.data?.player_id
+    ? directory.find((player) => player.id === profileResponse.data?.player_id)
+    : null;
   if (query.view !== "manage") {
     if (rosterResponse.error) throw new Error("Could not load the TFH album.");
     const page = query.page ?? "1";
     const requestedPage = page === "all" ? page : Number(page);
-    if (page !== "all" && (!Number.isInteger(requestedPage) || Number(requestedPage) < 1)) notFound();
-    const albumCards = all.map((card) => ({ ...card, live_ovr: card.ovr })) as unknown as AlbumCollectionCard[];
+    if (page !== "all" && (!Number.isInteger(requestedPage) || Number(requestedPage) < 1))
+      notFound();
+    const albumCards = all.map((card) => ({
+      ...card,
+      live_ovr: card.ovr,
+    })) as unknown as AlbumCollectionCard[];
     const roster = directory;
     const filteredSlots = applyLens(buildSlots(roster, albumCards), parseLens(query.lens));
     const albumTotal = paginate(filteredSlots, 1).total;
     if (page !== "all" && Number(page) > albumTotal) notFound();
-    const visibleSlots = page === "all"
-      ? filteredSlots
-      : (() => { const [left, right] = Number(page) % 2 === 0 ? [Number(page) - 1, Number(page)] : [Number(page), Number(page) + 1]; return [...(paginate(filteredSlots, left).slots ?? []), ...(right <= albumTotal ? paginate(filteredSlots, right).slots : [])]; })();
+    const visibleSlots =
+      page === "all"
+        ? filteredSlots
+        : (() => {
+            const [left, right] =
+              Number(page) % 2 === 0
+                ? [Number(page) - 1, Number(page)]
+                : [Number(page), Number(page) + 1];
+            return [
+              ...(paginate(filteredSlots, left).slots ?? []),
+              ...(right <= albumTotal ? paginate(filteredSlots, right).slots : []),
+            ];
+          })();
     const visiblePaths = visibleSlots.flatMap((slot) => slot.copies.map((card) => card.photo_path));
     const photoUrls = await resolvePhotoUrls(supabase, visiblePaths);
-    return <main className="board-ground min-h-screen p-5 text-ink sm:p-10"><section className="mx-auto max-w-6xl py-4 sm:py-8"><CollectionAlbum cards={albumCards} clubValue={clubValue} lensValue={query.lens} ownPlayerId={profileResponse.data?.player_id ?? null} pageValue={page} photoUrls={photoUrls} roster={roster} /></section></main>;
+    return (
+      <main className="board-ground min-h-screen p-5 text-ink sm:p-10">
+        <section className="mx-auto max-w-6xl py-4 sm:py-8">
+          <CollectionAlbum
+            cards={albumCards}
+            clubValue={clubValue}
+            lensValue={query.lens}
+            ownPlayerId={profileResponse.data?.player_id ?? null}
+            pageValue={page}
+            photoUrls={photoUrls}
+            roster={roster}
+          />
+        </section>
+      </main>
+    );
   }
   const term = query.q?.trim().slice(0, 80) ?? "";
-  const rarity = RARITIES.includes(query.rarity as (typeof RARITIES)[number]) ? query.rarity : undefined;
+  const rarity = RARITIES.includes(query.rarity as (typeof RARITIES)[number])
+    ? query.rarity
+    : undefined;
   const sort: SortKey = query.sort && query.sort in SORTS ? (query.sort as SortKey) : "ovr";
 
   const cards = all
@@ -111,7 +174,10 @@ export default async function CollectionPage({ searchParams }: CollectionPagePro
           : b.ovr - a.ovr || a.display_name.localeCompare(b.display_name),
     );
 
-  const photoUrls = await resolvePhotoUrls(supabase, cards.map((card) => card.photo_path));
+  const photoUrls = await resolvePhotoUrls(
+    supabase,
+    cards.map((card) => card.photo_path),
+  );
   const uniquePlayers = new Set(all.map((card) => card.player_id)).size;
   const discardValue = all.reduce((total, card) => total + (card.discard_value ?? 0), 0);
   const totalPlayers = directory.length;
@@ -130,20 +196,32 @@ export default async function CollectionPage({ searchParams }: CollectionPagePro
           uniquePlayers={uniquePlayers}
         />
 
-        {query.discard && Number.isSafeInteger(Number(query.discard)) && Number(query.discard) > 0 && (
-          <p className="rounded-2xl border border-moss-line/40 bg-moss-bg/50 p-4 font-bold text-moss">
-            Card discarded. {query.discard} KUT Coins were added to your wallet.
-          </p>
-        )}
-        {query.purchase && Number.isSafeInteger(Number(query.purchase)) && Number(query.purchase) > 0 && (
-          <p className="rounded-2xl border border-moss-line/40 bg-moss-bg/50 p-4 font-bold text-moss">Purchase complete. {query.purchase} KUT Coins were paid and the card is now in your collection.</p>
-        )}
+        {query.discard &&
+          Number.isSafeInteger(Number(query.discard)) &&
+          Number(query.discard) > 0 && (
+            <p className="rounded-2xl border border-moss-line/40 bg-moss-bg/50 p-4 font-bold text-moss">
+              Card discarded. {query.discard} KUT Coins were added to your wallet.
+            </p>
+          )}
+        {query.purchase &&
+          Number.isSafeInteger(Number(query.purchase)) &&
+          Number(query.purchase) > 0 && (
+            <p className="rounded-2xl border border-moss-line/40 bg-moss-bg/50 p-4 font-bold text-moss">
+              Purchase complete. {query.purchase} KUT Coins were paid and the card is now in your
+              collection.
+            </p>
+          )}
 
         {all.length === 0 ? (
           <div className="rounded-3xl border border-dashed border-line bg-panel/60 p-8 text-center">
             <h2 className="display text-3xl">Your collection is empty</h2>
             <p className="mt-3 text-ink-dim">Open a pack to receive your first Live Cards.</p>
-            <Link className="mt-6 inline-flex min-h-12 items-center rounded-xl bg-gradient-to-b from-[#eebd63] to-[#d29a34] px-5 font-black text-ink-on-accent" href="/club/packs">Open a pack</Link>
+            <Link
+              className="mt-6 inline-flex min-h-12 items-center rounded-xl bg-gradient-to-b from-[#eebd63] to-[#d29a34] px-5 font-black text-ink-on-accent"
+              href="/club/packs"
+            >
+              Open a pack
+            </Link>
           </div>
         ) : (
           <>
@@ -164,7 +242,10 @@ export default async function CollectionPage({ searchParams }: CollectionPagePro
             {cards.length === 0 ? (
               <p className="rounded-2xl border border-dashed border-line p-8 text-center text-ink-dim">
                 No cards match these filters.{" "}
-                <Link className="font-bold text-brass hover:underline" href="/club/collection?view=manage">
+                <Link
+                  className="font-bold text-brass hover:underline"
+                  href="/club/collection?view=manage"
+                >
                   Clear them
                 </Link>
                 .
@@ -185,28 +266,28 @@ export default async function CollectionPage({ searchParams }: CollectionPagePro
                       def: card.def,
                       phy: card.phy,
                       rarityTier: card.rarity_tier,
-                      photoUrl: card.photo_path ? photoUrls.get(card.photo_path) ?? null : null,
+                      photoUrl: card.photo_path ? (photoUrls.get(card.photo_path) ?? null) : null,
                     };
                     return (
                       <Link
-                          aria-label={`Open ${card.display_name}'s card`}
-                          className="relative block rounded-[0.9rem] outline-offset-4 outline-brass focus-visible:outline-2"
-                          href={`/club/collection/${card.card_id}`}
-                          key={card.card_id}
-                        >
-                          <LiveCard player={cardPlayer} />
-                          {/* Status rides the card rather than floating as loose text
+                        aria-label={`Open ${card.display_name}'s card`}
+                        className="relative block rounded-[0.9rem] outline-offset-4 outline-brass focus-visible:outline-2"
+                        href={`/club/collection/${card.card_id}`}
+                        key={card.card_id}
+                      >
+                        <LiveCard player={cardPlayer} />
+                        {/* Status rides the card rather than floating as loose text
                               beneath it, so a scanned grid reads in one pass. */}
-                          {card.active_listing_id && (
-                            <span className="absolute left-1/2 top-3 z-10 -translate-x-1/2 rounded-full border border-brass/55 bg-board-deep/90 px-3 py-1 text-[0.65rem] font-black uppercase tracking-[0.1em] text-brass backdrop-blur-sm">
-                              Listed
-                            </span>
-                          )}
-                          {!card.is_live && (
-                            <span className="absolute bottom-3 left-1/2 z-10 -translate-x-1/2 rounded-full border border-line bg-board-deep/90 px-3 py-1 text-[0.6rem] font-black uppercase tracking-[0.1em] text-ink-dim backdrop-blur-sm">
-                              {card.edition_title}
-                            </span>
-                          )}
+                        {card.active_listing_id && (
+                          <span className="absolute left-1/2 top-3 z-10 -translate-x-1/2 rounded-full border border-brass/55 bg-board-deep/90 px-3 py-1 text-[0.65rem] font-black uppercase tracking-[0.1em] text-brass backdrop-blur-sm">
+                            Listed
+                          </span>
+                        )}
+                        {!card.is_live && (
+                          <span className="absolute bottom-3 left-1/2 z-10 -translate-x-1/2 rounded-full border border-line bg-board-deep/90 px-3 py-1 text-[0.6rem] font-black uppercase tracking-[0.1em] text-ink-dim backdrop-blur-sm">
+                            {card.edition_title}
+                          </span>
+                        )}
                       </Link>
                     );
                   })}

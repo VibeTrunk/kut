@@ -19,7 +19,10 @@ function revalidateRoster() {
   revalidatePath("/players"); // directory placeholder
 }
 
-export async function addPlayer(_prev: AddPlayerState, formData: FormData): Promise<AddPlayerState> {
+export async function addPlayer(
+  _prev: AddPlayerState,
+  formData: FormData,
+): Promise<AddPlayerState> {
   await requireAdmin();
 
   const displayName = String(formData.get("display_name") ?? "").trim();
@@ -53,7 +56,10 @@ export async function addPlayer(_prev: AddPlayerState, formData: FormData): Prom
   return { ok: true, player: data as { slug: string; display_name: string } };
 }
 
-export async function manageRoster(_prev: RosterActionState, formData: FormData): Promise<RosterActionState> {
+export async function manageRoster(
+  _prev: RosterActionState,
+  formData: FormData,
+): Promise<RosterActionState> {
   await requireAdmin();
 
   const intent = String(formData.get("intent") ?? "");
@@ -78,17 +84,24 @@ export async function manageRoster(_prev: RosterActionState, formData: FormData)
     }
     revalidateRoster();
     const row = data as { display_name?: string } | null;
-    return { ok: true, message: `${row?.display_name ?? "Player"} ${makeActive ? "reactivated" : "deactivated"}.` };
+    return {
+      ok: true,
+      message: `${row?.display_name ?? "Player"} ${makeActive ? "reactivated" : "deactivated"}.`,
+    };
   }
 
   if (intent === "delete") {
-    const { data, error } = await supabase.schema("kut").rpc("admin_delete_player", { p_player_id: playerId });
+    const { data, error } = await supabase
+      .schema("kut")
+      .rpc("admin_delete_player", { p_player_id: playerId });
     if (error) {
-      if (error.message.includes("admin access")) return { ok: false, error: "You don't have permission to do this." };
+      if (error.message.includes("admin access"))
+        return { ok: false, error: "You don't have permission to do this." };
       if (error.code === "P0001") {
         return {
           ok: false,
-          error: "This player has history (attendance, an account, an invite, or owned cards). Deactivate them instead.",
+          error:
+            "This player has history (attendance, an account, an invite, or owned cards). Deactivate them instead.",
         };
       }
       return { ok: false, error: "Couldn't delete the player. Please try again." };

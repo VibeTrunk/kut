@@ -22,12 +22,16 @@ export default async function SettingsPage() {
     <main className="board-ground min-h-screen p-5 text-ink sm:p-10">
       <section className="mx-auto max-w-2xl space-y-8 py-4 sm:py-8">
         <header className="space-y-3">
-          <p className="text-[0.7rem] font-extrabold uppercase tracking-[0.26em] text-brass">Account</p>
+          <p className="text-[0.7rem] font-extrabold uppercase tracking-[0.26em] text-brass">
+            Account
+          </p>
           <h1 className="display text-3xl sm:text-6xl">Settings</h1>
         </header>
 
         <div className="rounded-2xl border border-line/60 bg-panel/60 p-6">
-          <p className="text-[0.65rem] font-extrabold uppercase tracking-[0.15em] text-ink-faint">Signed in as</p>
+          <p className="text-[0.65rem] font-extrabold uppercase tracking-[0.15em] text-ink-faint">
+            Signed in as
+          </p>
           <p className="mt-2 text-2xl font-black">{user.displayName}</p>
           {profile?.username && (
             <p className="mt-1.5 text-sm text-ink-faint">
@@ -55,13 +59,30 @@ export default async function SettingsPage() {
           </span>
         </Link>
 
-        <Link className="group flex min-h-16 items-center justify-between rounded-2xl border border-line/60 bg-panel/60 px-6 py-4 hover:border-brass/60" href="/how-it-works">
-          <span className="font-black">How KUT works</span><span aria-hidden="true" className="text-brass">&rarr;</span>
+        <Link
+          className="group flex min-h-16 items-center justify-between rounded-2xl border border-line/60 bg-panel/60 px-6 py-4 hover:border-brass/60"
+          href="/how-it-works"
+        >
+          <span className="font-black">How KUT works</span>
+          <span aria-hidden="true" className="text-brass">
+            &rarr;
+          </span>
         </Link>
 
         {isAdminRole(profile?.role) && (
-          <Link className="group flex min-h-16 items-center justify-between rounded-2xl border border-brick-line/50 bg-panel/60 px-6 py-4 hover:border-brick" href="/admin/attendance">
-            <span><span className="block font-black text-brick">Admin tools</span><span className="mt-1 block text-xs text-ink-faint">Attendance, reports, roster and economy</span></span><span aria-hidden="true" className="text-brick">&rarr;</span>
+          <Link
+            className="group flex min-h-16 items-center justify-between rounded-2xl border border-brick-line/50 bg-panel/60 px-6 py-4 hover:border-brick"
+            href="/admin/attendance"
+          >
+            <span>
+              <span className="block font-black text-brick">Admin tools</span>
+              <span className="mt-1 block text-xs text-ink-faint">
+                Attendance, reports, roster and economy
+              </span>
+            </span>
+            <span aria-hidden="true" className="text-brick">
+              &rarr;
+            </span>
           </Link>
         )}
 

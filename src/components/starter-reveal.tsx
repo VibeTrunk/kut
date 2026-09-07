@@ -25,7 +25,14 @@ export function StarterReveal({ cards }: { cards: LiveCardPlayer[] }) {
   }
 
   if (phase === "revealing") {
-    return <PackReveal cards={revealCards} doneHref="/" doneLabel="Enter KUT" title="Your starter pack" />;
+    return (
+      <PackReveal
+        cards={revealCards}
+        doneHref="/"
+        doneLabel="Enter KUT"
+        title="Your starter pack"
+      />
+    );
   }
 
   return (
@@ -33,7 +40,9 @@ export function StarterReveal({ cards }: { cards: LiveCardPlayer[] }) {
       <div className="pack-reveal__stage rounded-3xl border border-brass/40 bg-[radial-gradient(circle_at_top,_#4a2f08,_#15130f_62%)]">
         <div className="pack-reveal__seal">
           <p className="text-6xl">&#127890;</p>
-          <p className="mt-3 text-sm font-black uppercase tracking-[0.25em] text-brass">Sealed starter pack</p>
+          <p className="mt-3 text-sm font-black uppercase tracking-[0.25em] text-brass">
+            Sealed starter pack
+          </p>
         </div>
       </div>
       <p className="mx-auto max-w-md leading-7 text-ink-dim">

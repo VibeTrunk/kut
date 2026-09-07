@@ -5,7 +5,12 @@ import { AttendanceForm } from "./attendance-form";
 import { isUuid } from "@/lib/uuid";
 
 type AttendancePageProps = {
-  searchParams: Promise<{ cancelled?: string; corrected?: string; published?: string; reactivated?: string }>;
+  searchParams: Promise<{
+    cancelled?: string;
+    corrected?: string;
+    published?: string;
+    reactivated?: string;
+  }>;
 };
 
 export default async function AttendancePage({ searchParams }: AttendancePageProps) {
@@ -40,20 +45,37 @@ export default async function AttendancePage({ searchParams }: AttendancePagePro
     .select("id")
     .eq("is_active", true)
     .maybeSingle();
-  const [{ data: ratingRules, error: rulesError }, { data: publishedSession, error: publishedError }] = await Promise.all([
+  const [
+    { data: ratingRules, error: rulesError },
+    { data: publishedSession, error: publishedError },
+  ] = await Promise.all([
     activeSeason
-      ? supabase.schema("kut").from("season_rating_rules").select("v2_starts_week").eq("season_id", activeSeason.id).maybeSingle()
+      ? supabase
+          .schema("kut")
+          .from("season_rating_rules")
+          .select("v2_starts_week")
+          .eq("season_id", activeSeason.id)
+          .maybeSingle()
       : Promise.resolve({ data: null, error: null }),
     query.published && isUuid(query.published)
-      ? supabase.schema("kut").from("match_sessions").select("id, rating_rules_version").eq("id", query.published).eq("status", "published").maybeSingle()
+      ? supabase
+          .schema("kut")
+          .from("match_sessions")
+          .select("id, rating_rules_version")
+          .eq("id", query.published)
+          .eq("status", "published")
+          .maybeSingle()
       : Promise.resolve({ data: null, error: null }),
   ]);
-  if (seasonError || rulesError || publishedError) throw new Error("Could not load the reporting cutover.");
+  if (seasonError || rulesError || publishedError)
+    throw new Error("Could not load the reporting cutover.");
 
   const players = playersResponse.data ?? [];
   const sessions = sessionsResponse.data ?? [];
   const cutoverLabel = ratingRules?.v2_starts_week
-    ? new Intl.DateTimeFormat("en-GB", { dateStyle: "long", timeZone: "Europe/Amsterdam" }).format(new Date(`${ratingRules.v2_starts_week}T12:00:00`))
+    ? new Intl.DateTimeFormat("en-GB", { dateStyle: "long", timeZone: "Europe/Amsterdam" }).format(
+        new Date(`${ratingRules.v2_starts_week}T12:00:00`),
+      )
     : null;
 
   return (
@@ -61,18 +83,36 @@ export default async function AttendancePage({ searchParams }: AttendancePagePro
       <section className="mx-auto max-w-xl space-y-8">
         <header className="space-y-3">
           <h1 className="text-4xl font-black tracking-tight">Record attendance</h1>
-          <p className="text-ink-dim">Signed in as {admin.displayName}. Publishing rebuilds every Live Card from season history.</p>
+          <p className="text-ink-dim">
+            Signed in as {admin.displayName}. Publishing rebuilds every Live Card from season
+            history.
+          </p>
         </header>
         {query.published && (
           <p className="rounded-xl bg-moss-bg p-4 font-semibold text-moss">
-            {publishedSession?.rating_rules_version === 2
-              ? <>Session published. Member reports are open for 24 hours. <Link className="underline" href={`/admin/attendance/${publishedSession.id}/reports`}>Review reports &rarr;</Link></>
-              : <>Legacy session published. Player ratings were rebuilt, but no member report was opened{cutoverLabel ? ` because reports begin with the week of ${cutoverLabel}` : ""}.</>}
+            {publishedSession?.rating_rules_version === 2 ? (
+              <>
+                Session published. Member reports are open for 24 hours.{" "}
+                <Link
+                  className="underline"
+                  href={`/admin/attendance/${publishedSession.id}/reports`}
+                >
+                  Review reports &rarr;
+                </Link>
+              </>
+            ) : (
+              <>
+                Legacy session published. Player ratings were rebuilt, but no member report was
+                opened
+                {cutoverLabel ? ` because reports begin with the week of ${cutoverLabel}` : ""}.
+              </>
+            )}
           </p>
         )}
         {query.corrected === "1" && (
           <p className="rounded-xl bg-moss-bg p-4 font-semibold text-moss">
-            Correction saved. The previous record is retained in the audit log; published sessions rebuild Player Ratings immediately.
+            Correction saved. The previous record is retained in the audit log; published sessions
+            rebuild Player Ratings immediately.
           </p>
         )}
         {query.cancelled === "1" && (
@@ -89,9 +129,14 @@ export default async function AttendancePage({ searchParams }: AttendancePagePro
 
         <section className="space-y-3 border-t border-panel-2 pt-8">
           <h2 className="display text-2xl">Review published and cancelled sessions</h2>
-          <p className="text-sm leading-6 text-ink-dim">Open a session to amend attendance, date, or type. New-rule goals are managed under Session reports. Cancelled sessions stay available for review and reactivation.</p>
+          <p className="text-sm leading-6 text-ink-dim">
+            Open a session to amend attendance, date, or type. New-rule goals are managed under
+            Session reports. Cancelled sessions stay available for review and reactivation.
+          </p>
           {sessions.length === 0 ? (
-            <p className="rounded-xl bg-panel p-4 text-ink-dim">No published or cancelled sessions are available yet.</p>
+            <p className="rounded-xl bg-panel p-4 text-ink-dim">
+              No published or cancelled sessions are available yet.
+            </p>
           ) : (
             <ul className="space-y-2">
               {sessions.map((session) => (
@@ -100,9 +145,13 @@ export default async function AttendancePage({ searchParams }: AttendancePagePro
                     className="flex min-h-12 items-center justify-between rounded-xl border border-line bg-panel px-4 font-semibold hover:border-brass"
                     href={`/admin/attendance/${session.id}`}
                   >
-                    <span>{session.session_date} · {session.session_type}</span>
+                    <span>
+                      {session.session_date} · {session.session_type}
+                    </span>
                     <span className={session.status === "cancelled" ? "text-brick" : "text-brass"}>
-                      {session.status === "cancelled" ? "Cancelled · review →" : "Published · correct →"}
+                      {session.status === "cancelled"
+                        ? "Cancelled · review →"
+                        : "Published · correct →"}
                     </span>
                   </Link>
                 </li>

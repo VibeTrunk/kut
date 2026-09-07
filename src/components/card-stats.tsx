@@ -26,7 +26,9 @@ export function AttributeBars({ player }: { player: Attrs }) {
         return (
           <div className="space-y-2" key={key}>
             <div className="flex items-baseline justify-between gap-2">
-              <dt className="text-[0.65rem] font-extrabold uppercase tracking-[0.14em] text-ink-faint">{label}</dt>
+              <dt className="text-[0.65rem] font-extrabold uppercase tracking-[0.14em] text-ink-faint">
+                {label}
+              </dt>
               <dd className="text-xl font-black tabular-nums text-ink">{value}</dd>
             </div>
             <svg
@@ -36,7 +38,14 @@ export function AttributeBars({ player }: { player: Attrs }) {
               viewBox="0 0 100 4"
             >
               <rect className="fill-line" height="4" rx="2" width="100" x="0" y="0" />
-              <rect className="fill-brass" height="4" rx="2" width={Math.max(0, Math.min(100, value))} x="0" y="0" />
+              <rect
+                className="fill-brass"
+                height="4"
+                rx="2"
+                width={Math.max(0, Math.min(100, value))}
+                x="0"
+                y="0"
+              />
             </svg>
           </div>
         );

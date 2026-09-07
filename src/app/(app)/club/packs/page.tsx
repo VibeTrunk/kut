@@ -18,7 +18,11 @@ export default async function PacksPage() {
   const user = await requireUser();
   const supabase = await createClient();
   const [packsResponse, walletResponse] = await Promise.all([
-    supabase.schema("kut").from("active_pack_offers").select("slug, title, price, cards_per_pack").order("price"),
+    supabase
+      .schema("kut")
+      .from("active_pack_offers")
+      .select("slug, title, price, cards_per_pack")
+      .order("price"),
     supabase.schema("kut").from("wallets").select("balance").eq("user_id", user.id).maybeSingle(),
   ]);
 
@@ -33,10 +37,13 @@ export default async function PacksPage() {
     <main className="board-ground min-h-screen p-5 text-ink sm:p-10">
       <section className="mx-auto max-w-6xl space-y-8 py-4 sm:py-8">
         <header className="space-y-3">
-          <p className="text-[0.7rem] font-extrabold uppercase tracking-[0.26em] text-brass">Pack store</p>
+          <p className="text-[0.7rem] font-extrabold uppercase tracking-[0.26em] text-brass">
+            Pack store
+          </p>
           <h1 className="display text-3xl sm:text-6xl">Packs</h1>
           <p className="hidden max-w-2xl text-base leading-relaxed text-ink-dim sm:block">
-            Spend KUT Coins on server-selected Live Cards. You have {balance.toLocaleString()} KUT Coins.
+            Spend KUT Coins on server-selected Live Cards. You have {balance.toLocaleString()} KUT
+            Coins.
           </p>
         </header>
 
@@ -62,7 +69,9 @@ export default async function PacksPage() {
           )}
 
           <aside className="rounded-2xl border border-line/60 bg-panel/60 p-6">
-            <p className="text-[0.65rem] font-extrabold uppercase tracking-[0.15em] text-ink-faint">What is in the ladder</p>
+            <p className="text-[0.65rem] font-extrabold uppercase tracking-[0.15em] text-ink-faint">
+              What is in the ladder
+            </p>
             <dl className="mt-4">
               {TIER_BANDS.map(([tier, label, band]) => (
                 <div className="flex items-center gap-3.5 border-b border-line/30 py-3" key={tier}>
@@ -75,7 +84,8 @@ export default async function PacksPage() {
               ))}
             </dl>
             <p className="pt-4 text-xs leading-relaxed text-ink-faint">
-              Tier follows the card&rsquo;s live rating, so a card can climb the ladder without you doing anything.
+              Tier follows the card&rsquo;s live rating, so a card can climb the ladder without you
+              doing anything.
             </p>
           </aside>
         </div>

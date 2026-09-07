@@ -7,8 +7,7 @@
 export const LAST_STEP = 2;
 
 export type RevealState =
-  | { phase: "revealing"; index: number; step: number }
-  | { phase: "summary" };
+  { phase: "revealing"; index: number; step: number } | { phase: "summary" };
 
 export type RevealAction = { type: "advance" } | { type: "skipAll" } | { type: "restart" };
 
@@ -17,7 +16,11 @@ export function initialRevealState(cardCount: number, instant: boolean): RevealS
   return { phase: "revealing", index: 0, step: 0 };
 }
 
-export function packRevealReducer(state: RevealState, action: RevealAction, cardCount: number): RevealState {
+export function packRevealReducer(
+  state: RevealState,
+  action: RevealAction,
+  cardCount: number,
+): RevealState {
   switch (action.type) {
     case "skipAll":
       return { phase: "summary" };
@@ -26,7 +29,8 @@ export function packRevealReducer(state: RevealState, action: RevealAction, card
     case "advance": {
       if (state.phase === "summary") return state;
       if (state.step < LAST_STEP) return { ...state, step: state.step + 1 };
-      if (state.index + 1 < cardCount) return { phase: "revealing", index: state.index + 1, step: 0 };
+      if (state.index + 1 < cardCount)
+        return { phase: "revealing", index: state.index + 1, step: 0 };
       return { phase: "summary" };
     }
     default:

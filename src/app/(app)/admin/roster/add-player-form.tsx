@@ -22,7 +22,11 @@ export function AddPlayerForm({ existingNames }: { existingNames: string[] }) {
 
   return (
     <div className="space-y-6">
-      <form action={formAction} className="space-y-4 rounded-2xl border border-line bg-panel p-5" key={formKey}>
+      <form
+        action={formAction}
+        className="space-y-4 rounded-2xl border border-line bg-panel p-5"
+        key={formKey}
+      >
         <label className="block space-y-2">
           <span className="font-semibold">Display name</span>
           <input
@@ -36,8 +40,8 @@ export function AddPlayerForm({ existingNames }: { existingNames: string[] }) {
         </label>
         {duplicate && (
           <p className="rounded-xl bg-warning-bg p-3 text-sm text-warning">
-            A player called “{name.trim()}” already exists — add a distinguishing name (e.g. “Nick B”) if this is a
-            different person.
+            A player called “{name.trim()}” already exists — add a distinguishing name (e.g. “Nick
+            B”) if this is a different person.
           </p>
         )}
         <label className="block space-y-2">
@@ -56,10 +60,18 @@ export function AddPlayerForm({ existingNames }: { existingNames: string[] }) {
         </label>
         <label className="block space-y-2">
           <span className="font-semibold">Full name</span>
-          <input className="min-h-12 w-full rounded-xl border border-line bg-board-deep/60 px-4" maxLength={120} name="full_name" />
-          <span className="block text-sm text-ink-faint">Optional. Kept for admin reference only.</span>
+          <input
+            className="min-h-12 w-full rounded-xl border border-line bg-board-deep/60 px-4"
+            maxLength={120}
+            name="full_name"
+          />
+          <span className="block text-sm text-ink-faint">
+            Optional. Kept for admin reference only.
+          </span>
         </label>
-        {state && !state.ok && <p className="rounded-xl bg-brick-bg p-3 text-sm text-brick">{state.error}</p>}
+        {state && !state.ok && (
+          <p className="rounded-xl bg-brick-bg p-3 text-sm text-brick">{state.error}</p>
+        )}
         {state?.ok && (
           <p className="rounded-xl bg-moss-bg p-3 text-sm text-moss">
             Added {state.player.display_name} (slug: {state.player.slug})

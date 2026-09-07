@@ -6,6 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "typecheck": "tsc --noEmit",
@@ -14,7 +16,7 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "test:db": "supabase test db",
-    "verify:fast": "npm run lint && npm run typecheck && npm run test",
+    "verify:fast": "npm run format:check && npm run lint && npm run typecheck && npm run test",
     "verify:full": "npm run verify:fast && npm run test:db && npm run test:e2e && npm run build"
   },
   "dependencies": {
@@ -34,6 +36,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.3.4",
     "pg": "^8.23.0",
+    "prettier": "3.9.6",
     "supabase": "^2.116.0",
     "tailwindcss": "^4",
     "typescript": "^5",

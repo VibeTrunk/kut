@@ -155,14 +155,25 @@ body {
   mix-blend-mode: multiply;
 }
 
-.live-card__sheen { z-index: 5; opacity: 0; }
-.live-card__film { z-index: 3; opacity: 0; }
-.live-card__glow { z-index: 0; opacity: 0; }
+.live-card__sheen {
+  z-index: 5;
+  opacity: 0;
+}
+.live-card__film {
+  z-index: 3;
+  opacity: 0;
+}
+.live-card__glow {
+  z-index: 0;
+  opacity: 0;
+}
 
 .live-card__frame {
   z-index: 6;
   font-size: 4cqi;
-  box-shadow: inset 0 0 0 0.1em var(--edge), inset 0 0 0 0.34em rgb(0 0 0 / 5.5%);
+  box-shadow:
+    inset 0 0 0 0.1em var(--edge),
+    inset 0 0 0 0.34em rgb(0 0 0 / 5.5%);
 }
 
 /* ---- art ----------------------------------------------------------------- */
@@ -198,7 +209,12 @@ body {
   z-index: 2;
   width: 66%;
   height: 46%;
-  background: radial-gradient(120% 120% at top left, color-mix(in srgb, var(--stock) 88%, transparent) 0%, color-mix(in srgb, var(--stock) 32%, transparent) 38%, transparent 70%);
+  background: radial-gradient(
+    120% 120% at top left,
+    color-mix(in srgb, var(--stock) 88%, transparent) 0%,
+    color-mix(in srgb, var(--stock) 32%, transparent) 38%,
+    transparent 70%
+  );
 }
 
 /* Hands any photograph, however busy, cleanly off to the nameplate. */
@@ -207,7 +223,11 @@ body {
   inset: auto 0 0;
   z-index: 2;
   height: 46%;
-  background: linear-gradient(180deg, rgb(0 0 0 / 0%) 0%, color-mix(in srgb, var(--stock) 82%, transparent) 100%);
+  background: linear-gradient(
+    180deg,
+    rgb(0 0 0 / 0%) 0%,
+    color-mix(in srgb, var(--stock) 82%, transparent) 100%
+  );
 }
 
 .live-card__ovr {
@@ -262,14 +282,35 @@ body {
   background: currentColor;
 }
 
-.live-card__tier-icon--common { border-radius: 50%; }
-.live-card__tier-icon--bronze { clip-path: polygon(50% 6%, 6% 94%, 94% 94%); }
-.live-card__tier-icon--silver { clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }
-.live-card__tier-icon--gold { clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%); }
-.live-card__tier-icon--holo {
-  clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+.live-card__tier-icon--common {
+  border-radius: 50%;
 }
-.live-card__tier-icon--elite { clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%); }
+.live-card__tier-icon--bronze {
+  clip-path: polygon(50% 6%, 6% 94%, 94% 94%);
+}
+.live-card__tier-icon--silver {
+  clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+}
+.live-card__tier-icon--gold {
+  clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%);
+}
+.live-card__tier-icon--holo {
+  clip-path: polygon(
+    50% 0%,
+    61% 35%,
+    98% 35%,
+    68% 57%,
+    79% 91%,
+    50% 70%,
+    21% 91%,
+    32% 57%,
+    2% 35%,
+    39% 35%
+  );
+}
+.live-card__tier-icon--elite {
+  clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
+}
 
 /* Week-over-week riser pill (Home "Top risers"), opposite the pennant. */
 .live-card__trend {
@@ -371,7 +412,9 @@ body {
    Flat ink on open stock with the press grain left visible. There is no
    varnish layer, so there is nothing for light to travel across: still at
    rest, still on hover. */
-.live-card[data-rarity="common"] .live-card__grain { opacity: 0.66; }
+.live-card[data-rarity="common"] .live-card__grain {
+  opacity: 0.66;
+}
 
 /* ===== TIER 2 — BRONZE: coated stock ======================================= */
 .live-card[data-rarity="bronze"] {
@@ -410,7 +453,13 @@ body {
 }
 
 .live-card[data-rarity="silver"] .live-card__sheen {
-  background: linear-gradient(102deg, transparent 34%, rgb(255 255 255 / 66%) 49%, rgb(213 231 240 / 30%) 55%, transparent 66%);
+  background: linear-gradient(
+    102deg,
+    transparent 34%,
+    rgb(255 255 255 / 66%) 49%,
+    rgb(213 231 240 / 30%) 55%,
+    transparent 66%
+  );
   transform: translateX(-125%);
 }
 
@@ -426,12 +475,23 @@ body {
   --plate-ink: #fff6df;
   --rule: rgb(84 54 9 / 24%);
   --edge: rgb(255 246 222 / 75%);
-  box-shadow: var(--lift), 0 0 1.4rem rgb(224 172 74 / 12%);
+  box-shadow:
+    var(--lift),
+    0 0 1.4rem rgb(224 172 74 / 12%);
 }
 
 .live-card[data-rarity="gold"] .live-card__plate,
 .live-card[data-rarity="gold"] .live-card__pennant {
-  background-image: linear-gradient(100deg, #6b4a0d 0%, #b98f33 18%, #f2dd9a 30%, #c79b3d 44%, #7a560f 62%, #d8b45c 82%, #6b4a0d 100%);
+  background-image: linear-gradient(
+    100deg,
+    #6b4a0d 0%,
+    #b98f33 18%,
+    #f2dd9a 30%,
+    #c79b3d 44%,
+    #7a560f 62%,
+    #d8b45c 82%,
+    #6b4a0d 100%
+  );
   background-size: 260% 100%;
   animation: card-foil 9s linear infinite;
 }
@@ -465,7 +525,9 @@ body {
   --plate-ink: #ffffff;
   --rule: rgb(58 42 82 / 20%);
   --edge: rgb(255 255 255 / 80%);
-  box-shadow: var(--lift), 0 0 1.8rem rgb(140 110 230 / 22%);
+  box-shadow:
+    var(--lift),
+    0 0 1.8rem rgb(140 110 230 / 22%);
 }
 
 .live-card[data-rarity="holo"] .live-card__grain {
@@ -473,7 +535,9 @@ body {
   background-image:
     repeating-linear-gradient(78deg, rgb(255 255 255 / 16%) 0 1px, transparent 1px 2.5px),
     radial-gradient(rgb(0 0 0 / 14%) 0.5px, transparent 0.6px);
-  background-size: auto, 3px 3px;
+  background-size:
+    auto,
+    3px 3px;
   mix-blend-mode: overlay;
 }
 
@@ -556,7 +620,8 @@ body {
 
 /* The pointer tilt replaces the shared hover lift for this tier. */
 .live-card[data-rarity="elite"]:hover {
-  transform: perspective(1200px) rotateY(var(--card-tilt-y, 0deg)) rotateX(var(--card-tilt-x, 0deg)) translateY(-0.4rem);
+  transform: perspective(1200px) rotateY(var(--card-tilt-y, 0deg)) rotateX(var(--card-tilt-x, 0deg))
+    translateY(-0.4rem);
 }
 
 .live-card[data-rarity="elite"] .live-card__grain {
@@ -580,23 +645,43 @@ body {
 
 .live-card[data-rarity="elite"] .live-card__plate,
 .live-card[data-rarity="elite"] .live-card__pennant {
-  background-image: linear-gradient(100deg, #7c5f19 0%, #c8a147 16%, #f6e6b4 30%, #e9c46a 44%, #8a6a1f 62%, #dcbc6b 82%, #7c5f19 100%);
+  background-image: linear-gradient(
+    100deg,
+    #7c5f19 0%,
+    #c8a147 16%,
+    #f6e6b4 30%,
+    #e9c46a 44%,
+    #8a6a1f 62%,
+    #dcbc6b 82%,
+    #7c5f19 100%
+  );
   background-size: 250% 100%;
   animation: card-foil 11s linear infinite;
 }
 
-.live-card[data-rarity="elite"] .live-card__pennant { color: #191204; }
+.live-card[data-rarity="elite"] .live-card__pennant {
+  color: #191204;
+}
 
 .live-card[data-rarity="elite"] .live-card__ovr b {
   color: #f6e6b4;
-  text-shadow: 0 0 0.5em rgb(233 196 106 / 55%), 0 0.05em 0.06em rgb(0 0 0 / 60%);
+  text-shadow:
+    0 0 0.5em rgb(233 196 106 / 55%),
+    0 0.05em 0.06em rgb(0 0 0 / 60%);
 }
 
-.live-card[data-rarity="elite"] .live-card__ovr span { color: #e9c46a; opacity: 0.8; }
-.live-card[data-rarity="elite"] .live-card__stats dd { color: #f6e6b4; }
+.live-card[data-rarity="elite"] .live-card__ovr span {
+  color: #e9c46a;
+  opacity: 0.8;
+}
+.live-card[data-rarity="elite"] .live-card__stats dd {
+  color: #f6e6b4;
+}
 
 .live-card[data-rarity="elite"] .live-card__frame {
-  box-shadow: inset 0 0 0 0.1em rgb(233 196 106 / 42%), inset 0 0 1.8em rgb(224 172 74 / 20%);
+  box-shadow:
+    inset 0 0 0 0.1em rgb(233 196 106 / 42%),
+    inset 0 0 1.8em rgb(224 172 74 / 20%);
 }
 
 .live-card[data-rarity="elite"] .live-card__sheen {
@@ -608,17 +693,31 @@ body {
 }
 
 /* Depth planes — only meaningful while the card is being tilted. */
-.live-card[data-rarity="elite"] .live-card__ovr { transform: translateZ(26px); }
-.live-card[data-rarity="elite"] .live-card__plate { transform: translateZ(16px); }
-.live-card[data-rarity="elite"] .live-card__pennant { transform: translateZ(30px); }
+.live-card[data-rarity="elite"] .live-card__ovr {
+  transform: translateZ(26px);
+}
+.live-card[data-rarity="elite"] .live-card__plate {
+  transform: translateZ(16px);
+}
+.live-card[data-rarity="elite"] .live-card__pennant {
+  transform: translateZ(30px);
+}
 
 /* ---- no-photo card ------------------------------------------------------- */
 /* The shirt back: surname across the shoulders, live rating as the squad
    number. Drawn in the tier's own material, so it inherits the foil, the film
    and the lacquer for free — and unlike a monogram it differs per player. */
-.live-card__shirt-ground { fill: color-mix(in srgb, var(--ci) 16%, var(--stock)); }
-.live-card__shirt-body { fill: var(--shirt); }
-.live-card__shirt-seam { stroke: var(--shirt-ink); stroke-opacity: 0.16; stroke-width: 2; }
+.live-card__shirt-ground {
+  fill: color-mix(in srgb, var(--ci) 16%, var(--stock));
+}
+.live-card__shirt-body {
+  fill: var(--shirt);
+}
+.live-card__shirt-seam {
+  stroke: var(--shirt-ink);
+  stroke-opacity: 0.16;
+  stroke-width: 2;
+}
 .live-card__shirt-name {
   fill: var(--shirt-ink);
   font-family: var(--font-sans);
@@ -634,7 +733,10 @@ body {
 .live-card__shirt-halftone {
   position: absolute;
   inset: 0;
-  background-image: radial-gradient(color-mix(in srgb, var(--ci) 14%, transparent) 1.05px, transparent 1.15px);
+  background-image: radial-gradient(
+    color-mix(in srgb, var(--ci) 14%, transparent) 1.05px,
+    transparent 1.15px
+  );
   background-size: 6px 6px;
 }
 
@@ -650,43 +752,86 @@ body {
 
 /* ---- keyframes ----------------------------------------------------------- */
 @keyframes card-sweep {
-  0% { opacity: 0; transform: translateX(-125%); }
-  14% { opacity: 0.95; }
-  100% { opacity: 0; transform: translateX(125%); }
+  0% {
+    opacity: 0;
+    transform: translateX(-125%);
+  }
+  14% {
+    opacity: 0.95;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(125%);
+  }
 }
 
 @keyframes card-glide {
-  0%, 58% { transform: translateX(-125%); }
-  100% { transform: translateX(125%); }
+  0%,
+  58% {
+    transform: translateX(-125%);
+  }
+  100% {
+    transform: translateX(125%);
+  }
 }
 
 @keyframes card-foil {
-  from { background-position: 0% 50%; }
-  to { background-position: 250% 50%; }
+  from {
+    background-position: 0% 50%;
+  }
+  to {
+    background-position: 250% 50%;
+  }
 }
 
 @keyframes card-drift-a {
-  from { background-position: 0% 50%; }
-  to { background-position: 240% 50%; }
+  from {
+    background-position: 0% 50%;
+  }
+  to {
+    background-position: 240% 50%;
+  }
 }
 
 @keyframes card-drift-b {
-  from { background-position: 220% 50%; }
-  to { background-position: 0% 50%; }
+  from {
+    background-position: 220% 50%;
+  }
+  to {
+    background-position: 0% 50%;
+  }
 }
 
 /* Long rest, then one pass. The transform holds at the start position for
    the whole idle stretch, so nothing drifts between sweeps. */
 @keyframes card-prism {
-  0%, 70% { opacity: 0; transform: translate3d(-46%, 0, 0); }
-  76% { opacity: 0.62; }
-  93% { opacity: 0.58; }
-  100% { opacity: 0; transform: translate3d(46%, 0, 0); }
+  0%,
+  70% {
+    opacity: 0;
+    transform: translate3d(-46%, 0, 0);
+  }
+  76% {
+    opacity: 0.62;
+  }
+  93% {
+    opacity: 0.58;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(46%, 0, 0);
+  }
 }
 
 @keyframes card-breathe {
-  0%, 100% { opacity: 0.42; transform: scale(0.93); }
-  50% { opacity: 0.9; transform: scale(1.07); }
+  0%,
+  100% {
+    opacity: 0.42;
+    transform: scale(0.93);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.07);
+  }
 }
 
 /* Motion is a courtesy, not a requirement: the ladder still reads through
@@ -698,7 +843,9 @@ body {
     transition: none !important;
   }
 
-  .live-card:hover { transform: none; }
+  .live-card:hover {
+    transform: none;
+  }
 
   .live-card[data-rarity="elite"],
   .live-card[data-rarity="elite"]:hover {
@@ -724,21 +871,43 @@ body {
   height: 0.75rem;
 }
 
-.tier-chip[data-rarity="common"] { background: #e9e5d9; }
-.tier-chip[data-rarity="common"] span { background: #3b3830; }
-.tier-chip[data-rarity="bronze"] { background: #ecd8b1; }
-.tier-chip[data-rarity="bronze"] span { background: #8a5326; }
-.tier-chip[data-rarity="silver"] { background: #e3e8eb; }
-.tier-chip[data-rarity="silver"] span { background: #4b5761; }
-.tier-chip[data-rarity="gold"] { background: linear-gradient(140deg, #f7e7b2, #e2c069); }
-.tier-chip[data-rarity="gold"] span { background: #8a6414; }
-.tier-chip[data-rarity="holo"] { background: linear-gradient(140deg, #d9f2ee, #e6dcf6 45%, #f5dcf0); }
-.tier-chip[data-rarity="holo"] span { background: #574481; }
+.tier-chip[data-rarity="common"] {
+  background: #e9e5d9;
+}
+.tier-chip[data-rarity="common"] span {
+  background: #3b3830;
+}
+.tier-chip[data-rarity="bronze"] {
+  background: #ecd8b1;
+}
+.tier-chip[data-rarity="bronze"] span {
+  background: #8a5326;
+}
+.tier-chip[data-rarity="silver"] {
+  background: #e3e8eb;
+}
+.tier-chip[data-rarity="silver"] span {
+  background: #4b5761;
+}
+.tier-chip[data-rarity="gold"] {
+  background: linear-gradient(140deg, #f7e7b2, #e2c069);
+}
+.tier-chip[data-rarity="gold"] span {
+  background: #8a6414;
+}
+.tier-chip[data-rarity="holo"] {
+  background: linear-gradient(140deg, #d9f2ee, #e6dcf6 45%, #f5dcf0);
+}
+.tier-chip[data-rarity="holo"] span {
+  background: #574481;
+}
 .tier-chip[data-rarity="elite"] {
   background: radial-gradient(120% 100% at 50% 0%, #2c2314, #0f0c08);
   box-shadow: inset 0 0 0 1px rgb(233 196 106 / 45%);
 }
-.tier-chip[data-rarity="elite"] span { background: #e9c46a; }
+.tier-chip[data-rarity="elite"] span {
+  background: #e9c46a;
+}
 
 /* ---- Pack / starter reveal animation --------------------------------------- */
 .pack-reveal__stage {
@@ -767,23 +936,48 @@ body {
   animation: pack-card-rise 420ms ease-out both;
 }
 
-.pack-reveal__summary-card:nth-child(2) { animation-delay: 90ms; }
-.pack-reveal__summary-card:nth-child(3) { animation-delay: 180ms; }
+.pack-reveal__summary-card:nth-child(2) {
+  animation-delay: 90ms;
+}
+.pack-reveal__summary-card:nth-child(3) {
+  animation-delay: 180ms;
+}
 
 @keyframes pack-card-rise {
-  from { opacity: 0; transform: translateY(1.4rem) scale(0.96); }
-  to { opacity: 1; transform: none; }
+  from {
+    opacity: 0;
+    transform: translateY(1.4rem) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 @keyframes pack-rarity-flare {
-  0% { opacity: 0; transform: scale(0.7); }
-  55% { opacity: 1; transform: scale(1.08); }
-  100% { opacity: 1; transform: scale(1); }
+  0% {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+  55% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 @keyframes pack-ovr-pop {
-  from { opacity: 0; transform: scale(0.4); }
-  to { opacity: 1; transform: scale(1); }
+  from {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

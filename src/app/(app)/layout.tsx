@@ -7,7 +7,13 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
 
   return (
     <>
-      <AppNav balance={nav.balance} displayName={nav.displayName} incomingOfferCount={nav.incomingOfferCount} isAdmin={nav.isAdmin} unreadCount={nav.unreadCount} />
+      <AppNav
+        balance={nav.balance}
+        displayName={nav.displayName}
+        incomingOfferCount={nav.incomingOfferCount}
+        isAdmin={nav.isAdmin}
+        unreadCount={nav.unreadCount}
+      />
       {/* The bottom tab bar is ~57px of its own content PLUS
           `env(safe-area-inset-bottom)` (app-nav.tsx). A flat `pb-16` under-reserved
           by the inset, so on a phone with a home indicator the last ~30px of every

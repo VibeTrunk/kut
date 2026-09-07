@@ -10,7 +10,8 @@
 // admin profile first and then run the read as that member.
 import pg from "pg";
 
-const connectionString = process.env.KUT_LOCAL_DATABASE_URL ?? "postgresql://postgres:postgres@127.0.0.1:54322/postgres";
+const connectionString =
+  process.env.KUT_LOCAL_DATABASE_URL ?? "postgresql://postgres:postgres@127.0.0.1:54322/postgres";
 const client = new pg.Client({ connectionString });
 await client.connect();
 try {
@@ -18,7 +19,10 @@ try {
   const { rows: admins } = await client.query(
     "select id::text from kut.profiles where role in ('admin','superadmin') order by role limit 1",
   );
-  if (admins.length === 0) throw new Error("No admin or superadmin profile exists; kut.pack_economy_health cannot be read.");
+  if (admins.length === 0)
+    throw new Error(
+      "No admin or superadmin profile exists; kut.pack_economy_health cannot be read.",
+    );
 
   // Claim first, then drop to authenticated — RLS hides kut.profiles once the
   // role is switched, so the lookup above has to happen as the connecting role.
@@ -31,9 +35,16 @@ try {
       from kut.pack_economy_health
      order by slug
   `);
-  if (rows.length === 0) throw new Error("kut.pack_economy_health returned no active pack; nothing to measure.");
+  if (rows.length === 0)
+    throw new Error("kut.pack_economy_health returned no active pack; nothing to measure.");
 
-  console.log(JSON.stringify({ measuredAt: new Date().toISOString(), source: "kut.pack_economy_health", packs: rows }, null, 2));
+  console.log(
+    JSON.stringify(
+      { measuredAt: new Date().toISOString(), source: "kut.pack_economy_health", packs: rows },
+      null,
+      2,
+    ),
+  );
 } finally {
   await client.query("rollback").catch(() => {});
   await client.end();

@@ -64,7 +64,11 @@ export function LoginForm() {
           type="password"
         />
       </label>
-      {errorMessage && <p className="rounded-xl border border-brick-line/40 bg-brick-bg p-3 text-sm font-bold text-brick">{errorMessage}</p>}
+      {errorMessage && (
+        <p className="rounded-xl border border-brick-line/40 bg-brick-bg p-3 text-sm font-bold text-brick">
+          {errorMessage}
+        </p>
+      )}
       <button
         className="min-h-12 w-full rounded-xl bg-gradient-to-b from-[#eebd63] to-[#d29a34] px-4 py-3 font-black text-ink-on-accent shadow-lg shadow-brass/20 hover:brightness-105 disabled:bg-none disabled:bg-line disabled:text-ink-faint disabled:shadow-none"
         disabled={isSubmitting}

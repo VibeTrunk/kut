@@ -54,7 +54,8 @@ const fieldClass =
   "min-h-11 rounded-xl border border-line bg-board-deep/60 px-3.5 text-sm font-semibold text-ink placeholder:text-ink-faint focus:border-brass/60 focus:outline-none";
 const focusRing =
   "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brass";
-const chipBase = "min-h-9 rounded-full border px-3.5 py-1.5 text-xs font-extrabold capitalize transition-colors";
+const chipBase =
+  "min-h-9 rounded-full border px-3.5 py-1.5 text-xs font-extrabold capitalize transition-colors";
 const chipOn = "border-brass/50 bg-brass/12 text-brass";
 const chipOff = "border-line bg-board-deep/50 text-ink-dim hover:text-ink";
 
@@ -99,7 +100,11 @@ export function FilterBar({
   }
 
   const searchField = (extraClass = "") => (
-    <form action={basePath} className={`flex min-h-11 items-center gap-2 rounded-xl border border-line bg-board-deep/60 px-3.5 ${extraClass}`} onSubmit={submitSearch}>
+    <form
+      action={basePath}
+      className={`flex min-h-11 items-center gap-2 rounded-xl border border-line bg-board-deep/60 px-3.5 ${extraClass}`}
+      onSubmit={submitSearch}
+    >
       <IconSearch aria-hidden="true" className="h-4 w-4 shrink-0 text-ink-faint" />
       <input
         aria-label={searchPlaceholder}
@@ -114,7 +119,10 @@ export function FilterBar({
 
   const chipRow = chips && (
     <div className="flex flex-wrap items-center gap-2">
-      <Link className={`${chipBase} ${values[chips.name] ? chipOff : chipOn} ${focusRing}`} href={href({ [chips.name]: "" })}>
+      <Link
+        className={`${chipBase} ${values[chips.name] ? chipOff : chipOn} ${focusRing}`}
+        href={href({ [chips.name]: "" })}
+      >
         {chips.allLabel}
       </Link>
       {chips.options.map((option) => (
@@ -205,7 +213,15 @@ export function FilterBar({
           ref={triggerRef}
           type="button"
         >
-          <svg aria-hidden="true" className="h-4 w-4" fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="1.8" viewBox="0 0 24 24">
+          <svg
+            aria-hidden="true"
+            className="h-4 w-4"
+            fill="none"
+            stroke="currentColor"
+            strokeLinecap="round"
+            strokeWidth="1.8"
+            viewBox="0 0 24 24"
+          >
             <path d="M4 7h16M7 12h10M10 17h4" />
           </svg>
           Filters
@@ -227,7 +243,15 @@ export function FilterBar({
                   key={name}
                 >
                   {value}
-                  <svg aria-hidden="true" className="h-3 w-3" fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="2" viewBox="0 0 24 24">
+                  <svg
+                    aria-hidden="true"
+                    className="h-3 w-3"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeLinecap="round"
+                    strokeWidth="2"
+                    viewBox="0 0 24 24"
+                  >
                     <path d="M6 6l12 12M18 6L6 18" />
                   </svg>
                 </Link>
@@ -239,18 +263,27 @@ export function FilterBar({
 
       {summary && <p className="text-xs font-bold text-ink-faint">{summary}</p>}
 
-      <BottomSheet label="Filters" onClose={() => setSheetOpen(false)} open={sheetOpen} returnFocusRef={triggerRef}>
+      <BottomSheet
+        label="Filters"
+        onClose={() => setSheetOpen(false)}
+        open={sheetOpen}
+        returnFocusRef={triggerRef}
+      >
         {searchField("")}
         {chips && (
           <div className="space-y-2">
-            <p className="text-[0.65rem] font-extrabold uppercase tracking-[0.15em] text-ink-faint">{chips.allLabel}</p>
+            <p className="text-[0.65rem] font-extrabold uppercase tracking-[0.15em] text-ink-faint">
+              {chips.allLabel}
+            </p>
             {chipRow}
           </div>
         )}
         {(selects ?? []).length > 0 && <div className="grid gap-2">{selectFields}</div>}
         {range && (
           <div className="space-y-2">
-            <p className="text-[0.65rem] font-extrabold uppercase tracking-[0.15em] text-ink-faint">Price</p>
+            <p className="text-[0.65rem] font-extrabold uppercase tracking-[0.15em] text-ink-faint">
+              Price
+            </p>
             <div className="grid grid-cols-2 gap-2">
               <input
                 aria-label={range.minLabel}

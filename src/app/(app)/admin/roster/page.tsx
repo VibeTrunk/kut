@@ -7,7 +7,11 @@ export default async function RosterPage() {
   await requireAdmin();
   const supabase = await createClient();
   const [playersRes, attendanceRes, profilesRes] = await Promise.all([
-    supabase.schema("kut").from("players").select("id, slug, display_name, archetype, is_active").order("display_name"),
+    supabase
+      .schema("kut")
+      .from("players")
+      .select("id, slug, display_name, archetype, is_active")
+      .order("display_name"),
     supabase.schema("kut").from("attendance").select("player_id"),
     supabase.schema("kut").from("profiles").select("player_id").not("player_id", "is", null),
   ]);
@@ -31,8 +35,8 @@ export default async function RosterPage() {
         <header className="space-y-3">
           <h1 className="text-4xl font-black tracking-tight">Add a player</h1>
           <p className="text-ink-dim">
-            Register a new TFH member. They get a Live Card straight away and appear in Live Ratings at 30 OVR (common)
-            until their first published attendance.
+            Register a new TFH member. They get a Live Card straight away and appear in Live Ratings
+            at 30 OVR (common) until their first published attendance.
           </p>
         </header>
 

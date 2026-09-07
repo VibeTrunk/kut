@@ -25,22 +25,27 @@ export const getNavContext = cache(async (): Promise<NavContext> => {
     redirect("/login");
   }
 
-  const [profileResponse, walletResponse, notificationsResponse, offersResponse] = await Promise.all([
-    supabase
-      .schema("kut")
-      .from("profiles")
-      .select("display_name, role, is_disabled, starter_claimed_at, starter_opened_at")
-      .eq("id", userId)
-      .maybeSingle(),
-    supabase.schema("kut").from("wallets").select("balance").eq("user_id", userId).maybeSingle(),
-    supabase.schema("kut").from("user_notifications").select("id", { count: "exact", head: true }).is("read_at", null),
-    supabase
-      .schema("kut")
-      .from("my_trade_offers")
-      .select("offer_id", { count: "exact", head: true })
-      .eq("is_outgoing", false)
-      .eq("status", "active"),
-  ]);
+  const [profileResponse, walletResponse, notificationsResponse, offersResponse] =
+    await Promise.all([
+      supabase
+        .schema("kut")
+        .from("profiles")
+        .select("display_name, role, is_disabled, starter_claimed_at, starter_opened_at")
+        .eq("id", userId)
+        .maybeSingle(),
+      supabase.schema("kut").from("wallets").select("balance").eq("user_id", userId).maybeSingle(),
+      supabase
+        .schema("kut")
+        .from("user_notifications")
+        .select("id", { count: "exact", head: true })
+        .is("read_at", null),
+      supabase
+        .schema("kut")
+        .from("my_trade_offers")
+        .select("offer_id", { count: "exact", head: true })
+        .eq("is_outgoing", false)
+        .eq("status", "active"),
+    ]);
 
   const profile = profileResponse.data;
   if (profileResponse.error || !profile || profile.is_disabled) {

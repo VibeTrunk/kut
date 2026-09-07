@@ -32,14 +32,15 @@ const TIER_LABEL: Record<LiveCardPlayer["rarityTier"], string> = {
   elite: "Elite",
 };
 
-const attributes = (player: LiveCardPlayer) => [
-  ["PAC", player.pac],
-  ["SHO", player.sho],
-  ["PAS", player.pas],
-  ["DRI", player.dri],
-  ["DEF", player.def],
-  ["PHY", player.phy],
-] as const;
+const attributes = (player: LiveCardPlayer) =>
+  [
+    ["PAC", player.pac],
+    ["SHO", player.sho],
+    ["PAS", player.pas],
+    ["DRI", player.dri],
+    ["DEF", player.def],
+    ["PHY", player.phy],
+  ] as const;
 
 /** Longest surname that still sets legibly on the shoulder arc. */
 const ARC_LIMIT = 14;
@@ -111,7 +112,10 @@ function BustFallback({ player }: { player: LiveCardPlayer }) {
       <svg aria-hidden="true" preserveAspectRatio="xMidYMid slice" viewBox="0 0 200 200">
         <rect className="live-card__shirt-ground" height="200" width="200" x="0" y="0" />
         <circle className="live-card__bust" cx="100" cy="72" r="32" />
-        <path className="live-card__bust" d="M40,178 C40,140 66,120 100,120 C134,120 160,140 160,178" />
+        <path
+          className="live-card__bust"
+          d="M40,178 C40,140 66,120 100,120 C134,120 160,140 160,178"
+        />
       </svg>
       <span aria-hidden="true" className="live-card__shirt-halftone" />
       <span className="sr-only">{initials(player.displayName)}</span>

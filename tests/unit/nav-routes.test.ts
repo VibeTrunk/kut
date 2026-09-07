@@ -68,7 +68,13 @@ describe("activeEntryKey — primary tabs", () => {
     // The net for the classic startsWith("/") bug, where Home lights up everywhere.
     // Messages, the account routes and Admin are chrome controls of their own
     // (the messages button and the avatar), not primary tabs.
-    for (const pathname of ["/messages", "/settings", "/settings/card", "/how-it-works", "/admin/attendance"]) {
+    for (const pathname of [
+      "/messages",
+      "/settings",
+      "/settings/card",
+      "/how-it-works",
+      "/admin/attendance",
+    ]) {
       expect(activeEntryKey(PRIMARY_TABS, pathname)).toBeNull();
     }
   });
@@ -178,6 +184,8 @@ describe("route tables", () => {
   });
 
   it("marks only Admin as admin-only", () => {
-    expect(ACCOUNT_ROUTES.filter((entry) => entry.adminOnly).map((entry) => entry.key)).toEqual(["admin"]);
+    expect(ACCOUNT_ROUTES.filter((entry) => entry.adminOnly).map((entry) => entry.key)).toEqual([
+      "admin",
+    ]);
   });
 });

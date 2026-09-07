@@ -4,9 +4,13 @@ import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth/user";
 import { createClient } from "@/lib/supabase/server";
 
-export type SettingsActionState = { ok: true; message: string } | { ok: false; error: string } | null;
+export type SettingsActionState =
+  { ok: true; message: string } | { ok: false; error: string } | null;
 
-export async function saveClubName(_prev: SettingsActionState, formData: FormData): Promise<SettingsActionState> {
+export async function saveClubName(
+  _prev: SettingsActionState,
+  formData: FormData,
+): Promise<SettingsActionState> {
   await requireUser();
 
   const raw = String(formData.get("club_name") ?? "").trim();
@@ -19,7 +23,10 @@ export async function saveClubName(_prev: SettingsActionState, formData: FormDat
   const { error } = await supabase.schema("kut").rpc("set_own_club_name", { p_club_name: raw });
   if (error) {
     if (error.code === "22023") {
-      return { ok: false, error: "That club name wasn't accepted. Keep it to 80 plain characters." };
+      return {
+        ok: false,
+        error: "That club name wasn't accepted. Keep it to 80 plain characters.",
+      };
     }
     return { ok: false, error: "Something went wrong. Please try again." };
   }

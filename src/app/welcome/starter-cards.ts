@@ -25,7 +25,9 @@ export async function loadStarterCards(supabase: SupabaseServerClient): Promise<
   const { data, error } = await supabase
     .schema("kut")
     .from("my_collection_cards")
-    .select("card_id, display_name, archetype, ovr, pac, sho, pas, dri, def, phy, rarity_tier, photo_path")
+    .select(
+      "card_id, display_name, archetype, ovr, pac, sho, pas, dri, def, phy, rarity_tier, photo_path",
+    )
     .eq("source", "starter")
     .order("acquired_at");
 

@@ -97,11 +97,21 @@ export const PRIMARY_TABS: readonly RouteEntry[] = [
   // destination the chrome cannot place you in.
   { key: "home", href: "/", label: "Home", owns: ["/", "/chronicle"] },
   // Club Value is "my club" and is now reached from the Collection header.
-  { key: "collection", href: "/club/collection", label: "Collection", owns: ["/club/collection", "/club/value"] },
+  {
+    key: "collection",
+    href: "/club/collection",
+    label: "Collection",
+    owns: ["/club/collection", "/club/value"],
+  },
   { key: "packs", href: "/club/packs", label: "Packs" },
   { key: "market", href: "/market", label: "Market" },
   // The directory is a tab inside this section, so the primary tab owns it too.
-  { key: "leaderboard", href: "/leaderboard", label: "Leaderboard", owns: ["/leaderboard", "/players"] },
+  {
+    key: "leaderboard",
+    href: "/leaderboard",
+    label: "Leaderboard",
+    owns: ["/leaderboard", "/players"],
+  },
 ];
 
 /** Everything behind the avatar. Account only — no content lives here. */

@@ -13,9 +13,13 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             <span aria-hidden="true" className="clip-pennant h-4 w-3.5 shrink-0 bg-brass" />
             KUT
           </p>
-          <p className="text-[0.7rem] font-extrabold uppercase tracking-[0.26em] text-brass">Kelderklasse Ultimate Team</p>
+          <p className="text-[0.7rem] font-extrabold uppercase tracking-[0.26em] text-brass">
+            Kelderklasse Ultimate Team
+          </p>
           <h1 className="display text-5xl">Sign in</h1>
-          <p className="leading-relaxed text-ink-dim">KUT is private for invited members. Public sign-up is not available.</p>
+          <p className="leading-relaxed text-ink-dim">
+            KUT is private for invited members. Public sign-up is not available.
+          </p>
         </header>
         {query.welcome === "1" && (
           <p className="rounded-xl border border-moss-line/40 bg-moss-bg/50 p-4 font-bold text-moss">

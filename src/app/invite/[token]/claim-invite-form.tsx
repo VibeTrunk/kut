@@ -28,14 +28,27 @@ export function ClaimInviteForm({ token }: { token: string }) {
       </label>
       <label className="block space-y-2">
         <span className="font-semibold">Choose a password</span>
-        <input autoComplete="new-password" className="min-h-12 w-full rounded-xl border border-line bg-board-deep/60 px-4" minLength={12} name="password" required type="password" />
+        <input
+          autoComplete="new-password"
+          className="min-h-12 w-full rounded-xl border border-line bg-board-deep/60 px-4"
+          minLength={12}
+          name="password"
+          required
+          type="password"
+        />
       </label>
       <p className="text-sm text-ink-faint">
-        Username: 3–30 letters, numbers, or underscores — you&rsquo;ll sign in with it. Password: at least 12
-        characters. Your invite can only be claimed once.
+        Username: 3–30 letters, numbers, or underscores — you&rsquo;ll sign in with it. Password: at
+        least 12 characters. Your invite can only be claimed once.
       </p>
-      {state.error && <p className="rounded-xl bg-brick-bg p-3 text-sm text-brick">{state.error}</p>}
-      <button className="min-h-12 w-full rounded-xl bg-brass px-4 py-3 font-bold text-ink-on-accent disabled:bg-line disabled:text-ink-faint" disabled={isPending} type="submit">
+      {state.error && (
+        <p className="rounded-xl bg-brick-bg p-3 text-sm text-brick">{state.error}</p>
+      )}
+      <button
+        className="min-h-12 w-full rounded-xl bg-brass px-4 py-3 font-bold text-ink-on-accent disabled:bg-line disabled:text-ink-faint"
+        disabled={isPending}
+        type="submit"
+      >
         {isPending ? "Creating account…" : "Create KUT account"}
       </button>
     </form>

@@ -35,12 +35,22 @@ describe("pack reveal state machine", () => {
   });
 
   it("skipAll jumps straight to the summary from anywhere", () => {
-    expect(step({ phase: "revealing", index: 0, step: 0 }, { type: "skipAll" })).toEqual({ phase: "summary" });
-    expect(step({ phase: "revealing", index: 2, step: 1 }, { type: "skipAll" })).toEqual({ phase: "summary" });
+    expect(step({ phase: "revealing", index: 0, step: 0 }, { type: "skipAll" })).toEqual({
+      phase: "summary",
+    });
+    expect(step({ phase: "revealing", index: 2, step: 1 }, { type: "skipAll" })).toEqual({
+      phase: "summary",
+    });
   });
 
   it("restart replays from the first card unless there are none", () => {
-    expect(step({ phase: "summary" }, { type: "restart" })).toEqual({ phase: "revealing", index: 0, step: 0 });
-    expect(packRevealReducer({ phase: "summary" }, { type: "restart" }, 0)).toEqual({ phase: "summary" });
+    expect(step({ phase: "summary" }, { type: "restart" })).toEqual({
+      phase: "revealing",
+      index: 0,
+      step: 0,
+    });
+    expect(packRevealReducer({ phase: "summary" }, { type: "restart" }, 0)).toEqual({
+      phase: "summary",
+    });
   });
 });

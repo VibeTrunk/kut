@@ -1,0 +1,53 @@
+# Prettier owns the application source: .ts / .tsx / .mts / .mjs / .css under
+# src/, tests/ and scripts/, plus the root build and test configs. Everything
+# listed here is deliberately outside that scope.
+#
+# This file is the single source of truth for the formatter's reach — the npm
+# scripts run `prettier --check .` / `--write .` and rely on it, and so does
+# format-on-save in an editor with the Prettier extension enabled. Adding a
+# path here is how you keep both honest at once.
+#
+# Directory patterns are anchored with a leading slash on purpose. Prettier
+# uses gitignore semantics, where an unanchored `supabase/` also matches
+# `src/lib/supabase/` — which silently dropped five real source files from
+# formatting when this file was first written.
+
+# Build output, dependencies and generated artefacts.
+node_modules/
+/.next/
+/out/
+/build/
+/coverage/
+/test-results/
+/playwright-report/
+/.vercel/
+/next-env.d.ts
+/tsconfig.tsbuildinfo
+
+# Documentation is hand-wrapped prose. Reflowing BUILD_SPEC.md (4,783 lines)
+# and the decisions.md ADR log (2,714) would produce an unreviewable diff and
+# destroy the line history `git blame` gives those decision records.
+*.md
+/docs/
+
+# Rendered mockups, generated assets and a standalone prototype.
+/design/
+
+# Already deployed to the hosted schema; the SQL files are the migration
+# record, and are catalogued and deployed from VibeTrunk/supabase.
+/supabase/
+
+# Agent-safety scaffold — ESLint ignores these too, and they are maintained
+# by hand against the deny-lists in CLAUDE.md.
+/.claude/
+/.codex/
+
+# Not source: config and data formats the repo maintains by hand. Keeping
+# Prettier off them means a PR diff never mixes source reformatting with a
+# workflow or manifest change.
+/.github/
+/public/
+*.json
+*.yml
+*.yaml
+*.html

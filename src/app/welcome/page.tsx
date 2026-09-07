@@ -37,14 +37,16 @@ export default async function WelcomePage() {
   );
   const players: LiveCardPlayer[] = cards.map(({ photo_path, ...card }) => ({
     ...card,
-    photoUrl: photo_path ? photoUrls.get(photo_path) ?? null : null,
+    photoUrl: photo_path ? (photoUrls.get(photo_path) ?? null) : null,
   }));
 
   return (
     <main className="board-ground min-h-screen p-5 text-ink sm:p-10">
       <section className="mx-auto max-w-3xl space-y-6">
         <header className="text-center">
-          <p className="text-[0.7rem] font-extrabold uppercase tracking-[0.26em] text-brass">Welcome to KUT</p>
+          <p className="text-[0.7rem] font-extrabold uppercase tracking-[0.26em] text-brass">
+            Welcome to KUT
+          </p>
           <h1 className="display mt-3 text-5xl sm:text-6xl">Your starter pack is waiting</h1>
         </header>
         <StarterReveal cards={players} />

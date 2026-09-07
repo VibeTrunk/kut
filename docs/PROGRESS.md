@@ -2632,3 +2632,80 @@ then lint PASS, typecheck PASS, unit 17 files / 110 tests → 14 files / 85 test
 PASS (the drop is the deleted formula suites), pgTAP 14 files / 449 assertions
 PASS, `npm run build` PASS. The integration race suite was also run and is
 unaffected; it remains outside CI pending the Wave 2 fixture fix.
+
+## Prettier adopted, the source reformatted (ADR-065) — 2026-09-07
+
+No migration, no schema or game-rule change. Tooling and a mechanical reformat,
+alone in its own PR.
+
+**The problem.** The repo had no formatter, no `.editorconfig`, and
+`eslint-config-next` enforces no formatting rules, so the codebase had forked
+into two visually incompatible styles. Sixteen files in `src/`, `tests/` and
+`scripts/` carried a line over 400 characters;
+`admin/attendance/[sessionId]/reports/page.tsx` was **eight lines long in
+total**, with the whole React component on line 8 at 3,845 characters — up from
+3,734 in the ADR-064 sweep, because a correct fix added column names to it.
+Without a formatter, every legitimate change degrades those files further and
+none of them can be reviewed in a PR diff.
+
+**Prettier 3.9.6**, pinned exactly (as `next` and `eslint-config-next` already
+are) so a minor bump cannot restyle the repo and redden CI on an unrelated PR.
+Chosen over Biome: taking only Biome's formatter still installs a
+platform-specific native binary — the install shape that already fails here
+(`npm ci` EPERM on Next's SWC binary under OneDrive) — and taking its linter too
+would drop the 22 `@next/next/*` and 16 `react-hooks/*` rules, React Compiler
+set included, that Biome does not reimplement.
+
+**`printWidth` 100, measured not chosen.** Formatting the pre-reformat tree at
+each candidate width: 80 → 136 files / 8,747 churn lines; 90 → 123 / 7,264;
+**100 → 111 / 6,034**; 120 → 97 / 4,374. The count of lines still over 100
+characters afterwards is flat at 293–299 for widths 80–100 and jumps to 797 at
+120. That ~295 floor is `className` string literals, which Prettier never breaks
+at any width. So 100 is 31% cheaper than Prettier's default 80 at no cost in
+residual long lines, while 120 buys its saving by declining to break lines that
+should break. Every other value in `.prettierrc.json` is a Prettier 3 default,
+written out explicitly so a future major cannot silently restyle the repo.
+
+**`eslint-config-prettier` is not installed** — checked, not assumed.
+`npx eslint --print-config src/app/page.tsx` resolves 86 active rules; every one
+was cross-checked against that package's conflicting-rule list, with zero hits,
+and its four "special" rules are absent too. It would be an inert dependency.
+
+**Scope.** 164 files: `.ts` / `.tsx` / `.mts` / `.mjs` / `.css` under `src/`,
+`tests/`, `scripts/`, plus the seven root configs. `.prettierignore` is the
+single source of truth for that reach, because it governs format-on-save in an
+editor as well as the npm scripts — `docs/`, `design/` and `supabase/` are
+outside it deliberately. 111 files were reformatted (+4,923 / −1,107) in a
+commit of their own, readable with `git diff -w` or skippable entirely.
+`format:check` is the first step of `verify:fast`; the CI `fast` job already
+runs that, so `.github/workflows/verify.yml` needed no edit and local and CI
+cannot drift apart.
+
+**Three findings worth keeping.** Prettier is **not idempotent** on member
+chains: one `--write` pass left two `actions.ts` files that `--check` then
+rejected, because a `supabase.schema("kut").rpc(...)` chain breaks or collapses
+depending on whether the *input* was split across lines. Left there,
+`format:check` would have failed in CI forever on a freshly formatted tree; the
+tree is at the fixed point. `.prettierignore` uses **gitignore semantics**, so an
+unanchored `supabase/` also matched `src/lib/supabase/` and silently dropped five
+real source files — every directory pattern is now anchored with a leading slash.
+And **JSX text is the only place a reformat can change behaviour**: reflowing JSX
+moves `{" "}` around (27 occurrences before, 59 after, 14 on the removed side)
+and no test suite would catch a lost space, so every changed `.tsx` was parsed
+with the TypeScript compiler and its rendered text reconstructed under React's
+JSX whitespace rules and compared before against after — all 72 identical, zero
+mismatches.
+
+Two lines over 400 characters survive, in `market-race.test.ts` and
+`trade-race.test.ts`; both are single-quoted SQL `insert` statements, which
+Prettier never breaks.
+
+`main` is squash-merge only, so the reformat commit's SHA never reaches it, and
+a `.git-blame-ignore-revs` naming a SHA git cannot resolve makes `git blame` fail
+outright. The file therefore ships with its rules and local opt-in documented but
+no SHA; a follow-up PR adds the squashed commit's SHA once `main` has it.
+
+Verification, before and after the reformat, with identical counts: `verify:fast`
+14 files / 85 tests PASS, pgTAP 14 files / 449 assertions PASS,
+`npm run test:market-race` 3 files / 5 tests PASS, `npm run build` PASS.
+`format:check` passes clean on the formatted tree. E2E runs in CI only.

@@ -2712,3 +2712,133 @@ The Special-edition scaffolding is unaffected at the database level:
 still hold the frozen-snapshot and immutability rules, and issuance is still
 zero. Only the unused TypeScript resolver went. Whoever builds Special editions
 writes the resolver against the SQL contract then, with a consumer attached.
+
+## ADR-065 — Prettier formats the TypeScript source; the docs and migrations are left alone
+
+Date: 2026-09-07
+
+Status: Accepted
+
+Decision: Prettier 3.9.6 is adopted as the repository's formatter, pinned to an
+exact version, and `format:check` becomes the first step of `verify:fast`. It
+owns `.ts` / `.tsx` / `.mts` / `.mjs` / `.css` under `src/`, `tests/` and
+`scripts/`, plus the seven root build and test configs — 164 files. Everything
+else is denied in `.prettierignore`, which is the single source of truth for the
+formatter's reach because it governs format-on-save in an editor as well as the
+npm scripts. `docs/`, `design/` and `supabase/` are outside it, deliberately.
+
+Reason: the repo had no formatter, no `.editorconfig`, and `eslint-config-next`
+enforces no formatting rules, so style was whatever each session happened to
+produce. It had forked in two. Files written earlier are conventionally
+formatted; files from the 2026-09-06 feature push are single enormous lines —
+`src/app/(app)/admin/attendance/[sessionId]/reports/page.tsx` was **eight lines
+long in total**, with the entire React component on line 8 at 3,845 characters.
+Sixteen files carried a line over 400. That file grew from 3,734 to 3,845 in the
+ADR-064 sweep because a correct fix added column names to it: without a
+formatter every legitimate change makes such a file worse, and no reviewer can
+read it in a PR diff. The same drift is visible in SQL, where migrations
+`20260916`–`20260919` use `set search_path = kut, pg_catalog` and `20260920+`
+use `set search_path=kut,pg_catalog`.
+
+`printWidth` is 100, and it was measured rather than chosen. Formatting the
+pre-reformat tree at each candidate width gives:
+
+| printWidth | files changed | churn (± lines) | lines left over 100 chars |
+|---|---|---|---|
+| 80 (Prettier default) | 136 | 8,747 | 293 |
+| 90 | 123 | 7,264 | 293 |
+| **100** | **111** | **6,034** | **299** |
+| 120 | 97 | 4,374 | 797 |
+
+100 costs 31% less churn than the default 80 at an effectively identical count
+of residual long lines. That floor of roughly 295 lines is `className` string
+literals — Prettier never breaks a string literal, so no width fixes them, and
+201 of them already exceed 80 characters on their own. 120 buys further diff
+reduction only by declining to break lines that should break, tripling the
+over-100 count. An earlier draft of this decision argued for 80 on the grounds
+that comment prose in `src/` wraps at p50=76 / p90=81; that reasoning was
+discarded because Prettier never reflows comments, so the statistic says nothing
+about code width. Every other value in `.prettierrc.json` is a Prettier 3
+default, written out explicitly so a future major cannot silently restyle the
+repo the way v3 changed `trailingComma`. Double quotes, semicolons and 2-space
+indent match what is already there: 474 double-quoted imports against zero
+single-quoted, and no tabs.
+
+Prettier rather than Biome. Biome's value is being linter and formatter at once,
+and neither half is free here. Taking only its formatter still installs a
+platform-specific native binary — the same install shape that already fails on
+the maintainer's machine (`npm ci` EPERM on Next's SWC binary under OneDrive,
+which is why `npm install` is used locally). Taking its linter too would drop the
+22 `@next/next/*` and 16 `react-hooks/*` rules, the React Compiler set among them
+(`purity`, `immutability`, `set-state-in-render`, `preserve-manual-memoization`),
+which Biome does not reimplement. That is a bad trade for formatter speed on 164
+files where ESLint already finishes in seconds. `prettier-plugin-tailwindcss` was
+also considered and rejected: class sorting would balloon the diff and reorders
+utilities whose order can matter.
+
+`eslint-config-prettier` is **not** installed, and that was checked rather than
+assumed. `npx eslint --print-config src/app/page.tsx` resolves 86 rules to
+`error`/`warn`; cross-checking every one against `eslint-config-prettier`'s
+conflicting list — core stylistic (`indent`, `quotes`, `semi`, `max-len`,
+`comma-dangle`, …), `@typescript-eslint/*` stylistic, and `react/jsx-*` layout —
+yields zero hits, and its four "special" rules (`curly`, `no-confusing-arrow`,
+`no-unexpected-multiline`, `lines-around-comment`) are absent too. It would be an
+inert dependency. Re-run that command if `eslint-config-next` ever adds
+stylistic rules.
+
+`format:check` goes into `verify:fast` only, not into
+`.github/workflows/verify.yml` as well. The CI `fast` job already runs
+`npm run verify:fast`, so one definition covers local and CI and the two cannot
+drift; the workflow needed no edit. It runs first in the chain because it is the
+cheapest check and should fail before a typecheck.
+
+Consequences: 111 of the 164 in-scope files were reformatted (+4,923 / −1,107),
+in a commit of its own so it can be read with `git diff -w` or skipped entirely.
+Verification held flat across the change — `verify:fast` 14 files / 85 tests,
+pgTAP 14 files / 449 assertions, the integration race suites 3 files / 5 tests,
+and `npm run build`, all PASS before and after with identical counts.
+
+Three things this turned up that are worth keeping.
+
+**Prettier is not idempotent on member chains.** A single `prettier --write .`
+pass left two files that `--check` then rejected:
+`src/app/(app)/sessions/[sessionId]/report/actions.ts` and the sibling
+`admin/attendance/[sessionId]/reports/actions.ts`, where a
+`supabase.schema("kut").rpc(...)` chain breaks or collapses depending on whether
+the *input* had it split across lines, so `format(format(x)) != format(x)`. Left
+at one pass, `format:check` would have failed in CI forever on a tree that had
+just been formatted. The tree is at the fixed point, reached after one extra
+pass. If a future bulk reformat is ever run, run `format` until `format:check`
+passes rather than assuming one pass is enough.
+
+**`.prettierignore` uses gitignore semantics, so directory patterns must be
+anchored.** An unanchored `supabase/` also matches `src/lib/supabase/`, and it
+silently dropped five real source files from formatting before it was caught by
+reconciling the expected file count against Prettier's own `--file-info`. Every
+directory pattern in that file now carries a leading slash, and the reason is
+recorded in the file itself.
+
+**JSX text is the only place a reformat can change behaviour.** Prettier is
+AST-preserving, but reflowing JSX inserts and removes `{" "}` to keep meaningful
+spaces across line breaks — this diff went from 27 occurrences to 59, with 14 on
+the removed side — and neither Vitest nor pgTAP would notice a lost space. So
+every changed `.tsx` was parsed with the TypeScript compiler and its rendered
+text reconstructed under React's JSX whitespace rules (leading and trailing
+whitespace-with-newline dropped, interior runs collapsed to a single space), then
+compared before against after. All 72 render identical text; zero mismatches.
+
+Two lines over 400 characters survive, in `market-race.test.ts` and
+`trade-race.test.ts`. Both are single-quoted SQL `insert` statements, and
+Prettier never breaks a string literal; shortening them means editing them, which
+is not a mechanical reformat.
+
+`main` is squash-merge only, so the reformat commit's SHA never lands on it and
+`.git-blame-ignore-revs` cannot be completed inside the PR that does the
+reformatting — and a SHA git cannot resolve makes `git blame` fail outright,
+which is worse than having no file. The file therefore ships with its rules and
+its local opt-in documented but no SHA, and a follow-up PR adds the squashed
+commit's SHA once `main` has it. Documentation is left unformatted for the same
+reason it is unversioned prose: reflowing `BUILD_SPEC.md` (4,783 lines) and this
+ADR log (2,714) would produce an unreviewable diff and destroy the line history
+`git blame` gives those decision records. `supabase/` is left alone because those
+migrations are already deployed to the hosted schema.

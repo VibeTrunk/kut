@@ -27,7 +27,10 @@ type DirectoryRow = {
 };
 
 const RARITIES = ["common", "bronze", "silver", "gold", "holo", "elite"] as const;
-const TIER_OPTIONS = RARITIES.map((tier) => ({ value: tier, label: tier[0].toUpperCase() + tier.slice(1) }));
+const TIER_OPTIONS = RARITIES.map((tier) => ({
+  value: tier,
+  label: tier[0].toUpperCase() + tier.slice(1),
+}));
 const SORT_OPTIONS = [
   { value: "ovr", label: "Highest OVR" },
   { value: "name", label: "Name" },
@@ -46,12 +49,16 @@ export default async function PlayerDirectoryPage({ searchParams }: PlayerDirect
   let request = supabase
     .schema("kut")
     .from("player_directory")
-    .select("id, slug, display_name, archetype, photo_path, live_ovr, pac, sho, pas, dri, def, phy, rarity_tier");
+    .select(
+      "id, slug, display_name, archetype, photo_path, live_ovr, pac, sho, pas, dri, def, phy, rarity_tier",
+    );
 
   const term = query.q?.trim().slice(0, 80);
   if (term) request = request.ilike("display_name", `%${term}%`);
-  if (RARITIES.includes(query.rarity as (typeof RARITIES)[number])) request = request.eq("rarity_tier", query.rarity);
-  if (query.archetype && isArchetype(query.archetype)) request = request.eq("archetype", query.archetype);
+  if (RARITIES.includes(query.rarity as (typeof RARITIES)[number]))
+    request = request.eq("rarity_tier", query.rarity);
+  if (query.archetype && isArchetype(query.archetype))
+    request = request.eq("archetype", query.archetype);
   if (query.sort === "name") request = request.order("display_name");
   else if (query.sort === "newest") request = request.order("created_at", { ascending: false });
   else request = request.order("live_ovr", { ascending: false }).order("display_name");
@@ -60,18 +67,26 @@ export default async function PlayerDirectoryPage({ searchParams }: PlayerDirect
   if (error) throw new Error("Could not load the player directory.");
 
   const players = (data ?? []) as DirectoryRow[];
-  const photoUrls = await resolvePhotoUrls(supabase, players.map((player) => player.photo_path));
+  const photoUrls = await resolvePhotoUrls(
+    supabase,
+    players.map((player) => player.photo_path),
+  );
 
   return (
     <main className="board-ground min-h-screen p-5 text-ink sm:p-10">
       <section className="mx-auto max-w-6xl space-y-8 py-4 sm:py-8">
         <header className="space-y-3">
-          <p className="text-[0.7rem] font-extrabold uppercase tracking-[0.26em] text-brass">KUT roster</p>
+          <p className="text-[0.7rem] font-extrabold uppercase tracking-[0.26em] text-brass">
+            KUT roster
+          </p>
           <h1 className="display text-3xl sm:text-6xl">Players</h1>
           <p className="hidden max-w-2xl text-base leading-relaxed text-ink-dim sm:block">
-            Every collectible TFH player and their current Live Card. Tap a card for the full profile.
+            Every collectible TFH player and their current Live Card. Tap a card for the full
+            profile.
           </p>
-          <p className="text-xs font-bold text-ink-faint">{players.length} {players.length === 1 ? "player" : "players"}</p>
+          <p className="text-xs font-bold text-ink-faint">
+            {players.length} {players.length === 1 ? "player" : "players"}
+          </p>
           <div className="pt-2">
             <SectionTabs label="Leaderboard" tabs={LEADERBOARD_TABS} />
           </div>
@@ -86,11 +101,19 @@ export default async function PlayerDirectoryPage({ searchParams }: PlayerDirect
             {
               name: "archetype",
               anyLabel: "Any archetype",
-              options: ARCHETYPES.map((archetype) => ({ value: archetype, label: ARCHETYPE_LABELS[archetype] })),
+              options: ARCHETYPES.map((archetype) => ({
+                value: archetype,
+                label: ARCHETYPE_LABELS[archetype],
+              })),
             },
           ]}
           sorts={SORT_OPTIONS}
-          values={{ q: query.q, rarity: query.rarity, archetype: query.archetype, sort: query.sort }}
+          values={{
+            q: query.q,
+            rarity: query.rarity,
+            archetype: query.archetype,
+            sort: query.sort,
+          }}
         />
 
         {players.length === 0 ? (
@@ -112,7 +135,7 @@ export default async function PlayerDirectoryPage({ searchParams }: PlayerDirect
                 def: player.def,
                 phy: player.phy,
                 rarityTier: player.rarity_tier,
-                photoUrl: player.photo_path ? photoUrls.get(player.photo_path) ?? null : null,
+                photoUrl: player.photo_path ? (photoUrls.get(player.photo_path) ?? null) : null,
               };
               return (
                 <Link

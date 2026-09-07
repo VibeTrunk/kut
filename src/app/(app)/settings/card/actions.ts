@@ -24,7 +24,10 @@ function friendlyError(code: string | undefined, message: string | undefined): s
   return "Something went wrong. Please try again.";
 }
 
-export async function savePlayerPhoto(_prev: CardActionState, formData: FormData): Promise<CardActionState> {
+export async function savePlayerPhoto(
+  _prev: CardActionState,
+  formData: FormData,
+): Promise<CardActionState> {
   await requireUser();
 
   const photoPath = String(formData.get("photo_path") ?? "").trim();
@@ -33,7 +36,9 @@ export async function savePlayerPhoto(_prev: CardActionState, formData: FormData
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.schema("kut").rpc("set_own_player_photo", { p_photo_path: photoPath });
+  const { error } = await supabase
+    .schema("kut")
+    .rpc("set_own_player_photo", { p_photo_path: photoPath });
   if (error) {
     return { ok: false, error: friendlyError(error.code, error.message) };
   }
@@ -46,7 +51,9 @@ export async function clearPlayerPhoto(): Promise<CardActionState> {
   await requireUser();
 
   const supabase = await createClient();
-  const { error } = await supabase.schema("kut").rpc("set_own_player_photo", { p_photo_path: null });
+  const { error } = await supabase
+    .schema("kut")
+    .rpc("set_own_player_photo", { p_photo_path: null });
   if (error) {
     return { ok: false, error: friendlyError(error.code, error.message) };
   }
@@ -55,7 +62,10 @@ export async function clearPlayerPhoto(): Promise<CardActionState> {
   return { ok: true, message: "Photo removed. Your card is back to its initials." };
 }
 
-export async function savePlayerArchetype(_prev: CardActionState, formData: FormData): Promise<CardActionState> {
+export async function savePlayerArchetype(
+  _prev: CardActionState,
+  formData: FormData,
+): Promise<CardActionState> {
   await requireUser();
 
   const archetype = String(formData.get("archetype") ?? "");
@@ -64,7 +74,9 @@ export async function savePlayerArchetype(_prev: CardActionState, formData: Form
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.schema("kut").rpc("set_own_player_archetype", { p_archetype: archetype });
+  const { error } = await supabase
+    .schema("kut")
+    .rpc("set_own_player_archetype", { p_archetype: archetype });
   if (error) {
     return { ok: false, error: friendlyError(error.code, error.message) };
   }

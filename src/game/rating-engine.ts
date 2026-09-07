@@ -18,13 +18,7 @@ export { ARCHETYPES, type Archetype };
  * without turning a test red. Add a function here only when a screen needs it.
  */
 
-export type RarityTier =
-  | "common"
-  | "bronze"
-  | "silver"
-  | "gold"
-  | "holo"
-  | "elite";
+export type RarityTier = "common" | "bronze" | "silver" | "gold" | "holo" | "elite";
 
 /**
  * Live OVR range for each rarity tier. Derived from `getRarityTier` below and
@@ -71,8 +65,7 @@ export function calculateActivityOvr(activityScore: number): number {
 
   return (
     GAME_CONFIG.activityOvrFloor +
-    GAME_CONFIG.activityOvrRange *
-      (boundedActivity / 100) ** GAME_CONFIG.activityOvrExponent
+    GAME_CONFIG.activityOvrRange * (boundedActivity / 100) ** GAME_CONFIG.activityOvrExponent
   );
 }
 

@@ -52,13 +52,15 @@ export async function publishAttendanceSession(
     return { error: "There is no active season to publish this session into." };
   }
 
-  const { data: sessionId, error } = await supabase.schema("kut").rpc("publish_attendance_session", {
-    p_attendance: input.attendance,
-    p_bibs_washed_by: input.bibsWashedBy,
-    p_season_id: activeSeason.id,
-    p_session_date: input.sessionDate,
-    p_session_type: input.sessionType,
-  });
+  const { data: sessionId, error } = await supabase
+    .schema("kut")
+    .rpc("publish_attendance_session", {
+      p_attendance: input.attendance,
+      p_bibs_washed_by: input.bibsWashedBy,
+      p_season_id: activeSeason.id,
+      p_session_date: input.sessionDate,
+      p_session_type: input.sessionType,
+    });
 
   if (error) {
     if (error.code === "23505") {
@@ -81,12 +83,7 @@ export async function correctPublishedAttendanceSession(
   const sessionId = String(formData.get("sessionId") ?? "");
   const reason = String(formData.get("correctionReason") ?? "").trim();
 
-  if (
-    !input ||
-    !isUuid(sessionId) ||
-    reason.length < 3 ||
-    reason.length > 500
-  ) {
+  if (!input || !isUuid(sessionId) || reason.length < 3 || reason.length > 500) {
     return { error: "Add a short correction reason and review the attendance details." };
   }
 
@@ -104,7 +101,9 @@ export async function correctPublishedAttendanceSession(
     if (error.code === "23505") {
       return { error: "Another session of this type already exists on that date." };
     }
-    return { error: "The correction could not be saved. Ratings were not changed; please try again." };
+    return {
+      error: "The correction could not be saved. Ratings were not changed; please try again.",
+    };
   }
 
   revalidatePath("/");
@@ -121,11 +120,7 @@ export async function cancelPublishedSession(
   const sessionId = String(formData.get("sessionId") ?? "");
   const reason = String(formData.get("cancellationReason") ?? "").trim();
 
-  if (
-    !isUuid(sessionId) ||
-    reason.length < 3 ||
-    reason.length > 500
-  ) {
+  if (!isUuid(sessionId) || reason.length < 3 || reason.length > 500) {
     return { error: "Add a short cancellation reason before cancelling this session." };
   }
 
@@ -136,7 +131,9 @@ export async function cancelPublishedSession(
   });
 
   if (error) {
-    return { error: "The session could not be cancelled. Ratings were not changed; please try again." };
+    return {
+      error: "The session could not be cancelled. Ratings were not changed; please try again.",
+    };
   }
 
   revalidatePath("/");
@@ -153,11 +150,7 @@ export async function reactivateCancelledSession(
   const sessionId = String(formData.get("sessionId") ?? "");
   const reason = String(formData.get("reactivationReason") ?? "").trim();
 
-  if (
-    !isUuid(sessionId) ||
-    reason.length < 3 ||
-    reason.length > 500
-  ) {
+  if (!isUuid(sessionId) || reason.length < 3 || reason.length > 500) {
     return { error: "Add a short reason before reactivating this session." };
   }
 
@@ -169,9 +162,14 @@ export async function reactivateCancelledSession(
 
   if (error) {
     if (error.code === "23505") {
-      return { error: "A current session of this type already occupies that date. Cancel it or choose a different date first." };
+      return {
+        error:
+          "A current session of this type already occupies that date. Cancel it or choose a different date first.",
+      };
     }
-    return { error: "The session could not be reactivated. Ratings were not changed; please try again." };
+    return {
+      error: "The session could not be reactivated. Ratings were not changed; please try again.",
+    };
   }
 
   revalidatePath("/");

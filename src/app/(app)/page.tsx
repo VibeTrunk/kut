@@ -51,19 +51,35 @@ export default async function Home() {
     supabase
       .schema("kut")
       .from("top_risers")
-      .select("id, slug, display_name, archetype, live_ovr, pac, sho, pas, dri, def, phy, rarity_tier, photo_path, ovr_delta")
+      .select(
+        "id, slug, display_name, archetype, live_ovr, pac, sho, pas, dri, def, phy, rarity_tier, photo_path, ovr_delta",
+      )
       .limit(5),
     supabase.schema("kut").from("wallets").select("balance").eq("user_id", userId).maybeSingle(),
     supabase.schema("kut").from("my_club_value").select("club_value").maybeSingle(),
-    supabase.schema("kut").from("club_value_leaderboard").select("rank").eq("is_current_user", true).maybeSingle(),
+    supabase
+      .schema("kut")
+      .from("club_value_leaderboard")
+      .select("rank")
+      .eq("is_current_user", true)
+      .maybeSingle(),
     supabase
       .schema("kut")
       .from("activity_feed")
-      .select("kind, ts, actor_name, counterparty_name, card_name, amount, session_date, session_type")
+      .select(
+        "kind, ts, actor_name, counterparty_name, card_name, amount, session_date, session_type",
+      )
       .gte("ts", ACTIVITY_FLOOR_ISO)
       .order("ts", { ascending: false })
       .limit(12),
-    supabase.schema("kut").from("my_session_reports").select("session_id, session_date, report_status, reward_received, closes_at").eq("survey_status", "open").order("closes_at").limit(1).maybeSingle(),
+    supabase
+      .schema("kut")
+      .from("my_session_reports")
+      .select("session_id, session_date, report_status, reward_received, closes_at")
+      .eq("survey_status", "open")
+      .order("closes_at")
+      .limit(1)
+      .maybeSingle(),
   ]);
 
   if (profileError) {
@@ -80,7 +96,10 @@ export default async function Home() {
   }
 
   const risers = (risersResponse.data ?? []) as TopRiser[];
-  const photoUrls = await resolvePhotoUrls(supabase, risers.map((player) => player.photo_path));
+  const photoUrls = await resolvePhotoUrls(
+    supabase,
+    risers.map((player) => player.photo_path),
+  );
   const balance = walletResponse.data?.balance ?? 0;
   const clubValue = clubValueResponse.data?.club_value ?? balance;
   const rank = rankResponse.data?.rank ?? null;
@@ -93,18 +112,24 @@ export default async function Home() {
       <section className="mx-auto max-w-6xl space-y-12 py-4 sm:py-8">
         <header className="grid gap-8 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
           <div className="space-y-4">
-            <p className="text-[0.7rem] font-extrabold uppercase tracking-[0.26em] text-brass">Terrible Football Haarlem</p>
+            <p className="text-[0.7rem] font-extrabold uppercase tracking-[0.26em] text-brass">
+              Terrible Football Haarlem
+            </p>
             <h1 className="display text-5xl sm:text-6xl lg:text-7xl">This week in KUT</h1>
             <p className="text-sm font-bold text-ink-faint">Kelderklasse Ultimate Team</p>
             <p className="max-w-2xl text-base leading-relaxed text-ink-dim">
-              The five cards that rose most since the last published football week. Published attendance updates Live Ratings automatically.
+              The five cards that rose most since the last published football week. Published
+              attendance updates Live Ratings automatically.
             </p>
             {/* The Chronicle lost its More-menu slot when that menu went (ADR-053).
                 Home is its entry point: this page and the Chronicle both answer
                 "what happened this week", and Home never linked to it before
                 except through a session row in the activity feed. */}
             <p className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
-              <Link className="inline-flex items-center gap-2 font-bold text-brass hover:underline" href="/chronicle">
+              <Link
+                className="inline-flex items-center gap-2 font-bold text-brass hover:underline"
+                href="/chronicle"
+              >
                 <IconChronicle aria-hidden="true" className="h-4 w-4" />
                 Read this week&rsquo;s Chronicle issue &rarr;
               </Link>
@@ -125,26 +150,60 @@ export default async function Home() {
         </header>
 
         {openReport && (
-          <Link className="flex min-h-20 items-center justify-between gap-4 rounded-2xl border border-brass/50 bg-brass-bg/25 p-5 hover:bg-brass-bg/40" href={`/sessions/${openReport.session_id}/report`}>
-            <span><span className="text-xs font-black uppercase tracking-wider text-brass">Your report → +50 KUT Coins</span><span className="display mt-1 block text-2xl">{openReport.report_status === "submitted" ? "View your report" : "Add goals & kudos"}</span></span><span aria-hidden="true" className="text-2xl text-brass">&rarr;</span>
+          <Link
+            className="flex min-h-20 items-center justify-between gap-4 rounded-2xl border border-brass/50 bg-brass-bg/25 p-5 hover:bg-brass-bg/40"
+            href={`/sessions/${openReport.session_id}/report`}
+          >
+            <span>
+              <span className="text-xs font-black uppercase tracking-wider text-brass">
+                Your report → +50 KUT Coins
+              </span>
+              <span className="display mt-1 block text-2xl">
+                {openReport.report_status === "submitted"
+                  ? "View your report"
+                  : "Add goals & kudos"}
+              </span>
+            </span>
+            <span aria-hidden="true" className="text-2xl text-brass">
+              &rarr;
+            </span>
           </Link>
         )}
 
         <dl className="grid grid-cols-1 overflow-hidden rounded-2xl border border-line/60 bg-gradient-to-b from-panel-2/70 to-panel/70 sm:grid-cols-3">
           <div className="border-b border-line/50 px-6 py-5 sm:border-b-0 sm:border-l sm:first:border-l-0">
-            <dt className="text-[0.65rem] font-extrabold uppercase tracking-[0.15em] text-ink-faint">KUT Coins</dt>
-            <dd className="mt-1.5 text-3xl font-black tabular-nums tracking-tight text-brass">{balance.toLocaleString()}</dd>
+            <dt className="text-[0.65rem] font-extrabold uppercase tracking-[0.15em] text-ink-faint">
+              KUT Coins
+            </dt>
+            <dd className="mt-1.5 text-3xl font-black tabular-nums tracking-tight text-brass">
+              {balance.toLocaleString()}
+            </dd>
             <dd className="mt-1 text-xs font-bold text-ink-faint">Wallet balance</dd>
           </div>
-          <Link className="group border-b border-line/50 px-6 py-5 sm:border-b-0 sm:border-l sm:border-line/50" href="/club/value">
-            <dt className="text-[0.65rem] font-extrabold uppercase tracking-[0.15em] text-ink-faint">Club Value</dt>
-            <dd className="mt-1.5 text-3xl font-black tabular-nums tracking-tight group-hover:text-brass">{Number(clubValue).toLocaleString()}</dd>
-            <dd className="mt-1 text-xs font-bold text-ink-faint group-hover:text-brass">See the maths &rarr;</dd>
+          <Link
+            className="group border-b border-line/50 px-6 py-5 sm:border-b-0 sm:border-l sm:border-line/50"
+            href="/club/value"
+          >
+            <dt className="text-[0.65rem] font-extrabold uppercase tracking-[0.15em] text-ink-faint">
+              Club Value
+            </dt>
+            <dd className="mt-1.5 text-3xl font-black tabular-nums tracking-tight group-hover:text-brass">
+              {Number(clubValue).toLocaleString()}
+            </dd>
+            <dd className="mt-1 text-xs font-bold text-ink-faint group-hover:text-brass">
+              See the maths &rarr;
+            </dd>
           </Link>
           <Link className="group px-6 py-5 sm:border-l sm:border-line/50" href="/leaderboard">
-            <dt className="text-[0.65rem] font-extrabold uppercase tracking-[0.15em] text-ink-faint">Rank</dt>
-            <dd className="mt-1.5 text-3xl font-black tabular-nums tracking-tight text-steel">{rank === null ? "—" : `#${rank}`}</dd>
-            <dd className="mt-1 text-xs font-bold text-ink-faint group-hover:text-steel">Club Value leaderboard &rarr;</dd>
+            <dt className="text-[0.65rem] font-extrabold uppercase tracking-[0.15em] text-ink-faint">
+              Rank
+            </dt>
+            <dd className="mt-1.5 text-3xl font-black tabular-nums tracking-tight text-steel">
+              {rank === null ? "—" : `#${rank}`}
+            </dd>
+            <dd className="mt-1 text-xs font-bold text-ink-faint group-hover:text-steel">
+              Club Value leaderboard &rarr;
+            </dd>
           </Link>
         </dl>
 
@@ -158,7 +217,8 @@ export default async function Home() {
 
           {risers.length === 0 ? (
             <p className="rounded-2xl border border-line/60 bg-panel/60 p-6 text-ink-dim">
-              Movers appear once a second football week has been published. Meanwhile, browse every card in the{" "}
+              Movers appear once a second football week has been published. Meanwhile, browse every
+              card in the{" "}
               <Link className="font-bold text-brass hover:underline" href="/players">
                 player directory
               </Link>
@@ -186,7 +246,9 @@ export default async function Home() {
                       def: player.def,
                       phy: player.phy,
                       rarityTier: player.rarity_tier as LiveCardPlayer["rarityTier"],
-                      photoUrl: player.photo_path ? photoUrls.get(player.photo_path) ?? null : null,
+                      photoUrl: player.photo_path
+                        ? (photoUrls.get(player.photo_path) ?? null)
+                        : null,
                     }}
                     trend={player.ovr_delta}
                   />
@@ -227,7 +289,10 @@ export default async function Home() {
                       describeActivity(row)
                     )}
                   </p>
-                  <time className="order-2 text-xs font-bold tabular-nums text-ink-faint sm:order-none sm:text-right" dateTime={row.ts}>
+                  <time
+                    className="order-2 text-xs font-bold tabular-nums text-ink-faint sm:order-none sm:text-right"
+                    dateTime={row.ts}
+                  >
                     {formatDate(row.ts)}
                   </time>
                 </li>

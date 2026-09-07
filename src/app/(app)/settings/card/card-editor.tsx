@@ -4,7 +4,12 @@ import { useActionState, useCallback, useEffect, useRef, useState, useTransition
 import { ARCHETYPES, ARCHETYPE_LABELS, type Archetype } from "@/game/archetypes";
 import { createClient } from "@/lib/supabase/client";
 import { PLAYER_PHOTO_BUCKET, playerPhotoPath } from "@/lib/player-photos";
-import { clearPlayerPhoto, savePlayerArchetype, savePlayerPhoto, type CardActionState } from "./actions";
+import {
+  clearPlayerPhoto,
+  savePlayerArchetype,
+  savePlayerPhoto,
+  type CardActionState,
+} from "./actions";
 
 const VIEWPORT = 256; // px; square crop window
 const OUTPUT = 512; // px; saved image is OUTPUT x OUTPUT
@@ -26,14 +31,28 @@ function Feedback({ state }: { state: CardActionState }) {
   );
 }
 
-export function CardEditor({ playerId, displayName, currentArchetype, currentPhotoUrl }: CardEditorProps) {
-  const [archetypeState, archetypeAction, archetypePending] = useActionState(savePlayerArchetype, null);
+export function CardEditor({
+  playerId,
+  displayName,
+  currentArchetype,
+  currentPhotoUrl,
+}: CardEditorProps) {
+  const [archetypeState, archetypeAction, archetypePending] = useActionState(
+    savePlayerArchetype,
+    null,
+  );
   const [photoState, photoAction] = useActionState(savePlayerPhoto, null);
   const [removeState, removeAction, removePending] = useActionState(clearPlayerPhoto, null);
   const [isSubmittingPhoto, startPhotoSubmit] = useTransition();
 
   const imgRef = useRef<HTMLImageElement>(null);
-  const dragRef = useRef<{ pointerId: number; startX: number; startY: number; baseX: number; baseY: number } | null>(null);
+  const dragRef = useRef<{
+    pointerId: number;
+    startX: number;
+    startY: number;
+    baseX: number;
+    baseY: number;
+  } | null>(null);
 
   const [fileUrl, setFileUrl] = useState<string | null>(null);
   const [natural, setNatural] = useState<{ w: number; h: number } | null>(null);
@@ -112,7 +131,12 @@ export function CardEditor({ playerId, displayName, currentArchetype, currentPho
   function onPointerMove(event: React.PointerEvent<HTMLDivElement>) {
     const drag = dragRef.current;
     if (!drag || drag.pointerId !== event.pointerId) return;
-    setOffset(clampOffset(drag.baseX + (event.clientX - drag.startX), drag.baseY + (event.clientY - drag.startY)));
+    setOffset(
+      clampOffset(
+        drag.baseX + (event.clientX - drag.startX),
+        drag.baseY + (event.clientY - drag.startY),
+      ),
+    );
   }
 
   function endDrag(event: React.PointerEvent<HTMLDivElement>) {
@@ -150,7 +174,9 @@ export function CardEditor({ playerId, displayName, currentArchetype, currentPho
 
     const webpOk = canvas.toDataURL("image/webp").startsWith("data:image/webp");
     const contentType = webpOk ? "image/webp" : "image/jpeg";
-    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, contentType, 0.85));
+    const blob = await new Promise<Blob | null>((resolve) =>
+      canvas.toBlob(resolve, contentType, 0.85),
+    );
     if (!blob) throw new Error("could not encode image");
     return { blob, contentType };
   }
@@ -183,7 +209,9 @@ export function CardEditor({ playerId, displayName, currentArchetype, currentPho
   async function onRemovePhoto() {
     // Best-effort object delete; the RPC below is what actually clears the card.
     try {
-      await createClient().storage.from(PLAYER_PHOTO_BUCKET).remove([playerPhotoPath(playerId)]);
+      await createClient()
+        .storage.from(PLAYER_PHOTO_BUCKET)
+        .remove([playerPhotoPath(playerId)]);
     } catch {
       // ignore — clearing photo_path is the source of truth
     }
@@ -198,8 +226,8 @@ export function CardEditor({ playerId, displayName, currentArchetype, currentPho
         <div>
           <h2 className="text-base font-extrabold">Archetype</h2>
           <p className="mt-1 text-sm text-ink-faint">
-            This reshapes the six stats on your <strong>{displayName}</strong> card. It does not change your OVR.
-            Saving recalculates every stat.
+            This reshapes the six stats on your <strong>{displayName}</strong> card. It does not
+            change your OVR. Saving recalculates every stat.
           </p>
         </div>
         <form action={archetypeAction} className="space-y-3">
@@ -225,7 +253,8 @@ export function CardEditor({ playerId, displayName, currentArchetype, currentPho
         <div>
           <h2 className="text-base font-extrabold">Card photo</h2>
           <p className="mt-1 text-sm text-ink-faint">
-            Upload a photo, then drag to reposition and use the slider to zoom. It&rsquo;s saved as a square.
+            Upload a photo, then drag to reposition and use the slider to zoom. It&rsquo;s saved as
+            a square.
           </p>
         </div>
 
@@ -272,7 +301,9 @@ export function CardEditor({ playerId, displayName, currentArchetype, currentPho
           </div>
         )}
 
-        {uploadError && <p className="rounded-xl bg-brick-bg p-3 text-sm text-brick">{uploadError}</p>}
+        {uploadError && (
+          <p className="rounded-xl bg-brick-bg p-3 text-sm text-brick">{uploadError}</p>
+        )}
         <Feedback state={photoState} />
 
         {currentPhotoUrl && !fileUrl && (

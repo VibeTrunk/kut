@@ -34,11 +34,13 @@ function mapRpcError(error: { message: string; code?: string }): string {
     return error.message;
   }
   if (error.code === "P0001") {
-    if (error.message.includes("already linked")) return "That player is already linked to another account.";
+    if (error.message.includes("already linked"))
+      return "That player is already linked to another account.";
     if (error.message.includes("your own account") || error.message.includes("your own wallet")) {
       return "You can't do that to your own account.";
     }
-    if (error.message.includes("below zero")) return "That would drop the member's balance below zero.";
+    if (error.message.includes("below zero"))
+      return "That would drop the member's balance below zero.";
     if (error.message.includes("superadmin")) return "Superadmin accounts can't be changed here.";
     if (error.message.includes("completed market trades")) {
       return "This account has completed market trades — disable it instead of deleting.";
@@ -48,7 +50,10 @@ function mapRpcError(error: { message: string; code?: string }): string {
   return "Something went wrong. Please try again.";
 }
 
-export async function manageAccount(_prev: LinkActionState, formData: FormData): Promise<LinkActionState> {
+export async function manageAccount(
+  _prev: LinkActionState,
+  formData: FormData,
+): Promise<LinkActionState> {
   await requireAdmin();
 
   const intent = String(formData.get("intent") ?? "");
@@ -87,7 +92,10 @@ export async function manageAccount(_prev: LinkActionState, formData: FormData):
     if (error) return { ok: false, error: mapRpcError(error) };
     revalidateLinks();
     const row = data as { display_name?: string } | null;
-    return { ok: true, message: `${row?.display_name ?? "Account"} ${intent === "disable" ? "disabled" : "enabled"}.` };
+    return {
+      ok: true,
+      message: `${row?.display_name ?? "Account"} ${intent === "disable" ? "disabled" : "enabled"}.`,
+    };
   }
 
   if (intent === "adjust_coins") {
@@ -114,7 +122,8 @@ export async function manageAccount(_prev: LinkActionState, formData: FormData):
     if (error) return { ok: false, error: mapRpcError(error) };
     revalidateLinks();
     const row = data as { display_name?: string; amount?: number; balance?: number } | null;
-    const signed = (row?.amount ?? amount) > 0 ? `+${row?.amount ?? amount}` : String(row?.amount ?? amount);
+    const signed =
+      (row?.amount ?? amount) > 0 ? `+${row?.amount ?? amount}` : String(row?.amount ?? amount);
     return {
       ok: true,
       message: `${row?.display_name ?? "Account"} wallet adjusted ${signed} KUT Coins (new balance ${row?.balance ?? "?"}).`,
@@ -138,7 +147,8 @@ export async function manageAccount(_prev: LinkActionState, formData: FormData):
       return { ok: false, error: "Give a reason of 1–200 characters." };
     }
     const idempotencyKey = String(formData.get("idempotency_key") ?? "");
-    if (!isUuid(idempotencyKey)) return { ok: false, error: "Could not start the grant. Reload and try again." };
+    if (!isUuid(idempotencyKey))
+      return { ok: false, error: "Could not start the grant. Reload and try again." };
 
     const { data, error } = await supabase.schema("kut").rpc("admin_grant_self_wallet", {
       p_amount: amount,
@@ -149,9 +159,13 @@ export async function manageAccount(_prev: LinkActionState, formData: FormData):
     revalidateLinks();
     const row = data as { amount?: number; balance?: number; already_processed?: boolean } | null;
     if (row?.already_processed) {
-      return { ok: true, message: `Already granted with this request (balance ${row?.balance ?? "?"} KUT Coins).` };
+      return {
+        ok: true,
+        message: `Already granted with this request (balance ${row?.balance ?? "?"} KUT Coins).`,
+      };
     }
-    const signed = (row?.amount ?? amount) > 0 ? `+${row?.amount ?? amount}` : String(row?.amount ?? amount);
+    const signed =
+      (row?.amount ?? amount) > 0 ? `+${row?.amount ?? amount}` : String(row?.amount ?? amount);
     return {
       ok: true,
       message: `You granted yourself ${signed} KUT Coins (new balance ${row?.balance ?? "?"}).`,
@@ -160,16 +174,24 @@ export async function manageAccount(_prev: LinkActionState, formData: FormData):
 
   if (intent === "reset_account") {
     const idempotencyKey = String(formData.get("idempotency_key") ?? "");
-    if (!isUuid(idempotencyKey)) return { ok: false, error: "Could not start the reset. Reload and try again." };
+    if (!isUuid(idempotencyKey))
+      return { ok: false, error: "Could not start the reset. Reload and try again." };
     const { data, error } = await supabase.schema("kut").rpc("admin_reset_account", {
       p_user_id: userId,
       p_idempotency_key: idempotencyKey,
     });
     if (error) return { ok: false, error: mapRpcError(error) };
     revalidateLinks();
-    const row = data as { display_name?: string; already_processed?: boolean; cards_burned?: number } | null;
+    const row = data as {
+      display_name?: string;
+      already_processed?: boolean;
+      cards_burned?: number;
+    } | null;
     if (row?.already_processed) {
-      return { ok: true, message: `${row?.display_name ?? "Account"} was already reset with this request.` };
+      return {
+        ok: true,
+        message: `${row?.display_name ?? "Account"} was already reset with this request.`,
+      };
     }
     return {
       ok: true,
@@ -178,7 +200,9 @@ export async function manageAccount(_prev: LinkActionState, formData: FormData):
   }
 
   if (intent === "delete") {
-    const { data, error } = await supabase.schema("kut").rpc("admin_prepare_account_deletion", { p_user_id: userId });
+    const { data, error } = await supabase
+      .schema("kut")
+      .rpc("admin_prepare_account_deletion", { p_user_id: userId });
     if (error) return { ok: false, error: mapRpcError(error) };
     const row = data as { display_name?: string } | null;
 
@@ -186,8 +210,14 @@ export async function manageAccount(_prev: LinkActionState, formData: FormData):
     const { error: deleteError } = await service.auth.admin.deleteUser(userId);
     if (deleteError) {
       // Cleanup already ran; neutralise the account so it can't be used.
-      await supabase.schema("kut").rpc("admin_set_account_disabled", { p_user_id: userId, p_disabled: true });
-      return { ok: false, error: "Account data was cleared but the sign-in record could not be removed. It has been disabled instead." };
+      await supabase
+        .schema("kut")
+        .rpc("admin_set_account_disabled", { p_user_id: userId, p_disabled: true });
+      return {
+        ok: false,
+        error:
+          "Account data was cleared but the sign-in record could not be removed. It has been disabled instead.",
+      };
     }
     revalidateLinks();
     return { ok: true, message: `${row?.display_name ?? "Account"} permanently deleted.` };

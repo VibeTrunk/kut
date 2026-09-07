@@ -32,7 +32,9 @@ export default async function MyCardPage() {
     <main className="board-ground min-h-screen p-5 text-ink sm:p-10">
       <section className="mx-auto max-w-2xl space-y-8">
         <header>
-          <p className="text-[0.7rem] font-extrabold uppercase tracking-[0.26em] text-brass">Account</p>
+          <p className="text-[0.7rem] font-extrabold uppercase tracking-[0.26em] text-brass">
+            Account
+          </p>
           <h1 className="display mt-3 text-5xl sm:text-6xl">My card</h1>
         </header>
         {children}
@@ -48,8 +50,8 @@ export default async function MyCardPage() {
       <div className="rounded-3xl border border-dashed border-line bg-panel/60 p-8 text-center text-ink-dim">
         <h2 className="display text-2xl text-ink">No player linked yet</h2>
         <p className="mx-auto mt-2 max-w-md">
-          Your account isn&rsquo;t linked to a TFH player, so there&rsquo;s no card to edit yet. Ask an admin to
-          link your account to your player.
+          Your account isn&rsquo;t linked to a TFH player, so there&rsquo;s no card to edit yet. Ask
+          an admin to link your account to your player.
         </p>
       </div>,
     );
@@ -67,14 +69,16 @@ export default async function MyCardPage() {
     return shell(
       <div className="rounded-3xl border border-dashed border-line bg-panel/60 p-8 text-center text-ink-dim">
         <h2 className="display text-2xl text-ink">Player not found</h2>
-        <p className="mt-2">Your linked player could not be loaded. Ask an admin to check your account.</p>
+        <p className="mt-2">
+          Your linked player could not be loaded. Ask an admin to check your account.
+        </p>
       </div>,
     );
   }
 
   const row = player as PlayerRow;
   const photoUrls = await resolvePhotoUrls(supabase, [row.photo_path]);
-  const currentPhotoUrl = row.photo_path ? photoUrls.get(row.photo_path) ?? null : null;
+  const currentPhotoUrl = row.photo_path ? (photoUrls.get(row.photo_path) ?? null) : null;
 
   return shell(
     <CardEditor

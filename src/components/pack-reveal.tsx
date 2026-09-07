@@ -3,7 +3,12 @@
 import { useEffect, useReducer } from "react";
 import Link from "next/link";
 import { LiveCard, type LiveCardPlayer } from "@/components/live-card";
-import { initialRevealState, packRevealReducer, type RevealAction, type RevealState } from "@/components/pack-reveal-state";
+import {
+  initialRevealState,
+  packRevealReducer,
+  type RevealAction,
+  type RevealState,
+} from "@/components/pack-reveal-state";
 
 const RARITY_LABEL: Record<LiveCardPlayer["rarityTier"], string> = {
   common: "Common",
@@ -53,8 +58,14 @@ export function PackReveal({
   if (state.phase === "summary") {
     return (
       <div className="pack-reveal">
-        {title && <p className="text-center text-sm font-black uppercase tracking-[0.25em] text-brass">{title}</p>}
-        <h1 className="mt-2 text-center text-3xl font-black tracking-tight sm:text-4xl">Your new Live Cards</h1>
+        {title && (
+          <p className="text-center text-sm font-black uppercase tracking-[0.25em] text-brass">
+            {title}
+          </p>
+        )}
+        <h1 className="mt-2 text-center text-3xl font-black tracking-tight sm:text-4xl">
+          Your new Live Cards
+        </h1>
         <div className="mt-6 grid grid-cols-[repeat(auto-fit,minmax(190px,1fr))] gap-5">
           {cards.map((card, i) => {
             const href = cardHrefBase ? `${cardHrefBase}${card.id}` : null;
@@ -62,7 +73,10 @@ export function PackReveal({
             return (
               <div className="pack-reveal__summary-card" key={`${card.id}-${i}`}>
                 {href ? (
-                  <Link className="block rounded-[1.25rem] outline-offset-4 outline-brass focus-visible:outline-2" href={href}>
+                  <Link
+                    className="block rounded-[1.25rem] outline-offset-4 outline-brass focus-visible:outline-2"
+                    href={href}
+                  >
                     {cardEl}
                   </Link>
                 ) : (
@@ -73,11 +87,17 @@ export function PackReveal({
           })}
         </div>
         <div className="mt-8 flex flex-wrap justify-center gap-3">
-          <Link className="inline-flex min-h-12 items-center rounded-xl bg-gradient-to-b from-[#eebd63] to-[#d29a34] px-5 font-black text-ink-on-accent hover:brightness-105" href={doneHref}>
+          <Link
+            className="inline-flex min-h-12 items-center rounded-xl bg-gradient-to-b from-[#eebd63] to-[#d29a34] px-5 font-black text-ink-on-accent hover:brightness-105"
+            href={doneHref}
+          >
             {doneLabel}
           </Link>
           {secondaryHref && secondaryLabel && (
-            <Link className="inline-flex min-h-12 items-center rounded-xl border border-brass px-5 font-black text-brass" href={secondaryHref}>
+            <Link
+              className="inline-flex min-h-12 items-center rounded-xl border border-brass px-5 font-black text-brass"
+              href={secondaryHref}
+            >
               {secondaryLabel}
             </Link>
           )}
@@ -121,7 +141,9 @@ export function PackReveal({
 
         {state.step === 1 && (
           <div className="pack-reveal__focus text-center">
-            <p className="text-xs font-black uppercase tracking-[0.2em] text-brass">{RARITY_LABEL[card.rarityTier]}</p>
+            <p className="text-xs font-black uppercase tracking-[0.2em] text-brass">
+              {RARITY_LABEL[card.rarityTier]}
+            </p>
             <p className="pack-reveal__ovr mt-2 text-7xl font-black text-ink">{card.liveOvr}</p>
             <p className="text-sm font-black uppercase tracking-[0.2em] text-ink-faint">OVR</p>
             <p className="mt-3 text-sm text-ink-dim">Tap to reveal the player</p>

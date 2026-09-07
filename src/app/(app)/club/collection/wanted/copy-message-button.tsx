@@ -17,9 +17,23 @@ export function CopyMessageButton({ owner, card }: { owner: string; card: string
 
   return (
     <div className="space-y-2">
-      <button className="min-h-11 rounded-xl border border-brass/50 px-4 text-sm font-black text-brass" onClick={copy} type="button">Copy message</button>
-      {status === "copied" && <p className="text-xs font-bold text-moss" role="status">Copied. Send it to the owner.</p>}
-      {status === "fallback" && <p className="select-all rounded-lg bg-board p-3 text-xs text-ink-dim" role="status">{message}</p>}
+      <button
+        className="min-h-11 rounded-xl border border-brass/50 px-4 text-sm font-black text-brass"
+        onClick={copy}
+        type="button"
+      >
+        Copy message
+      </button>
+      {status === "copied" && (
+        <p className="text-xs font-bold text-moss" role="status">
+          Copied. Send it to the owner.
+        </p>
+      )}
+      {status === "fallback" && (
+        <p className="select-all rounded-lg bg-board p-3 text-xs text-ink-dim" role="status">
+          {message}
+        </p>
+      )}
     </div>
   );
 }

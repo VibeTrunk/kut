@@ -37,7 +37,9 @@ export default async function PlayerProfilePage({ params }: PlayerProfilePagePro
   const { data, error } = await supabase
     .schema("kut")
     .from("player_directory")
-    .select("id, slug, display_name, archetype, photo_path, live_ovr, pac, sho, pas, dri, def, phy, rarity_tier")
+    .select(
+      "id, slug, display_name, archetype, photo_path, live_ovr, pac, sho, pas, dri, def, phy, rarity_tier",
+    )
     .eq("slug", slug)
     .maybeSingle();
 
@@ -47,12 +49,7 @@ export default async function PlayerProfilePage({ params }: PlayerProfilePagePro
   const player = data as DirectoryRow;
   const [photoUrls, seasonResponse, attendanceResponse] = await Promise.all([
     resolvePhotoUrls(supabase, [player.photo_path]),
-    supabase
-      .schema("kut")
-      .from("seasons")
-      .select("id")
-      .eq("is_active", true)
-      .maybeSingle(),
+    supabase.schema("kut").from("seasons").select("id").eq("is_active", true).maybeSingle(),
     supabase
       .schema("kut")
       .from("attendance")
@@ -69,12 +66,17 @@ export default async function PlayerProfilePage({ params }: PlayerProfilePagePro
         .eq("season_id", seasonResponse.data.id)
         .order("week_start")
     : { data: null, error: null };
-  const photoUrl = player.photo_path ? photoUrls.get(player.photo_path) ?? null : null;
+  const photoUrl = player.photo_path ? (photoUrls.get(player.photo_path) ?? null) : null;
   // Both chart queries are deliberately non-critical.
-  const snapshots = snapshotsResponse.error ? [] : ((snapshotsResponse.data ?? []) as RatingSnapshot[]);
+  const snapshots = snapshotsResponse.error
+    ? []
+    : ((snapshotsResponse.data ?? []) as RatingSnapshot[]);
   const goalsByWeek = new Map<string, number>();
   if (!attendanceResponse.error) {
-    for (const row of (attendanceResponse.data ?? []) as unknown as { goals: number; match_sessions: { session_date: string } | null }[]) {
+    for (const row of (attendanceResponse.data ?? []) as unknown as {
+      goals: number;
+      match_sessions: { session_date: string } | null;
+    }[]) {
       if (row.match_sessions?.session_date) {
         const week = weekStart(row.match_sessions.session_date);
         goalsByWeek.set(week, (goalsByWeek.get(week) ?? 0) + row.goals);
@@ -116,14 +118,19 @@ export default async function PlayerProfilePage({ params }: PlayerProfilePagePro
               </p>
               <h1 className="display text-3xl sm:text-6xl">{player.display_name}</h1>
               <p className="text-base text-ink-dim">
-                {archetypeLabel(player.archetype)} &middot; {player.live_ovr} OVR &middot; rises and falls with published sessions
+                {archetypeLabel(player.archetype)} &middot; {player.live_ovr} OVR &middot; rises and
+                falls with published sessions
               </p>
             </div>
 
             <AttributeBars player={player} />
 
             <hr className="border-line/40" />
-            <RatingHistory goalsByWeek={goalsByWeek} playerName={player.display_name} snapshots={snapshots} />
+            <RatingHistory
+              goalsByWeek={goalsByWeek}
+              playerName={player.display_name}
+              snapshots={snapshots}
+            />
           </div>
         </div>
       </section>

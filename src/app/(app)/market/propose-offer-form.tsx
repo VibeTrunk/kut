@@ -4,7 +4,12 @@ import { useActionState, useRef, useState } from "react";
 import { ECONOMY } from "@/game/economy";
 import { proposeOffer, type OfferState } from "./actions";
 
-export type OfferableCard = { card_id: string; display_name: string; ovr: number; rarity_tier: string };
+export type OfferableCard = {
+  card_id: string;
+  display_name: string;
+  ovr: number;
+  rarity_tier: string;
+};
 
 const initialState: OfferState = { error: null };
 
@@ -50,14 +55,20 @@ export function ProposeOfferForm({
   const nothingOffered = coins <= 0 && picked.size === 0;
 
   return (
-    <form action={action} className="space-y-3 rounded-xl border border-line bg-board/60 p-3 text-left">
+    <form
+      action={action}
+      className="space-y-3 rounded-xl border border-line bg-board/60 p-3 text-left"
+    >
       <input name="listingId" type="hidden" value={listingId} />
       {[...picked].map((cardId) => (
         <input key={cardId} name="cardId" type="hidden" value={cardId} />
       ))}
 
       <div>
-        <label className="block text-xs font-bold uppercase tracking-[0.12em] text-ink-faint" htmlFor={`offer-coins-${listingId}`}>
+        <label
+          className="block text-xs font-bold uppercase tracking-[0.12em] text-ink-faint"
+          htmlFor={`offer-coins-${listingId}`}
+        >
           KUT Coins
         </label>
         <input
@@ -106,7 +117,9 @@ export function ProposeOfferForm({
         </fieldset>
       )}
 
-      {state.error && <p className="rounded-lg bg-brick-bg p-2 text-xs text-brick">{state.error}</p>}
+      {state.error && (
+        <p className="rounded-lg bg-brick-bg p-2 text-xs text-brick">{state.error}</p>
+      )}
 
       <button
         className="min-h-11 w-full rounded-lg bg-brass px-3 text-sm font-black text-ink-on-accent disabled:bg-line disabled:text-ink-faint"

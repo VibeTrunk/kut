@@ -44,7 +44,9 @@ export async function resetMemberPassword(
   }
 
   const service = createServiceClient();
-  const { error: updateError } = await service.auth.admin.updateUserById(targetUserId, { password });
+  const { error: updateError } = await service.auth.admin.updateUserById(targetUserId, {
+    password,
+  });
 
   const { error: completionError } = await supabase
     .schema("kut")
@@ -54,11 +56,17 @@ export async function resetMemberPassword(
     });
 
   if (updateError) {
-    return { error: "The password was not changed. The failed attempt was recorded.", success: null };
+    return {
+      error: "The password was not changed. The failed attempt was recorded.",
+      success: null,
+    };
   }
 
   if (completionError) {
-    return { error: "Password changed, but its audit record needs review before another reset.", success: null };
+    return {
+      error: "Password changed, but its audit record needs review before another reset.",
+      success: null,
+    };
   }
 
   return {

@@ -16,24 +16,30 @@ describe("buildFilterHref", () => {
 
   it("clears a param with an empty string", () => {
     // How a chip's "All tiers" and the mobile remove-chip both work.
-    expect(buildFilterHref({ ...base, values: { q: "darryl", rarity: "gold" }, patch: { rarity: "" } })).toBe(
-      "/market?q=darryl",
-    );
+    expect(
+      buildFilterHref({ ...base, values: { q: "darryl", rarity: "gold" }, patch: { rarity: "" } }),
+    ).toBe("/market?q=darryl");
   });
 
   it("keeps the default sort out of the URL", () => {
     // The canonical URL stays /market, not /market?sort=newest — these get
     // shared between members and bookmarked.
     expect(buildFilterHref({ ...base, values: {}, patch: { sort: "newest" } })).toBe("/market");
-    expect(buildFilterHref({ ...base, values: {}, patch: { sort: "price" } })).toBe("/market?sort=price");
+    expect(buildFilterHref({ ...base, values: {}, patch: { sort: "price" } })).toBe(
+      "/market?sort=price",
+    );
   });
 
   it("drops empty and whitespace-only values", () => {
-    expect(buildFilterHref({ ...base, values: { q: "   ", rarity: undefined }, patch: {} })).toBe("/market");
+    expect(buildFilterHref({ ...base, values: { q: "   ", rarity: undefined }, patch: {} })).toBe(
+      "/market",
+    );
   });
 
   it("trims what it keeps", () => {
-    expect(buildFilterHref({ ...base, values: {}, patch: { q: "  darryl  " } })).toBe("/market?q=darryl");
+    expect(buildFilterHref({ ...base, values: {}, patch: { q: "  darryl  " } })).toBe(
+      "/market?q=darryl",
+    );
   });
 
   it("carries preserved params through every change", () => {

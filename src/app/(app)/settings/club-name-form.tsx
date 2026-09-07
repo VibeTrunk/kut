@@ -12,13 +12,24 @@ function Feedback({ state }: { state: SettingsActionState }) {
   );
 }
 
-export function ClubNameForm({ currentName, defaultName }: { currentName: string | null; defaultName: string }) {
-  const [state, action, pending] = useActionState<SettingsActionState, FormData>(saveClubName, null);
+export function ClubNameForm({
+  currentName,
+  defaultName,
+}: {
+  currentName: string | null;
+  defaultName: string;
+}) {
+  const [state, action, pending] = useActionState<SettingsActionState, FormData>(
+    saveClubName,
+    null,
+  );
 
   return (
     <form action={action} className="space-y-3">
       <label className="block space-y-2">
-        <span className="text-[0.65rem] font-extrabold uppercase tracking-[0.15em] text-ink-faint">Club name</span>
+        <span className="text-[0.65rem] font-extrabold uppercase tracking-[0.15em] text-ink-faint">
+          Club name
+        </span>
         <input
           className="min-h-12 w-full rounded-xl border border-line bg-panel px-4 text-ink"
           defaultValue={currentName ?? ""}

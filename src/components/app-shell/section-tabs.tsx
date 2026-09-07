@@ -84,7 +84,9 @@ export function SectionTabs({ label, tabs, variant = "segmented", activeKey }: S
             // An explicit activeKey means the caller resolved the state itself
             // (the Album/Manage toggle differs only by query string, which
             // ariaCurrent cannot see), so trust it as the exact page.
-            aria-current={activeKey ? (active ? "page" : undefined) : ariaCurrent(tab, pathname, resolved)}
+            aria-current={
+              activeKey ? (active ? "page" : undefined) : ariaCurrent(tab, pathname, resolved)
+            }
             className={`${tabClass} ${focusRing}`}
             href={tab.href}
             key={tab.key}

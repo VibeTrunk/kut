@@ -28,7 +28,13 @@ type BuildArgs = {
  * `/market?sort=newest` — which matters because these URLs get shared between
  * members and bookmarked.
  */
-export function buildFilterHref({ basePath, values, preserve, patch, defaults }: BuildArgs): string {
+export function buildFilterHref({
+  basePath,
+  values,
+  preserve,
+  patch,
+  defaults,
+}: BuildArgs): string {
   const merged: FilterValues = { ...preserve, ...values, ...patch };
   const params = new URLSearchParams();
 
@@ -49,5 +55,6 @@ export function buildFilterHref({ basePath, values, preserve, patch, defaults }:
  * narrows anything, so counting it would mean the pill never reads zero.
  */
 export function countActiveFilters(values: FilterValues, ignore: readonly string[] = []): number {
-  return Object.entries(values).filter(([name, value]) => !ignore.includes(name) && !!value?.trim()).length;
+  return Object.entries(values).filter(([name, value]) => !ignore.includes(name) && !!value?.trim())
+    .length;
 }

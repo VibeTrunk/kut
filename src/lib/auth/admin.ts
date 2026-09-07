@@ -26,12 +26,7 @@ export const requireAdmin = cache(async (): Promise<AdminIdentity> => {
     .eq("id", userId)
     .maybeSingle();
 
-  if (
-    profileError ||
-    !profile ||
-    profile.is_disabled ||
-    !isAdminRole(profile.role)
-  ) {
+  if (profileError || !profile || profile.is_disabled || !isAdminRole(profile.role)) {
     redirect("/");
   }
 

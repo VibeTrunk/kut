@@ -56,7 +56,9 @@ export function CollectionHeader({
   return (
     <header className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
       <div className="space-y-3">
-        <p className="text-[0.7rem] font-extrabold uppercase tracking-[0.26em] text-brass">My club</p>
+        <p className="text-[0.7rem] font-extrabold uppercase tracking-[0.26em] text-brass">
+          My club
+        </p>
         <h1 className="display text-3xl sm:text-6xl">Collection</h1>
         <p className="display text-4xl text-brass">
           {uniquePlayers} / {totalPlayers}{" "}
@@ -67,8 +69,8 @@ export function CollectionHeader({
         <Completion count={uniquePlayers} total={totalPlayers} />
         <p className="text-xs font-bold text-ink-faint">
           {cardCount} {cardCount === 1 ? "card" : "cards"} &middot; {uniquePlayers} unique{" "}
-          {uniquePlayers === 1 ? "player" : "players"} &middot; {discardValue.toLocaleString()} KUT Coins of discard
-          value
+          {uniquePlayers === 1 ? "player" : "players"} &middot; {discardValue.toLocaleString()} KUT
+          Coins of discard value
         </p>
         {/* Club Value moved here when /club retired (ADR-053). It stays a link,
             which was the one thing that hub still did that nothing else did. */}
@@ -89,7 +91,8 @@ export function CollectionHeader({
             className="block rounded-full border border-brass-line bg-brass-bg/40 px-4 py-3 text-sm font-bold text-ink-dim hover:text-brass"
             href="/settings/card"
           >
-            Your card is an All-rounder by default &mdash; <span className="text-brass">choose your type &rarr;</span>
+            Your card is an All-rounder by default &mdash;{" "}
+            <span className="text-brass">choose your type &rarr;</span>
           </Link>
         )}
       </div>

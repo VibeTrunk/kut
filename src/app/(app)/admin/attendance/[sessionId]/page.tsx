@@ -30,34 +30,42 @@ export default async function CorrectionPage({ params }: CorrectionPageProps) {
   }
 
   const supabase = await createClient();
-  const [sessionResponse, playersResponse, correctionsResponse, statusEventsResponse] = await Promise.all([
-    supabase
-      .schema("kut")
-      .from("match_sessions")
-      .select("id, session_date, session_type, status, rating_rules_version, bibs_washed_by, attendance(player_id, goals)")
-      .eq("id", sessionId)
-      .in("status", ["published", "cancelled"])
-      .maybeSingle(),
-    supabase
-      .schema("kut")
-      .from("players")
-      .select("id, display_name, is_active")
-      .order("display_name"),
-    supabase
-      .schema("kut")
-      .from("session_corrections")
-      .select("id, reason, corrected_at")
-      .eq("session_id", sessionId)
-      .order("corrected_at", { ascending: false }),
-    supabase
-      .schema("kut")
-      .from("session_status_events")
-      .select("id, event_type, reason, occurred_at")
-      .eq("session_id", sessionId)
-      .order("occurred_at", { ascending: false }),
-  ]);
+  const [sessionResponse, playersResponse, correctionsResponse, statusEventsResponse] =
+    await Promise.all([
+      supabase
+        .schema("kut")
+        .from("match_sessions")
+        .select(
+          "id, session_date, session_type, status, rating_rules_version, bibs_washed_by, attendance(player_id, goals)",
+        )
+        .eq("id", sessionId)
+        .in("status", ["published", "cancelled"])
+        .maybeSingle(),
+      supabase
+        .schema("kut")
+        .from("players")
+        .select("id, display_name, is_active")
+        .order("display_name"),
+      supabase
+        .schema("kut")
+        .from("session_corrections")
+        .select("id, reason, corrected_at")
+        .eq("session_id", sessionId)
+        .order("corrected_at", { ascending: false }),
+      supabase
+        .schema("kut")
+        .from("session_status_events")
+        .select("id, event_type, reason, occurred_at")
+        .eq("session_id", sessionId)
+        .order("occurred_at", { ascending: false }),
+    ]);
 
-  if (sessionResponse.error || playersResponse.error || correctionsResponse.error || statusEventsResponse.error) {
+  if (
+    sessionResponse.error ||
+    playersResponse.error ||
+    correctionsResponse.error ||
+    statusEventsResponse.error
+  ) {
     throw new Error("Could not load this session.");
   }
 
@@ -75,8 +83,14 @@ export default async function CorrectionPage({ params }: CorrectionPageProps) {
     <main className="board-ground min-h-screen p-6 text-ink sm:p-10">
       <section className="mx-auto max-w-xl space-y-8">
         <header className="space-y-3">
-          <p className="text-[0.7rem] font-extrabold uppercase tracking-[0.26em] text-brass">Correction</p>
-          <h1 className="text-4xl font-black tracking-tight">{session.status === "cancelled" ? "Review cancelled session" : "Correct published session"}</h1>
+          <p className="text-[0.7rem] font-extrabold uppercase tracking-[0.26em] text-brass">
+            Correction
+          </p>
+          <h1 className="text-4xl font-black tracking-tight">
+            {session.status === "cancelled"
+              ? "Review cancelled session"
+              : "Correct published session"}
+          </h1>
           <p className="text-ink-dim">
             {session.status === "cancelled"
               ? "You can update this record before reactivating it. It will not affect Live Ratings while cancelled."
@@ -85,7 +99,10 @@ export default async function CorrectionPage({ params }: CorrectionPageProps) {
         </header>
 
         {session.status === "published" && (
-          <Link className="flex min-h-13 items-center justify-between rounded-xl border border-brass/50 bg-brass-bg/20 px-5 font-black text-brass" href={`/admin/attendance/${session.id}/reports`}>
+          <Link
+            className="flex min-h-13 items-center justify-between rounded-xl border border-brass/50 bg-brass-bg/20 px-5 font-black text-brass"
+            href={`/admin/attendance/${session.id}/reports`}
+          >
             Session reports <span aria-hidden="true">&rarr;</span>
           </Link>
         )}
@@ -110,7 +127,9 @@ export default async function CorrectionPage({ params }: CorrectionPageProps) {
               {corrections.map((correction) => (
                 <li className="rounded-xl bg-panel p-4 text-sm text-ink-dim" key={correction.id}>
                   <p className="font-semibold text-ink">{correction.reason}</p>
-                  <p className="mt-1">{new Date(correction.corrected_at).toLocaleString("en-GB")}</p>
+                  <p className="mt-1">
+                    {new Date(correction.corrected_at).toLocaleString("en-GB")}
+                  </p>
                 </li>
               ))}
             </ul>

@@ -5,7 +5,15 @@ import { respondToOffer, withdrawOffer, type OfferState } from "../actions";
 
 const initialState: OfferState = { error: null };
 
-function RespondButton({ offerId, accept, label }: { offerId: string; accept: boolean; label: string }) {
+function RespondButton({
+  offerId,
+  accept,
+  label,
+}: {
+  offerId: string;
+  accept: boolean;
+  label: string;
+}) {
   const key = useRef<string | null>(null);
   const [state, formAction, pending] = useActionState(respondToOffer, initialState);
 
@@ -19,7 +27,9 @@ function RespondButton({ offerId, accept, label }: { offerId: string; accept: bo
   return (
     <form action={action} className={accept ? "flex-1" : undefined}>
       <input name="offerId" type="hidden" value={offerId} />
-      {state.error && <p className="mb-2 rounded-lg bg-brick-bg p-2 text-xs text-brick">{state.error}</p>}
+      {state.error && (
+        <p className="mb-2 rounded-lg bg-brick-bg p-2 text-xs text-brick">{state.error}</p>
+      )}
       <button
         className={
           accept
@@ -49,7 +59,9 @@ export function WithdrawOfferForm({ offerId }: { offerId: string }) {
   return (
     <form action={formAction} className="mt-3">
       <input name="offerId" type="hidden" value={offerId} />
-      {state.error && <p className="mb-2 rounded-lg bg-brick-bg p-2 text-xs text-brick">{state.error}</p>}
+      {state.error && (
+        <p className="mb-2 rounded-lg bg-brick-bg p-2 text-xs text-brick">{state.error}</p>
+      )}
       <button
         className="min-h-11 rounded-lg border border-line px-3 text-sm font-bold text-ink-dim disabled:opacity-50"
         disabled={pending}

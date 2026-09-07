@@ -68,7 +68,9 @@ function OfferCard({ offer }: { offer: TradeOffer }) {
 
       <dl className="mt-4 grid grid-cols-2 gap-3 text-sm">
         <div className="rounded-xl bg-board/60 p-3">
-          <dt className="text-xs font-bold uppercase tracking-[0.12em] text-ink-faint">Offered coins</dt>
+          <dt className="text-xs font-bold uppercase tracking-[0.12em] text-ink-faint">
+            Offered coins
+          </dt>
           <dd className="mt-1 text-lg font-black tabular-nums">{offer.offered_coins}</dd>
         </div>
         <div className="rounded-xl bg-board/60 p-3">
@@ -76,14 +78,20 @@ function OfferCard({ offer }: { offer: TradeOffer }) {
             {offer.status === "active" ? "Expires" : "Resolved"}
           </dt>
           <dd className="mt-1 text-sm font-bold">
-            {formatDate(offer.status === "active" ? offer.expires_at : offer.resolved_at ?? offer.expires_at)}
+            {formatDate(
+              offer.status === "active"
+                ? offer.expires_at
+                : (offer.resolved_at ?? offer.expires_at),
+            )}
           </dd>
         </div>
       </dl>
 
       {cards.length > 0 && (
         <div className="mt-3">
-          <p className="text-xs font-bold uppercase tracking-[0.12em] text-ink-faint">Plus {cards.length} card(s)</p>
+          <p className="text-xs font-bold uppercase tracking-[0.12em] text-ink-faint">
+            Plus {cards.length} card(s)
+          </p>
           <ul className="mt-1 flex flex-wrap gap-2">
             {cards.map((card) => (
               <li
@@ -98,17 +106,28 @@ function OfferCard({ offer }: { offer: TradeOffer }) {
       )}
 
       {offer.status === "accepted" && !offer.is_outgoing && offer.coins_to_seller !== null && (
-        <p className="mt-3 text-sm font-bold text-moss">You received {offer.coins_to_seller} KUT Coins after the 5% burn.</p>
+        <p className="mt-3 text-sm font-bold text-moss">
+          You received {offer.coins_to_seller} KUT Coins after the 5% burn.
+        </p>
       )}
 
-      {offer.status === "active" && !offer.is_outgoing && <RespondToOfferForms offerId={offer.offer_id} />}
-      {offer.status === "active" && offer.is_outgoing && <WithdrawOfferForm offerId={offer.offer_id} />}
+      {offer.status === "active" && !offer.is_outgoing && (
+        <RespondToOfferForms offerId={offer.offer_id} />
+      )}
+      {offer.status === "active" && offer.is_outgoing && (
+        <WithdrawOfferForm offerId={offer.offer_id} />
+      )}
     </li>
   );
 }
 
 type OffersPageProps = {
-  searchParams: Promise<{ sent?: string; withdrawn?: string; accepted?: string; declined?: string }>;
+  searchParams: Promise<{
+    sent?: string;
+    withdrawn?: string;
+    accepted?: string;
+    declined?: string;
+  }>;
 };
 
 export default async function TradeOffersPage({ searchParams }: OffersPageProps) {
@@ -146,11 +165,13 @@ export default async function TradeOffersPage({ searchParams }: OffersPageProps)
     <main className="board-ground min-h-screen p-5 text-ink sm:p-10">
       <section className="mx-auto max-w-3xl space-y-8">
         <header>
-          <p className="text-[0.7rem] font-extrabold uppercase tracking-[0.26em] text-brass">Transfer market</p>
+          <p className="text-[0.7rem] font-extrabold uppercase tracking-[0.26em] text-brass">
+            Transfer market
+          </p>
           <h1 className="display mt-3 text-3xl sm:text-6xl">Trade offers</h1>
           <p className="mt-3 hidden text-ink-dim sm:block">
-            Coin-and-card offers on market listings. Everything you offer is escrowed until the seller accepts or
-            declines, or the offer expires.
+            Coin-and-card offers on market listings. Everything you offer is escrowed until the
+            seller accepts or declines, or the offer expires.
           </p>
           {/* The Buy tab replaces the old "Back to the market" link. */}
           <div className="mt-5">
@@ -158,27 +179,47 @@ export default async function TradeOffersPage({ searchParams }: OffersPageProps)
           </div>
         </header>
 
-        {flash && <p className="rounded-2xl border border-moss-line/40 bg-moss-bg/50 p-4 font-bold text-moss">{flash}</p>}
+        {flash && (
+          <p className="rounded-2xl border border-moss-line/40 bg-moss-bg/50 p-4 font-bold text-moss">
+            {flash}
+          </p>
+        )}
 
         <div className="space-y-4">
-          <h2 className="display text-2xl">Incoming ({incoming.filter((o) => o.status === "active").length})</h2>
+          <h2 className="display text-2xl">
+            Incoming ({incoming.filter((o) => o.status === "active").length})
+          </h2>
           {incoming.length === 0 ? (
             <p className="rounded-2xl border border-dashed border-line p-6 text-center text-ink-dim">
               No offers on your listings yet.
             </p>
           ) : (
-            <ul className="space-y-3">{incoming.map((offer) => <OfferCard key={offer.offer_id} offer={offer} />)}</ul>
+            <ul className="space-y-3">
+              {incoming.map((offer) => (
+                <OfferCard key={offer.offer_id} offer={offer} />
+              ))}
+            </ul>
           )}
         </div>
 
         <div className="space-y-4">
-          <h2 className="display text-2xl">Sent ({outgoing.filter((o) => o.status === "active").length})</h2>
+          <h2 className="display text-2xl">
+            Sent ({outgoing.filter((o) => o.status === "active").length})
+          </h2>
           {outgoing.length === 0 ? (
             <p className="rounded-2xl border border-dashed border-line p-6 text-center text-ink-dim">
-              You haven&rsquo;t made any offers. Find a listing on the <Link className="text-brass underline" href="/market">market</Link>.
+              You haven&rsquo;t made any offers. Find a listing on the{" "}
+              <Link className="text-brass underline" href="/market">
+                market
+              </Link>
+              .
             </p>
           ) : (
-            <ul className="space-y-3">{outgoing.map((offer) => <OfferCard key={offer.offer_id} offer={offer} />)}</ul>
+            <ul className="space-y-3">
+              {outgoing.map((offer) => (
+                <OfferCard key={offer.offer_id} offer={offer} />
+              ))}
+            </ul>
           )}
         </div>
       </section>

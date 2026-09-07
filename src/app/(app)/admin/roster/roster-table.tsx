@@ -13,12 +13,17 @@ export type RosterRow = {
 };
 
 export function RosterTable({ players }: { players: RosterRow[] }) {
-  const [state, formAction, isPending] = useActionState<RosterActionState, FormData>(manageRoster, null);
+  const [state, formAction, isPending] = useActionState<RosterActionState, FormData>(
+    manageRoster,
+    null,
+  );
 
   return (
     <div className="space-y-3">
       <h2 className="display text-2xl">Current roster ({players.length})</h2>
-      {state && !state.ok && <p className="rounded-xl bg-brick-bg p-3 text-sm text-brick">{state.error}</p>}
+      {state && !state.ok && (
+        <p className="rounded-xl bg-brick-bg p-3 text-sm text-brick">{state.error}</p>
+      )}
       {state?.ok && <p className="rounded-xl bg-moss-bg p-3 text-sm text-moss">{state.message}</p>}
       <div className="overflow-x-auto rounded-2xl border border-line bg-panel">
         <table className="w-full text-left text-sm">
@@ -43,7 +48,11 @@ export function RosterTable({ players }: { players: RosterRow[] }) {
                     <form action={formAction}>
                       <input name="intent" type="hidden" value="toggle" />
                       <input name="player_id" type="hidden" value={player.id} />
-                      <input name="is_active" type="hidden" value={player.is_active ? "false" : "true"} />
+                      <input
+                        name="is_active"
+                        type="hidden"
+                        value={player.is_active ? "false" : "true"}
+                      />
                       <button
                         className="rounded-lg border border-line px-3 py-1.5 text-xs font-bold text-ink-dim hover:text-ink disabled:cursor-not-allowed disabled:opacity-50"
                         disabled={isPending}
@@ -55,7 +64,11 @@ export function RosterTable({ players }: { players: RosterRow[] }) {
                     <form
                       action={formAction}
                       onSubmit={(event) => {
-                        if (!window.confirm(`Permanently delete ${player.display_name}? This cannot be undone.`)) {
+                        if (
+                          !window.confirm(
+                            `Permanently delete ${player.display_name}? This cannot be undone.`,
+                          )
+                        ) {
                           event.preventDefault();
                         }
                       }}
@@ -83,9 +96,9 @@ export function RosterTable({ players }: { players: RosterRow[] }) {
         </table>
       </div>
       <p className="text-sm text-ink-faint">
-        Deactivating hides a player from Live Ratings and pack pools but keeps their history and any cards people own — it
-        is reversible. Delete is permanent and only goes through for a player with no attendance, account, invite, or
-        owned cards.
+        Deactivating hides a player from Live Ratings and pack pools but keeps their history and any
+        cards people own — it is reversible. Delete is permanent and only goes through for a player
+        with no attendance, account, invite, or owned cards.
       </p>
     </div>
   );

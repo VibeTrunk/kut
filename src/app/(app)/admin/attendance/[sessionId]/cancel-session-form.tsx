@@ -9,11 +9,16 @@ export function CancelSessionForm({ sessionId }: { sessionId: string }) {
   const [state, formAction, isPending] = useActionState(cancelPublishedSession, initialState);
 
   return (
-    <form action={formAction} className="space-y-4 rounded-2xl border border-brick-line bg-brick-bg/30 p-5">
+    <form
+      action={formAction}
+      className="space-y-4 rounded-2xl border border-brick-line bg-brick-bg/30 p-5"
+    >
       <input name="sessionId" type="hidden" value={sessionId} />
       <div className="space-y-1">
         <h2 className="text-xl font-bold text-brick">Cancel this published session</h2>
-        <p className="text-sm leading-6 text-brick/85">It will stay in the audit trail, but its attendance will no longer affect Live Ratings.</p>
+        <p className="text-sm leading-6 text-brick/85">
+          It will stay in the audit trail, but its attendance will no longer affect Live Ratings.
+        </p>
       </div>
       <label className="block space-y-2">
         <span className="font-semibold">Why is it being cancelled?</span>
@@ -26,7 +31,9 @@ export function CancelSessionForm({ sessionId }: { sessionId: string }) {
           required
         />
       </label>
-      {state.error && <p className="rounded-xl bg-brick-bg p-3 text-sm text-brick">{state.error}</p>}
+      {state.error && (
+        <p className="rounded-xl bg-brick-bg p-3 text-sm text-brick">{state.error}</p>
+      )}
       <button
         className="min-h-12 w-full rounded-xl bg-brick px-4 py-3 font-bold text-ink-on-accent disabled:cursor-not-allowed disabled:bg-line"
         disabled={isPending}

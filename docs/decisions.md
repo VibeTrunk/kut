@@ -2842,3 +2842,20 @@ reason it is unversioned prose: reflowing `BUILD_SPEC.md` (4,783 lines) and this
 ADR log (2,714) would produce an unreviewable diff and destroy the line history
 `git blame` gives those decision records. `supabase/` is left alone because those
 migrations are already deployed to the hosted schema.
+
+The follow-up PR that registered the squashed SHA measured what the entry
+actually buys, and it is not free. Across the 111 reformatted files, the lines
+wrongly blamed on the reformat drop from 4,923 to 151 — 4,772 lines of
+authorship restored. But across the files the same commit genuinely authored
+(this log, `PROGRESS.md`, `README.md`, the two Prettier config files), the lines
+correctly blamed on it fall from 278 to 93: 185 lines lose their attribution.
+Squash-merging is the cause. Because `main` takes one commit per PR, that SHA
+bundles the mechanical reformat with the config and this ADR, and `--ignore-rev`
+is all-or-nothing; for lines a skipped commit genuinely authored, git hunts for
+the most similar line in the parent rather than admitting it has no answer, and
+scatters the ADR-065 block across roughly 25 unrelated commits. The entry is
+kept because the ratio is 26 code lines recovered per prose line lost, and
+because these documents date themselves — every ADR carries a `Date:` and every
+`PROGRESS.md` entry is dated in its heading — so `git blame` was never how they
+are read. A future bulk reformat that can be landed as its own commit on `main`
+should be, rather than bundled into a PR that also adds content.

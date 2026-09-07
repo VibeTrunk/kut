@@ -20,5 +20,26 @@
 # the Prettier reformat below is registered by a follow-up PR opened after
 # the merge rather than inside the PR that did the reformatting.
 
-# Prettier adoption, ADR-065 — reformatted 111 files across src/, tests/,
-# scripts/ and the root configs. SHA added by the follow-up PR.
+# Prettier adoption, ADR-065 (PR #67) — reformatted 111 files across src/,
+# tests/, scripts/ and the root configs.
+#
+# Measured effect of this entry, so the trade is on the record:
+#
+#   reformatted code   4,923 -> 151 lines wrongly blamed on the reformat
+#                      (4,772 lines of authorship restored)
+#   new prose/config     278 ->  93 lines still correctly blamed on it
+#                      (185 lines lose it)
+#
+# The loss is real and is the price of squash-merging. Because `main` takes
+# one commit per PR, this SHA bundles the mechanical reformat with the
+# Prettier config and the ADR that documents it, and --ignore-rev is
+# all-or-nothing. For lines the commit genuinely authored, git looks for the
+# most similar line in the parent and scatters attribution across unrelated
+# history rather than admitting it has no answer — the ADR-065 block in
+# decisions.md gets spread over about 25 old commits.
+#
+# Kept anyway: it is 26 lines of code recovered for every prose line lost,
+# and the affected documents date themselves (every ADR carries a Date:, every
+# PROGRESS.md entry is dated in its heading), so blame was never how you read
+# them. If a future reformat can be landed on its own commit, prefer that.
+e68b872243e1313258ceb6162c499c871c16241e

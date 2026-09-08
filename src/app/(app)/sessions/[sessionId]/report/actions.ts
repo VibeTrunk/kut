@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth/user";
+import { ballotPayload, type Ballot } from "@/lib/session-reports/kudos-ballot";
 import { createClient } from "@/lib/supabase/server";
 import { isUuid } from "@/lib/uuid";
 
@@ -38,22 +39,22 @@ export async function saveSessionReport(
     formData.get("confirmGoals") !== "yes"
   )
     return { error: `Confirm ${goals} goals before submitting.` };
-  const nominations: Record<string, string | null> = {};
-  for (const categoryId of String(formData.get("categoryIds") ?? "").split(",")) {
-    if (!isUuid(categoryId))
-      return { error: "The report categories changed. Refresh and try again." };
-    const value = String(formData.get(`category-${categoryId}`) ?? "");
-    // An empty value is a deliberate Skip; a malformed one is a stale or tampered
-    // form and must not be silently recorded as a Skip the member did not choose.
-    if (value && !isUuid(value))
-      return { error: "That nomination is no longer valid. Refresh and try again." };
-    nominations[categoryId] = value || null;
-  }
+  const categoryIds = String(formData.get("categoryIds") ?? "")
+    .split(",")
+    .filter(Boolean);
+  const ballot: Ballot = Object.fromEntries(
+    categoryIds.map((categoryId) => [
+      categoryId,
+      String(formData.get(`category-${categoryId}`) ?? ""),
+    ]),
+  );
+  const payload = ballotPayload(categoryIds, ballot, intent);
+  if (!payload.ok) return { error: `${payload.error} Refresh if the form looks out of date.` };
   const supabase = await createClient();
   const { data, error } = await supabase.schema("kut").rpc("submit_session_report", {
     p_session_id: sessionId,
     p_goals: goals,
-    p_nominations: nominations,
+    p_nominations: payload.nominations,
     p_expected_revision: revision,
     p_idempotency_key: idempotencyKey,
     p_intent: intent,
@@ -62,7 +63,11 @@ export async function saveSessionReport(
     return {
       error: error.message.includes("closed")
         ? "Reports are closed for this session."
-        : "Could not save the report. Check every category and try again.",
+        : error.message.includes("only once")
+          ? "Choose a different teammate in each category."
+          : error.message.includes("Skip")
+            ? "Choose a teammate or Skip in every kudos category."
+            : "Could not save the report. Check every category and try again.",
     };
   if (data && typeof data === "object" && "conflict" in data && data.conflict)
     return { error: "This report changed elsewhere. Refresh to load the saved version." };

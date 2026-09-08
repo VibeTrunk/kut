@@ -19,6 +19,7 @@ type Context = {
   report_status: string | null;
   revision: number;
   reward_received: boolean;
+  explicit_skips: string[] | null;
 };
 
 export default async function SessionReportPage({ params }: Props) {
@@ -31,7 +32,7 @@ export default async function SessionReportPage({ params }: Props) {
     .schema("kut")
     .from("my_session_reports")
     .select(
-      "session_id,session_date,session_type,survey_status,closes_at,category_ids,reward_amount,player_id,goals,report_status,revision,reward_received",
+      "session_id,session_date,session_type,survey_status,closes_at,category_ids,reward_amount,player_id,goals,report_status,revision,reward_received,explicit_skips",
     )
     .eq("session_id", sessionId)
     .maybeSingle();
@@ -65,6 +66,17 @@ export default async function SessionReportPage({ params }: Props) {
   const nominations = Object.fromEntries(
     (kudosResponse.data ?? []).map((row) => [row.category_id, row.recipient_player_id]),
   );
+  // kut.attendance has no natural order and is read by a sequential scan, so the
+  // teammate list is sorted here rather than left in heap order.
+  const attendees = (attendanceResponse.data ?? [])
+    .map((row) => {
+      const player = Array.isArray(row.players) ? row.players[0] : row.players;
+      return { player_id: row.player_id, display_name: player?.display_name ?? "Teammate" };
+    })
+    .sort(
+      (a, b) =>
+        a.display_name.localeCompare(b.display_name) || a.player_id.localeCompare(b.player_id),
+    );
   const closed = report.survey_status !== "open" || new Date(report.closes_at) <= new Date();
   return (
     <main className="board-ground min-h-screen p-5 text-ink sm:p-10">
@@ -106,8 +118,9 @@ export default async function SessionReportPage({ params }: Props) {
           </section>
         ) : (
           <ReportForm
-            attendees={attendanceResponse.data ?? []}
+            attendees={attendees}
             categories={categories}
+            explicitSkips={report.explicit_skips ?? []}
             goals={report.goals}
             playerId={report.player_id}
             revision={report.revision}

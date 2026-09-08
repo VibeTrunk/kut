@@ -2859,3 +2859,104 @@ because these documents date themselves — every ADR carries a `Date:` and ever
 `PROGRESS.md` entry is dated in its heading — so `git blame` was never how they
 are read. A future bulk reformat that can be landed as its own commit on `main`
 should be, rather than bundled into a PR that also adds content.
+## ADR-066 — Chronicle results are a definer projection; finalization is provable without survey eligibility
+
+Date: 2026-09-08
+
+Status: Accepted
+
+Decision: `kut.chronicle_session_reports` is recreated with
+`security_invoker=false`, matching its sibling
+`kut.chronicle_session_report_status` (ADR-060 / `20260920090000`). The
+`"members read finalized results"` policy on `kut.session_report_results` stops
+proving finalization with an inline `exists()` over `kut.session_surveys` and
+calls a new `security definer` predicate, `kut.is_survey_finalized(uuid)`,
+instead. Migration `20260923000000_chronicle_results_visibility.sql`; no data
+change.
+
+Reason: the Chronicle is the club's newspaper, but its per-player results were
+readable only by the people who were *at* the session. The projection ran as the
+reader, and its inner join to `kut.session_surveys` meets
+`"eligible members read surveys"`, which admits `kut.is_admin()` or a member
+holding a `kut.session_survey_eligibility` row — i.e. an attendee. Everyone who
+missed the session read zero rows and the issue page fell through to its
+"Results finalized. No report results were recorded." empty state (KB-013),
+while an admin on the same URL saw the full table. The policy on the results
+table had the same defect for the same reason: Postgres applies a referenced
+table's RLS inside a policy expression, so that `exists()` could not see the
+survey row either. The two-layer failure is why the symptom was total rather
+than partial.
+
+Making the view a definer projection also repairs three columns that were
+quietly wrong for everyone: `submitted_reports`, `eligible_accounts` and
+`attendee_count` are sub-selects over `kut.session_reports` and
+`kut.session_survey_eligibility`, both RLS-scoped to the reader's own rows, so
+an attendee computed "1 of 1 reports submitted". The page never showed it
+because it prefers the status view's counts and only falls back to these, but
+the columns are part of the contract and now mean what they say.
+
+Nothing new is disclosed. `effective_goals` is already published club-wide as
+`chronicle_session_report_status.goal_total`; `recognized_categories` lists only
+categories two or more nominators agreed on, which is the feature; `goal_form`,
+`kudos_form` and `session_input` are pure functions of those two under the
+ADR-063 ladders; and the three count columns duplicate ones the status view
+already grants. Raw ballots (`kut.session_kudos`) and provisional reports
+(`kut.session_reports`) keep their own RLS and are never read here. The join to
+`session_surveys` on `status='finalized'` is now the *only* thing keeping an open
+session out of the projection — it is load-bearing, and the pgTAP cases assert
+it by reopening a finalized survey and re-reading as a member.
+
+Consequences: `kut.is_survey_finalized(uuid)` is new, executable by
+`authenticated` and `service_role`. Six pgTAP assertions in
+`next_features_contracts.test.sql` cover a member with no eligibility row
+reading a finalized issue, the club-wide count, direct `session_report_results`
+access, and both no-leak cases while the survey is open. Rollback restores the
+invoker view and the inline-`exists()` policy and drops the function; it
+reinstates the blackout.
+## ADR-067 — An admin can close a report window early; the deadline is left on the record
+
+Date: 2026-09-08
+
+Status: Accepted
+
+Decision: `kut.admin_finalize_session_survey(uuid, text)` lets an admin finalize
+a published session's report window before its 24 hours elapse. It is a gated,
+audited front door to the existing `kut._finalize_one_session` — same scoring,
+same season rebuild, same notifications — and adds no rating maths. It requires
+`kut.is_admin()` and a 3–500 character reason, refuses a cancelled survey,
+returns `already_finalized` rather than raising on a second press, and returns
+the attendee / eligible / submitted counts plus whether the kudos quorum was
+met. `kut.session_surveys` gains nullable `finalized_by` and `finalized_reason`.
+Migration `20260924000000_admin_finalize_session_survey.sql`.
+
+Reason: the 24-hour wait is the right default for a club where people report
+from the pub car park hours later, but it is the wrong default once everyone
+present has actually filed. Waiting a further ten hours to see the week's
+ratings — and the ADR-061 lazy fallback needing somebody to open a page after
+that — is friction with no integrity purpose. Nothing downstream needed
+changing, because every consumer already keys off `session_surveys.status`:
+`submit_session_report` rejects a status other than `open`,
+`finalize_session_surveys` only selects `open` rows so it cannot double-run, and
+`chronicle_session_report_status.accepting_reports` flips on its own.
+
+`closes_at` is deliberately not moved. `session_surveys` carries
+`check (closes_at = opened_at + interval '24 hours')`, so rewriting it would mean
+rewriting `opened_at` and erasing when the window actually opened. Leaving it
+means the published deadline stays on the record and `finalized_at < closes_at`
+is what identifies an early close. `finalized_by` and `finalized_reason` stay
+null on the automatic path and on the re-finalization `admin_correct_session_goals`
+triggers, so null reads as "closed at its deadline" — asserted in the tests.
+
+Consequences: a member who had not submitted when an admin closes the window
+loses both the ability to submit and the 50-coin completion reward. That is
+inherent to closing it and is not softened here; instead
+`/admin/attendance/[sessionId]/reports` states the pending count, the reward
+consequence and the three-ballot kudos quorum in the panel above the button, and
+requires the reason before it will submit. Rewards already earned are untouched.
+No extra notification event type was added — finalization already sends
+`session_results` to every eligible member, and widening the
+`user_notifications.event_type` check to say "closed early" would change a
+constraint for a sentence. 21 pgTAP assertions in
+`admin_finalize_session_survey.test.sql` cover the gate, the reason, the audit
+columns, the preserved deadline, the quorum, the closed window, the untouched
+reward, idempotence, and the automatic path's null audit trail.

@@ -2960,3 +2960,61 @@ constraint for a sentence. 21 pgTAP assertions in
 `admin_finalize_session_survey.test.sql` cover the gate, the reason, the audit
 columns, the preserved deadline, the quorum, the closed window, the untouched
 reward, idempotence, and the automatic path's null audit trail.
+
+## ADR-068 — The kudos ballot is React-controlled, and an unanswered category is not a Skip
+
+Date: 2026-09-08
+
+Status: Accepted
+
+Decision: the session report form (`src/app/(app)/sessions/[sessionId]/report/`)
+dispatches its server action from an `onSubmit` handler instead of
+`<form action={fn}>`, holds every kudos category in React state, and gives each
+category three states rather than two: a nominee, an explicit Skip, or
+**undecided**. Undecided is the opening state, is sent to
+`kut.submit_session_report` by omitting the category from `p_nominations`, and
+blocks a submission (a draft still saves). The decision logic lives in
+`src/lib/session-reports/kudos-ballot.ts` and is unit-tested. No migration: the
+RPC already accepted a missing category on a draft and raised on a submission,
+and its contract is unchanged.
+
+Reason: two defects, one of which corrupted the first live kudos round (KB-015).
+
+React resets a form with a *function* action once that action settles —
+`startHostTransition` calls `requestFormReset` unconditionally
+(`react-dom` 19.2.8), and the reset restores every control to the default it was
+**mounted** with. React keeps a controlled `<input>` safe from this by syncing
+the element's `defaultValue` to the current value on every commit, but it does
+nothing equivalent for a `<select>`, and it never re-applies a changed
+`defaultValue` to one either. So the kudos selects reverted on every save, while
+the goals field — same form, controlled `<input>` — survived, which is exactly
+how the report reached us: "the selection for players resets". Reproduced
+against the local stack: pick three teammates, press Save draft, get "Your
+report is saved", and watch all three dropdowns snap back. Making the selects
+controlled is necessary but **not** sufficient — verified, they still reverted —
+so the dispatch moved off the `action` prop.
+
+The second defect is what made the first one expensive. "Skip" was the first
+option, so an untouched select already read as a deliberate Skip and Submit
+accepted it. A member whose picks had just been silently reverted could save
+again and cast three explicit Skips without ever seeing a warning; three of nine
+did. Separating "not answered yet" from "Skip" removes the silent path in both
+directions — nobody skips by inertia, and nobody's reverted ballot can be
+resubmitted as one.
+
+Consequences: the form is now JavaScript-only in a way it was not before —
+`onSubmit` + `preventDefault` means no no-JS fallback. It already depended on
+`crypto.randomUUID()` in the browser for its idempotency key, so nothing that
+worked before stops working. Submit is disabled, with a named reason, while any
+category is undecided or a teammate is picked twice; the duplicate rule is the
+database's (`unique(session_id, nominator_player_id, recipient_player_id)`) and
+is now caught inline instead of failing the whole save with a generic message.
+The teammate list is sorted by display name — `kut.attendance` has no natural
+order and is read by a sequential scan, so it was previously in heap order.
+`explicit_skips` is read back from `kut.my_session_reports` so a saved Skip
+reopens as a Skip, and only a genuine explicit Skip is ever written as one.
+
+Not fixed here: `settings/card`'s archetype select, `settings/club-name-form`
+and the admin goal-override inputs share the same React reset and revert to
+their pre-save values (KB-016). They are cosmetic — the save succeeds and a
+reload shows the truth — and none of them can turn a revert into a wrong vote.

@@ -2807,3 +2807,43 @@ just their coins, and degrades to an em dash only when the read itself failed.
 The pack store already threw on this error and is unchanged.
 
 Verification: `verify:fast` PASS. No migration, no schema surface.
+## Kudos picks survive a save, and a blank category is no longer a Skip (KB-015) — 2026-09-08
+
+Three of nine members in the first live kudos round submitted all-skip ballots
+and reported the selection "resetting". It was not the database: the ballots
+read back correctly under RLS, and every save had persisted. It was React.
+
+React resets a `<form action={fn}>` once the action settles — `startHostTransition`
+calls `requestFormReset` unconditionally in `react-dom` 19.2.8 — and the reset
+restores every control to the default it was **mounted** with. A controlled
+`<input>` is safe because React keeps the element's `defaultValue` equal to the
+current value on every commit; a `<select>` gets no such treatment, and React
+never re-applies a changed `defaultValue` to one either. So the three kudos
+dropdowns reverted on every save while the goals field, in the same form,
+survived — exactly the shape of the report we got. Reproduced against the local
+stack: pick three teammates, press Save draft, get the green "Your report is
+saved" banner, and watch all three snap back. On a first report the mount-time
+default is `""` — the value of the first option, `Skip` — so they snapped back
+to Skip, and a second press wrote three real skips.
+
+Making the selects controlled was verified **insufficient**; they still
+reverted. The action is now dispatched from an `onSubmit` handler, which keeps
+the auto-reset out of it entirely. Alongside that, a category has three states
+instead of two: nominee, explicit Skip, or undecided. Undecided is the opening
+state, is sent by omitting the category from `p_nominations` (which the RPC
+already accepted on a draft and rejected on a submission), and disables Submit
+with a named reason — so nobody skips by inertia and no reverted ballot can be
+resubmitted as one. Duplicate nominees, a database constraint that used to fail
+the whole save with a generic message, are caught inline and named. The teammate
+list is sorted by display name; `kut.attendance` has no natural order and is
+read by a sequential scan, so it was in heap order before.
+
+Verification: `verify:fast` PASS (15 files / 93 tests), 8 of them new in
+`tests/unit/kudos-ballot.test.ts`. Driven end to end against the local stack as
+member_c on a reopened survey: the bug reproduced on the old code, then, on the
+new, picks survived a draft save and a submit, a reload round-tripped two
+nominations plus one explicit Skip, a partial draft stored one nomination with
+no skips, Submit stayed disabled while any category was undecided, and a
+duplicate pick was blocked and named. No migration; the RPC contract is
+unchanged. ADR-068. The same React reset affects three cosmetic surfaces
+elsewhere, registered as KB-016.

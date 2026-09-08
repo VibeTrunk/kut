@@ -2913,3 +2913,50 @@ reading a finalized issue, the club-wide count, direct `session_report_results`
 access, and both no-leak cases while the survey is open. Rollback restores the
 invoker view and the inline-`exists()` policy and drops the function; it
 reinstates the blackout.
+## ADR-067 — An admin can close a report window early; the deadline is left on the record
+
+Date: 2026-09-08
+
+Status: Accepted
+
+Decision: `kut.admin_finalize_session_survey(uuid, text)` lets an admin finalize
+a published session's report window before its 24 hours elapse. It is a gated,
+audited front door to the existing `kut._finalize_one_session` — same scoring,
+same season rebuild, same notifications — and adds no rating maths. It requires
+`kut.is_admin()` and a 3–500 character reason, refuses a cancelled survey,
+returns `already_finalized` rather than raising on a second press, and returns
+the attendee / eligible / submitted counts plus whether the kudos quorum was
+met. `kut.session_surveys` gains nullable `finalized_by` and `finalized_reason`.
+Migration `20260924000000_admin_finalize_session_survey.sql`.
+
+Reason: the 24-hour wait is the right default for a club where people report
+from the pub car park hours later, but it is the wrong default once everyone
+present has actually filed. Waiting a further ten hours to see the week's
+ratings — and the ADR-061 lazy fallback needing somebody to open a page after
+that — is friction with no integrity purpose. Nothing downstream needed
+changing, because every consumer already keys off `session_surveys.status`:
+`submit_session_report` rejects a status other than `open`,
+`finalize_session_surveys` only selects `open` rows so it cannot double-run, and
+`chronicle_session_report_status.accepting_reports` flips on its own.
+
+`closes_at` is deliberately not moved. `session_surveys` carries
+`check (closes_at = opened_at + interval '24 hours')`, so rewriting it would mean
+rewriting `opened_at` and erasing when the window actually opened. Leaving it
+means the published deadline stays on the record and `finalized_at < closes_at`
+is what identifies an early close. `finalized_by` and `finalized_reason` stay
+null on the automatic path and on the re-finalization `admin_correct_session_goals`
+triggers, so null reads as "closed at its deadline" — asserted in the tests.
+
+Consequences: a member who had not submitted when an admin closes the window
+loses both the ability to submit and the 50-coin completion reward. That is
+inherent to closing it and is not softened here; instead
+`/admin/attendance/[sessionId]/reports` states the pending count, the reward
+consequence and the three-ballot kudos quorum in the panel above the button, and
+requires the reason before it will submit. Rewards already earned are untouched.
+No extra notification event type was added — finalization already sends
+`session_results` to every eligible member, and widening the
+`user_notifications.event_type` check to say "closed early" would change a
+constraint for a sentence. 21 pgTAP assertions in
+`admin_finalize_session_survey.test.sql` cover the gate, the reason, the audit
+columns, the preserved deadline, the quorum, the closed window, the untouched
+reward, idempotence, and the automatic path's null audit trail.

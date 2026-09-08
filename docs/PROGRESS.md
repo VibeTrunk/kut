@@ -2751,3 +2751,38 @@ the defect exactly — `chronicle_session_reports` reported `security_invoker=tr
 beside its sibling's `false` — before the migration flipped it. E2E runs in CI
 only. Not yet deployed; the migration ships from `VibeTrunk/supabase` per
 `docs/OPERATIONS.md`.
+## Admins can close a report window early (ADR-067) — 2026-09-08
+
+The 24-hour report window is the right default and the wrong one once everybody
+present has filed. `kut.admin_finalize_session_survey(uuid, text)` is a gated
+front door to `kut._finalize_one_session`: `kut.is_admin()`, a 3–500 character
+reason, refuses a cancelled survey, returns `already_finalized` instead of
+raising on a second press, and hands back the attendee / eligible / submitted
+counts and whether the three-ballot kudos quorum was met. Same scoring, same
+season rebuild, same notifications — only the timing moves.
+
+Nothing downstream needed a change, because everything already keys off
+`session_surveys.status`: `submit_session_report` rejects anything but `open`,
+`finalize_session_surveys` only claims `open` rows so it cannot double-run, and
+`chronicle_session_report_status.accepting_reports` flips on its own.
+`closes_at` is left alone — the table's `check (closes_at = opened_at + 24h)`
+means moving it would mean rewriting when the window opened — so the published
+deadline stays on the record and an early close is visible as
+`finalized_at < closes_at`. New nullable `finalized_by` / `finalized_reason`
+columns stay null on the automatic path, so null reads as "closed at its
+deadline".
+
+`/admin/attendance/[sessionId]/reports` grows a panel above the roster: the
+automatic close time, how many of the eligible members have submitted, that the
+pending ones can no longer submit *or* earn the 50 KUT Coins, and that kudos need
+three submitted reports carrying nominations before any category is recognised.
+The reason field is required before the button will submit.
+
+Verification: `verify:fast` PASS (14 files / 85 tests). Both migrations applied
+to the local stack and the whole pgTAP suite re-run: 15 files, 476 assertions,
+zero failures — 21 of them new, in `admin_finalize_session_survey.test.sql`,
+covering the gate, the reason, the audit columns, the preserved deadline, the
+quorum, the closed window, the untouched reward, idempotence and the automatic
+path's null audit trail. Two were caught and fixed while writing them: a plan
+miscount, and a reward read-back that was itself RLS-scoped to the wrong member.
+E2E runs in CI only. Not yet deployed; ships from `VibeTrunk/supabase`.

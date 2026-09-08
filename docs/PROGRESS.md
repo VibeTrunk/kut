@@ -2709,3 +2709,45 @@ Verification, before and after the reformat, with identical counts: `verify:fast
 14 files / 85 tests PASS, pgTAP 14 files / 449 assertions PASS,
 `npm run test:market-race` 3 files / 5 tests PASS, `npm run build` PASS.
 `format:check` passes clean on the formatted tree. E2E runs in CI only.
+## Chronicle results reach the whole club again (ADR-066 / KB-013) — 2026-09-08
+
+The first live kudos round finalized correctly and then appeared to vanish: on
+`/chronicle/2026-09-07` a member saw "Results finalized. No report results were
+recorded." while an admin on the same URL saw all eleven attendees, their
+effective goals and their recognised categories. Nothing was wrong with the
+data. `kut.chronicle_session_reports` ran as the reader
+(`security_invoker=true`) and inner-joins `kut.session_surveys`, which admits
+only `kut.is_admin()` or a member holding a `session_survey_eligibility` row —
+an attendee. Everyone who missed the session read zero rows. The
+`"members read finalized results"` policy on `kut.session_report_results`
+failed identically, because a referenced table's RLS is applied inside a policy
+expression, so its `exists()` over `session_surveys` was blind too.
+
+`20260923000000_chronicle_results_visibility.sql` makes the projection
+`security_invoker=false` — matching `chronicle_session_report_status`, whose
+definer rights are exactly why the status line, the 11-attendee count and the
+22-goal total *did* reach every member — and replaces the policy's inline
+`exists()` with a `security definer` `kut.is_survey_finalized(uuid)`. No data
+change. The join on `status='finalized'` is now the only guard keeping an open
+session out of the projection, so the tests assert it directly by reopening the
+finalized survey and re-reading as a member.
+
+The same change repairs three columns nobody had noticed were broken:
+`submitted_reports`, `eligible_accounts` and `attendee_count` are sub-selects
+over RLS-scoped tables, so an attendee computed "1 of 1 reports submitted". The
+page hid it by preferring the status view's counts and treating these as a
+fallback.
+
+Six new pgTAP assertions in `next_features_contracts.test.sql` (plan 40 → 46),
+using a new fixture member with no player link and no eligibility row: they read
+the finalized issue, see the club-wide submitted count of 3, select from
+`session_report_results` directly, and see nothing at all in either place once
+the survey is reopened.
+
+Verification: `verify:fast` PASS (14 files / 85 tests). The migration was
+applied to the local stack and the full pgTAP suite re-run against it: 14 files,
+455 assertions, zero failures (449 before, +6 here). The local schema reproduced
+the defect exactly — `chronicle_session_reports` reported `security_invoker=true`
+beside its sibling's `false` — before the migration flipped it. E2E runs in CI
+only. Not yet deployed; the migration ships from `VibeTrunk/supabase` per
+`docs/OPERATIONS.md`.

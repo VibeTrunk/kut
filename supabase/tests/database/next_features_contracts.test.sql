@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path to extensions,kut,public;
-select plan(40);
+select plan(46);
 
 select is((select price from kut.pack_definitions where slug='tfh-pack'),175::bigint,'basic pack price is exactly 175');
 select has_function('kut','open_pack',array['text','bigint','uuid'],'pack opening requires an expected price');
@@ -16,12 +16,14 @@ select has_table('kut','session_reports','session reports exist');
 select has_table('kut','session_report_rewards','once-only report reward receipts exist');
 select has_function('kut','finalize_session_surveys',array['integer'],'bounded finalizer exists');
 select has_view('kut','chronicle_session_report_status','Chronicle has a privacy-safe report progress projection');
+select has_function('kut','is_survey_finalized',array['uuid'],'finalization is provable without reading the survey row (ADR-066)');
 
 insert into auth.users(id,email,aud,role,raw_app_meta_data,raw_user_meta_data,created_at,updated_at) values
 ('20000000-0000-4000-8000-000000000001','want-a@example.test','authenticated','authenticated','{}','{}',now(),now()),
 ('20000000-0000-4000-8000-000000000002','want-b@example.test','authenticated','authenticated','{}','{}',now(),now()),
 ('20000000-0000-4000-8000-000000000003','report-admin@example.test','authenticated','authenticated','{}','{}',now(),now()),
-('20000000-0000-4000-8000-000000000004','report-c@example.test','authenticated','authenticated','{}','{}',now(),now());
+('20000000-0000-4000-8000-000000000004','report-c@example.test','authenticated','authenticated','{}','{}',now(),now()),
+('20000000-0000-4000-8000-000000000005','report-absent@example.test','authenticated','authenticated','{}','{}',now(),now());
 insert into kut.players(id,slug,display_name,archetype) values
 ('20000000-0000-4000-8000-000000000011','next-a','Next A','all_rounder'),
 ('20000000-0000-4000-8000-000000000012','next-b','Next B','all_rounder'),
@@ -31,7 +33,8 @@ insert into kut.profiles(id,display_name,role,player_id) values
 ('20000000-0000-4000-8000-000000000001','Want A','user','20000000-0000-4000-8000-000000000011'),
 ('20000000-0000-4000-8000-000000000002','Want B','user','20000000-0000-4000-8000-000000000012'),
 ('20000000-0000-4000-8000-000000000003','Report Admin','admin',null),
-('20000000-0000-4000-8000-000000000004','Report C','user','20000000-0000-4000-8000-000000000014');
+('20000000-0000-4000-8000-000000000004','Report C','user','20000000-0000-4000-8000-000000000014'),
+('20000000-0000-4000-8000-000000000005','Report Absent','user',null);
 insert into kut.card_editions(id,player_id,edition_type,title,is_live) values
 ('20000000-0000-4000-8000-000000000021','20000000-0000-4000-8000-000000000011','live','Next A Live',true),
 ('20000000-0000-4000-8000-000000000022','20000000-0000-4000-8000-000000000012','live','Next B Live',true);
@@ -93,6 +96,21 @@ select is((select count(*) from kut.user_notifications where user_id='20000000-0
 select is((select count(*) from kut.user_notifications where user_id='20000000-0000-4000-8000-000000000002' and event_type='kudos_awarded'),0::bigint,'an attendee with no recognized category gets no kudos-awarded notice');
 select ok((select body not ilike '%next %' from kut.user_notifications where user_id='20000000-0000-4000-8000-000000000001' and event_type='kudos_awarded' and reference_id='20000000-0000-4000-8000-000000000041'),'the kudos-awarded notice never names a nominator');
 reset role; select set_config('request.jwt.claim.role','',true);
+
+-- KB-013 / ADR-066: finalized results are a club-wide read model. A member who
+-- missed the session holds no session_survey_eligibility row, so under
+-- security_invoker the projection's join to session_surveys erased every row.
+set local role authenticated; set local request.jwt.claim.sub='20000000-0000-4000-8000-000000000005';
+select is((select count(*) from kut.chronicle_session_reports where session_id='20000000-0000-4000-8000-000000000041'),4::bigint,'a member who missed the session still reads its finalized Chronicle results');
+select is((select submitted_reports from kut.chronicle_session_reports where session_id='20000000-0000-4000-8000-000000000041' and player_id='20000000-0000-4000-8000-000000000011'),3,'Chronicle report counts are club-wide, not scoped to the reader own rows');
+select is((select count(*) from kut.session_report_results where session_id='20000000-0000-4000-8000-000000000041'),4::bigint,'the finalized-results policy no longer depends on survey eligibility');
+reset role;
+update kut.session_surveys set status='open',finalized_at=null where session_id='20000000-0000-4000-8000-000000000041';
+set local role authenticated; set local request.jwt.claim.sub='20000000-0000-4000-8000-000000000005';
+select is((select count(*) from kut.chronicle_session_reports where session_id='20000000-0000-4000-8000-000000000041'),0::bigint,'an unfinalized survey publishes no per-player Chronicle results');
+select is((select count(*) from kut.session_report_results where session_id='20000000-0000-4000-8000-000000000041'),0::bigint,'an unfinalized survey hides its result rows from members');
+reset role;
+update kut.session_surveys set status='finalized',finalized_at=now() where session_id='20000000-0000-4000-8000-000000000041';
 select lives_ok($$update kut.session_report_results set session_input=3.5 where session_id='20000000-0000-4000-8000-000000000041' and player_id='20000000-0000-4000-8000-000000000011'$$,'the combined per-session Form input may reach 3.5');
 select throws_ok($$update kut.session_report_results set session_input=3.6 where session_id='20000000-0000-4000-8000-000000000041' and player_id='20000000-0000-4000-8000-000000000011'$$,'23514',NULL,'the combined per-session Form input cannot exceed 3.5');
 set local role authenticated; set local request.jwt.claim.sub='20000000-0000-4000-8000-000000000003';

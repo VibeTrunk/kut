@@ -3014,10 +3014,16 @@ order and is read by a sequential scan, so it was previously in heap order.
 `explicit_skips` is read back from `kut.my_session_reports` so a saved Skip
 reopens as a Skip, and only a genuine explicit Skip is ever written as one.
 
-Not fixed here: `settings/card`'s archetype select, `settings/club-name-form`
-and the admin goal-override inputs share the same React reset and revert to
-their pre-save values (KB-016). They are cosmetic — the save succeeds and a
-reload shows the truth — and none of them can turn a revert into a wrong vote.
+Not fixed here: `settings/card`'s archetype select shares the same React reset
+and shows its pre-save value until a reload (KB-016). It is cosmetic — the save
+succeeds and a reload shows the truth — and cannot turn a revert into a wrong
+vote. Fixed in a follow-up with the same controlled + `onSubmit` combination.
+`settings/club-name-form` and the admin goal-override inputs were suspected of
+the same and then measured: they are fine. React's `updateInput` pushes a
+changed `defaultValue` to the DOM on every update, so an uncontrolled `<input>`
+picks up the revalidated value and the reset restores *that* — the asymmetry
+with `<select>`, which gets no equivalent, is exactly why the goals field
+survived while the kudos dropdowns did not.
 
 ## ADR-069 — The kudos notice names the categories and credits goals + kudos for the OVR move
 

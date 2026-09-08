@@ -1,6 +1,14 @@
 "use client";
 
-import { useActionState, useCallback, useEffect, useRef, useState, useTransition } from "react";
+import {
+  startTransition,
+  useActionState,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
 import { ARCHETYPES, ARCHETYPE_LABELS, type Archetype } from "@/game/archetypes";
 import { createClient } from "@/lib/supabase/client";
 import { PLAYER_PHOTO_BUCKET, playerPhotoPath } from "@/lib/player-photos";
@@ -41,6 +49,19 @@ export function CardEditor({
     savePlayerArchetype,
     null,
   );
+  // Controlled, and dispatched from onSubmit rather than through `action={...}`:
+  // React resets a form with a function action once that action settles, and the
+  // reset restores each control to its mount-time default. React re-applies a
+  // changed `defaultValue` to an <input> on update, so the club-name and
+  // goal-override fields recover on their own — but it never does that for a
+  // <select>, which left this one showing the pre-save archetype until a hard
+  // reload (ADR-068 / KB-016). Controlling it is necessary but not sufficient.
+  const [archetype, setArchetype] = useState<Archetype>(currentArchetype);
+  function submitArchetype(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    startTransition(() => archetypeAction(formData));
+  }
   const [photoState, photoAction] = useActionState(savePlayerPhoto, null);
   const [removeState, removeAction, removePending] = useActionState(clearPlayerPhoto, null);
   const [isSubmittingPhoto, startPhotoSubmit] = useTransition();
@@ -230,8 +251,13 @@ export function CardEditor({
             change your OVR. Saving recalculates every stat.
           </p>
         </div>
-        <form action={archetypeAction} className="space-y-3">
-          <select className={fieldClass} defaultValue={currentArchetype} name="archetype">
+        <form className="space-y-3" onSubmit={submitArchetype}>
+          <select
+            className={fieldClass}
+            name="archetype"
+            onChange={(event) => setArchetype(event.target.value as Archetype)}
+            value={archetype}
+          >
             {ARCHETYPES.map((value) => (
               <option key={value} value={value}>
                 {ARCHETYPE_LABELS[value]}

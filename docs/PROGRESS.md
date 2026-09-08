@@ -2749,8 +2749,11 @@ applied to the local stack and the full pgTAP suite re-run against it: 14 files,
 455 assertions, zero failures (449 before, +6 here). The local schema reproduced
 the defect exactly — `chronicle_session_reports` reported `security_invoker=true`
 beside its sibling's `false` — before the migration flipped it. E2E runs in CI
-only. Not yet deployed; the migration ships from `VibeTrunk/supabase` per
-`docs/OPERATIONS.md`.
+only. Deployed 2026-09-08 from `VibeTrunk/supabase` (catalogue PR #31), in one
+`db push` with ADR-067's migration; hosted checks confirm
+`chronicle_session_reports` reports `security_invoker` = `false` and
+`kut.is_survey_finalized` exists, and the week-of-7-September issue now renders
+the full per-player table on a non-admin account.
 ## Admins can close a report window early (ADR-067) — 2026-09-08
 
 The 24-hour report window is the right default and the wrong one once everybody
@@ -2785,7 +2788,10 @@ covering the gate, the reason, the audit columns, the preserved deadline, the
 quorum, the closed window, the untouched reward, idempotence and the automatic
 path's null audit trail. Two were caught and fixed while writing them: a plan
 miscount, and a reward read-back that was itself RLS-scoped to the wrong member.
-E2E runs in CI only. Not yet deployed; ships from `VibeTrunk/supabase`.
+E2E runs in CI only. Deployed 2026-09-08 from `VibeTrunk/supabase` (catalogue
+PR #31), in the same `db push` as ADR-066's migration; hosted checks confirm
+`kut.admin_finalize_session_survey` exists, both audit columns are present and
+nullable, and no survey row carries a non-null `finalized_by`.
 ## A wallet read that fails no longer reads as zero coins (KB-014) — 2026-09-08
 
 Tracing a member's report that their KUT Coins fell on a refresh: the ledger

@@ -2883,8 +2883,15 @@ join. All four body shapes were also driven end to end against the local stack
 by seeding ballots on a reopened survey and finalizing: three categories with
 two goals, two categories with one goal (singular), one category with no rating
 move, and three categories with no goals ("These kudos lifted…"). `verify:fast`
-PASS. ADR-069, `20260925000000_kudos_award_notice_detail.sql`; not yet deployed
-— hosted migrations ship from `VibeTrunk/supabase`.
+PASS. ADR-069, `20260925000000_kudos_award_notice_detail.sql`. Deployed
+2026-09-08 from `VibeTrunk/supabase` (catalogue PR #33), on its own additive
+`db push` on top of the ADR-066 / ADR-067 batch earlier the same day. Hosted
+checks confirm `kut._join_names` and the replaced `kut._finalize_one_session`
+exist, that the helper renders `Engine, Playmaker and The Wall`, and that the
+finalizer body now calls it; `migration list --linked` shows `20260925000000`
+Local = Remote with no drift across the ledger, and the catalogue check reports
+65 approved source migrations. Notices written before the push keep the ADR-063
+wording, so the club sees a mix until the next session finalizes.
 ## The archetype select stops contradicting its own save (KB-016) — 2026-09-08
 
 Follow-up to KB-015. Registering that bug, I noted three other forms that looked

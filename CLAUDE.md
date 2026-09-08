@@ -54,6 +54,27 @@ don't add cross-repo coupling beyond the shared Supabase project.
 
 KUT is live at `https://kut.vibetrunk.com` as Vercel project `kut`.
 
+Deployed 2026-09-08 from `VibeTrunk/supabase` (catalogue PR #33 there), on its
+own additive `db push` after the batch below:
+
+- `20260925000000_kudos_award_notice_detail.sql` (ADR-069, additive) &mdash;
+  the `kudos_awarded` notice from ADR-063 names the categories and says where
+  the OVR came from. New immutable `kut._join_names(text[])` renders a list as
+  `A` / `A and B` / `A, B and C` (execute to `service_role` only; it is called
+  from inside a `security definer` function). `kut._finalize_one_session` is
+  `create or replace`d so that body names every recognised category in *ballot*
+  order (`array_position` over `session_surveys.category_ids`, not
+  `category_id`) and credits this session's goals *and* kudos for the movement
+  &mdash; naming the goal count when `effective_goals > 0` ("Your 2 goals and
+  these kudos lifted your card rating +3 OVR this week") and claiming no goals
+  when it is not ("These kudos lifted&hellip;"). A movement of `<= 0` still adds
+  no rating sentence, and no nominator is ever named. Scoring, the season
+  rebuild, the `session_results` notice and the idempotency key are untouched;
+  no table, constraint, grant or rating-maths change and no DML. Notices already
+  written keep the old wording (the existing `on conflict &hellip; do nothing`),
+  so the club sees a mix until the next session finalizes. Rollback drops the
+  helper and re-runs the ADR-063 finalizer block.
+
 Deployed 2026-09-08 from `VibeTrunk/supabase` (PR #31 + #32 there) in one
 `db push`, both additive and neither changing data:
 

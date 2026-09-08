@@ -1066,13 +1066,22 @@ local browser pass: archetype change recalculates the six stats, a photo
 upload round-trips (browser upload &rarr; RPC &rarr; signed URL) and appears
 on Home / directory / collection, and the console shows zero CSP violations.
 
-Not yet deployed: this migration is local-only until it goes through the
-`VibeTrunk/supabase` ADR-021 workflow (catalogue byte-identical, extend
+Deployed 2026-08-30 from `VibeTrunk/supabase`, as one batch with
+`20260831000000` and `20260901000000` after KUT PR #8 merged, through the
+ADR-021 workflow (catalogue byte-identical, extend
 `scripts/verify-catalog.ps1` &rarr; expect "matches 31", backup,
 `migration list --linked`, `db push --dry-run` reviewing the `storage.*`
-statements, user-run `db push`). It is the first KUT migration that touches
-the `storage` schema. `docs/OPERATIONS.md` step 5 is now stale — the CSP
-lives in `src/proxy.ts`, not `vercel.json`.
+statements, user-run `db push`). The `player-photos` bucket (private, 5 MiB,
+webp/jpeg/png) and its four `storage.objects` policies were confirmed on the
+hosted project. It is the first KUT migration that touches the `storage`
+schema. `docs/OPERATIONS.md` step 5 is now stale — the CSP lives in
+`src/proxy.ts`, not `vercel.json`.
+
+(Corrected 2026-09-08: this paragraph opened "Not yet deployed: this migration
+is local-only until it goes through the `VibeTrunk/supabase` ADR-021 workflow"
+for nine days after the batch had actually gone out. The deploy facts above are
+taken from the catalogue's own record in `VibeTrunk/supabase`'s `CLAUDE.md`,
+which is authoritative for hosted state.)
 
 ## Username sign-up, admin account links, attendance-reward inbox messages - 2026-08-29
 

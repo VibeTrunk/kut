@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path to extensions,kut,public;
-select plan(46);
+select plan(52);
 
 select is((select price from kut.pack_definitions where slug='tfh-pack'),175::bigint,'basic pack price is exactly 175');
 select has_function('kut','open_pack',array['text','bigint','uuid'],'pack opening requires an expected price');
@@ -95,6 +95,13 @@ select is((select snapshot.live_ovr from kut.player_rating_snapshots snapshot jo
 select is((select count(*) from kut.user_notifications where user_id='20000000-0000-4000-8000-000000000001' and event_type='kudos_awarded' and reference_type='match_session' and reference_id='20000000-0000-4000-8000-000000000041'),1::bigint,'a recognized player is told they were awarded kudos');
 select is((select count(*) from kut.user_notifications where user_id='20000000-0000-4000-8000-000000000002' and event_type='kudos_awarded'),0::bigint,'an attendee with no recognized category gets no kudos-awarded notice');
 select ok((select body not ilike '%next %' from kut.user_notifications where user_id='20000000-0000-4000-8000-000000000001' and event_type='kudos_awarded' and reference_id='20000000-0000-4000-8000-000000000041'),'the kudos-awarded notice never names a nominator');
+-- ADR-069: the notice names the categories and attributes the move to goals + kudos.
+select is((select body from kut.user_notifications where user_id='20000000-0000-4000-8000-000000000001' and event_type='kudos_awarded' and reference_id='20000000-0000-4000-8000-000000000041'),'Teammates recognized you for '||(select c.title from kut.kudos_categories c where c.id=(select category_ids[1] from kut.session_surveys where session_id='20000000-0000-4000-8000-000000000041'))||' this session. Your 1 goal and these kudos lifted your card rating +2 OVR this week.','the kudos-awarded notice names the recognized category and credits this session goals and kudos for the OVR move');
+select ok((select body not like '%'||(select c.title from kut.kudos_categories c where c.id=(select category_ids[2] from kut.session_surveys where session_id='20000000-0000-4000-8000-000000000041'))||'%' from kut.user_notifications where user_id='20000000-0000-4000-8000-000000000001' and event_type='kudos_awarded' and reference_id='20000000-0000-4000-8000-000000000041'),'the notice does not name a category the player was not recognized in');
+select is(kut._join_names(array['Engine']),'Engine','one recognized category is named on its own');
+select is(kut._join_names(array['Engine','Playmaker']),'Engine and Playmaker','two recognized categories are joined with and');
+select is(kut._join_names(array['Engine','Playmaker','The Wall']),'Engine, Playmaker and The Wall','three recognized categories are comma-joined with a trailing and');
+select is(kut._join_names('{}'::text[]),null,'no recognized category yields no name list');
 reset role; select set_config('request.jwt.claim.role','',true);
 
 -- KB-013 / ADR-066: finalized results are a club-wide read model. A member who

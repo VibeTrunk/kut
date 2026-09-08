@@ -3018,3 +3018,51 @@ Not fixed here: `settings/card`'s archetype select, `settings/club-name-form`
 and the admin goal-override inputs share the same React reset and revert to
 their pre-save values (KB-016). They are cosmetic — the save succeeds and a
 reload shows the truth — and none of them can turn a revert into a wrong vote.
+
+## ADR-069 — The kudos notice names the categories and credits goals + kudos for the OVR move
+
+Date: 2026-09-08
+
+Status: Accepted
+
+Decision: the `kudos_awarded` notification body introduced by ADR-063 is
+rewritten to name every category the player was recognised in, in the order the
+session's ballot presented them, and to attribute the rating movement to what
+produced it — this session's reported goals *and* the kudos. A new immutable
+helper `kut._join_names(text[])` renders the list as "Engine", "Engine and
+Playmaker", or "Engine, Playmaker and The Wall". Migration
+`20260925000000_kudos_award_notice_detail.sql`.
+
+The four shapes the body can take:
+
+- `Teammates recognized you for The Wall, Playmaker and Level Up this session.
+  Your 2 goals and these kudos lifted your card rating +3 OVR this week.`
+- `… Your 1 goal and these kudos lifted your card rating +1 OVR this week.`
+  (singular where the count is one)
+- `… These kudos lifted your card rating +1 OVR this week.` (no goals scored, so
+  no goals claimed)
+- `Teammates recognized you for The Wall this session.` (movement of zero or
+  less, so no rating sentence at all — unchanged from ADR-063)
+
+Reason: the old body said only "Teammates recognized you with kudos this
+session. Your card rating rose +N OVR this week." Members could not tell what
+they had been recognised *for*, which is most of the reward — the categories are
+the compliment, the Form is the side effect. It also read as though the whole
+week's movement came from kudos, when at finalization the movement is precisely
+this session's goals plus its kudos; appearances were already counted when the
+session was published. Naming both is accurate and answers the question the
+vague version provoked.
+
+Consequences: text-only. One `create or replace` of `kut._finalize_one_session`
+plus one new helper; no table, constraint, grant, scoring rule or rating maths
+changes, and no data change. Notices already written keep the ADR-063 wording,
+because re-finalizing a session hits the existing `on conflict … do nothing` —
+so the club will see a mix until the next session finalizes, which is preferable
+to rewriting notices members have already read. The notice still names no
+nominator, still goes only to players with at least one recognised category, and
+still requires the unchanged quorum (a category needs two nominators, and the
+session needs three ballots). Six new pgTAP assertions in
+`next_features_contracts.test.sql` cover the full body of a single-category
+notice, that it names no category the player did not win, and the one/two/three
+and empty forms of the name join. The two- and three-category bodies were also
+driven end to end against the local stack with the real club fixture.

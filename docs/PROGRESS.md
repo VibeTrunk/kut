@@ -2862,3 +2862,26 @@ no skips, Submit stayed disabled while any category was undecided, and a
 duplicate pick was blocked and named. No migration; the RPC contract is
 unchanged. ADR-068. The same React reset affects three cosmetic surfaces
 elsewhere, registered as KB-016.
+## The kudos notice says what you won and why your card moved — 2026-09-08
+
+ADR-063's `kudos_awarded` body was deliberately vague: "Teammates recognized you
+with kudos this session. Your card rating rose +N OVR this week." It withheld
+the part that is actually the reward — which categories — and implied the whole
+week's movement came from kudos.
+
+The body now names every recognised category in ballot order, joined by a new
+`kut._join_names(text[])` helper as "A", "A and B" or "A, B and C", and credits
+the movement to this session's goals *and* kudos, naming the goal count when
+there is one and claiming no goals when the player scored none. A movement of
+zero or less still produces no rating sentence, and the notice still names no
+nominator.
+
+Verification: 482 pgTAP assertions across 15 files, zero failures — six of them
+new, covering the full body text of a single-category notice, that it names no
+category the player did not win, and the one/two/three/empty forms of the name
+join. All four body shapes were also driven end to end against the local stack
+by seeding ballots on a reopened survey and finalizing: three categories with
+two goals, two categories with one goal (singular), one category with no rating
+move, and three categories with no goals ("These kudos lifted…"). `verify:fast`
+PASS. ADR-069, `20260925000000_kudos_award_notice_detail.sql`; not yet deployed
+— hosted migrations ship from `VibeTrunk/supabase`.

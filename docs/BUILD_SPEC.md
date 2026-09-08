@@ -4780,4 +4780,9 @@ implementation ADRs are ADR-055 through ADR-059.
   player, a `kudos_awarded` notification that omits the nominator and states the
   OVR change. Admin goal corrections for
   members or guests require a reason, recalculate final results and never pay
-  a reward.
+  a reward. An admin may also close a session's report window before its 24
+  hours elapse (`kut.admin_finalize_session_survey`, ADR-067): same scoring, same
+  rebuild, same notifications, with the closing admin and a required reason
+  recorded on the survey and the published `closes_at` left intact. Members who
+  had not submitted lose the window and its reward; nothing already earned is
+  clawed back.

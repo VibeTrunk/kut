@@ -1066,13 +1066,22 @@ local browser pass: archetype change recalculates the six stats, a photo
 upload round-trips (browser upload &rarr; RPC &rarr; signed URL) and appears
 on Home / directory / collection, and the console shows zero CSP violations.
 
-Not yet deployed: this migration is local-only until it goes through the
-`VibeTrunk/supabase` ADR-021 workflow (catalogue byte-identical, extend
+Deployed 2026-08-30 from `VibeTrunk/supabase`, as one batch with
+`20260831000000` and `20260901000000` after KUT PR #8 merged, through the
+ADR-021 workflow (catalogue byte-identical, extend
 `scripts/verify-catalog.ps1` &rarr; expect "matches 31", backup,
 `migration list --linked`, `db push --dry-run` reviewing the `storage.*`
-statements, user-run `db push`). It is the first KUT migration that touches
-the `storage` schema. `docs/OPERATIONS.md` step 5 is now stale — the CSP
-lives in `src/proxy.ts`, not `vercel.json`.
+statements, user-run `db push`). The `player-photos` bucket (private, 5 MiB,
+webp/jpeg/png) and its four `storage.objects` policies were confirmed on the
+hosted project. It is the first KUT migration that touches the `storage`
+schema. `docs/OPERATIONS.md` step 5 is now stale — the CSP lives in
+`src/proxy.ts`, not `vercel.json`.
+
+(Corrected 2026-09-08: this paragraph opened "Not yet deployed: this migration
+is local-only until it goes through the `VibeTrunk/supabase` ADR-021 workflow"
+for nine days after the batch had actually gone out. The deploy facts above are
+taken from the catalogue's own record in `VibeTrunk/supabase`'s `CLAUDE.md`,
+which is authoritative for hosted state.)
 
 ## Username sign-up, admin account links, attendance-reward inbox messages - 2026-08-29
 
@@ -2749,8 +2758,11 @@ applied to the local stack and the full pgTAP suite re-run against it: 14 files,
 455 assertions, zero failures (449 before, +6 here). The local schema reproduced
 the defect exactly — `chronicle_session_reports` reported `security_invoker=true`
 beside its sibling's `false` — before the migration flipped it. E2E runs in CI
-only. Not yet deployed; the migration ships from `VibeTrunk/supabase` per
-`docs/OPERATIONS.md`.
+only. Deployed 2026-09-08 from `VibeTrunk/supabase` (catalogue PR #31), in one
+`db push` with ADR-067's migration; hosted checks confirm
+`chronicle_session_reports` reports `security_invoker` = `false` and
+`kut.is_survey_finalized` exists, and the week-of-7-September issue now renders
+the full per-player table on a non-admin account.
 ## Admins can close a report window early (ADR-067) — 2026-09-08
 
 The 24-hour report window is the right default and the wrong one once everybody
@@ -2785,7 +2797,10 @@ covering the gate, the reason, the audit columns, the preserved deadline, the
 quorum, the closed window, the untouched reward, idempotence and the automatic
 path's null audit trail. Two were caught and fixed while writing them: a plan
 miscount, and a reward read-back that was itself RLS-scoped to the wrong member.
-E2E runs in CI only. Not yet deployed; ships from `VibeTrunk/supabase`.
+E2E runs in CI only. Deployed 2026-09-08 from `VibeTrunk/supabase` (catalogue
+PR #31), in the same `db push` as ADR-066's migration; hosted checks confirm
+`kut.admin_finalize_session_survey` exists, both audit columns are present and
+nullable, and no survey row carries a non-null `finalized_by`.
 ## A wallet read that fails no longer reads as zero coins (KB-014) — 2026-09-08
 
 Tracing a member's report that their KUT Coins fell on a refresh: the ledger

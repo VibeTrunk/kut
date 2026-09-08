@@ -54,6 +54,44 @@ don't add cross-repo coupling beyond the shared Supabase project.
 
 KUT is live at `https://kut.vibetrunk.com` as Vercel project `kut`.
 
+Deployed 2026-09-08 from `VibeTrunk/supabase` (PR #31 + #32 there) in one
+`db push`, both additive and neither changing data:
+
+- `20260923000000_chronicle_results_visibility.sql` (ADR-066, additive) &mdash;
+  fixes a live blackout (KB-013) in which only a session's attendees and admins
+  could read its finalized Chronicle results; everyone who missed the session
+  saw "Results finalized. No report results were recorded."
+  `kut.chronicle_session_reports` ran with `security_invoker=true` and
+  inner-joins `kut.session_surveys`, whose policy admits only `kut.is_admin()`
+  or a member holding a `session_survey_eligibility` row, and the
+  `"members read finalized results"` policy failed the same way because
+  Postgres applies a referenced table's RLS inside a policy expression. The
+  projection becomes `security_invoker=false`, matching its sibling
+  `kut.chronicle_session_report_status`, and the policy proves finalization
+  through a new `security definer` `kut.is_survey_finalized(uuid)`. Also repairs
+  `submitted_reports` / `eligible_accounts` / `attendee_count`, RLS-scoped
+  sub-selects that made an attendee compute "1 of 1 reports submitted". The join
+  on `status='finalized'` is now the only guard keeping an open session out of
+  the projection &mdash; do not drop it. Rollback restores the invoker view and
+  the inline-`exists()` policy and drops the function, reinstating the blackout.
+- `20260924000000_admin_finalize_session_survey.sql` (ADR-067, additive) &mdash;
+  `kut.admin_finalize_session_survey(uuid, text)` lets an admin close a report
+  window before its 24 hours elapse, from
+  `/admin/attendance/[sessionId]/reports`. A gated front door to
+  `kut._finalize_one_session`: same scoring, same `_rebuild_season_core`, same
+  `session_results` / `kudos_awarded` notices &mdash; only the timing moves.
+  Gated on `kut.is_admin()`, requires a 3&ndash;500 character reason, refuses a
+  cancelled survey, returns `already_finalized` instead of raising on a second
+  press. `kut.session_surveys` gains nullable `finalized_by` &rarr;
+  `kut.profiles(id)` and `finalized_reason`; both stay null on the automatic
+  path and on the re-finalization `admin_correct_session_goals` triggers, so
+  null means "closed at its deadline". `closes_at` is deliberately not moved
+  (the table's `check (closes_at = opened_at + interval '24 hours')` would force
+  rewriting `opened_at`), so an early close reads as
+  `finalized_at < closes_at`. A member who had not submitted loses the window
+  and the 50-coin completion reward; rewards already earned are untouched.
+  Rollback drops the function and both columns.
+
 On top of the rating-v2 / member-reporting batch (`20260916000000` &hellip;
 `20260920090000`, deployed 2026-09-06 from `VibeTrunk/supabase`):
 

@@ -32,3 +32,25 @@ export async function correctGoals(formData: FormData) {
   revalidatePath(`/admin/attendance/${sessionId}/reports`);
   revalidatePath("/chronicle", "layout");
 }
+
+/**
+ * Closes a session's report window before its 24 hours are up (ADR-067).
+ * Members who have not submitted lose the ability to, and with it the
+ * completion reward — the page states the count before this is called.
+ */
+export async function finalizeReports(formData: FormData) {
+  await requireAdmin();
+  const sessionId = String(formData.get("sessionId") ?? "");
+  const reason = String(formData.get("reason") ?? "").trim();
+  if (!isUuid(sessionId) || reason.length < 3 || reason.length > 500)
+    throw new Error("A reason of 3 to 500 characters is required.");
+  const supabase = await createClient();
+  const { error } = await supabase.schema("kut").rpc("admin_finalize_session_survey", {
+    p_session_id: sessionId,
+    p_reason: reason,
+  });
+  if (error) throw new Error("The report window could not be closed.");
+  revalidatePath(`/admin/attendance/${sessionId}/reports`);
+  revalidatePath("/chronicle", "layout");
+  revalidatePath("/");
+}

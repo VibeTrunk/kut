@@ -2870,3 +2870,28 @@ two goals, two categories with one goal (singular), one category with no rating
 move, and three categories with no goals ("These kudos lifted…"). `verify:fast`
 PASS. ADR-069, `20260925000000_kudos_award_notice_detail.sql`; not yet deployed
 — hosted migrations ship from `VibeTrunk/supabase`.
+## The archetype select stops contradicting its own save (KB-016) — 2026-09-08
+
+Follow-up to KB-015. Registering that bug, I noted three other forms that looked
+like they shared the React post-action reset. Driving all three against the
+local stack, only one of them actually does.
+
+The card editor's archetype `<select>` saved correctly — RPC ran, stats
+recalculated, "Archetype updated" shown — and then kept displaying the previous
+archetype until a hard reload, so the page contradicted its own confirmation.
+Fixed the way KB-015 was: controlled *and* dispatched from `onSubmit`, since
+controlling a `<select>` alone was already proven insufficient.
+
+The club-name field and the admin goal-override inputs do **not** revert, and
+the register has been corrected. React's `updateInput` pushes a changed
+`defaultValue` to the DOM on every update, so an uncontrolled `<input>` picks up
+the revalidated server value and the reset restores that; a `<select>` gets no
+equivalent. That asymmetry is the whole reason the same `<form action={fn}>`
+pattern is harmless on one control type and destructive on the other — which is
+also why the goals field survived while the kudos dropdowns did not.
+
+Verification: `verify:fast` PASS. Driven end to end as a member: saving an
+archetype now leaves the select on the new value, a hard reload agrees, and
+`kut.players.archetype` matches; the club name overwrote an existing value and
+held; the admin goal override held and its row read back "Goals: 4 (admin
+correction)". No migration, no schema surface.

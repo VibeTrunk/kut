@@ -100,8 +100,17 @@ export default async function Home() {
     supabase,
     risers.map((player) => player.photo_path),
   );
-  const balance = walletResponse.data?.balance ?? 0;
-  const clubValue = clubValueResponse.data?.club_value ?? balance;
+  // A failed read is not a zero balance (KB-014): both stats degrade to "we
+  // don't know" rather than asserting a figure the member never had. The
+  // `?? balance` on Club Value stays — a member with no cards has no
+  // my_club_value row, and their club really is worth just their coins.
+  if (walletResponse.error) console.error("home wallet read failed", walletResponse.error);
+  if (clubValueResponse.error)
+    console.error("home club value read failed", clubValueResponse.error);
+  const balance = walletResponse.error ? null : (walletResponse.data?.balance ?? 0);
+  const clubValue = clubValueResponse.error
+    ? null
+    : (clubValueResponse.data?.club_value ?? balance);
   const rank = rankResponse.data?.rank ?? null;
   // The activity feed is a non-critical widget — never fail the Home page over it.
   const activity = (activityResponse.data ?? []) as ActivityRow[];
@@ -176,7 +185,7 @@ export default async function Home() {
               KUT Coins
             </dt>
             <dd className="mt-1.5 text-3xl font-black tabular-nums tracking-tight text-brass">
-              {balance.toLocaleString()}
+              {balance === null ? "—" : balance.toLocaleString()}
             </dd>
             <dd className="mt-1 text-xs font-bold text-ink-faint">Wallet balance</dd>
           </div>
@@ -188,7 +197,7 @@ export default async function Home() {
               Club Value
             </dt>
             <dd className="mt-1.5 text-3xl font-black tabular-nums tracking-tight group-hover:text-brass">
-              {Number(clubValue).toLocaleString()}
+              {clubValue === null ? "—" : Number(clubValue).toLocaleString()}
             </dd>
             <dd className="mt-1 text-xs font-bold text-ink-faint group-hover:text-brass">
               See the maths &rarr;

@@ -9,13 +9,22 @@ import { buildPrimaryNavItems, type NavItem } from "./nav-items";
 type AppNavProps = {
   displayName: string;
   isAdmin: boolean;
-  balance: number;
+  /** null when the wallet read failed — render it as unknown, never as zero. */
+  balance: number | null;
   unreadCount: number;
   incomingOfferCount: number;
 };
 
 const focusRing =
   "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brass";
+
+// A balance we could not read is shown as an em dash. Rendering the failure as
+// "0" tells the member their coins are gone, which is the one thing the pill
+// must never say when it does not know (KB-014).
+const BALANCE_UNKNOWN = "—";
+function balanceLabel(balance: number | null) {
+  return balance === null ? "KUT Coins unavailable" : `${balance.toLocaleString()} KUT Coins`;
+}
 
 function TabBadge({ item }: { item: NavItem }) {
   const text = formatBadgeCount(item.badgeCount ?? 0);
@@ -104,9 +113,12 @@ export function AppNav({ displayName, balance, unreadCount, incomingOfferCount }
             ))}
           </nav>
           <div className="flex items-center gap-3">
-            <span className="flex items-center gap-1.5 rounded-full border border-brass/30 bg-gradient-to-b from-brass/15 to-brass/5 px-3.5 py-1.5 text-sm font-black tabular-nums text-brass">
+            <span
+              aria-label={balanceLabel(balance)}
+              className="flex items-center gap-1.5 rounded-full border border-brass/30 bg-gradient-to-b from-brass/15 to-brass/5 px-3.5 py-1.5 text-sm font-black tabular-nums text-brass"
+            >
               <IconCoin className="h-3.5 w-3.5" />
-              {balance.toLocaleString()}
+              {balance === null ? BALANCE_UNKNOWN : balance.toLocaleString()}
             </span>
             <MessagesLink className="h-9 w-9" unreadCount={unreadCount} />
             <Link
@@ -130,9 +142,14 @@ export function AppNav({ displayName, balance, unreadCount, incomingOfferCount }
           KUT
         </Link>
         <div className="flex min-w-0 items-center gap-2">
-          <span className="flex min-w-0 items-center gap-1 rounded-full border border-brass/30 bg-gradient-to-b from-brass/15 to-brass/5 px-3 py-1 text-xs font-black tabular-nums text-brass">
+          <span
+            aria-label={balanceLabel(balance)}
+            className="flex min-w-0 items-center gap-1 rounded-full border border-brass/30 bg-gradient-to-b from-brass/15 to-brass/5 px-3 py-1 text-xs font-black tabular-nums text-brass"
+          >
             <IconCoin className="h-3 w-3 shrink-0" />
-            <span className="truncate">{balance.toLocaleString()}</span>
+            <span className="truncate">
+              {balance === null ? BALANCE_UNKNOWN : balance.toLocaleString()}
+            </span>
           </span>
           <MessagesLink className="h-11 w-11" unreadCount={unreadCount} />
           <Link

@@ -2786,3 +2786,24 @@ quorum, the closed window, the untouched reward, idempotence and the automatic
 path's null audit trail. Two were caught and fixed while writing them: a plan
 miscount, and a reward read-back that was itself RLS-scoped to the wrong member.
 E2E runs in CI only. Not yet deployed; ships from `VibeTrunk/supabase`.
+## A wallet read that fails no longer reads as zero coins (KB-014) — 2026-09-08
+
+Tracing a member's report that their KUT Coins fell on a refresh: the ledger
+cleared them completely — `wallets.balance` equalled `sum(wallet_ledger.amount)`
+for every member in the club, and every movement in the window was accounted for
+(six discards up to 250, then a 175-coin pack). But the trace turned up the one
+place the UI can state a balance that was never real. `getNavContext` reads the
+wallet alongside the profile and never checks `walletResponse.error`, so
+`?? 0` turns any failed read into a confident zero in the header pill; Home does
+the same, then hands that fabricated figure to Club Value through
+`clubValue ?? balance`.
+
+`NavContext.balance` and `AppNavProps.balance` are now `number | null`. An error
+logs and yields null, and both coin pills — desktop and mobile — render an em
+dash with an `aria-label` of "KUT Coins unavailable". Home renders its wallet
+stat the same way. Club Value keeps its `?? balance` fallback for the *no-row*
+case, which is a real member who owns no cards and whose club really is worth
+just their coins, and degrades to an em dash only when the read itself failed.
+The pack store already threw on this error and is unchanged.
+
+Verification: `verify:fast` PASS. No migration, no schema surface.

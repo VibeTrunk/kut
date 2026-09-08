@@ -6,7 +6,12 @@ import { isAdminRole } from "@/lib/auth/roles";
 export type NavContext = {
   displayName: string;
   isAdmin: boolean;
-  balance: number;
+  /**
+   * null means the wallet could not be read, not that the member has no coins.
+   * A failed read used to collapse to 0 (KB-014) — the one value the nav can
+   * show that was never a real balance — so callers must render it as unknown.
+   */
+  balance: number | null;
   unreadCount: number;
   incomingOfferCount: number;
 };
@@ -52,6 +57,13 @@ export const getNavContext = cache(async (): Promise<NavContext> => {
     redirect("/login");
   }
 
+  // A wallet read can fail on its own without the page being unusable, so the
+  // nav degrades to "unknown" rather than throwing the whole shell away. What
+  // it must never do is state a balance the member does not have.
+  if (walletResponse.error) {
+    console.error("nav wallet read failed", walletResponse.error);
+  }
+
   // First-login gate: a member whose starter pack was granted but never opened
   // is held at the full-screen /welcome reveal (see ADR-031).
   if (profile.starter_claimed_at && !profile.starter_opened_at) {
@@ -61,7 +73,7 @@ export const getNavContext = cache(async (): Promise<NavContext> => {
   return {
     displayName: profile.display_name,
     isAdmin: isAdminRole(profile.role),
-    balance: walletResponse.data?.balance ?? 0,
+    balance: walletResponse.error ? null : (walletResponse.data?.balance ?? 0),
     unreadCount: notificationsResponse.count ?? 0,
     incomingOfferCount: offersResponse.count ?? 0,
   };

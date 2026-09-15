@@ -47,13 +47,39 @@ export function parseDotenv(source) {
   return values;
 }
 
+// Each locator names the canonical `.env.local` key first. Later entries are
+// accepted spellings that predate `.env.example`: operator files already
+// carried `KUT_SUPABASE_DB_PASSWORD` before the bootstrap existed, and making
+// someone hand-edit a secrets file to satisfy a rename is a worse failure mode
+// than accepting both.
+const BOOTSTRAP_MAPPINGS = [
+  { locator: "backup-encryption-v1", keys: ["KUT_BACKUP_PASSPHRASE"] },
+  { locator: "hosted-db-v1", keys: ["KUT_HOSTED_DB_PASSWORD", "KUT_SUPABASE_DB_PASSWORD"] },
+];
+
 export function validateBootstrapValues(values) {
-  const mappings = [
-    ["KUT_BACKUP_PASSPHRASE", "backup-encryption-v1"],
-    ["KUT_HOSTED_DB_PASSWORD", "hosted-db-v1"],
-  ];
-  const missing = mappings.filter(([key]) => !values[key]).map(([key]) => key);
+  const resolved = [];
+  const missing = [];
+
+  for (const { locator, keys } of BOOTSTRAP_MAPPINGS) {
+    const present = keys.filter((key) => values[key]);
+    if (present.length === 0) {
+      missing.push(keys.length === 1 ? keys[0] : `${keys[0]} (or ${keys.slice(1).join(", ")})`);
+      continue;
+    }
+    // Two spellings holding different secrets is unresolvable: picking either
+    // could store the wrong password under a locator nothing would re-check.
+    const distinct = new Set(present.map((key) => values[key]));
+    if (distinct.size > 1) {
+      throw new Error(
+        `Conflicting bootstrap values: ${present.join(" and ")} are both set to different values. ` +
+          `Remove all but ${keys[0]}.`,
+      );
+    }
+    resolved.push({ key: present[0], locator, value: values[present[0]] });
+  }
+
   if (missing.length)
     throw new Error(`Missing or empty bootstrap value(s): ${missing.join(", ")}.`);
-  return mappings.map(([key, locator]) => ({ key, locator, value: values[key] }));
+  return resolved;
 }

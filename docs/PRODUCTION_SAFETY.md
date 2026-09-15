@@ -81,8 +81,18 @@ dependency-audit jobs. Gitleaks runs separately with an immutable container
 digest.
 
 After these files land and produce a green run, configure GitHub branch
-protection to require both `verify / merge-gate` and `gitleaks / scan`. That is
-an external administrative change and is intentionally not automated here.
+protection to require both **`merge-gate`** and **`scan`**. That is an external
+administrative change and is intentionally not automated here.
+
+Use those exact names. GitHub Actions reports a check run under its *job* name,
+not `workflow / job`, so requiring `verify / merge-gate` or `gitleaks / scan`
+would pin a context that never reports and leave every PR permanently pending —
+the same never-starts failure this workflow's always-present aggregator exists
+to prevent. Confirm the current names before changing protection:
+
+```powershell
+gh api "repos/VibeTrunk/kut/commits/main/check-runs?per_page=100" --jq '.check_runs[].name' | Sort-Object -Unique
+```
 
 Migration policy rejects modifying, deleting, copying, or renaming an existing
 `supabase/migrations/*.sql`; permits at most one added migration; and requires a

@@ -65,10 +65,12 @@ wallets, cards, sessions, or market history.
 ## Production evidence gate
 
 PR checks and release evidence are now mechanical; the detailed contract is
-`docs/PRODUCTION_SAFETY.md`. The always-present `verify / merge-gate` accepts
-skipped expensive jobs only for a docs-only diff. Configure it and
-`gitleaks / scan` as required branch checks after the workflow has landed and
-passed once; changing branch protection is a separate external action.
+`docs/PRODUCTION_SAFETY.md`. The always-present `merge-gate` accepts skipped
+expensive jobs only for a docs-only diff. Configure it and `scan` as required
+branch checks after the workflow has landed and passed once; changing branch
+protection is a separate external action. Those bare job names are the contexts
+GitHub actually reports — `verify / merge-gate` would never report and would
+block every PR.
 
 A release candidate is one exact commit SHA. From a clean checkout and a
 hook-verified production agent session, run:

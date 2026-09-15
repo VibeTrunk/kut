@@ -3029,8 +3029,8 @@ reports 0 vulnerabilities; DPAPI credential-store and separate-process cold-
 verify/rekey pipeline tests pass; the 64-file catalogue hash check passes.
 
 Still deliberately external: land the repository change, observe a green CI
-run, then separately authorize configuring `verify / merge-gate` and
-`gitleaks / scan` as required checks. Real credential bootstrap, a hosted
+run, then separately authorize configuring `merge-gate` and `scan` as required
+checks (bare job names; corrected 2026-09-15). Real credential bootstrap, a hosted
 backup, a clean-SHA production gate, release approval, push, merge, hosted
 migration, and deployment were not performed.
 

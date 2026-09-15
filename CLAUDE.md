@@ -12,6 +12,30 @@ specification lives in [`docs/BUILD_SPEC.md`](docs/BUILD_SPEC.md) — read it
 in full before implementing anything; this file is orientation, not a
 substitute.
 
+<!-- BEGIN:KUT-PRODUCTION-INVARIANTS -->
+## Production-safety invariants
+
+This block is generated from `policy/PRODUCTION_INVARIANTS.md`. Run
+`npm run policy:sync` after changing the source; CI rejects drift.
+
+- Never output secrets or reversible encodings of secrets.
+- One migration- or invariant-bearing feature is allowed per PR or independently reviewable change slice.
+- Never deploy when a required release gate has not run successfully for the exact candidate SHA.
+- Never declare an encrypted backup successful unless its credential is durably retrievable and an independent recovery check passes.
+- Production release approval never authorizes deployment, migration application, branch-protection changes, secret changes, or any other external mutation. Each needs a separate explicit instruction.
+- Hosted Supabase migrations are applied only from `VibeTrunk/supabase`, never from this repository. Existing migration files are immutable; a change may add at most one migration and must include a database test or reviewed machine-readable exemption.
+- A production candidate is one exact 40-character commit SHA. Every gate artifact and external check must name that SHA; skipped, stale, cancelled, missing, or mismatched evidence fails closed.
+- Production-sensitive agent sessions start through the repository launcher. Codex uses `gpt-6-astra` with high reasoning when available, otherwise `gpt-5.6-sol` with high reasoning; Claude uses Opus. Session hooks record what they can actually observe: Codex does not expose reasoning effort, and Claude Code sends a model to `SessionStart` only sometimes and cannot abort a session there. Evidence says which checks were attested and which are launcher-enforced, and the gate fails closed on anything it cannot establish.
+- Committing, pushing, and deploying are per-change authorization decisions, never standing permissions. No agent rule set auto-allows `git commit`, `git push`, or a Supabase function deployment.
+- Database-backed test fixtures create and delete real rows and users. They refuse any non-loopback target unless an operator sets the explicit acknowledgement variable, which CI and every repository script leave unset.
+- Production credentials are retrieved by stable locator from the Windows DPAPI store under `%LOCALAPPDATA%\VibeTrunk\kut\credentials`. `.env.local` is an explicit, interactive bootstrap source only and is never a runtime fallback.
+- Backup plaintext and database passwords never appear in process arguments or durable logs. Encryption and cold verification run in separate child processes that independently retrieve credentials.
+- A backup becomes final only after a separate-process decrypt produces the expected plaintext SHA-256. Failure removes only the new pending candidate and never overwrites or bulk-deletes existing backups.
+- Rekeying always writes a new staged candidate. It verifies old and new plaintext hashes in separate processes and never overwrites the source backup.
+- The release gate is fail-closed and does not deploy. It requires the merge gate, secret scan, dependency scan, database and concurrency suites, authenticated mobile E2E, finalizer readiness, migration/catalogue parity, a cold-verified backup, and valid agent-session evidence.
+- The 23 game/economy invariants in `docs/BUILD_SPEC.md` Part L remain the canonical product regression checklist and must all stay true.
+<!-- END:KUT-PRODUCTION-INVARIANTS -->
+
 ## Status so far
 - **Repo:** feature-complete MVP built and committed; see "Current hosted
   deployment" below for what's live.
@@ -33,9 +57,11 @@ substitute.
     deployed separately from `VibeTrunk/supabase`, so a bundled PR cannot be
     reverted without dragging unrelated work with it while the hosted schema
     stays migrated. One such change per PR. Since ADR-070 this is enforced
-    mechanically: the `migrations` job in `.github/workflows/verify.yml` fails
-    any PR whose diff against the merge base touches more than one
-    `supabase/migrations/*.sql`. There is no label override.
+    mechanically: the `migrations` job in `.github/workflows/verify.yml`
+    rejects any modification/deletion/rename/copy of an existing migration,
+    permits at most one newly added `supabase/migrations/*.sql`, and requires a
+    changed database test or reviewed machine-readable exemption. There is no
+    label override.
   - **Never run two agents in one working tree.** Each holds stale file state
     and they will silently clobber each other. Serialize them on the branch,
     or give each its own `git worktree` and merge into the PR branch.
@@ -284,6 +310,14 @@ Live-mutating Supabase CLI commands (`supabase db push` for real, `supabase
 db reset`, `supabase secrets set`) are intentionally **not** auto-allowed —
 they change the live schema or rotate live credentials for every VibeTrunk
 tool sharing this Supabase project, so each use should get a deliberate look
-rather than running unattended. Read-only/dry-run commands (`supabase
-migration list`, `supabase db push --dry-run`, `supabase functions deploy`)
-are allowed.
+rather than running unattended. Genuinely read-only commands (`supabase
+migration list`, `supabase db push --dry-run`) are allowed.
+
+`supabase functions deploy` is **not** in that read-only set, and since
+ADR-071 is no longer auto-allowed: it ships code to the shared hosted project,
+so being reversible does not make it unattended. `git commit` and `git push`
+are likewise no longer auto-allowed in either rule set. A standing permission
+is not per-change authorization — conflating the two is how one session
+produced a 140-file, 14-migration commit — so each of these now surfaces an
+approval prompt. Direct pushes to `main` are denied outright; branch
+protection rejects them anyway.

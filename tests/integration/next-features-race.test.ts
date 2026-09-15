@@ -1,8 +1,8 @@
 import { Client } from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { localDatabaseUrl } from "../support/local-target";
 
-const url =
-  process.env.KUT_LOCAL_DATABASE_URL ?? "postgresql://postgres:postgres@127.0.0.1:54322/postgres";
+const url = localDatabaseUrl();
 const fx = {
   user: "30000000-0000-4000-8000-000000000001",
   low: "30000000-0000-4000-8000-000000000002",

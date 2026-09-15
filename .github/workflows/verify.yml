@@ -3,18 +3,7 @@ name: verify
 on:
   push:
     branches: [main]
-    # Docs-only changes skip CI entirely (the `database` job alone is ~5 min).
-    # Safe today because no status check is required to merge to main
-    # (branch protection: required_status_checks is null). If checks are ever
-    # made required, remove this filter or add an always-succeeds shim job —
-    # a required check that never runs leaves the PR stuck pending.
-    paths-ignore:
-      - '**/*.md'
-      - 'docs/**'
   pull_request:
-    paths-ignore:
-      - '**/*.md'
-      - 'docs/**'
 
 permissions:
   contents: read
@@ -24,12 +13,25 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  # Single source of truth: both `setup-node` and the node_modules cache key
-  # read this, so the cached tree can never belong to a different Node major.
   NODE_VERSION: '24'
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      docs_only: ${{ steps.classify.outputs.docs_only }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - id: classify
+        name: Classify docs-only changes
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: node scripts/policy/classify-ci-change.mjs --base "$BASE_SHA"
+
   fast:
+    needs: changes
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -37,22 +39,14 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
-      # The flags are what matter here, not a cache: `npm ci` used to take
-      # 2m38s-5m02s per job *with* a warm npm cache, because it was making
-      # registry round trips for the audit and for metadata revalidation.
-      # --prefer-offline --no-audit drops that to 9-12s.
-      #
-      # A node_modules cache was measured on top of this and removed again:
-      # it saved only a further 5-7s of a ~104s run, while costing 140 MB of
-      # cache budget and, more importantly, the guarantee `npm ci` gives of
-      # a tree rebuilt from the lockfile every time. A cache save that
-      # happens on a cancelled or failed run can otherwise pin a partial
-      # tree until the lockfile changes.
       - run: npm ci --prefer-offline --no-audit --no-fund
       - run: npm run verify:fast
-      - run: npm run build
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run build
 
   e2e:
+    needs: changes
+    if: needs.changes.outputs.docs_only != 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -63,16 +57,14 @@ jobs:
       - run: npm ci --prefer-offline --no-audit --no-fund
       - name: Skip the flaky azure.archive.ubuntu.com mirror
         run: echo "http://archive.ubuntu.com/ubuntu" | sudo tee /etc/apt/apt-mirrors.txt
-      # Deliberately NOT cached. Measured on this PR: the step takes 29s with
-      # a warm browser cache and 29s without, because `--with-deps` apt work
-      # dominates and the browser download never was the cost. A cache here
-      # only added a 3s restore and ate 249 MB of the repo cache budget.
       - name: Install Playwright browsers
         timeout-minutes: 5
         run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
 
   database:
+    needs: changes
+    if: needs.changes.outputs.docs_only != 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -81,83 +73,66 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
       - run: npm ci --prefer-offline --no-audit --no-fund
-      # Only three of the CLI's fourteen containers are load-bearing here:
-      #   postgres     — obviously
-      #   storage-api  — its startup migrations create storage.buckets,
-      #                  storage.objects and storage.foldername(), all of which
-      #                  20260830000000_member_self_service_and_player_directory
-      #                  writes to. The base postgres image ships an *empty*
-      #                  `storage` schema, so excluding this breaks migrations.
-      #   kong         — `supabase start` finishes by reaching the storage API
-      #                  through the gateway; without it, start exits non-zero.
-      # auth is safe to exclude: auth.users and auth.uid()/role()/email() come
-      # from the postgres image itself, not from gotrue.
-      #
-      # `supabase start` on a fresh volume applies migrations *and* runs
-      # supabase/seed.sql ([db.seed] enabled = true), so the previous
-      # `supabase db reset --local` step was pure duplicated work. Verified
-      # locally against an isolated scratch project on this exact exclude
-      # list: 12 files / 398 tests pass with no reset step at all.
-      - name: Start only the containers the pgTAP suite needs
+      - name: Start the minimal pgTAP/integration stack
         run: npx supabase start -x gotrue,realtime,imgproxy,mailpit,postgrest,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
       - run: npm run test:db
-      # The tests/integration/ concurrency suites belong here rather than in a
-      # job of their own: they connect by raw `pg` to 127.0.0.1:54322 and need
-      # no PostgREST and no GoTrue, so the stack started above is already
-      # everything they require — they insert into auth.users as superuser and
-      # SET ROLE authenticated, both of which come from the postgres image, and
-      # their data dependencies (kut.pack_definitions 'tfh-pack', the kudos
-      # category ids) come from migrations, not seed.sql. A separate job would
-      # re-pay the ~2-3 min `supabase start` for no extra signal.
-      #
-      # Ordered after test:db on purpose: pgTAP runs inside a transaction and
-      # leaves nothing behind, while these suites mutate and then clean up, so
-      # running the transactional one first means a schema break is reported by
-      # the more precise suite.
-      #
-      # timeout-minutes because a concurrency suite that loses its lock
-      # ordering does not fail, it *hangs* — without a cap that burns the job's
-      # entire budget.
-      - name: Run the database concurrency suites
+      - name: Run database concurrency suites
         timeout-minutes: 5
         run: npm run test:integration
 
-  # CLAUDE.md: a PR carrying a supabase/migrations/*.sql may carry no other
-  # migration. Hosted migrations are deployed separately from
-  # VibeTrunk/supabase and squash-merge turns a PR into exactly one commit on
-  # main, so a bundled migration PR cannot be reverted without dragging
-  # unrelated work with it while the hosted schema stays migrated. That rule
-  # was violated once (14 migrations in a single PR, now permanently on the
-  # hosted schema); this is the mechanical guard.
-  #
-  # It inspects only the files *this PR changes* against the merge base, so
-  # the migrations already on main can never trip it — that is the mechanism,
-  # not a special case that needs maintaining as the count grows.
   migrations:
-    if: github.event_name == 'pull_request'
+    needs: changes
     runs-on: ubuntu-latest
     steps:
-      # fetch-depth: 0 so origin/<base> exists to diff against.
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-      - name: At most one migration per PR
+      - name: Enforce migration immutability, isolation and test evidence
         env:
-          BASE: ${{ github.base_ref }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: node scripts/policy/check-migration-policy.mjs --base "$BASE_SHA"
+
+  security:
+    needs: changes
+    if: needs.changes.outputs.docs_only != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci --prefer-offline --no-audit --no-fund
+      - name: Reject high-severity production dependency findings
+        run: npm audit --omit=dev --audit-level=high
+
+  # Configure this job and gitleaks / scan as required checks after this
+  # workflow has landed. Changing branch protection is an external operation
+  # and is deliberately not performed by repository code.
+  merge-gate:
+    if: always()
+    needs: [changes, fast, e2e, database, migrations, security]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require complete evidence for this change class
+        env:
+          DOCS_ONLY: ${{ needs.changes.outputs.docs_only }}
+          FAST: ${{ needs.fast.result }}
+          E2E: ${{ needs.e2e.result }}
+          DATABASE: ${{ needs.database.result }}
+          MIGRATIONS: ${{ needs.migrations.result }}
+          SECURITY: ${{ needs.security.result }}
         run: |
           set -euo pipefail
-          git fetch --quiet origin "$BASE"
-          changed=$(git diff --name-only --diff-filter=ACMR \
-            "origin/$BASE...HEAD" -- 'supabase/migrations/*.sql')
-          count=$(printf '%s' "$changed" | grep -c . || true)
-          if [ "$count" -gt 1 ]; then
-            echo "::error::This PR changes $count migrations; the limit is 1."
-            echo "$changed" | sed 's/^/  /'
-            echo
-            echo "See CLAUDE.md, 'Batching agent work into one PR': a hosted"
-            echo "migration is deployed from VibeTrunk/supabase and squash-merge"
-            echo "makes this PR one commit, so a bundled migration cannot be"
-            echo "reverted without dragging unrelated work with it. Split it."
-            exit 1
+          test "$FAST" = success
+          test "$MIGRATIONS" = success
+          if [ "$DOCS_ONLY" = true ]; then
+            test "$E2E" = skipped
+            test "$DATABASE" = skipped
+            test "$SECURITY" = skipped
+          else
+            test "$E2E" = success
+            test "$DATABASE" = success
+            test "$SECURITY" = success
           fi
-          echo "$count migration(s) changed — within the one-per-PR rule."
+          echo "Merge evidence is complete for $GITHUB_SHA."

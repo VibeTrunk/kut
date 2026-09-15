@@ -2990,3 +2990,87 @@ Local-stack note: the working copy was four migrations behind
 (`20260922000000`–`20260925000000`) and `20260925000000` had partially applied —
 `kut._join_names` existed but `kut._finalize_one_session` had not been replaced.
 Both were applied by `docker exec … psql` and the ledger now reads 64.
+
+## Durable production-safety controls (ADR-071) — 2026-09-15
+
+Implemented the repository half of the production-safety plan without touching
+application code, migrations, hosted data, credentials, GitHub settings,
+Vercel, or deployment state.
+
+- One canonical production-invariants source now generates a byte-identical,
+  directly visible block in `AGENTS.md` and `CLAUDE.md`; `verify:fast` rejects
+  drift. It expressly prohibits secret output, bundled migration/invariant
+  slices, ungated deployment, and unverified/unrecoverable backup claims.
+- CI now runs on docs-only changes, publishes an always-present `merge-gate`,
+  adds a production-dependency audit, and enforces immutable migration history,
+  one new migration, and companion pgTAP evidence or reviewed JSON exemption.
+  Gitleaks is pinned to the v8.30.1 linux/amd64 image digest.
+- Backup credentials now use stable Windows DPAPI locators. `.env.local` is an
+  explicit bootstrap source only, parsed with tested dotenv semantics. Backup
+  production, encryption, and cold verification are isolated across processes;
+  publication is atomic and rekeying stages a separately verified new file.
+- The SHA-bound non-deploying production gate requires exact fresh GitHub
+  evidence, KUT-to-central migration hashes, agent-session evidence,
+  authenticated member/admin mobile E2E, finalizer readiness, and both recent
+  and freshly repeated cold-backup verification. Release approval remains a
+  separate expiring artifact with `deployment_authorized = false`.
+- Codex and Claude production launchers plus `SessionStart` hooks fail on model
+  mismatch. Codex high reasoning is launcher-enforced and recorded because the
+  current hook payload cannot independently attest reasoning effort. Separate
+  session prompts now define specification, migration, integration, and release
+  handoffs and their authorization boundaries.
+
+Verification: formatting, lint, typecheck, workflow JSON/YAML parsing, and
+PowerShell parsing pass. Unit tests pass (18 files / 116 tests); pgTAP passes
+(15 files / 482 assertions); integration/finalizer tests pass (4 files / 6
+tests); unauthenticated E2E passes (26 tests); authenticated Pixel 7 member/admin
+E2E passes (2 tests); production build passes (29 pages); npm production audit
+reports 0 vulnerabilities; DPAPI credential-store and separate-process cold-
+verify/rekey pipeline tests pass; the 64-file catalogue hash check passes.
+
+Still deliberately external: land the repository change, observe a green CI
+run, then separately authorize configuring `verify / merge-gate` and
+`gitleaks / scan` as required checks. Real credential bootstrap, a hosted
+backup, a clean-SHA production gate, release approval, push, merge, hosted
+migration, and deployment were not performed.
+
+### ADR-071 review corrections (2026-09-15)
+
+A review of the unlanded ADR-071 tree, before it was committed, found five
+defects; all are fixed and recorded in the ADR-071 addendum in
+`docs/decisions.md`.
+
+The one that mattered most: the destructive test fixtures had no target guard.
+The authenticated Playwright setup deletes and recreates `auth.users`, every
+database suite took its connection string from an environment variable with
+only a loopback default, and the production gate itself requires `API_URL` and
+`DB_URL` to be exported — so an operator holding hosted values in their shell
+would have pointed those fixtures at production. `tests/support/local-target.ts`
+now refuses a non-loopback host across the integration suites, the Playwright
+global setup/teardown, and the authenticated Playwright config; verified by
+running the suite against a hosted-looking URL and watching it exit non-zero
+before a browser started, naming the host and not the password.
+
+Also: commit, push and `supabase functions deploy` no longer auto-allowed in
+either agent rule set (direct pushes to `main` denied); the Claude session hook
+rewritten as attest-only because `SessionStart` provably cannot abort a session
+and `model` is optional there, with real enforcement moved to a new
+`PreModelSwitch` guard that blocks a mid-release downgrade off Opus;
+`finalizer-readiness.test.ts` replaced with a real end-to-end finalization test;
+and the backup pipeline tests extended from happy-path only to 23 assertions
+covering wrong credential, tampered and truncated ciphertext, hash mismatch,
+evidence suppression and rekey failure, plus a recursive work-directory cleanup
+that can no longer mask the real error or strand plaintext.
+
+Verification after the corrections: `verify:fast` passes (20 files / 137 tests,
+up from 18 / 116); pgTAP passes (15 files / 482 assertions); integration passes
+(4 files / 9 tests); unauthenticated E2E passes (26 tests); authenticated mobile
+E2E passes at both Pixel 7 and 320x568 (4 tests); production build passes;
+credential-store, backup-pipeline (23 assertions) and the new
+session-receipt suite (21 assertions) pass; PowerShell parsing,
+hook JSON, workflow YAML, migration policy and invariant drift all clean; the
+release gate still fails closed on a dirty checkout.
+
+Still deliberately external and unchanged: nothing is committed or pushed, no
+branch protection, Vercel, Supabase or GitHub setting was touched, no credential
+was bootstrapped, and no backup, gate, approval or deployment was run.

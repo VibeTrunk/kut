@@ -13,14 +13,10 @@
       "Bash(git branch)",
       "Bash(git branch *)",
       "Bash(git add *)",
-      "Bash(git commit *)",
-      "Bash(git push)",
-      "Bash(git push origin main)",
       "Bash(npm install)",
       "Bash(npm run *)",
       "Bash(npx supabase migration list*)",
       "Bash(npx supabase db push --dry-run*)",
-      "Bash(npx supabase functions deploy *)",
       "Bash(gh pr view *)",
       "Bash(gh pr list*)",
       "Bash(gh run list*)",
@@ -41,7 +37,6 @@
       "PowerShell(npm run *)",
       "PowerShell(npx supabase migration list*)",
       "PowerShell(npx supabase db push --dry-run*)",
-      "PowerShell(npx supabase functions deploy *)",
       "PowerShell(ls)",
       "PowerShell(ls *)",
       "PowerShell(cat *)",
@@ -51,6 +46,10 @@
       "Grep"
     ],
     "deny": [
+      "Bash(git push origin main*)",
+      "Bash(git push * main)",
+      "PowerShell(git push origin main*)",
+      "PowerShell(git push * main)",
       "Bash(git push --force*)",
       "Bash(git push -f *)",
       "Bash(git push *--delete*)",
@@ -76,6 +75,33 @@
   },
 
   "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": [".claude/hooks/require-production-session.cjs"],
+            "timeout": 10,
+            "statusMessage": "Production session check"
+          }
+        ]
+      }
+    ],
+    "PreModelSwitch": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": [".claude/hooks/guard-production-model-switch.cjs"],
+            "timeout": 10,
+            "statusMessage": "Production model guard"
+          }
+        ]
+      }
+    ],
     "PreToolUse": [
       {
         "matcher": "Bash|PowerShell",

@@ -1,5 +1,19 @@
 {
   "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/.codex/hooks/require-production-session.cjs\"",
+            "commandWindows": "powershell -NoProfile -Command \"$root = git rev-parse --show-toplevel; node (Join-Path $root '.codex/hooks/require-production-session.cjs')\"",
+            "timeout": 10,
+            "statusMessage": "Production session check"
+          }
+        ]
+      }
+    ],
     "PreToolUse": [
       {
         "matcher": "^Bash$",

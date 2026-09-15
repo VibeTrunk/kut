@@ -4786,3 +4786,27 @@ implementation ADRs are ADR-055 through ADR-059.
   recorded on the survey and the published `closes_at` left intact. Members who
   had not submitted lose the window and its reward; nothing already earned is
   clawed back.
+
+---
+
+# IMPLEMENTED PRODUCTION-SAFETY AMENDMENT — 2026-09-15
+
+Production readiness is a fail-closed evidence contract for one exact commit
+SHA, not an informal checklist. CI always publishes one aggregate merge gate;
+docs-only classification may skip expensive jobs, while any executable change
+requires fast/build, E2E, database/pgTAP/concurrency, migration policy and
+dependency results. The independent secret scan is also required by operating
+policy.
+
+Existing migrations are immutable. A change may add at most one migration and
+must change a database test or carry a reviewed machine-readable exemption.
+Hosted migration authority remains exclusively in `VibeTrunk/supabase`.
+
+A production gate additionally requires byte-identical catalogue parity, an
+authenticated member/admin mobile E2E pass, finalizer-readiness proof, a fresh
+separate-process cold-verified encrypted backup, and production-agent session
+evidence. The gate and the separate release approval both explicitly deny
+deployment authority. Deployment, hosted migration application, branch
+protection, and secret changes always require their own explicit instruction.
+
+Detailed contracts and commands are in `docs/PRODUCTION_SAFETY.md` (ADR-071).

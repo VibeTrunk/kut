@@ -3211,3 +3211,155 @@ Historical references to `test:market-race` in `PROGRESS.md`, earlier entries of
 this file, `SECURITY_REVIEW.md` and `archive/` are left alone as a dated record
 of what was actually run at the time; `README.md` and `OPERATIONS.md`, which
 describe what to run *now*, are updated.
+
+## ADR-071 — Production release safety is fail-closed, SHA-bound, and non-deploying
+
+Date: 2026-09-15
+
+Status: Accepted
+
+Decision: production readiness is represented by machine-readable evidence for
+one exact commit SHA. The repository supplies the controls but makes no external
+configuration change in this slice.
+
+- `verify` runs for every PR and main push. An always-present `merge-gate`
+  accepts skipped database/E2E/security jobs only for a mechanically classified
+  docs-only diff. Executable changes require all of them. Gitleaks is pinned to
+  the reviewed v8.30.1 linux/amd64 image digest. After one green landing run,
+  branch protection should separately require `verify / merge-gate` and
+  `gitleaks / scan`.
+- The ADR-070 migration count check becomes an immutable-history policy:
+  modifying, deleting, copying or renaming a base migration fails; at most one
+  migration may be added; and it needs a changed database test or a reviewed
+  machine-readable exemption. Semantic Part L/RPC and risk-tier review remains
+  human work.
+- Production credentials use Windows DPAPI records under
+  `%LOCALAPPDATA%\VibeTrunk\kut\credentials`, addressed by stable nonsecret
+  locators `backup-encryption-v1` and `hosted-db-v1`. `.env.local` is accepted
+  only by an explicit bootstrap command, never as runtime fallback.
+- The backup orchestrator never receives secrets. One worker retrieves the two
+  credentials, puts the database password only in its child environment, dumps,
+  hashes and encrypts a pending candidate, deletes plaintext and exits. A new
+  process independently retrieves the passphrase and decrypts/hash-compares.
+  Only a passed candidate is atomically published. Rekey writes a new candidate
+  and separately verifies both old and new plaintext hashes; it never overwrites
+  existing generations.
+- Production-sensitive Codex sessions request `gpt-6-astra` at high reasoning,
+  with `gpt-5.6-sol` high as the explicit fallback. A `SessionStart` hook checks
+  the active model and attests a launcher receipt. Codex hook payloads expose
+  the model but not reasoning effort, so `high` is honestly launcher-enforced
+  and receipt-recorded rather than claimed as runtime-attested. The Claude
+  launcher/hook requires the current `opus` alias.
+- `request-production-gate.ps1 -CandidateSha <sha>` requires a clean checkout,
+  fresh successful GitHub jobs for that SHA (including the aggregate and secret
+  scan), byte-identical central catalogue hashes, a fresh cold-verified backup,
+  authenticated member/admin mobile E2E, finalizer readiness, and verified
+  session evidence. Missing, skipped, stale, duplicated or mismatched evidence
+  fails. Its manifest records `release_approval = not_granted` and
+  `deployment_authorized = false`.
+- Release approval is a second interactive artifact and still records
+  `deployment_authorized = false`. The repository intentionally provides no
+  deploy command. Vercel auto-deploy, GitHub branch protection, hosted migration
+  application, pushes/merges and production secrets remain separately
+  authorized external actions.
+- One canonical production-invariants source is copied byte-for-byte into both
+  agent entry points by a generator; `verify:fast` rejects drift. Separate
+  prompts cover specification, migration, integration review and release
+  sessions so the release prompt cannot smuggle in deploy authority.
+
+Reason: the prior controls were good individual practices but did not compose
+into a durable release boundary. Docs-only workflow filters meant a future
+required check could remain pending; branch protection required no status
+checks; migration history could still be modified; the backup passed secrets
+on argv and verified in the same process; and no artifact tied CI, catalogue,
+backup, mobile auth, finalizer and agent evidence to the commit being approved.
+
+Consequences: this is tooling/docs only — no application code, schema,
+migration, hosted data, Vercel setting or GitHub setting changes. Local release
+gating now requires a Windows operator for DPAPI and a full local Supabase stack
+for authenticated mobile E2E. The GitHub required-check change and any Vercel
+cutover remain explicit manual follow-ups. The release gate is intentionally
+strict: a docs-only candidate, an old green run, a missing backup, or a session
+started before the candidate commit cannot be promoted by exception.
+
+### ADR-071 addendum — corrections found in review before the slice landed
+
+Date: 2026-09-15
+
+A review of the unlanded ADR-071 working tree found five defects. They are
+recorded here rather than as a new ADR because ADR-071 had not been committed,
+so nothing was ever released with these behaviours.
+
+1. **Destructive fixtures had no target guard.** The authenticated Playwright
+   setup deletes and recreates `auth.users`, and every database suite read its
+   connection string from an environment variable with only a loopback
+   *default*. `request-production-gate.ps1` itself requires `API_URL` and
+   `DB_URL` to be exported, so an operator holding hosted values would have
+   pointed the fixtures at production. `tests/support/local-target.ts` now
+   refuses a non-loopback host in the integration suites, the Playwright global
+   setup/teardown, and the authenticated Playwright config, which fails before a
+   browser starts. The single override is an exact acknowledgement phrase in
+   `KUT_ALLOW_NONLOCAL_TEST_TARGET`; CI and every repository script leave it
+   unset. Refusals name the host, never the connection string.
+2. **The agent rule sets still auto-allowed the very actions ADR-071 called
+   authorization decisions.** `git add`/`git commit`/`git push`, `git push
+   origin main` and `npx supabase functions deploy` ran without prompting in
+   `.claude/settings.json` and `.codex/rules/project.rules`. Commit, push and
+   function deployment now prompt; pushing directly to `main` is denied. Being
+   reversible never made a function deployment unattended — it ships code to the
+   shared hosted project.
+3. **The Claude session hook could not do what it claimed.** It returned
+   `continue:false` on a model mismatch, but the hooks reference states that
+   `SessionStart` cannot abort a session — `continue:false` is not honoured and
+   exit code 2 is non-blocking there. It also treated an absent `model` as a
+   violation, while the same reference says Claude Code "doesn't always include
+   it", so the launcher would have blocked every session had blocking worked.
+   The hook is now attest-only and records `hook` / `unavailable` / `rejected`;
+   the gate fails closed on `rejected` or a missing attestation and labels
+   `unavailable` as launcher-enforced in the manifest. Real runtime enforcement
+   moved to a new `PreModelSwitch` hook, where exit code 2 does block: a
+   production session cannot be downgraded off Opus mid-release. Both Claude
+   hooks now have unit coverage; previously only the Codex one did.
+4. **`finalizer-readiness.test.ts` did not test finalizer readiness.** It
+   asserted EXECUTE grants and that a batch call returned a row. It now seeds a
+   published session whose 24-hour window closed an hour ago (backdating
+   `opened_at`, since the table's check constraint pins `closes_at`), with three
+   submitting attendees and a two-nominator kudos category, then asserts the
+   survey finalizes on the automatic path, per-attendee results and the
+   ADR-063 ladder, weekly rating snapshots, a job row with null `error_text`,
+   notices for every eligible member, and that a second pass does not
+   re-finalize. The suppressed-error path in the deployed runner is exactly what
+   the `error_text` assertion exists to catch.
+5. **Backup tests covered only the happy path, and cleanup could mask a
+   failure.** `test-kut-backup-pipeline.ps1` now runs 23 assertions including
+   wrong credential, missing locator, tampered ciphertext, truncated ciphertext,
+   wrong expected hash, refusal to overwrite, no evidence file on any failure,
+   no leftover decrypted scratch file on any path, and rekey failure leaving the
+   source byte-identical with no pending file. Separately, both orchestrators
+   removed their work directory non-recursively, which throws on a non-empty
+   directory; thrown from a `finally` that exception would have replaced the
+   real error while leaving plaintext in `%TEMP%`. Cleanup is now recursive and
+   downgrades its own failure to a warning.
+
+Also corrected: `$matches` in the gate script shadowed PowerShell's automatic
+`$Matches`, and the authenticated E2E ran only at Pixel 7 despite the plan
+asking for a narrow width too — it now also runs at 320x568.
+
+Receipt validation moved out of `request-production-gate.ps1` into
+`scripts/lib/KutSessionReceipt.psm1`. The gate refuses a dirty checkout before
+it ever reads a receipt, which made that logic unreachable from any test — the
+extraction is what let `scripts/test-kut-session-receipt.ps1` cover it (21
+assertions across both providers, candidate binding and freshness). The move
+also surfaced a live defect: under `Set-StrictMode -Version Latest` a missing
+property is a terminating error, so reading `model_attestation` off a Codex
+receipt, which has no such field, would have failed the gate with a confusing
+PowerShell error. Optional fields are now read through `Get-KutReceiptField`,
+and the Codex hook writes the field too so the manifest is uniform.
+
+Not addressed, and still open: `scripts/protect-kut-backup.ps1` does not zero
+key and plaintext byte arrays in `finally` blocks, and its PBKDF2 uses the
+SHA-1 PRF implied by the three-argument `Rfc2898DeriveBytes` constructor. Both
+predate ADR-071 and neither is reachable without the passphrase, but the
+original plan listed the zeroing as acceptance criteria and it was dropped.
+Changing the KDF would break the `KUTBKP01` format every existing backup uses,
+so it needs its own slice with a rekey path.

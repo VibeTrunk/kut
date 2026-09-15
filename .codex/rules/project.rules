@@ -58,10 +58,15 @@ prefix_rule(
     ],
 )
 
+# `git commit` and `git push` are deliberately NOT auto-allowed. A standing
+# permission is not per-change authorization, and treating it as one is how a
+# broad implementation request turned into one 140-file, 14-migration commit.
+# Each commit and each push needs the user to say so for that specific change,
+# which means each one must surface an approval prompt.
 prefix_rule(
     pattern = ["git", "commit"],
-    decision = "allow",
-    justification = "Local commits are routine and reversible; only a push publishes them.",
+    decision = "ask",
+    justification = "A commit records an authorization decision the user must make per change slice.",
     match = [
         "git commit -m \"Fix typo\"",
     ],
@@ -69,8 +74,8 @@ prefix_rule(
 
 prefix_rule(
     pattern = ["git", "push"],
-    decision = "allow",
-    justification = "Normal pushes are allowed; the repository hook separately blocks force pushes and remote-branch deletion.",
+    decision = "ask",
+    justification = "Publishing a branch is outward-facing; the user authorizes each push. Direct pushes to main are additionally rejected by branch protection.",
     match = [
         "git push",
         "git push origin main",
@@ -162,8 +167,8 @@ prefix_rule(
 
 prefix_rule(
     pattern = ["npx", "supabase", "functions", "deploy"],
-    decision = "allow",
-    justification = "Redeploying an Edge Function is routine and reversible (redeploy again to roll back).",
+    decision = "ask",
+    justification = "This ships code to the shared hosted project every VibeTrunk tool uses. Being reversible does not make it unattended: it is an external deployment and needs the user to say so.",
     match = [
         "npx supabase functions deploy <function-name>",
     ],

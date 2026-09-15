@@ -26,23 +26,28 @@ From the repo root, with the Supabase CLI logged in and the project linked
 .\scripts\backup-kut-hosted.ps1
 ```
 
-It prompts for an **encryption passphrase** (store it in your password
-manager — a backup you can't decrypt is not a backup) and, unless you pass
-`-DbPassword`, the Supabase CLI prompts for the **hosted Postgres password**.
+By default the workers retrieve `backup-encryption-v1` and `hosted-db-v1`
+from the current Windows user's DPAPI store. Import `.env.local` only through
+the explicit bootstrap command in `docs/PRODUCTION_SAFETY.md`. For a manual
+emergency run, pass `-Interactive`; encryption and cold verification then ask
+for the passphrase separately.
 
 The script:
 
-1. `supabase db dump --linked -s kut` for the schema DDL, then again with
-   `--data-only --use-copy` for the data.
-2. Concatenates them into one replayable `.sql`.
-3. Encrypts it to `%USERPROFILE%\backups\kut\kut-backup-<timestamp>.sql.enc`
-   (AES-256-CBC + HMAC-SHA256, PBKDF2 600k — via `scripts/protect-kut-backup.ps1`).
-4. **Decrypts the ciphertext back and checks the SHA-256 matches** the source
-   before shredding the plaintext. A mismatch deletes the bad file and fails.
-5. Appends a metadata entry to `.private-backups/BACKUP_LOG.md` (gitignored).
+1. Starts a short-lived worker that independently retrieves both credentials.
+2. Passes the database password to the Supabase child only through that
+   worker's environment — never process arguments or logs.
+3. Dumps schema DDL and data, concatenates them, hashes the plaintext, encrypts
+   to a `.pending` candidate, deletes plaintext, and exits.
+4. Starts a different worker, which retrieves the passphrase independently,
+   decrypts to a new temporary file, and compares the plaintext SHA-256.
+5. Atomically publishes the candidate only after the cold check passes. A
+   failure removes only that pending candidate; existing backups are untouched.
+6. Writes nonsecret locator/hash evidence to the gitignored backup log and
+   `latest-backup-evidence.json` for the production gate.
 
-Options: `-OutDir <path>` (must be outside the repo tree), `-DbPassword
-<SecureString>`, `-SkipVerify` (don't).
+The cipher remains AES-256-CBC + HMAC-SHA256 with PBKDF2 600k. `-OutDir`
+must be outside the repository. There is no skip-verification switch.
 
 ### Where the encrypted files go
 
@@ -134,24 +139,25 @@ foreign keys are enforced.
 - Re-run the restore drill roughly monthly, or any time the schema changes
   shape significantly.
 
-### Optional: scheduled unattended run
+### Scheduled unattended run
 
-`Export-Clixml` binds a SecureString to the current user + machine via DPAPI,
-so a scheduled task can read secrets without a prompt. One-time, as the task's
-user on the task's machine:
+Run `scripts/backup-kut-hosted.ps1` as the same Windows account that performed
+the DPAPI bootstrap. DPAPI binds each locator to that account and machine, so a
+different task identity cannot decrypt it. A scheduled backup still needs the
+restore drill run by hand periodically — automation that is never tested is
+not a backup.
+
+### Rekey
+
+Store the replacement under a new locator (normally `backup-encryption-v2`),
+then run:
 
 ```powershell
-Read-Host -AsSecureString "encryption passphrase"  | Export-Clixml "$env:USERPROFILE\.kut-backup-pp.xml"
-Read-Host -AsSecureString "hosted db password"     | Export-Clixml "$env:USERPROFILE\.kut-backup-db.xml"
+powershell -NoProfile -File scripts/rekey-kut-backup.ps1 `
+  -SourcePath C:\backups\kut\kut-backup-....sql.enc
 ```
 
-Wrapper the task runs:
-
-```powershell
-& "C:\path\to\kut\scripts\backup-kut-hosted.ps1" `
-  -Passphrase (Import-Clixml "$env:USERPROFILE\.kut-backup-pp.xml") `
-  -DbPassword (Import-Clixml "$env:USERPROFILE\.kut-backup-db.xml")
-```
-
-A scheduled backup still needs the restore drill run by hand periodically —
-automation that is never tested is not a backup.
+Rekey writes a new candidate, separately decrypts both old and new ciphertext,
+and publishes only when their plaintext hashes match. It never overwrites or
+bulk-rewrites existing backups. Keep the old locator and old backup until the
+new generation has passed the periodic restore drill.

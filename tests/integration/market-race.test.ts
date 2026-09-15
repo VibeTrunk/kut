@@ -1,8 +1,8 @@
 import { Client } from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { localDatabaseUrl } from "../support/local-target";
 
-const databaseUrl =
-  process.env.KUT_LOCAL_DATABASE_URL ?? "postgresql://postgres:postgres@127.0.0.1:54322/postgres";
+const databaseUrl = localDatabaseUrl();
 
 // Every id this suite writes lives under the 20000000- prefix, including its
 // own kut.players row. Nothing here is shared with another integration file or

@@ -62,6 +62,29 @@ changes shape significantly.
 Git migrations are necessary but are **not** a backup of user accounts,
 wallets, cards, sessions, or market history.
 
+## Production evidence gate
+
+PR checks and release evidence are now mechanical; the detailed contract is
+`docs/PRODUCTION_SAFETY.md`. The always-present `verify / merge-gate` accepts
+skipped expensive jobs only for a docs-only diff. Configure it and
+`gitleaks / scan` as required branch checks after the workflow has landed and
+passed once; changing branch protection is a separate external action.
+
+A release candidate is one exact commit SHA. From a clean checkout and a
+hook-verified production agent session, run:
+
+```powershell
+powershell -NoProfile -File scripts/release/request-production-gate.ps1 `
+  -CandidateSha <40-character-sha>
+```
+
+The gate reads rather than changes GitHub, checks catalogue and backup
+evidence, and runs authenticated mobile E2E against the local stack. It does
+not deploy or approve a release. Release approval has a separate interactive
+command, and even that records `deployment_authorized = false`. A merge,
+release approval, or passing gate never implicitly authorizes Vercel or a
+hosted Supabase mutation.
+
 ## Preview deployment preflight
 
 1. Run `npm run verify:full` locally with Docker running.

@@ -32,6 +32,8 @@ history — where they disagree with `BUILD_SPEC.md`, the spec wins.
 | `OPERATIONS.md` | Live runbook: shared-migration authority, the risk-tiered hosted-migration checklist (ADR-032), preview-deploy preflight, alpha ops. | The deploy or migration process changes. |
 | `LAUNCH_PLAN.md` | The go-live checklist for opening KUT from the closed alpha to all of TFH: the decisions taken (§0, ADR-050), auth and backup prep, the roster rule for joiners, no account reset, what to do if something breaks, and the day-by-day sequencing. Extends `OPERATIONS.md`. | An item lands, or the plan changes; retire it once go-live is recorded in `PROGRESS.md`. |
 | `BACKUP.md` | Live runbook: taking an encrypted `kut`-schema backup, and the restore drill. | The backup tooling or cadence changes. |
+| `PRODUCTION_SAFETY.md` | Fail-closed merge/release gates, DPAPI credential locators, production agent launchers, and the explicit release-versus-deploy boundary. | Production safety controls or evidence contracts change. |
+| `session-prompts/` | Bounded prompts/checklists for specification, migration, integration review, and release sessions. | A production workflow or handoff requirement changes. |
 | `SECURITY_REVIEW.md` | Point-in-time security / integrity review (MVP era). A reference, not a runbook. | A fresh review pass is done. |
 | `archive/` | Superseded one-time documents, kept for history: the 2026-08-17 handoff, the MVP hardening plan, the design spec + build plan for the rating graph / album / Chronicle (shipped 2026-09-02), and the spec, implementation plan, execution notes and starting prompt for the five-feature build (shipped 2026-09-06). `BUILD_SPEC.md` and the ADRs are canonical over all of them. | Never — archival only. |
 

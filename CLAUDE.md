@@ -83,6 +83,60 @@ don't add cross-repo coupling beyond the shared Supabase project.
 
 KUT is live at `https://kut.vibetrunk.com` as Vercel project `kut`.
 
+Deployed 2026-09-16 from `VibeTrunk/supabase` (catalogue PR #34 there), on its
+own additive `db push` after everything below:
+
+- `20260926000000_trade_log_rating_story_listing_duration.sql`
+  (ADR-072 + ADR-073 + ADR-074, additive) &mdash; **three features in one
+  migration**, which is exceptional and authorized once (ADR-075) so the hosted
+  schema was pushed once rather than three times. Zero DML: no table created or
+  altered, no backfill, no economy or rating formula changed. Each section has
+  its own ADR, database test and reverse DDL, and the three touch disjoint
+  objects.
+  - **ADR-072** &mdash; `kut.create_listing` gains `p_duration_hours`, a 24-or-72
+    allow-list, default 24. The two-argument signature is **dropped** first: a
+    defaulted third parameter creates an *overload*, not a replacement, which
+    would have left a permanently 24-hour entry point alive. Body rebased on the
+    `20260911000000` definition so the ADR-042 `held_by_offer_id` escrow guard
+    survives. `expires_at` and its 24h column default already existed, and
+    expiry was always enforced lazily by `expires_at > now()` predicates &mdash;
+    only the value written at insert time moved, and nothing sweeps expired
+    listings still.
+  - **ADR-073** &mdash; `kut.activity_feed` reports a trade's whole
+    consideration. The trade branch reported `coins_to_seller` while every other
+    branch reports gross, so it now reports `offered_coins`; **existing trades
+    display ~5% higher as a result**, with no row rewritten. `trade_offer_cards`
+    was never joined, so a `left join lateral` `array_agg` adds
+    `offered_card_names text[]` as the **ninth and last** column &mdash; append
+    only, since `create or replace view` cannot reorder.
+  - **ADR-074** &mdash; `kut.player_rating_breakdown` and
+    `kut.player_form_contributions`, both `security_invoker = true` so
+    `session_report_results` stays gated to finalized surveys by
+    `kut.is_survey_finalized` (ADR-066); definer views would have bypassed that.
+    The OVR split is derived (`live_ovr - floor(form_score + 0.5)`), not
+    recomputed, so the halves reconstruct the card face by construction. The
+    decay ladder is mirrored from `_rebuild_season_core` and **pinned** by
+    `rating_breakdown.test.sql`, which runs the real engine and asserts the
+    summed contributions equal `form_score`. Neither view may join
+    `kut.session_kudos` (nominator identity) or `kut.session_surveys` (KB-013).
+  - Pushed on a fresh cold-verified backup (`20260916-005721`) rather than the
+    scheduled one the additive tier allows. Smoke-tested on hosted: a card lists
+    for 72 hours with its real expiry, the activity feed returns rows, and a Live
+    card renders its rating buildup. Rollback per section is in the migration
+    header.
+  - **KB-017 overlaps this.** It names `kut.activity_feed` among the definer
+    projections granting `SELECT` to `authenticated` without proving an active
+    KUT profile. This migration neither caused nor worsened that, but its fix
+    must rebase on **this** version of the view or it will silently revert the
+    gross-coins change and drop the ninth column.
+  - **Deploy-ordering lesson.** Vercel production deploys on merge to `main`, so
+    PR #86 shipped code expecting this schema ~2 hours before the schema
+    existed: creating a listing failed (`p_duration_hours` against the old
+    signature) and the activity feed rendered empty (non-critical by design).
+    Nothing crashed, but a migration-bearing PR whose code cannot degrade
+    gracefully needs a flag, a tolerant read, or a catalogue push ready to
+    follow the merge immediately.
+
 Deployed 2026-09-08 from `VibeTrunk/supabase` (catalogue PR #33 there), on its
 own additive `db push` after the batch below:
 

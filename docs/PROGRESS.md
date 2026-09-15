@@ -3149,4 +3149,21 @@ and the seller's `Trade completed` notification still says "plus cards" without
 naming them, because fixing it means re-declaring all ~150 lines of
 `respond_to_trade` for a copy change.
 
-Nothing was committed, pushed or deployed.
+Merged as PR #86 (`aa1f254`), catalogued in `VibeTrunk/supabase` PR #34, and
+pushed to hosted 2026-09-16 on a fresh cold-verified backup
+(`20260916-005721`) rather than the scheduled one the additive tier allows.
+Smoke-tested on hosted: a card lists for 72 hours and shows its real expiry
+date, the club activity feed returns rows, and a Live card renders its rating
+buildup.
+
+One thing to carry forward. Vercel deploys production on merge to `main`, so
+PR #86 shipped application code that expected this schema roughly two hours
+before the schema existed. Creating a market listing failed on hosted in that
+window — `create_listing` was called with `p_duration_hours` against the old
+two-argument signature — and the club activity feed rendered empty, because
+selecting the not-yet-existing `offered_card_names` errored and that widget is
+deliberately non-critical. Nothing crashed and no data was at risk, and the two
+rating-story reads degraded silently exactly as intended. But the next
+migration-bearing change whose code cannot degrade that gracefully needs a
+feature flag, a tolerant read, or a catalogue push queued to follow the merge
+immediately.

@@ -15,6 +15,7 @@ const base: ActivityRow = {
   amount: 137,
   session_date: null,
   session_type: null,
+  offered_card_names: null,
 };
 
 describe("describeActivity", () => {
@@ -26,8 +27,37 @@ describe("describeActivity", () => {
     expect(sentence).toMatch(/\.$/);
   });
 
-  it("describes a trade with both parties and the coin amount", () => {
+  it("describes a coins-only trade with both parties and the coin amount", () => {
     expect(describeActivity({ ...base, kind: "trade" })).toBe(
+      "Teize traded Steffen to Michael for 137 KUT Coins.",
+    );
+  });
+
+  // ADR-073: the whole consideration, not just the coin leg.
+  it("names a single card offered back alongside the coins", () => {
+    expect(describeActivity({ ...base, kind: "trade", offered_card_names: ["Freek"] })).toBe(
+      "Teize traded Steffen to Michael for 137 KUT Coins plus Freek.",
+    );
+  });
+
+  it("joins two offered cards with 'and'", () => {
+    expect(describeActivity({ ...base, kind: "trade", offered_card_names: ["Freek", "Jan"] })).toBe(
+      "Teize traded Steffen to Michael for 137 KUT Coins plus Freek and Jan.",
+    );
+  });
+
+  it("joins three or more offered cards with commas and a final 'and'", () => {
+    expect(
+      describeActivity({
+        ...base,
+        kind: "trade",
+        offered_card_names: ["Freek", "Jan", "Pieter"],
+      }),
+    ).toBe("Teize traded Steffen to Michael for 137 KUT Coins plus Freek, Jan and Pieter.");
+  });
+
+  it("ignores an empty offered-card array rather than rendering a dangling 'plus'", () => {
+    expect(describeActivity({ ...base, kind: "trade", offered_card_names: [] })).toBe(
       "Teize traded Steffen to Michael for 137 KUT Coins.",
     );
   });

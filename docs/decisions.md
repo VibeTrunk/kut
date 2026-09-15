@@ -396,7 +396,11 @@ Date: 2026-08-16
 
 Status: Accepted
 
-Decision: The marketplace uses 24-hour buy-now listings only. Listings retain
+Superseded in part by ADR-072 (2026-09-16): the listing duration is no longer
+fixed at 24 hours — a seller chooses 24 or 72. Everything else in this ADR,
+including the locking, tax and atomicity rules, still stands.
+
+Decision: The marketplace uses buy-now listings only. Listings retain
 seller ownership but lock the Card Copy against discard; `create_listing` and
 `cancel_listing` validate the caller and status server-side. `buy_listing`
 locks the listing and both wallets in a consistent order, validates balance
@@ -3401,3 +3405,279 @@ GitHub, and the bootstrap was never resolved against a real `.env.local`. Both
 are now covered: the bootstrap resolution is unit-tested against both spellings
 and the conflict case, and the docs carry the command that re-derives the check
 names from the API.
+
+## ADR-072 — A seller chooses a 24-hour or 72-hour market listing
+
+Date: 2026-09-16
+
+Status: Accepted
+
+Decision: `kut.create_listing` takes a duration and the seller picks it from a
+two-value allow-list — 24 or 72 hours. 24 hours remains the default.
+
+TFH has plenty of members who do not open the app every day, so a 24-hour
+buy-now window could lapse before the people most likely to want a card ever
+saw it. Rather than lengthening every listing and taking the short window away
+from sellers who want a quick sale, the duration became a choice.
+
+This changes a duration, not a mechanism. `kut.market_listings.expires_at` has
+existed since `20260816070600_atomic_marketplace.sql` with a
+`default (now() + interval '24 hours')`, and expiry has always been enforced by
+`expires_at > now()` predicates in the table's RLS policy,
+`kut.active_market_listings`, `kut.my_collection_cards`, `kut.activity_feed`,
+`kut.buy_listing`, `kut.propose_trade` and `kut.prevent_burning_listed_card`.
+All of that is untouched. The migration is additive: no table is created or
+altered, no row is backfilled, and every existing listing keeps the
+`expires_at` it already had.
+
+Three things are worth recording about the shape:
+
+- **The old signature is dropped, not left behind.** Adding a defaulted third
+  parameter to a PL/pgSQL function creates an *overload*, so
+  `create_listing(uuid, bigint)` would have survived as a second, silently
+  24-hour-only entry point. The migration drops it first and recreates the
+  three-argument version, following the ADR-037 precedent for
+  `publish_attendance_session`. The new parameter still defaults to 24, so
+  existing two-argument callers — including
+  `supabase/tests/database/trade_offers.test.sql` — stay valid.
+- **An allow-list, not a range.** An arbitrary duration would let a seller park
+  a card in the listing soft-lock for as long as they liked. The permitted
+  values are dual-declared as the `p_duration_hours not in (24, 72)` guard in
+  SQL and `ECONOMY.listingDurationChoiceHours` in `src/game/economy.ts`,
+  mirroring how `adminWalletAdjustMax` / `100000` are declared. The server
+  action re-validates before the RPC, so the form control is convenience, not
+  security.
+- **The return value stopped lying.** The previous body returned a hardcoded
+  `now() + interval '24 hours'` that was never read back from the insert.
+  Nothing consumed it, but with a variable duration it would have been wrong, so
+  it now returns the `expires_at` actually stored, via `returning`.
+
+The card detail page now shows the real expiry date instead of asserting "24
+hours" in copy, using the existing date-only `formatDate` convention that
+`/market/offers` already applies to offer expiry.
+
+Deliberately not changed, and left as separate concerns:
+
+- **Nothing sweeps expired listings.** A lapsed listing keeps
+  `status = 'active'` and is merely hidden by the predicates above, flipped
+  opportunistically by `create_listing`/`buy_listing`. That remains the owner's
+  explicit decision in `docs/LAUNCH_PLAN.md` — "the sweep is not what enforces
+  expiry" — and a longer window does not change the reasoning. The repository
+  still has no cron infrastructure of any kind.
+- **`kut.propose_trade` still sets a flat 12-hour offer expiry with no clamp to
+  `listing.expires_at`**, so an offer can nominally outlive its listing. This is
+  pre-existing and harmless — `respond_to_trade` re-checks the listing and
+  refuses — but it is more visible at 72 hours. A
+  `least(now() + interval '12 hours', listing.expires_at)` clamp is the fix if
+  it becomes a nuisance.
+- **`kut.cancel_listing` carries `expires_at > now()`**, so cancelling a lapsed
+  listing raises "active listing not found" rather than a clean "already
+  expired". More sellers will meet this at 72 hours.
+
+Consequences: section 1 of
+`supabase/migrations/20260926000000_trade_log_rating_story_listing_duration.sql`
+plus `supabase/tests/database/listing_duration.test.sql` (13 assertions,
+including that the two-argument signature is gone and that 0, 48, 168 and null
+are all refused). `phase_1a_roster.test.sql` had pinned the old two-argument
+signature and was updated to the new one. `BUILD_SPEC.md` Part XI §33 and Part
+XXXIII §82 drop their "24-hour listing" wording, and ADR-016's "24-hour buy-now
+listings only" is superseded on duration alone — everything else about that
+decision stands.
+
+## ADR-073 — The club log reports a trade's whole consideration
+
+Date: 2026-09-16
+
+Status: Accepted
+
+Decision: `kut.activity_feed` reports a trade's **gross** offered coins and names
+every card offered back. The change is confined to the projection; no trade row
+is rewritten.
+
+An accepted trade logged only the net coins the seller banked and the name of
+the listed card. When an offer bundled cards plus coins — or several cards plus
+coins — everything except the coin receipt was invisible, so the club log
+understated what had actually changed hands. Two distinct defects sat behind
+that, and both are fixed in the view.
+
+**The amount meant something different for trades than for everything else.**
+Every other branch reports gross: `market_sales.sale_price`,
+`market_listings.price`, `pack_openings.price_paid`. The trade branch reported
+`trade_offers.coins_to_seller`, which is already 5% lighter than what the
+proposer actually paid. That inconsistency was invisible because nothing
+displayed the two side by side. The trade branch now reports
+`trade_offers.offered_coins`, so `amount` means the same thing in all five
+branches.
+
+A consequence worth stating plainly: **past trades now read higher than they
+did.** A trade that displayed "138 KUT Coins" becomes "145 KUT Coins". No data
+changed — `coins_to_seller` and `coins_burned` are untouched on the row, and the
+seller still sees their real post-burn receipt on `/market/offers`. This is the
+feed reporting the price rather than the proceeds, which is what "the value of
+the trade" means to everyone reading it.
+
+**Offered cards were never joined at all.** `kut.trade_offer_cards` has existed
+since ADR-042 but the feed never touched it, so cards moving the other way could
+not appear. A lateral `array_agg` of the offered players' display names now
+supplies them, appended as `offered_card_names`. `create or replace view` can
+only add columns at the end — the same constraint ADR-040 met — so the column
+order is load-bearing and all five branches carry `null::text[]` where they have
+no offered cards. A coins-only trade yields null rather than an empty array, so
+the UI can branch on presence.
+
+No valuation is attached to those cards, and that is deliberate. Nothing is
+snapshotted at accept time, so a coin-equivalent computed later would drift with
+Live Ratings and a past trade would silently rewrite its own worth. Naming the
+cards says what was exchanged without inventing a number that was never agreed.
+
+Privacy is unchanged: the feed already discloses both counterparty names and the
+listed card club-wide, and the offered cards are the other half of that same
+disclosed transaction. The view keeps owner rights (`security_invoker = false`),
+so the new join raises no RLS question, and both `role <> 'superadmin'` guards
+(KB-009 / ADR-054) are untouched. Part L invariant #23 still holds — the trade
+branch does not reference `kut.market_sales`, and the test asserts it.
+
+Consequences: section 2 of
+`supabase/migrations/20260926000000_trade_log_rating_story_listing_duration.sql`;
+`kut.activity_feed` gains a ninth column. `src/lib/activity.ts` gains a
+`joinNames` helper rendering `A` / `A and B` / `A, B and C`, the TypeScript twin
+of `kut._join_names` (ADR-069). `activity_feed.test.sql` grows from 12 to 19
+assertions — it had no trade coverage whatsoever before this. The two existing
+trade assertions in `tests/unit/activity.test.ts` were updated and four added.
+
+Deliberately not done: the seller's `Trade completed` notification still says
+"plus cards" without naming them. Fixing it means `create or replace`-ing all
+~150 lines of `respond_to_trade` for a copy change, which is poor risk/reward
+beside a view-only change. Registered as a follow-up rather than smuggled in.
+
+## ADR-074 — A card explains its own rating, in Form rather than per-line OVR
+
+Date: 2026-09-16
+
+Status: Accepted
+
+Decision: two additive read projections,
+`kut.player_rating_breakdown` and `kut.player_form_contributions`, back a "why
+this rating" story on the card detail page and the player profile. The
+attendance/Form split is stated in OVR once; per-session detail is stated in
+Form.
+
+A card showed its OVR and never explained it. Attendance, goals and kudos all
+feed the number, but a member could not see why they were a 62 or where a recent
++2 came from. The `kudos_awarded` notice (ADR-069) explains a single session;
+nothing explained the standing rating.
+
+**No new data is stored.** `kut.session_report_results` already holds
+`effective_goals`, `goal_form`, `kudos_form`, `session_input` and
+`qualified_category_ids` per player per session, and `kut.player_season_state`
+already holds `activity_score` and `form_score`. This is a reading of facts that
+already existed.
+
+**The requested shape was "+2 OVR for goals, +2 OVR for being elected", and that
+is not what shipped.** `docs/RATING_BALANCE_REVIEW.md` rules that Form is
+rounded once, on the total: "three separate category awards are not individually
+rounded and added… The UI says 'Form' for decimal contributions, rather than
+promising an exact '+N OVR' per category." Per-line OVR integers would not sum
+to the real figure, so the story states the combined bonus once in OVR and every
+session line in Form. The narrative the request asked for survives; only the
+unit on the individual lines changed.
+
+**The attendance base is derived, not recomputed.** The engine computes
+`live_ovr := least(83, greatest(30, round(activity_ovr + floor(form + .5))))`,
+so the attendance half could have been recalculated as
+`30 + 45·(activity/100)^0.8`. It deliberately is not: recomputing invites an
+off-by-one against the stored `live_ovr`, and a breakdown that fails to add up
+is worse than no breakdown. Instead `form_bonus` is `floor(form_score + 0.5)` —
+the engine's own final rounding — and `attendance_base` is `live_ovr` minus that
+bonus. The two halves then reconstruct the number on the card face *by
+construction*, including where the clamp bites; `is_ovr_capped` lets the UI say
+so at the 83 ceiling.
+
+**The known risk is duplication of the decay ladder.**
+`player_form_contributions` expresses the session-age weights (1 / .75 / .5 /
+.25 / 0) and the age expression a second time, outside
+`kut._rebuild_season_core`. If the engine's ladder moves and the view does not,
+the view lies quietly. That is pinned by
+`supabase/tests/database/rating_breakdown.test.sql`, which runs the real
+`_rebuild_season_core` over a fixture and asserts the summed
+`weighted_contribution` equals the resulting `player_season_state.form_score`.
+Per ADR-064 the maths is not mirrored into TypeScript; `src/lib/rating-story.ts`
+formats numbers SQL computed and recalculates nothing.
+
+Age is counted in **sessions**, never weeks — the same document warns "never
+equate four sessions with four weeks" — so the copy names actual session dates
+and a unit test asserts the decay wording never contains "week".
+
+**Privacy.** Both views are `security_invoker = true`, so the caller's own RLS
+applies: `session_report_results` is already gated to finalized surveys by
+`kut.is_survey_finalized` (ADR-066), and `match_sessions` to published rows.
+Neither view may join `kut.session_kudos`, which holds nominator identity, nor
+`kut.session_surveys`, whose attendee-only policy caused the KB-013 blackout —
+session dates come from `match_sessions` and category titles from
+`qualified_category_ids`, so neither table is needed. A test asserts via
+`information_schema.view_table_usage` that neither is referenced, and another
+asserts a member who missed a session still reads its finalized breakdown.
+
+Per-category nominator *counts* are deliberately not exposed either: since
+qualification is exactly "≥2 distinct nominators", publishing a count above two
+would leak more than the current model does in a squad this small.
+
+Consequences: section 3 of
+`supabase/migrations/20260926000000_trade_log_rating_story_listing_duration.sql`;
+`supabase/tests/database/rating_breakdown.test.sql` (14 assertions);
+`src/lib/rating-story.ts` + `tests/unit/rating-story.test.ts` (16 assertions);
+`src/components/rating-breakdown.tsx`. The card detail page now selects
+`player_id` from `my_collection_cards`, which the view always exposed but the
+page never read. The story renders only for a Live card — a Special edition is a
+frozen snapshot and explaining a current OVR would misdescribe it — and both
+reads are non-critical, dropping the section rather than failing the page, which
+matches how the ADR-047 chart treats its own queries.
+
+## ADR-075 — Three features ship in one migration, once, by explicit instruction
+
+Date: 2026-09-16
+
+Status: Accepted
+
+Decision: ADR-072, ADR-073 and ADR-074 ship as one migration file and one PR,
+rather than the three the standing convention would produce.
+
+`policy/PRODUCTION_INVARIANTS.md` says "one migration- or invariant-bearing
+feature is allowed per PR or independently reviewable change slice", and the
+`migrations` CI job (ADR-070) permits at most one *added* migration file per
+change, with a matching database test and no label override. The normal reading
+of both is one feature per PR.
+
+The owner instructed otherwise on 2026-09-16, for an operational reason that the
+convention does not serve: hosted migrations are applied by hand from
+`VibeTrunk/supabase`, and three PRs mean three separate `supabase db push`
+operations against the shared project. One migration means one push.
+
+What makes this acceptable rather than merely convenient:
+
+- **The mechanical gate is satisfied honestly, not circumvented.** The invariant
+  caps *added migration files* at one, and this is one file. Nothing is bypassed
+  and no exemption was needed.
+- **The invariant's second limb is met deliberately.** Each of the three is an
+  independently reviewable slice: its own ADR, its own database test file, its
+  own rollback, and a clearly delimited section in the migration. They touch
+  disjoint objects — a function, a view replacement, and two new views — so no
+  section can mask a defect in another.
+- **All three are additive.** No table is created or altered, no row is
+  backfilled, no economy or rating formula moves, and no Part L invariant is
+  touched. The revert-granularity argument behind the one-per-PR rule bites
+  hardest on data-changing migrations; here a rollback is three independent
+  `drop`/recreate steps, spelled out per section.
+- **One file is atomically applied.** Postgres DDL is transactional, so a
+  failure anywhere rolls the whole migration back. Three sequential pushes can
+  leave the hosted schema half-applied; this cannot.
+
+What is genuinely given up: squash-merge means this lands as one commit on
+`main`, so `git bisect` and `git revert` cannot separate the three. Reverting
+one feature means reverting the code for all three and re-applying two, while
+the hosted schema stays migrated. That cost is accepted knowingly and is the
+reason this ADR exists rather than the batching passing unrecorded.
+
+This is a one-time authorization for these three changes. It sets no precedent:
+the next migration-bearing change goes back to one per PR unless the owner again
+says otherwise, and a data-changing migration should not be batched at all.

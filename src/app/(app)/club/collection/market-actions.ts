@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth/user";
+import { ECONOMY } from "@/game/economy";
 import { createClient } from "@/lib/supabase/server";
 import { isUuid } from "@/lib/uuid";
 
@@ -18,10 +19,19 @@ export async function createListing(
   if (!isUuid(cardId) || !Number.isSafeInteger(price) || price < 1) {
     return { error: "Enter a whole-number price for this card." };
   }
+  // The duration is validated here as well as in the RPC: the form select is a
+  // client control and must never be the only guard (ADR-072).
+  const durationHours = Number(formData.get("durationHours") ?? ECONOMY.listingDurationHours);
+  const allowedDurations: readonly number[] = ECONOMY.listingDurationChoiceHours;
+  if (!allowedDurations.includes(durationHours)) {
+    return { error: "Choose how long the listing should run." };
+  }
   const supabase = await createClient();
-  const { error } = await supabase
-    .schema("kut")
-    .rpc("create_listing", { p_card_id: cardId, p_price: price });
+  const { error } = await supabase.schema("kut").rpc("create_listing", {
+    p_card_id: cardId,
+    p_price: price,
+    p_duration_hours: durationHours,
+  });
   if (error)
     return {
       error: "This listing could not be created. Check the current price range and try again.",

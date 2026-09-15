@@ -193,7 +193,7 @@ Raw triage (who asked, de-duplication, disposition) lives in
 | Coin-generating dimension — mini-game or PvP on card collections | idea | Large: a new subsystem with its own tables and a new coin faucet to balance against the Part L invariants. Recorded in the spec as "Future idea 1". |
 | Peer / performance scoring beyond goals — assists, defensive play, post-game survey, 1–5 player ratings, goalie saves, goal reward scaled by player count | partial | The **"Real-life play → ratings"** design for this round-3 cluster shipped 2026-09-06 (ADR-059/060/063): attendance backbone, diminishing-returns goals and a positive-only post-game kudos survey. **Open remainder:** assists, defensive play, 1–5 player ratings, goalie saves and scaling the goal reward by player count — none of these has a design, and each would need its own ADR. |
 | Distinct goalkeeper stat set (handling / reflexes / …) | idea | ADR-036 shipped a goalkeeper archetype that reuses the six outfield stats with an offset. A true GK stat set would rewrite the card component and every attribute projection — deferred as the "hard" variant in the round-1 triage. |
-| Market auctions | idea | ADR-042 added fixed-price listings + escrow trade offers. A timed ascending auction is a separate mechanic. |
+| Market auctions | idea | ADR-042 added fixed-price listings + escrow trade offers; ADR-072 let the seller choose a 24- or 72-hour window. A timed ascending auction is still a separate mechanic. |
 | Weather bonus — extra coins for rain / snow / freeze / >25 °C | idea | No weather data source today. |
 | In-app FAQ | idea | There is a "How KUT works" page; a short FAQ is a smaller, distinct surface. |
 
@@ -305,6 +305,45 @@ audit and idempotency guarantees as an ordinary pack opening. An ADR must
 settle self-gifts, send / receive limits, unopened-gift expiry or refunds,
 inactive recipients, notifications, and abuse through coordinated or
 alternative accounts before any economy work begins.
+
+## Raised 2026-09-15 — all three shipped 2026-09-16
+
+**Status: shipped.** Three items were raised on 2026-09-15 and all three shipped
+the next day in a single migration,
+`20260926000000_trade_log_rating_story_listing_duration.sql`:
+
+| Item | Shipped as |
+|---|---|
+| Trades show their full value in the club log | ADR-073 |
+| An OVR breakdown on the card detail page | ADR-074 |
+| List cards on the market for 72 hours | ADR-072 |
+
+The ADRs and `PROGRESS.md` are canonical for the live behaviour. Three points
+worth carrying forward, because each was a decision rather than an
+implementation detail:
+
+- **The trade log names cards but does not value them.** Nothing is snapshotted
+  at accept time, so a coin-equivalent computed later would drift with Live
+  Ratings and a past trade would rewrite its own worth. If per-card valuation is
+  ever wanted, it needs snapshot columns written at accept time — a
+  data-changing change, not another projection.
+- **The OVR story states Form per session and OVR only once.** The original
+  request asked for "+2 OVR for goals, +2 OVR for kudos";
+  `RATING_BALANCE_REVIEW.md` forbids it, because Form is rounded once on the
+  total and per-line integers would not sum. Revisiting that means revisiting
+  the balance review, not just the copy.
+- **Batching was a one-time authorization** (ADR-075), taken so the hosted
+  schema was pushed once. It sets no precedent; the next migration-bearing
+  change returns to one per PR.
+
+Follow-ups these three deliberately left open:
+
+| Item | Status | Notes / next step |
+|---|---|---|
+| Name the cards in the `Trade completed` notification | idea | The seller inbox notice still says "plus cards" unquantified. The feed now names them, so the inbox reads as the poorer surface. Fixing it means `create or replace`-ing all ~150 lines of `kut.respond_to_trade` for a copy change; worth doing alongside the next real change to that function rather than alone. |
+| Clamp a trade offer to its listing expiry | idea | `kut.propose_trade` sets a flat 12-hour expiry with no clamp to `listing.expires_at`, so an offer can nominally outlive its listing. Harmless — `respond_to_trade` re-checks and refuses — but more visible now listings can run 72 hours. Fix is `least(now() + interval '12 hours', listing.expires_at)`. |
+| Cancelling a lapsed listing reports the wrong thing | idea | `kut.cancel_listing` carries `expires_at > now()`, so cancelling an expired listing raises "active listing not found" rather than a clean "already expired". More sellers will meet this at 72 hours. |
+| Backfill or snapshot per-card trade values | idea | Prerequisite for ever showing a trade's total coin-equivalent. See the first bullet above. |
 
 ## Player eligibility, academy and roster pruning
 
@@ -545,3 +584,14 @@ owned, and expired; abuse vectors (collusion, vote-trading).
 - **`player-photos` storage bucket** is not covered by the SQL backup —
   `BACKUP.md`.
 - **Photo consent toggle + admin photo moderation** — still open (ADR-027).
+- **Enable RLS on `kut.season_rating_rules`** — low-priority defense in depth
+  from the 2026-09-16 Supabase Security Advisor review. The table is in an
+  exposed schema, but this is not a current write or data-integrity hole:
+  `20260920070000_rating_rules_read_permission.sql` revokes `public`/`anon`
+  and grants only `SELECT` to `authenticated` and `service_role`; its rows are
+  deliberately readable by signed-in screens. In a separate independently
+  reviewable migration, enable RLS, retain the least-privilege grants, add an
+  authenticated read policy (preferably using the same active-KUT-member
+  boundary as KB-017), and add pgTAP assertions that `anon` and authenticated
+  writes fail while the intended member read and owner/service paths still
+  work. This needs no paid Supabase feature or recurring administration.

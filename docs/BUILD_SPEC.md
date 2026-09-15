@@ -1243,7 +1243,7 @@ User can:
 
 - select an owned card that is not already listed;
 - enter a price;
-- create a 24-hour listing;
+- create a listing, choosing a 24-hour or 72-hour window (ADR-072);
 - cancel an unsold listing;
 - browse active listings;
 - buy a listing immediately.
@@ -2724,7 +2724,7 @@ Validate:
 - price within current server bounds;
 - user not disabled.
 
-Create 24-hour active listing.
+Create an active listing running 24 or 72 hours, at the seller's choice (ADR-072).
 
 ---
 

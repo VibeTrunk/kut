@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { archetypeLabel } from "@/game/archetypes";
 import { AttributeBars } from "@/components/card-stats";
 import { RatingHistory, type RatingSnapshot } from "@/components/rating-history";
+import { RatingBreakdownStory } from "@/components/rating-breakdown";
+import type { FormContribution, RatingBreakdown } from "@/lib/rating-story";
 import { weekStart } from "@/game/football-week";
 import { LiveCard, type LiveCardPlayer } from "@/components/live-card";
 import { requireUser } from "@/lib/auth/user";
@@ -66,6 +68,31 @@ export default async function PlayerProfilePage({ params }: PlayerProfilePagePro
         .eq("season_id", seasonResponse.data.id)
         .order("week_start")
     : { data: null, error: null };
+  // ADR-074: the same "why this rating" story the card page shows, here beneath
+  // the history chart. Non-critical like the chart queries — a failure drops the
+  // section rather than breaking the profile.
+  const [breakdownResponse, contributionsResponse] = await Promise.all([
+    supabase
+      .schema("kut")
+      .from("player_rating_breakdown")
+      .select("live_ovr, form_score, activity_score, form_bonus, attendance_base, is_ovr_capped")
+      .eq("player_id", player.id)
+      .maybeSingle(),
+    supabase
+      .schema("kut")
+      .from("player_form_contributions")
+      .select(
+        "session_id, session_date, session_type, effective_goals, goal_form, kudos_form, session_input, session_age, weight, weighted_contribution, recognized_categories",
+      )
+      .eq("player_id", player.id)
+      .order("session_date", { ascending: false }),
+  ]);
+  const ratingBreakdown = breakdownResponse.error
+    ? null
+    : ((breakdownResponse.data as RatingBreakdown | null) ?? null);
+  const formContributions = contributionsResponse.error
+    ? []
+    : ((contributionsResponse.data ?? []) as FormContribution[]);
   const photoUrl = player.photo_path ? (photoUrls.get(player.photo_path) ?? null) : null;
   // Both chart queries are deliberately non-critical.
   const snapshots = snapshotsResponse.error
@@ -131,6 +158,14 @@ export default async function PlayerProfilePage({ params }: PlayerProfilePagePro
               playerName={player.display_name}
               snapshots={snapshots}
             />
+
+            {ratingBreakdown && (
+              <RatingBreakdownStory
+                breakdown={ratingBreakdown}
+                contributions={formContributions}
+                playerName={player.display_name}
+              />
+            )}
           </div>
         </div>
       </section>

@@ -3074,3 +3074,79 @@ release gate still fails closed on a dirty checkout.
 Still deliberately external and unchanged: nothing is committed or pushed, no
 branch protection, Vercel, Supabase or GitHub setting was touched, no credential
 was bootstrapped, and no backup, gate, approval or deployment was run.
+
+## Three readability features, one migration — 2026-09-16
+
+Three member-facing changes shipped together in
+`20260926000000_trade_log_rating_story_listing_duration.sql`: seller-chosen
+listing durations (ADR-072), a trade's full composition in the club log
+(ADR-073), and a "why this rating" story on the card page (ADR-074). They are
+batched into one migration at the owner's explicit instruction so the hosted
+schema is pushed once rather than three times; ADR-075 records that decision,
+what it satisfies honestly, and what it costs.
+
+All three turned out to be projection work. **No table was created or altered,
+no row was backfilled, and no economy or rating formula moved** — every input
+already existed and was simply never exposed. Additive tier per `OPERATIONS.md`.
+
+**Seller-chosen listing duration (ADR-072).** `kut.create_listing` takes a
+duration and the seller picks 24 or 72 hours; 24 stays the default.
+`market_listings.expires_at` has carried a 24-hour column default since the
+original marketplace migration and expiry has always been enforced lazily by
+`expires_at > now()` predicates, so only the value written at insert time moved.
+The old two-argument signature is *dropped* before the three-argument one is
+created — a defaulted parameter would otherwise have left a second, permanently
+24-hour entry point alive. The permitted durations are an allow-list rather than
+a range, dual-declared as the SQL guard and `ECONOMY.listingDurationChoiceHours`
+and re-validated in the server action, so the form control is never the only
+guard. `create_listing` also stopped returning a hardcoded
+`now() + interval '24 hours'` that was never read back from the insert. The card
+page now shows the real expiry date instead of asserting "24 hours" in copy.
+
+**A trade's full composition in the log (ADR-073).** Two defects, both in
+`kut.activity_feed`. The trade branch reported `coins_to_seller` while every
+other branch reports gross, so trades alone were understated by the 5% burn —
+it now reports `offered_coins` and `amount` means the same thing everywhere.
+And `trade_offer_cards` was never joined, so cards moving the other way were
+invisible; a lateral `array_agg` now supplies them in a new ninth column. Past
+trades consequently read higher than before: no data changed, the feed simply
+reports the price rather than the proceeds. No coin valuation is attached to the
+offered cards, because nothing is snapshotted at accept time and a value
+computed later would drift with Live Ratings.
+
+**A card explains its own rating (ADR-074).** Two new views split a player's OVR
+into its attendance base and Form bonus, and list the sessions behind that Form
+with their decay weight and recognised category titles. The requested "+2 OVR
+for goals, +2 OVR for kudos" shape is *not* what shipped:
+`RATING_BALANCE_REVIEW.md` rules that Form is rounded once on the total, so
+per-line OVR would not sum to the real number. The story states the bonus once
+in OVR and every session line in Form. The attendance base is derived as
+`live_ovr - floor(form_score + 0.5)` rather than recomputed from the attendance
+curve, so the two halves reconstruct the card face by construction. Age is
+counted in sessions, never weeks.
+
+The real risk in that last one is that the decay ladder is now expressed a
+second time outside `_rebuild_season_core` and could drift from it. That is
+pinned by a test which runs the real engine over a fixture and asserts the
+summed weighted contributions equal the resulting `form_score`.
+
+Verification: `verify:fast` passes (21 files / 159 tests, up from 20 / 142);
+pgTAP passes (17 files / 516 assertions, up from 15 / 482) — new
+`listing_duration.test.sql` (13) and `rating_breakdown.test.sql` (14), and
+`activity_feed.test.sql` grown 12 → 19 after having no trade coverage at all;
+production build passes; the migration-policy gate passes with exactly one added
+migration. Two stale assertions were caught by running the whole suite rather
+than only the new files: `phase_1a_roster.test.sql` pinned the old
+`create_listing` signature, and two `activity.test.ts` cases pinned the old
+trade sentence.
+
+Deliberately unchanged and recorded in the ADRs: nothing sweeps expired listings
+(still the `LAUNCH_PLAN.md` decision, and there is still no cron infrastructure
+in the repo); `propose_trade` still sets a flat 12-hour offer expiry with no
+clamp to the listing's own expiry, which is more visible at 72 hours;
+`cancel_listing` still raises "active listing not found" for a lapsed listing;
+and the seller's `Trade completed` notification still says "plus cards" without
+naming them, because fixing it means re-declaring all ~150 lines of
+`respond_to_trade` for a copy change.
+
+Nothing was committed, pushed or deployed.

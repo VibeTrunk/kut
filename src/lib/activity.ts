@@ -17,6 +17,9 @@ export type ActivityRow = {
   amount: number | null;
   session_date: string | null;
   session_type: string | null;
+  // ADR-073: the players whose cards were offered back in a trade. Null on
+  // every other row kind, and on a coins-only trade.
+  offered_card_names: string[] | null;
 };
 
 // Oldest activity the feed will show. The club started using KUT for real on
@@ -40,13 +43,27 @@ export function activityKindLabel(kind: string): string {
 // Kept as a named export for backwards compatibility with existing imports.
 export const ACTIVITY_KIND_LABEL = ACTIVITY_KIND_LABELS;
 
+/**
+ * Renders a list as `A`, `A and B`, or `A, B and C` — the TypeScript twin of
+ * `kut._join_names` (ADR-069), which does the same job for notification copy.
+ */
+function joinNames(names: string[]): string {
+  if (names.length <= 1) return names[0] ?? "";
+  return `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
+}
+
 export function describeActivity(row: ActivityRow): string {
   const coins = (n: number | null) => `${n ?? 0} KUT Coins`;
   switch (row.kind) {
     case "sale":
       return `${row.actor_name ?? "A member"} sold ${row.card_name ?? "a card"} to ${row.counterparty_name ?? "a member"} for ${coins(row.amount)}.`;
-    case "trade":
-      return `${row.actor_name ?? "A member"} traded ${row.card_name ?? "a card"} to ${row.counterparty_name ?? "a member"} for ${coins(row.amount)}.`;
+    case "trade": {
+      // ADR-073: a trade's consideration is coins AND any cards offered back,
+      // so the sentence names both rather than reporting the coins alone.
+      const offered = row.offered_card_names ?? [];
+      const plusCards = offered.length > 0 ? ` plus ${joinNames(offered)}` : "";
+      return `${row.actor_name ?? "A member"} traded ${row.card_name ?? "a card"} to ${row.counterparty_name ?? "a member"} for ${coins(row.amount)}${plusCards}.`;
+    }
     case "listing":
       return `${row.actor_name ?? "A member"} listed ${row.card_name ?? "a card"} for ${coins(row.amount)}.`;
     case "pack":

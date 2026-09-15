@@ -81,7 +81,8 @@ select has_function(
   'server-authoritative pack opening function exists'
 );
 select has_function('kut', 'get_listing_bounds', array['uuid'], 'listing-bound calculation function exists');
-select has_function('kut', 'create_listing', array['uuid', 'bigint'], 'listing creation function exists');
+-- ADR-072 added the duration argument and dropped the two-argument signature.
+select has_function('kut', 'create_listing', array['uuid', 'bigint', 'integer'], 'listing creation function exists');
 select has_function('kut', 'cancel_listing', array['uuid'], 'listing cancellation function exists');
 select has_function('kut', 'buy_listing', array['uuid', 'uuid'], 'atomic market purchase function exists');
 select has_function('kut', 'mark_notifications_read', array['uuid[]'], 'notification read-state function exists');

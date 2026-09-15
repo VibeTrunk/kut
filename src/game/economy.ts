@@ -23,7 +23,13 @@ export const ECONOMY = {
   basicPackPrice: 175,
   basicPackCardCount: 3,
   marketTaxPercent: 5,
+  // Default market listing length, used when a seller expresses no preference.
   listingDurationHours: 24,
+  // ADR-072: the durations a seller may choose when listing a card. Mirrored by
+  // the `p_duration_hours not in (24, 72)` allow-list in
+  // 20260928000000_listing_duration_choice.sql. Adding a value here without
+  // widening that guard makes the server reject the choice.
+  listingDurationChoiceHours: [24, 72],
   // Per-call fat-finger cap on abs(amount) for the admin coin faucet
   // (kut.admin_adjust_wallet, ADR-035). Mirrored by the SQL guard in
   // 20260905000000_admin_economy_tools.sql.

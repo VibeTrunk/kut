@@ -67,7 +67,7 @@ export default async function Home() {
       .schema("kut")
       .from("activity_feed")
       .select(
-        "kind, ts, actor_name, counterparty_name, card_name, amount, session_date, session_type",
+        "kind, ts, actor_name, counterparty_name, card_name, amount, session_date, session_type, offered_card_names",
       )
       .gte("ts", ACTIVITY_FLOOR_ISO)
       .order("ts", { ascending: false })

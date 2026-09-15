@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { formatDate } from "@/lib/format";
 import { cancelListing, type ListingState } from "./market-actions";
 
 const initialState: ListingState = { error: null };
@@ -8,10 +9,14 @@ export function CancelListingForm({
   cardId,
   listingId,
   price,
+  expiresAt,
 }: {
   cardId: string;
   listingId: string;
   price: number;
+  // ADR-072: listings no longer all run 24 hours, so the real expiry is shown
+  // rather than a fixed figure in the copy.
+  expiresAt: string | null;
 }) {
   const [state, action, pending] = useActionState(cancelListing, initialState);
   return (
@@ -20,7 +25,8 @@ export function CancelListingForm({
       <input name="listingId" type="hidden" value={listingId} />
       <p className="font-black text-steel">Listed for {price} KUT Coins</p>
       <p className="mt-1 text-sm text-steel/80">
-        This card is locked while its 24-hour listing is active.
+        This card is locked while the listing is active
+        {expiresAt ? `, until ${formatDate(expiresAt)}` : ""}.
       </p>
       {state.error && (
         <p className="mt-3 rounded-xl bg-brick-bg p-3 text-sm text-brick">{state.error}</p>

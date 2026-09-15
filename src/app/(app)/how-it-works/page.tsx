@@ -244,11 +244,11 @@ export default async function HowItWorksPage() {
 
         <Section title="8. Transfer market & trade offers">
           <p>
-            List any card at a buy-now price (within server-set bounds) for{" "}
-            {ECONOMY.listingDurationHours} hours. When it sells, a {ECONOMY.marketTaxPercent}% tax
-            (minimum 1 coin) is <strong>burned</strong> &mdash; it doesn&rsquo;t go to anyone
-            &mdash; and the seller gets the rest. A listed card is locked until it sells, is
-            cancelled, or expires.
+            List any card at a buy-now price (within server-set bounds), choosing whether it runs
+            for {ECONOMY.listingDurationChoiceHours.join(" or ")} hours. When it sells, a{" "}
+            {ECONOMY.marketTaxPercent}% tax (minimum 1 coin) is <strong>burned</strong> &mdash; it
+            doesn&rsquo;t go to anyone &mdash; and the seller gets the rest. A listed card is locked
+            until it sells, is cancelled, or expires.
           </p>
           <p>
             Instead of paying the buy-now price, you can <strong>make an offer</strong>: some KUT

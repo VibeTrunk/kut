@@ -2,7 +2,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AttributeBars } from "@/components/card-stats";
 import { LiveCard, type LiveCardPlayer } from "@/components/live-card";
+import { RatingBreakdownStory } from "@/components/rating-breakdown";
 import { requireUser } from "@/lib/auth/user";
+import type { FormContribution, RatingBreakdown } from "@/lib/rating-story";
 import { resolvePhotoUrls } from "@/lib/player-photos";
 import { createClient } from "@/lib/supabase/server";
 import { isUuid } from "@/lib/uuid";
@@ -23,6 +25,7 @@ type CollectionCard = {
   is_live: boolean;
   source: string;
   display_name: string;
+  player_id: string;
   player_slug: string;
   archetype: string;
   ovr: number;
@@ -36,6 +39,7 @@ type CollectionCard = {
   discard_value: number;
   active_listing_id: string | null;
   active_listing_price: number | null;
+  active_listing_expires_at: string | null;
   held_by_offer_id: string | null;
   photo_path: string | null;
 };
@@ -55,7 +59,7 @@ export default async function CardDetailPage({ params, searchParams }: CardPageP
     .schema("kut")
     .from("my_collection_cards")
     .select(
-      "card_id, edition_id, edition_title, edition_type, is_live, source, player_slug, display_name, archetype, ovr, pac, sho, pas, dri, def, phy, rarity_tier, discard_value, active_listing_id, active_listing_price, held_by_offer_id, photo_path",
+      "card_id, edition_id, edition_title, edition_type, is_live, source, player_id, player_slug, display_name, archetype, ovr, pac, sho, pas, dri, def, phy, rarity_tier, discard_value, active_listing_id, active_listing_price, active_listing_expires_at, held_by_offer_id, photo_path",
     )
     .eq("card_id", cardId)
     .maybeSingle();
@@ -70,18 +74,43 @@ export default async function CardDetailPage({ params, searchParams }: CardPageP
 
   const card = data as CollectionCard;
   const photoUrls = await resolvePhotoUrls(supabase, [card.photo_path]);
-  const [query, boundsResponse, valueResponse] = await Promise.all([
-    searchParams,
-    !card.active_listing_id
-      ? supabase.schema("kut").rpc("get_listing_bounds", { p_card_id: card.card_id })
-      : Promise.resolve({ data: null, error: null }),
-    supabase
-      .schema("kut")
-      .from("my_club_value_copies")
-      .select("weight_percent,club_value_contribution,club_value_change_if_discarded")
-      .eq("card_id", card.card_id)
-      .maybeSingle(),
-  ]);
+  // ADR-074: the rating story applies only to a Live card. A Special edition is
+  // a frozen snapshot, so explaining a current OVR would misdescribe it. Both
+  // reads are non-critical — a failure renders the page without the story
+  // rather than 500ing, matching how the rating graph treats its own queries.
+  const [query, boundsResponse, valueResponse, breakdownResponse, contributionsResponse] =
+    await Promise.all([
+      searchParams,
+      !card.active_listing_id
+        ? supabase.schema("kut").rpc("get_listing_bounds", { p_card_id: card.card_id })
+        : Promise.resolve({ data: null, error: null }),
+      supabase
+        .schema("kut")
+        .from("my_club_value_copies")
+        .select("weight_percent,club_value_contribution,club_value_change_if_discarded")
+        .eq("card_id", card.card_id)
+        .maybeSingle(),
+      card.is_live
+        ? supabase
+            .schema("kut")
+            .from("player_rating_breakdown")
+            .select(
+              "live_ovr, form_score, activity_score, form_bonus, attendance_base, is_ovr_capped",
+            )
+            .eq("player_id", card.player_id)
+            .maybeSingle()
+        : Promise.resolve({ data: null, error: null }),
+      card.is_live
+        ? supabase
+            .schema("kut")
+            .from("player_form_contributions")
+            .select(
+              "session_id, session_date, session_type, effective_goals, goal_form, kudos_form, session_input, session_age, weight, weighted_contribution, recognized_categories",
+            )
+            .eq("player_id", card.player_id)
+            .order("session_date", { ascending: false })
+        : Promise.resolve({ data: null, error: null }),
+    ]);
   const bounds =
     boundsResponse.data && typeof boundsResponse.data === "object" ? boundsResponse.data : null;
   const minimumPrice = bounds && "minimum_price" in bounds ? Number(bounds.minimum_price) : null;
@@ -91,6 +120,8 @@ export default async function CardDetailPage({ params, searchParams }: CardPageP
     club_value_contribution: number;
     club_value_change_if_discarded: number;
   } | null;
+  const ratingBreakdown = (breakdownResponse.data as RatingBreakdown | null) ?? null;
+  const formContributions = (contributionsResponse.data as FormContribution[] | null) ?? [];
 
   const cardPlayer: LiveCardPlayer = {
     id: card.card_id,
@@ -135,6 +166,14 @@ export default async function CardDetailPage({ params, searchParams }: CardPageP
 
             <AttributeBars player={card} />
 
+            {card.is_live && ratingBreakdown && (
+              <RatingBreakdownStory
+                breakdown={ratingBreakdown}
+                contributions={formContributions}
+                playerName={card.display_name}
+              />
+            )}
+
             <Link
               className="block text-sm font-bold text-brass hover:underline"
               href={`/players/${card.player_slug}`}
@@ -144,7 +183,7 @@ export default async function CardDetailPage({ params, searchParams }: CardPageP
 
             {query.listed === "1" && (
               <p className="rounded-2xl border border-moss-line/40 bg-moss-bg/50 p-4 text-sm font-bold text-moss">
-                Listed successfully. This card is now locked for 24 hours or until you cancel it.
+                Listed successfully. This card is locked until the listing expires or you cancel it.
               </p>
             )}
             {query.listingCancelled === "1" && (
@@ -162,6 +201,7 @@ export default async function CardDetailPage({ params, searchParams }: CardPageP
             {!card.held_by_offer_id && card.active_listing_id && card.active_listing_price && (
               <CancelListingForm
                 cardId={card.card_id}
+                expiresAt={card.active_listing_expires_at}
                 listingId={card.active_listing_id}
                 price={card.active_listing_price}
               />

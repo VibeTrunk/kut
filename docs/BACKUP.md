@@ -120,13 +120,50 @@ function usually means another extension or `auth`/`storage` stub object to
 add in step 3; a genuine data error is a real finding. Record the drill date
 and the row counts in `.private-backups/BACKUP_LOG.md`.
 
-Last drill: 2026-08-30 against `kut-backup-20260830-104303` — passed, full
-schema + all `COPY` blocks, no errors.
+Last drill: 2026-09-15 against `kut-backup-20260915-225752` — passed, `psql`
+exit 0, zero errors, 33 players / 22 profiles / 513 user_cards / 41
+trade_offers. First drill against the post-ADR-042 schema; the previous one
+(2026-08-30, `kut-backup-20260830-104303`) predated trade offers.
 
 For a **real** disaster recovery (not a drill) you would restore into a
 project that already has the matching `auth.users` rows (from the Supabase
 dashboard backup), then replay this dump **without** the `replica` setting so
 foreign keys are enforced.
+
+### The circular foreign key, and why it only matters in real DR
+
+Since ADR-042, `pg_dump` warns on every backup:
+
+```
+warning: there are circular foreign-key constraints among these tables:
+detail: user_cards
+detail: trade_offers
+```
+
+`kut.user_cards.held_by_offer_id` references `kut.trade_offers`, which
+references `kut.user_cards` back. A `--data-only` dump cannot order the two
+`COPY` blocks so that both sides are satisfied as they load.
+
+The **drill** never hits this, because step 4 sets
+`session_replication_role = replica` and that suspends FK triggers. Real DR
+replays with foreign keys live, which is exactly where the cycle bites — and
+only when a card is genuinely escrowed in an open offer, i.e.
+`held_by_offer_id is not null` for at least one row. That count was **0** at
+the 2026-09-15 drill, so that backup restores cleanly either way. That is a
+property of the data on the day, not a guarantee.
+
+So, before a real restore, check the escrow count in the decrypted dump. If it
+is non-zero, replay with `--disable-triggers` semantics — the same
+`set session_replication_role = replica` the drill uses — and then re-enable
+and validate, rather than discovering the failure halfway through recovery:
+
+```sql
+-- after restoring, with replication role back to 'origin'
+select count(*) from kut.user_cards uc
+  where uc.held_by_offer_id is not null
+    and not exists (select 1 from kut.trade_offers t where t.id = uc.held_by_offer_id);
+-- must be 0; anything else means escrow rows were lost
+```
 
 ## Cadence
 

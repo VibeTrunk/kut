@@ -208,6 +208,154 @@ New ideas identified during roadmap review. They are deliberately **not scoped**
 | Opt-in community collection goals | idea | A TFH-wide seasonal album or themed goal that members can contribute toward while retaining their own cards. Completion unlocks a cosmetic club-wide badge, card frame, or Chronicle moment — **not** coins, packs, ratings, or ownership disclosure. This complements the personal Panini album and collection challenges; needs opt-in contribution semantics, a privacy-safe aggregate-progress design, and an ADR. |
 | Market "My listings" tab | idea | Raised by the 2026-09-05 navigation audit and deliberately not built with ADR-053. Market now has `Buy` / `Offers` section tabs; a third **My listings** tab would show everything you currently have up for sale. Today a listing is cancelled from its card in the Collection, which works, but there is no single view of your own active listings. `kut.my_collection_cards` already carries `active_listing_id` and `active_listing_price`, so it is a filter over data the Collection already fetches — no new query shape, but it is new scope and a product decision about whether the Collection or the Market owns that job. |
 
+## New candidate additions — 2026-09-08
+
+All items in this section have **idea** status. They were selected as
+high-potential additions during a roadmap review, but they are not committed
+features and have not had their product rules, economy effects, privacy model
+or implementation scoped. Each needs an ADR before implementation; anything
+that changes a game rule or public contract also needs a `BUILD_SPEC.md`
+update.
+
+### KUT Matchweek Drop
+
+**Status: idea.** Turn the end of a football week's reporting cycle into a
+recognisable reveal moment rather than letting the results appear silently
+across several pages. A short sequence could reveal attendance and goals,
+kudos, rating movements, tier changes, and selected Chronicle / club-activity
+moments, then lead into the permanent Chronicle issue. It should present data
+KUT already calculates rather than introduce another scoring system.
+
+Open design questions include what triggers a Drop after automatic or early
+survey finalization, whether it is watched once or can be replayed, which
+events deserve inclusion, and how the experience remains quick, accessible
+and respectful of reduced-motion preferences.
+
+### My KUT Season / KUT Wrapped
+
+**Status: idea.** Give each member a personal, narrative view of their season:
+appearances, goals, kudos categories, starting/current/peak OVR, rarity
+promotions, notable cards, collection progress, and trading or pack-opening
+moments. It could have a live in-season form and a richer end-of-season
+"Wrapped" summary with a shareable final card. This is distinct from the
+generic season history listed under Phase 2: the point is the member's own
+story, not merely an archive of seasons or standings. It should initially be
+a read-only interpretation of existing facts, without attaching new coin or
+rating rewards.
+
+### Card-copy identity and provenance
+
+**Status: idea.** Make an individual Card Copy feel like a collectible object
+rather than an interchangeable row. Candidate details include a stable serial
+number, mint date and source, matchweek or pack of origin, original-starter
+status, and an ownership / trade count or timeline. Preserve the existing
+card-ownership privacy stance: provenance may be anonymous, and previous owner
+names must not be exposed without an explicit privacy decision. Decide whether
+history can be reconstructed accurately for existing copies and whether any
+provenance marker is purely cosmetic by default; it must not silently change
+OVR, discard value, pack odds or Club Value.
+
+### A good start for new players
+
+**Status: idea.** Give a genuine newcomer a fair, enjoyable start after the
+club and economy have already progressed. This deliberately records only the
+product goal, **not** a guided mission or onboarding-quest system. More thought
+is needed about what bounded advantages a newcomer could receive, how long
+they last, and what positive advantage an established member could receive
+for welcoming, trading with, gifting to or otherwise helping the newcomer.
+Possible mechanisms are inputs for design, not adopted rules.
+
+Any design must be tied to the real invited Player/account so it cannot be
+farmed through alternative accounts, must not permanently disadvantage
+existing members, and must not create an unbounded coin or card faucet. It
+should also be designed together with the academy / card-eligibility concept
+below: an attendee who has not yet qualified for a full card and an established
+Player who has only just claimed an account are different newcomer cases.
+
+### Shareable cards and matchweek posters
+
+**Status: idea.** Generate polished, club-branded images that a member may
+choose to download or share: their current Live Card, an OVR or rarity change,
+a Chronicle cover, a matchweek summary, an album achievement, or an
+end-of-season card. Sharing remains opt-in; the generated asset must omit
+private data, respect photo consent, and offer the normal initials / default-art
+fallback when a personal photo may not be used. This is an export surface, not
+automatic external messaging or a reason to add spammy notifications.
+
+### Animated Special-edition card artwork
+
+**Status: idea.** Allow selected Special editions to use animated GIF artwork
+in place of the Player's static profile photo, making rare cards feel visibly
+different from ordinary Live editions. Animation belongs to the edition's
+frozen artwork treatment rather than replacing the Player's normal profile
+photo everywhere. Before implementation, settle who may upload or assign the
+asset, file-size and dimension limits, storage and content-validation rules,
+and how animation behaves in card grids, reveal sequences and shareable
+exports. Every animated card needs a good static poster-frame fallback, and
+`prefers-reduced-motion` or an in-app accessibility choice must be able to show
+that still image instead.
+
+### Gift a sealed pack
+
+**Status: idea.** Let one member buy a sealed pack for another member, with
+the recipient performing the reveal and receiving the normal
+server-authoritative outcome. The sender pays the configured price; this is
+not a direct coin transfer and must use the same odds, supply guards, ledger
+audit and idempotency guarantees as an ordinary pack opening. An ADR must
+settle self-gifts, send / receive limits, unopened-gift expiry or refunds,
+inactive recipients, notifications, and abuse through coordinated or
+alternative accounts before any economy work begins.
+
+## Player eligibility, academy and roster pruning
+
+**Status: idea; workings deliberately open.** Occasional visitors who attend
+once and never return should not automatically receive a permanent collectible
+Player card. A starting proposal is to require three recorded attendances
+before a Player becomes part of the full card game, while remaining open to a
+different mechanism that achieves the same outcome more fairly or simply.
+
+Candidate lifecycle:
+
+1. After one or two qualifying attendances, show the person in a visible
+   **Academy** of upcoming Players, without yet minting or making their full
+   collectible card available.
+2. On the third qualifying attendance, promote them to full Player-card status.
+3. If their Academy attendance count has not increased for a month, take an
+   as-yet-undecided action. Whether they remain visible, are archived/hidden,
+   or later restart part of the qualification process is explicitly open and
+   must not be inferred from this proposal.
+4. Support the other end of the lifecycle too: an admin may propose retiring
+   a full Player who no longer attends often. Retirement is **never automatic**
+   and requires an explicit manual confirmation so injury, travel or another
+   temporary absence can be handled humanely.
+5. The proposed retirement settlement cashes out active copies of that
+   Player's affected cards to their owners at the applicable discard value.
+   Exact burn / retirement semantics remain open and must be atomic, audited
+   and communicated to every affected owner.
+
+Before an ADR, decide what counts as a qualifying session, whether the three
+appearances are lifetime or inside a rolling window, who may appear publicly
+in the Academy, how existing Players are grandfathered, what happens after an
+Academy timeout or later return, and whether promotion happens immediately or
+after admin confirmation. Pruning additionally needs explicit rules for Live
+versus Special editions, current listings, cards held in trade escrow,
+historical market / Chronicle / album records, current-season ratings, and
+possible future reactivation. Never delete the historical Player or silently
+invalidate economy records.
+
+## Generated default player portraits
+
+**Status: idea.** Replace the visually empty initials-only state for Players
+without a custom photo with a small controlled library — initially around ten
+distinct generated default portraits. Assign a portrait deterministically so
+the same Player keeps the same visual across Live Cards, the Album, Market,
+Chronicle and shareable assets; a consented custom photo always overrides it.
+The defaults should be clearly fictional / illustrative rather than attempts
+to resemble the real person, cover enough visual variety to avoid making the
+roster look repetitive, carry suitable usage rights, and work across all
+rarity treatments and card sizes. Art direction, assignment inputs and whether
+archetype influences the portrait are open design decisions.
+
 ## KUT Five Cup — archetype-aware weekly knockout
 
 **Status: favored.** A lightweight, asynchronous competitive use for the cards

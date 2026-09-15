@@ -43,6 +43,59 @@ describe("dotenv bootstrap parser", () => {
     );
   });
 
+  // Operator .env.local files predate .env.example and carry the older
+  // spelling. Rejecting them made the documented bootstrap command unusable.
+  it("accepts the legacy database-password spelling", () => {
+    expect(
+      validateBootstrapValues({
+        KUT_BACKUP_PASSPHRASE: "passphrase",
+        KUT_SUPABASE_DB_PASSWORD: "database-password",
+      }).map(({ key, locator }) => ({ key, locator })),
+    ).toEqual([
+      { key: "KUT_BACKUP_PASSPHRASE", locator: "backup-encryption-v1" },
+      { key: "KUT_SUPABASE_DB_PASSWORD", locator: "hosted-db-v1" },
+    ]);
+  });
+
+  it("prefers the canonical spelling when both agree", () => {
+    const [, database] = validateBootstrapValues({
+      KUT_BACKUP_PASSPHRASE: "passphrase",
+      KUT_HOSTED_DB_PASSWORD: "same",
+      KUT_SUPABASE_DB_PASSWORD: "same",
+    });
+    expect(database).toMatchObject({ key: "KUT_HOSTED_DB_PASSWORD", locator: "hosted-db-v1" });
+  });
+
+  it("refuses to guess when both spellings hold different secrets", () => {
+    expect(() =>
+      validateBootstrapValues({
+        KUT_BACKUP_PASSPHRASE: "passphrase",
+        KUT_HOSTED_DB_PASSWORD: "one",
+        KUT_SUPABASE_DB_PASSWORD: "another",
+      }),
+    ).toThrow(/Conflicting bootstrap values/);
+  });
+
+  it("names both accepted spellings when the database password is absent", () => {
+    expect(() => validateBootstrapValues({ KUT_BACKUP_PASSPHRASE: "passphrase" })).toThrow(
+      /KUT_HOSTED_DB_PASSWORD \(or KUT_SUPABASE_DB_PASSWORD\)/,
+    );
+  });
+
+  it("never echoes a secret value in a validation failure", () => {
+    try {
+      validateBootstrapValues({
+        KUT_BACKUP_PASSPHRASE: "passphrase",
+        KUT_HOSTED_DB_PASSWORD: "fictional-secret-one",
+        KUT_SUPABASE_DB_PASSWORD: "fictional-secret-two",
+      });
+      expect.unreachable("expected a conflict");
+    } catch (error) {
+      expect((error as Error).message).not.toContain("fictional-secret-one");
+      expect((error as Error).message).not.toContain("fictional-secret-two");
+    }
+  });
+
   it("maps required values to stable nonsecret locators", () => {
     expect(
       validateBootstrapValues({

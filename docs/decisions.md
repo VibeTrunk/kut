@@ -3226,8 +3226,8 @@ configuration change in this slice.
   accepts skipped database/E2E/security jobs only for a mechanically classified
   docs-only diff. Executable changes require all of them. Gitleaks is pinned to
   the reviewed v8.30.1 linux/amd64 image digest. After one green landing run,
-  branch protection should separately require `verify / merge-gate` and
-  `gitleaks / scan`.
+  branch protection should separately require `merge-gate` and `scan` (the bare
+  job names GitHub reports; corrected 2026-09-15, see the addendum below).
 - The ADR-070 migration count check becomes an immutable-history policy:
   modifying, deleting, copying or renaming a base migration fails; at most one
   migration may be added; and it needs a changed database test or a reviewed
@@ -3363,3 +3363,41 @@ predate ADR-071 and neither is reachable without the passphrase, but the
 original plan listed the zeroing as acceptance criteria and it was dropped.
 Changing the KDF would break the `KUTBKP01` format every existing backup uses,
 so it needs its own slice with a rekey path.
+
+### ADR-071 addendum 2 — two defects that blocked the follow-up runbook
+
+Date: 2026-09-15
+
+Found immediately after ADR-071 landed as `c27f075`, while walking the
+follow-up steps it defines. Both were in the landed slice; neither affected the
+running application.
+
+1. **The documented required-check contexts do not exist.** Four documents told
+   the operator to require `verify / merge-gate` and `gitleaks / scan`. GitHub
+   Actions reports a check run under its *job* name, so the real contexts are
+   `merge-gate` and `scan`. Requiring the `workflow / job` form would have
+   pinned contexts that never report, leaving every PR permanently pending and
+   blocking all merges — the same never-starts failure the always-present
+   aggregator was introduced to prevent, reintroduced through the runbook.
+   `scripts/release/request-production-gate.ps1` was already correct, so this
+   was prose-only. The docs now carry the bare names and a `gh api` one-liner to
+   re-confirm them before changing protection.
+
+2. **The credential bootstrap could not read a real `.env.local`.** It required
+   `KUT_HOSTED_DB_PASSWORD`, the name `.env.example` introduced alongside it.
+   The operator file predating it carries `KUT_SUPABASE_DB_PASSWORD`, which is
+   referenced nowhere else in the repository. `validateBootstrapValues` now
+   accepts either spelling for the `hosted-db-v1` locator, prefers the canonical
+   one, and refuses outright when both are present with different values rather
+   than guessing which secret to store under a locator nothing would re-check.
+   Accepting an alias was chosen over documenting a rename because the
+   alternative is hand-editing a secrets file to satisfy a naming change.
+
+Neither is reachable from the deployed application: the first is documentation,
+the second is a local operator script. The wider lesson is that ADR-071's
+verification proved its scripts self-consistent without ever proving they matched
+the environment they would run in — the check names were never read back from
+GitHub, and the bootstrap was never resolved against a real `.env.local`. Both
+are now covered: the bootstrap resolution is unit-tested against both spellings
+and the conflict case, and the docs carry the command that re-derives the check
+names from the API.

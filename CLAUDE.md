@@ -32,7 +32,10 @@ substitute.
     change to a Part L invariant or an RPC contract. Hosted migrations are
     deployed separately from `VibeTrunk/supabase`, so a bundled PR cannot be
     reverted without dragging unrelated work with it while the hosted schema
-    stays migrated. One such change per PR.
+    stays migrated. One such change per PR. Since ADR-070 this is enforced
+    mechanically: the `migrations` job in `.github/workflows/verify.yml` fails
+    any PR whose diff against the merge base touches more than one
+    `supabase/migrations/*.sql`. There is no label override.
   - **Never run two agents in one working tree.** Each holds stale file state
     and they will silently clobber each other. Serialize them on the branch,
     or give each its own `git worktree` and merge into the PR branch.

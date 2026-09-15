@@ -3,14 +3,23 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 const databaseUrl =
   process.env.KUT_LOCAL_DATABASE_URL ?? "postgresql://postgres:postgres@127.0.0.1:54322/postgres";
+
+// Every id this suite writes lives under the 21000000- prefix, including its
+// own kut.players row. Nothing here is shared with another integration file or
+// with supabase/seed.sql, so the suite is correct run alone, run beside the
+// others, or run against a stack that already carries real data.
 const fx = {
-  seller: "00000000-0000-4000-8000-0000000f0a01",
-  proposerA: "00000000-0000-4000-8000-0000000f0a02",
-  proposerB: "00000000-0000-4000-8000-0000000f0a03",
-  player: "00000000-0000-4000-8000-000000000001",
-  edition: "00000000-0000-4000-8000-0000000f0a04",
-  card: "00000000-0000-4000-8000-0000000f0a05",
-  listing: "00000000-0000-4000-8000-0000000f0a06",
+  seller: "21000000-0000-4000-8000-000000000001",
+  proposerA: "21000000-0000-4000-8000-000000000002",
+  proposerB: "21000000-0000-4000-8000-000000000003",
+  player: "21000000-0000-4000-8000-000000000011",
+  edition: "21000000-0000-4000-8000-000000000021",
+  card: "21000000-0000-4000-8000-000000000031",
+  listing: "21000000-0000-4000-8000-000000000041",
+  offerKeyA: "21000000-0000-4000-8000-000000000051",
+  offerKeyB: "21000000-0000-4000-8000-000000000052",
+  respondKeyA: "21000000-0000-4000-8000-000000000061",
+  respondKeyB: "21000000-0000-4000-8000-000000000062",
 };
 const users = [fx.seller, fx.proposerA, fx.proposerB];
 let admin: Client;
@@ -19,10 +28,12 @@ let sellerConn2: Client;
 
 async function cleanup() {
   await admin.query("delete from kut.user_notifications where user_id = any($1::uuid[])", [users]);
-  await admin.query(
-    "delete from kut.wallet_ledger where user_id = any($1::uuid[]) or reason in ('trade_escrow','trade_unescrow','trade_sale')",
-    [users],
-  );
+  // Scoped to the fixture users only. This once also carried
+  // `or reason in ('trade_escrow','trade_unescrow','trade_sale')`, which
+  // deleted every trade ledger row in the database for every account — the
+  // escrow and sale rows this suite writes all belong to these three users by
+  // construction, so the user_id predicate alone is both sufficient and safe.
+  await admin.query("delete from kut.wallet_ledger where user_id = any($1::uuid[])", [users]);
   await admin.query(
     "delete from kut.trade_offer_cards where offer_id in (select id from kut.trade_offers where listing_id = $1)",
     [fx.listing],
@@ -35,6 +46,8 @@ async function cleanup() {
   await admin.query("delete from kut.wallets where user_id = any($1::uuid[])", [users]);
   await admin.query("delete from kut.profiles where id = any($1::uuid[])", [users]);
   await admin.query("delete from auth.users where id = any($1::uuid[])", [users]);
+  // Last: kut.card_editions and kut.profiles both reference the player row.
+  await admin.query("delete from kut.players where id = $1", [fx.player]);
 }
 
 async function asUser(client: Client, userId: string, sql: string, params: unknown[] = []) {
@@ -63,6 +76,10 @@ describe("local two-client trade-offer accept race", () => {
       [fx.seller, fx.proposerA, fx.proposerB],
     );
     await admin.query(
+      "insert into kut.players (id, slug, display_name, full_name, archetype) values ($1,'trade-race-player','Trade Race Player','Trade Race Player','all_rounder')",
+      [fx.player],
+    );
+    await admin.query(
       "insert into kut.profiles (id, display_name, role) values ($1,'Trace Seller','user'),($2,'Trace A','user'),($3,'Trace B','user')",
       [fx.seller, fx.proposerA, fx.proposerB],
     );
@@ -86,11 +103,11 @@ describe("local two-client trade-offer accept race", () => {
     // Each proposer makes a coin offer on the same listing.
     await asUser(sellerConn1, fx.proposerA, "select kut.propose_trade($1,120,'{}'::uuid[],$2)", [
       fx.listing,
-      "00000000-0000-4000-8000-0000000faa01",
+      fx.offerKeyA,
     ]);
     await asUser(sellerConn2, fx.proposerB, "select kut.propose_trade($1,150,'{}'::uuid[],$2)", [
       fx.listing,
-      "00000000-0000-4000-8000-0000000faa02",
+      fx.offerKeyB,
     ]);
   });
 
@@ -104,40 +121,45 @@ describe("local two-client trade-offer accept race", () => {
       "select id, proposer_idempotency_key from kut.trade_offers where listing_id = $1 order by offered_coins",
       [fx.listing],
     );
-    const offerA = offers.rows.find(
-      (r) => r.proposer_idempotency_key === "00000000-0000-4000-8000-0000000faa01",
-    );
-    const offerB = offers.rows.find(
-      (r) => r.proposer_idempotency_key === "00000000-0000-4000-8000-0000000faa02",
-    );
+    const offerA = offers.rows.find((r) => r.proposer_idempotency_key === fx.offerKeyA);
+    const offerB = offers.rows.find((r) => r.proposer_idempotency_key === fx.offerKeyB);
 
+    // The one deliberate overlap: two *separate* client connections, both
+    // acting as the seller, accepting different offers on the same listing.
+    // Every read below runs on the single `admin` client and is therefore
+    // awaited one at a time — pg 8.x warns on an overlapped query and pg 9
+    // removes the behaviour outright.
     const [resA, resB] = await Promise.all([
       asUser(sellerConn1, fx.seller, "select kut.respond_to_trade($1, true, $2)", [
         offerA!.id,
-        "00000000-0000-4000-8000-0000000fbb01",
+        fx.respondKeyA,
       ]),
       asUser(sellerConn2, fx.seller, "select kut.respond_to_trade($1, true, $2)", [
         offerB!.id,
-        "00000000-0000-4000-8000-0000000fbb02",
+        fx.respondKeyB,
       ]),
     ]);
 
     const succeeded = [resA, resB].filter((r) => r.error === null);
     expect(succeeded).toHaveLength(1);
 
-    const [listing, card, sales, wallets, offerRows] = await Promise.all([
-      admin.query("select status, buyer_id from kut.market_listings where id = $1", [fx.listing]),
-      admin.query("select owner_id from kut.user_cards where id = $1", [fx.card]),
-      admin.query("select count(*)::int as n from kut.market_sales where listing_id = $1", [
-        fx.listing,
-      ]),
-      admin.query("select user_id, balance from kut.wallets where user_id = any($1::uuid[])", [
-        users,
-      ]),
-      admin.query("select proposer_id, status from kut.trade_offers where listing_id = $1", [
-        fx.listing,
-      ]),
-    ]);
+    const listing = await admin.query(
+      "select status, buyer_id from kut.market_listings where id = $1",
+      [fx.listing],
+    );
+    const card = await admin.query("select owner_id from kut.user_cards where id = $1", [fx.card]);
+    const sales = await admin.query(
+      "select count(*)::int as n from kut.market_sales where listing_id = $1",
+      [fx.listing],
+    );
+    const wallets = await admin.query(
+      "select user_id, balance from kut.wallets where user_id = any($1::uuid[])",
+      [users],
+    );
+    const offerRows = await admin.query(
+      "select proposer_id, status from kut.trade_offers where listing_id = $1",
+      [fx.listing],
+    );
 
     expect(listing.rows[0].status).toBe("sold");
     const winner = listing.rows[0].buyer_id as string;

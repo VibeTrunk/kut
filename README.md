@@ -52,7 +52,7 @@ npm run format:check # the same check verify:fast and CI run
 npm run verify:fast  # format, lint, typecheck, unit tests
 npm run test:e2e     # requires Playwright Chromium once installed
 npm run test:db      # requires `npx supabase start`
-npm run test:market-race # two concurrent local PostgreSQL buyers; requires `npx supabase start`
+npm run test:integration # database concurrency suites (market, trade, packs); requires `npx supabase start`
 npm run verify:full  # all checks plus production build
 ```
 

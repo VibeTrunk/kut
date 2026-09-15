@@ -3072,3 +3072,142 @@ session needs three ballots). Six new pgTAP assertions in
 notice, that it names no category the player did not win, and the one/two/three
 and empty forms of the name join. The two- and three-category bodies were also
 driven end to end against the local stack with the real club fixture.
+
+## ADR-070 — The integration race suites become a real CI gate, and one migration per PR is enforced mechanically
+
+Date: 2026-09-15
+
+Status: Accepted
+
+Decision: `tests/integration/` becomes a first-class, CI-gated suite. One config
+(`vitest.integration.config.mts`) and one honestly-named script (`npm run
+test:integration`) replace three configs and a misnamed script; each suite is
+made independently correct; and the suite runs as a step of the existing
+`database` job in `.github/workflows/verify.yml`. Separately, a new `migrations`
+job enforces the one-migration-per-PR rule that `CLAUDE.md` has stated in prose
+since the batching convention was written.
+
+### Why the suites were worth rescuing
+
+They are the only automated proof that `kut.buy_listing`, `kut.open_pack`,
+`kut.respond_to_trade` and `kut.submit_session_report` actually serialize under
+contention. pgTAP runs one session inside a rollback and structurally cannot
+test a race — two connections are the whole mechanism. `BUILD_SPEC.md` Part
+XX–XXIII requires these paths to be server-authoritative, and Part L invariant
+#23 (an accepted trade is never written to `kut.market_sales`) is asserted
+nowhere else in the repository.
+
+They were nevertheless unrun in every sense: `vitest.config.mts` globs
+`tests/unit/**`, no CI job invoked them, `trade-race.test.ts` had no script at
+all, and `test:market-race` silently ran all three through a config whose name
+claimed one. A fourth config, `vitest.next-features-race.config.mts`, narrowed
+to a single file and had no script pointing at it.
+
+### Making them trustworthy before making them a gate
+
+The order matters: a gate nobody trusts is worse than no gate, so the
+correctness work landed first and the CI step was made conditional on 20
+consecutive green runs.
+
+Two fixture-isolation changes, which answer different questions:
+
+- **Namespacing.** `market-race` and `trade-race` both built their
+  `kut.card_editions` row against the seed player
+  `00000000-0000-4000-8000-000000000001` (`supabase/seed.sql`, "Alex Example").
+  Neither deleted it, so — contrary to how the problem was first reported —
+  there was no delete/re-insert race on that row and no fixture-id collision
+  between the two suites. The undeclared dependency on seed data was still
+  wrong: it makes a suite depend on a row it does not own and cannot see. Each
+  suite now inserts and deletes its own `kut.players` row, and every id it
+  writes sits under its own UUID prefix — `20000000-` for market, `21000000-`
+  for trade, beside the `30000000-` that `next-features-race` already used. This
+  is what makes each file correct *in isolation*.
+- **`fileParallelism: false`.** This is what makes the suite correct *as a
+  whole*. These suites mutate shared database state rather than rolling back the
+  way pgTAP does, so the convention above is only ever as good as the next
+  author's memory of it. Serializing costs about a second on a suite that runs
+  in four, and immunises the entire class of problem for files nobody has
+  written yet. Both, not either.
+
+One genuine defect was fixed along the way, at a different line than the one
+reported. The cleanup in `trade-race.test.ts` ran
+
+```sql
+delete from kut.wallet_ledger
+where user_id = any($1::uuid[])
+   or reason in ('trade_escrow','trade_unescrow','trade_sale')
+```
+
+whose `or` arm is unscoped: it deleted **every** trade ledger row in the
+database, for every account, in both `beforeAll` and `afterAll`. Nothing else
+writes those reasons today, so it never surfaced across the test suite — but
+against a developer's local stack carrying real trade history it was destructive
+on every run. The `user_id` predicate alone already covers every row the suite
+creates, so the `or` arm is simply deleted.
+
+Finally, the `DeprecationWarning: Calling client.query() when the client is
+already executing a query` these suites emitted is gone. It came from three
+`Promise.all` fan-outs issuing four, five and three queries on the *same*
+`admin` client. All of them were post-race assertion reads, so they are now
+awaited one at a time; `pg` is on 8.x, where this warns, and pg 9 removes the
+behaviour. The `Promise.all`s that *are* the races run on separate clients,
+which is legal and is the entire point — those are untouched, and now carry a
+comment saying so.
+
+### Where it runs, and why it blocks
+
+A step of the existing `database` job, after `npm run test:db`. That job's
+trimmed stack already provides everything needed: the suites connect by raw `pg`
+to `127.0.0.1:54322` and need no PostgREST and no GoTrue, they insert into
+`auth.users` as superuser and `set role authenticated` (both from the postgres
+image, not gotrue), and their data dependencies — `kut.pack_definitions`
+`'tfh-pack'` and the three kudos category ids — come from migrations rather than
+`seed.sql`, and `supabase start` applies both. This was verified rather than
+assumed. A separate job would re-pay a 2–3 minute `supabase start` for no extra
+signal. pgTAP runs first because it is transactional and leaves nothing behind,
+while these suites mutate and then clean up. The step carries
+`timeout-minutes: 5`, because a concurrency suite that loses its lock ordering
+does not fail — it hangs.
+
+It blocks from day one, with no `continue-on-error`. The question is softer than
+it looks: branch protection on `main` has `required_status_checks: null`, so no
+check gates a merge today and every job in this workflow is already advisory. A
+red step therefore cannot produce the intermittently-red *required* check that
+was the concern; it produces visible pressure, which is the point. A
+non-blocking step that nobody ever promotes is worse than none at all, because
+it teaches everyone to ignore it. The real gate on correctness was the stress
+run, not a soft landing afterwards.
+
+### The migration guard
+
+A pull-request-only `migrations` job fails any PR whose diff against the merge
+base touches more than one `supabase/migrations/*.sql`. `CLAUDE.md` has stated
+that rule in prose for as long as the batching convention has existed, and it
+was violated once — 14 migrations in a single PR, now permanently on the hosted
+schema and unrevertable without dragging unrelated work with them. Prose did not
+hold; a mechanical guard is the only durable form of the rule.
+
+It inspects only the files the PR itself changes, so the 64 migrations already
+on `main` can never trip it — that is the mechanism, rather than an exemption
+list that would need maintaining as the count grows. Verified against three
+arms: this branch (0 migrations, passes), the ADR-069 PR `87549ee` (1, passes),
+and the 14-migration commit `43ebedc` (fails, naming all 14).
+
+There is deliberately no label override. The rule in `CLAUDE.md` is
+unconditional, and because nothing is a required check a human can still merge
+past a red run when they genuinely must — that is already the right amount of
+friction, and a documented escape hatch would dilute a rule whose single
+violation is permanent.
+
+Consequences: no migration, no schema surface, and no application code touched —
+`src/` is untouched entirely. `npm test` stays unit-only and database-free,
+which is load-bearing: the CI `fast` job runs `verify:fast` with no Postgres, so
+a single config using vitest `projects` was rejected precisely because a bare
+`vitest run` would then reach for a database that is not there. `verify:full`
+gains `test:integration`. The single-file config is not replaced, because it is
+redundant — `npm run test:integration -- tests/integration/trade-race.test.ts`
+takes a filename filter. The `database` job grows by roughly five seconds.
+Historical references to `test:market-race` in `PROGRESS.md`, earlier entries of
+this file, `SECURITY_REVIEW.md` and `archive/` are left alone as a dated record
+of what was actually run at the time; `README.md` and `OPERATIONS.md`, which
+describe what to run *now*, are updated.

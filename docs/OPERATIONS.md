@@ -66,7 +66,7 @@ wallets, cards, sessions, or market history.
 
 1. Run `npm run verify:full` locally with Docker running.
 2. Review `docs/SECURITY_REVIEW.md` and resolve or consciously accept the
-   remaining local two-client market-race check.
+   remaining local two-client concurrency checks (`npm run test:integration`).
 3. In the central migration repository only, link the intended hosted
    Supabase project after confirming its project reference. Run the catalogue
    parity check and `npx supabase db push --dry-run`; review every listed

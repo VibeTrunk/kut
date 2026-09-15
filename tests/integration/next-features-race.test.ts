@@ -111,14 +111,18 @@ describe("next-feature concurrency", () => {
       run(b, "select kut.open_pack('tfh-pack',175,$1) result", [fx.packKey]),
     ]);
     expect(results.every((r) => r.error === null)).toBe(true);
-    const [opening, wallet, cards] = await Promise.all([
-      admin.query("select price_paid from kut.pack_openings where user_id=$1", [fx.user]),
-      admin.query("select balance from kut.wallets where user_id=$1", [fx.user]),
-      admin.query(
-        "select count(*)::int count from kut.pack_opening_cards where opening_id in(select id from kut.pack_openings where user_id=$1)",
-        [fx.user],
-      ),
+    // The race above runs on two *separate* clients, which is the point. These
+    // reads all share the single `admin` client, so they are awaited one at a
+    // time — pg 8.x warns on an overlapped query and pg 9 removes the
+    // behaviour outright.
+    const opening = await admin.query("select price_paid from kut.pack_openings where user_id=$1", [
+      fx.user,
     ]);
+    const wallet = await admin.query("select balance from kut.wallets where user_id=$1", [fx.user]);
+    const cards = await admin.query(
+      "select count(*)::int count from kut.pack_opening_cards where opening_id in(select id from kut.pack_openings where user_id=$1)",
+      [fx.user],
+    );
     expect(opening.rows).toEqual([{ price_paid: "175" }]);
     expect(wallet.rows[0].balance).toBe("325");
     expect(cards.rows[0].count).toBe(3);

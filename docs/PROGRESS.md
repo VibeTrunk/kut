@@ -2917,3 +2917,76 @@ archetype now leaves the select on the new value, a hard reload agrees, and
 `kut.players.archetype` matches; the club name overwrote an existing value and
 held; the admin goal override held and its row read back "Goals: 4 (admin
 correction)". No migration, no schema surface.
+
+## The integration race suites become a real CI gate (ADR-070) — 2026-09-15
+
+Wave 2 of the codebase-quality sweep. The three suites in `tests/integration/`
+cover the concurrency and atomicity of the economy paths `BUILD_SPEC.md` Part
+XX–XXIII requires to be server-authoritative — market buy races, trade-offer
+escrow, pack replay and stale quotes — and they are the only automated proof
+those RPCs serialize under contention, since pgTAP runs one session inside a
+rollback and structurally cannot test a race. They were unrun on every axis:
+`vitest.config.mts` globs `tests/unit/**`, no CI job invoked them,
+`trade-race.test.ts` had no script, and `test:market-race` silently ran all
+three through a config whose name claimed one.
+
+Fixed in that order — correctness first, gate second, because the point was
+that the gate be trustworthy before it became a gate.
+
+Three configs collapse to two. `vitest.integration.config.mts` (new) replaces
+`vitest.market-race.config.mts` and the scriptless
+`vitest.next-features-race.config.mts`; `npm run test:market-race` becomes
+`npm run test:integration`, and `verify:full` gains it. `npm test` stays
+unit-only and database-free, which is load-bearing — the CI `fast` job runs
+`verify:fast` with no Postgres.
+
+Each suite is now correct in isolation: `market-race` and `trade-race` own their
+`kut.players` row instead of leaning on the seed player, and every id each
+writes sits under its own UUID prefix (`20000000-`, `21000000-`, beside the
+`30000000-` `next-features-race` already used). `fileParallelism: false` is the
+belt to that braces, for suites nobody has written yet.
+
+**Two corrections to the reported problem.** No suite ever deleted the shared
+seed player — both only read it as an FK target, under distinct edition ids — so
+there was no delete/re-insert race and no fixture-id collision. But a real
+unscoped delete was found one file over: `trade-race.test.ts`'s cleanup carried
+`or reason in ('trade_escrow','trade_unescrow','trade_sale')` with no user
+scope, deleting every trade ledger row in the database for every account, twice
+per run. Invisible across the test suite, destructive against a local stack with
+real trade history. The `user_id` predicate alone already covers the suite, so
+the `or` arm is gone. The reported violation count was also 14 migrations in one
+PR, not 11.
+
+The `DeprecationWarning` about overlapping `client.query()` calls is gone —
+three `Promise.all` fan-outs of four, five and three queries on the same `admin`
+client, all post-race assertion reads, now awaited one at a time. The
+`Promise.all`s that *are* the races use separate clients and are untouched.
+
+CI: a step in the existing `database` job after `test:db`, with
+`timeout-minutes: 5` because a suite that loses its lock ordering hangs rather
+than fails. The job's trimmed stack was verified sufficient rather than assumed —
+the suites need no PostgREST and no GoTrue, and their data dependencies
+(`'tfh-pack'`, the kudos category ids) come from migrations, not `seed.sql`. It
+blocks from day one: branch protection has `required_status_checks: null`, so
+nothing gates a merge today and a red step is pressure, not a block.
+
+Also new: a PR-only `migrations` job failing any PR that touches more than one
+`supabase/migrations/*.sql`, making `CLAUDE.md`'s prose rule mechanical. It
+reads only the PR's own diff against the merge base, so the 64 existing
+migrations cannot trip it.
+
+Verification: the substance here was the stress run, since these suites mutate
+shared state rather than rolling back. **20 consecutive runs of
+`npm run test:integration` on the final code: 20 passed, 0 failed**, 3 files / 5
+tests every time, 4.0–4.5s per run once warm (the two cold runs took 7.4s and
+7.6s). Zero `DeprecationWarning` lines across all 20. An earlier 20-run pass on
+the pre-formatting code was also 20/20, 3.8–4.8s. `verify:fast` PASS — 15 unit files / 93
+tests. `npm run test:db` PASS — 15 files / 482 pgTAP assertions.
+`npm run build` PASS. The migration guard was driven against three arms locally:
+this branch (0 migrations → pass), `87549ee` (1 → pass), `43ebedc` (14 → fail,
+naming all 14). No migration and no schema surface; `src/` untouched.
+
+Local-stack note: the working copy was four migrations behind
+(`20260922000000`–`20260925000000`) and `20260925000000` had partially applied —
+`kut._join_names` existed but `kut._finalize_one_session` had not been replaced.
+Both were applied by `docker exec … psql` and the ledger now reads 64.

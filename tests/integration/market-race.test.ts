@@ -3,14 +3,19 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 const databaseUrl =
   process.env.KUT_LOCAL_DATABASE_URL ?? "postgresql://postgres:postgres@127.0.0.1:54322/postgres";
+
+// Every id this suite writes lives under the 20000000- prefix, including its
+// own kut.players row. Nothing here is shared with another integration file or
+// with supabase/seed.sql, so the suite is correct run alone, run beside the
+// others, or run against a stack that already carries real data.
 const fixture = {
-  seller: "00000000-0000-4000-8000-0000000000a1",
-  buyerA: "00000000-0000-4000-8000-0000000000a2",
-  buyerB: "00000000-0000-4000-8000-0000000000a3",
-  edition: "00000000-0000-4000-8000-0000000000a4",
-  card: "00000000-0000-4000-8000-0000000000a5",
-  listing: "00000000-0000-4000-8000-0000000000a6",
-  player: "00000000-0000-4000-8000-000000000001",
+  seller: "20000000-0000-4000-8000-000000000001",
+  buyerA: "20000000-0000-4000-8000-000000000002",
+  buyerB: "20000000-0000-4000-8000-000000000003",
+  player: "20000000-0000-4000-8000-000000000011",
+  edition: "20000000-0000-4000-8000-000000000021",
+  card: "20000000-0000-4000-8000-000000000031",
+  listing: "20000000-0000-4000-8000-000000000041",
 };
 const fixtureUsers = [fixture.seller, fixture.buyerA, fixture.buyerB];
 let admin: Client;
@@ -31,6 +36,8 @@ async function cleanup() {
   await admin.query("delete from kut.wallets where user_id = any($1::uuid[])", [fixtureUsers]);
   await admin.query("delete from kut.profiles where id = any($1::uuid[])", [fixtureUsers]);
   await admin.query("delete from auth.users where id = any($1::uuid[])", [fixtureUsers]);
+  // Last: kut.card_editions and kut.profiles both reference the player row.
+  await admin.query("delete from kut.players where id = $1", [fixture.player]);
 }
 
 async function prepareBuyer(client: Client, userId: string) {
@@ -65,6 +72,10 @@ describe("local two-client market race", () => {
       [fixture.seller, fixture.buyerA, fixture.buyerB],
     );
     await admin.query(
+      "insert into kut.players (id, slug, display_name, full_name, archetype) values ($1, 'market-race-player', 'Market Race Player', 'Market Race Player', 'all_rounder')",
+      [fixture.player],
+    );
+    await admin.query(
       "insert into kut.profiles (id, display_name, role) values ($1, 'Race Seller', 'user'), ($2, 'Race Buyer A', 'user'), ($3, 'Race Buyer B', 'user')",
       [fixture.seller, fixture.buyerA, fixture.buyerB],
     );
@@ -93,9 +104,13 @@ describe("local two-client market race", () => {
 
   it("permits exactly one concurrent buyer to complete the protected RPC", async () => {
     await Promise.all([prepareBuyer(buyerA, fixture.buyerA), prepareBuyer(buyerB, fixture.buyerB)]);
+    // The one deliberate overlap: two *separate* clients contending for the
+    // same listing. Every read below runs on the single `admin` client and is
+    // therefore awaited one at a time — pg 8.x warns on an overlapped query
+    // and pg 9 removes the behaviour outright.
     const [attemptA, attemptB] = await Promise.all([
-      attemptPurchase(buyerA, "00000000-0000-4000-8000-0000000000b1"),
-      attemptPurchase(buyerB, "00000000-0000-4000-8000-0000000000b2"),
+      attemptPurchase(buyerA, "20000000-0000-4000-8000-000000000051"),
+      attemptPurchase(buyerB, "20000000-0000-4000-8000-000000000052"),
     ]);
     const successes = [
       { userId: fixture.buyerA, attempt: attemptA },
@@ -104,19 +119,21 @@ describe("local two-client market race", () => {
     expect(successes).toHaveLength(1);
     const winner = successes[0].userId;
     const loser = winner === fixture.buyerA ? fixture.buyerB : fixture.buyerA;
-    const [listing, card, sales, wallets] = await Promise.all([
-      admin.query("select status, buyer_id from kut.market_listings where id = $1", [
-        fixture.listing,
-      ]),
-      admin.query("select owner_id from kut.user_cards where id = $1", [fixture.card]),
-      admin.query(
-        "select id, buyer_id, sale_price, tax_amount, seller_receipt from kut.market_sales where listing_id = $1",
-        [fixture.listing],
-      ),
-      admin.query("select user_id, balance from kut.wallets where user_id = any($1::uuid[])", [
-        fixtureUsers,
-      ]),
+    const listing = await admin.query(
+      "select status, buyer_id from kut.market_listings where id = $1",
+      [fixture.listing],
+    );
+    const card = await admin.query("select owner_id from kut.user_cards where id = $1", [
+      fixture.card,
     ]);
+    const sales = await admin.query(
+      "select id, buyer_id, sale_price, tax_amount, seller_receipt from kut.market_sales where listing_id = $1",
+      [fixture.listing],
+    );
+    const wallets = await admin.query(
+      "select user_id, balance from kut.wallets where user_id = any($1::uuid[])",
+      [fixtureUsers],
+    );
     expect(listing.rows[0]).toMatchObject({ status: "sold", buyer_id: winner });
     expect(card.rows[0].owner_id).toBe(winner);
     expect(sales.rows).toHaveLength(1);

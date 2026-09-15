@@ -101,3 +101,63 @@ jobs:
       - name: Start only the containers the pgTAP suite needs
         run: npx supabase start -x gotrue,realtime,imgproxy,mailpit,postgrest,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
       - run: npm run test:db
+      # The tests/integration/ concurrency suites belong here rather than in a
+      # job of their own: they connect by raw `pg` to 127.0.0.1:54322 and need
+      # no PostgREST and no GoTrue, so the stack started above is already
+      # everything they require — they insert into auth.users as superuser and
+      # SET ROLE authenticated, both of which come from the postgres image, and
+      # their data dependencies (kut.pack_definitions 'tfh-pack', the kudos
+      # category ids) come from migrations, not seed.sql. A separate job would
+      # re-pay the ~2-3 min `supabase start` for no extra signal.
+      #
+      # Ordered after test:db on purpose: pgTAP runs inside a transaction and
+      # leaves nothing behind, while these suites mutate and then clean up, so
+      # running the transactional one first means a schema break is reported by
+      # the more precise suite.
+      #
+      # timeout-minutes because a concurrency suite that loses its lock
+      # ordering does not fail, it *hangs* — without a cap that burns the job's
+      # entire budget.
+      - name: Run the database concurrency suites
+        timeout-minutes: 5
+        run: npm run test:integration
+
+  # CLAUDE.md: a PR carrying a supabase/migrations/*.sql may carry no other
+  # migration. Hosted migrations are deployed separately from
+  # VibeTrunk/supabase and squash-merge turns a PR into exactly one commit on
+  # main, so a bundled migration PR cannot be reverted without dragging
+  # unrelated work with it while the hosted schema stays migrated. That rule
+  # was violated once (14 migrations in a single PR, now permanently on the
+  # hosted schema); this is the mechanical guard.
+  #
+  # It inspects only the files *this PR changes* against the merge base, so
+  # the migrations already on main can never trip it — that is the mechanism,
+  # not a special case that needs maintaining as the count grows.
+  migrations:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      # fetch-depth: 0 so origin/<base> exists to diff against.
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: At most one migration per PR
+        env:
+          BASE: ${{ github.base_ref }}
+        run: |
+          set -euo pipefail
+          git fetch --quiet origin "$BASE"
+          changed=$(git diff --name-only --diff-filter=ACMR \
+            "origin/$BASE...HEAD" -- 'supabase/migrations/*.sql')
+          count=$(printf '%s' "$changed" | grep -c . || true)
+          if [ "$count" -gt 1 ]; then
+            echo "::error::This PR changes $count migrations; the limit is 1."
+            echo "$changed" | sed 's/^/  /'
+            echo
+            echo "See CLAUDE.md, 'Batching agent work into one PR': a hosted"
+            echo "migration is deployed from VibeTrunk/supabase and squash-merge"
+            echo "makes this PR one commit, so a bundled migration cannot be"
+            echo "reverted without dragging unrelated work with it. Split it."
+            exit 1
+          fi
+          echo "$count migration(s) changed — within the one-per-PR rule."

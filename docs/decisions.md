@@ -3681,3 +3681,70 @@ reason this ADR exists rather than the batching passing unrecorded.
 This is a one-time authorization for these three changes. It sets no precedent:
 the next migration-bearing change goes back to one per PR unless the owner again
 says otherwise, and a data-changing migration should not be batched at all.
+
+## ADR-076 — The rating story accounts for carried Form, by subtraction for now
+
+Date: 2026-09-16
+
+Status: Accepted
+
+Decision: the "why this rating" panel (ADR-074) renders the Form its session
+rows do not account for as a row of its own, recovered as `form_score` minus the
+listed rows. No migration; `kut.player_form_contributions` is unchanged.
+
+**The rows did not add up, and in one case the panel contradicted itself.**
+Reported from two live cards. One listed 1.00 and 1.25 Form beneath a stated
+total of 2.88. The other showed "FROM FORM +2" directly above "No recent session
+is adding Form right now, so this rating is all attendance", with a bare
+`Carried Form: 1.5` footnote — a line that rendered only when the list was
+empty, and explained nothing when it did. Registered as KB-018.
+
+**Cause.** `kut._rebuild_season_core` computes
+
+    v_form := least(8, greatest(0, v_contributions + v_legacy * <decay>))
+
+and `kut.player_form_contributions` reads `kut.session_report_results`, which is
+the `v_contributions` term alone. `v_legacy` is the Form a player carried over
+the season's rating-v2 cutover — goals scored before self-reporting existed —
+decaying over the first four v2 sessions by the count of published v2 sessions
+rather than by session age. It is counted in `player_season_state.form_score`
+and so in the OVR bonus, but it has no session row to render. ADR-074 did not
+mention the term at all; the pinning test in
+`supabase/tests/database/rating_breakdown.test.sql` forces the cutover so that
+"no legacy Form carries in" and says the sum assertion only holds that way, so
+the fixture could not reproduce the live condition.
+
+The attendance/Form split was never wrong: `attendance_base + form_bonus =
+live_ovr` holds by construction, as ADR-074 intended.
+
+**Why subtraction, and what it costs.** The remainder is exact —
+`v_contributions` is precisely what the contributions view sums, so
+`form_score - listed` is the rest of the engine's expression and nothing else.
+What the client cannot know is *which* part of the expression it is. A positive
+remainder is attributed to carry-over because that is the only other additive
+term; a negative one is attributed to the `least(8, …)` ceiling, which is the
+only subtractive one. Both are true of today's engine and neither is asserted by
+the database. Adding a term to the engine without adding a column here would
+therefore mislabel it rather than hide it — a real, accepted risk, carried
+because the alternative is a migration and the symptom is live now.
+
+This does not mirror rating maths into TypeScript (ADR-064): it subtracts two
+numbers SQL computed and re-derives nothing. The proper fix — `legacy_form` and
+`legacy_weight` columns on `kut.player_rating_breakdown`, read rather than
+inferred, with a test fixture whose season spans a cutover — needs its own
+migration and its own PR, and is in `docs/ROADMAP.md`.
+
+**The symptom would have cleared itself.** At a season's fourth v2 session the
+legacy weight reaches 0 and the rows sum again. It returns on the next season
+that spans a rules cutover, and the self-contradicting empty-state copy was
+wrong on the day it was reported, so waiting was not a fix.
+
+Consequences: `carriedForm()`, `describeCarriedForm()` and
+`describeCarriedDecay()` in `src/lib/rating-story.ts`;
+`src/components/rating-breakdown.tsx` renders the carry-over as a list row, gates
+the "all attendance" sentence on the rows being genuinely empty, keeps a
+"no recent session yet" note for a player whose Form is entirely carried, and
+names the 8 Form ceiling on a negative remainder. The `Carried Form: N` footnote
+is removed, superseded by the row. Ten new unit assertions in
+`tests/unit/rating-story.test.ts`, including both reported cards as fixtures.
+

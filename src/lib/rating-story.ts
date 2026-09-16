@@ -100,3 +100,57 @@ export function describeDecay(contribution: FormContribution): string {
 export function describeFormTotal(breakdown: RatingBreakdown): string {
   return `${formatForm(breakdown.form_score)} Form in total, which lifts the rating by ${breakdown.form_bonus} OVR.`;
 }
+
+/**
+ * Form the listed sessions do not account for.
+ *
+ * `kut.player_form_contributions` reads `kut.session_report_results` only, so it
+ * sees the `v_contributions` half of the engine's Form and nothing else:
+ *
+ *     v_form := least(8, greatest(0, v_contributions + v_legacy * <decay>))
+ *
+ * `v_legacy` is the Form a player carried over the rating-v2 cutover — goals
+ * scored before self-reporting existed — decaying to nothing over the first four
+ * v2 sessions. It is real Form, counted in `form_score` and in the OVR bonus,
+ * but it has no session row to render, so before this the listed lines simply
+ * did not add up to the stated total (Stephen: 1.00 + 1.25 listed, 2.88 total).
+ *
+ * A POSITIVE remainder is that carry-over. A NEGATIVE one is the `least(8, …)`
+ * ceiling biting, where the sessions really do add up to more than the engine
+ * kept. Both are stated rather than hidden.
+ *
+ * This is arithmetic over two numbers SQL computed, not a second rating engine
+ * (ADR-064): it subtracts, it does not re-derive. The proper fix is to give the
+ * carry-over its own column on `kut.player_rating_breakdown` so the amount is
+ * read rather than inferred; until then the subtraction is exact, because
+ * `v_contributions` is precisely what the contributions view sums.
+ */
+export function carriedForm(breakdown: RatingBreakdown, contributions: FormContribution[]): number {
+  const listed = contributions.reduce(
+    (total, contribution) => total + Math.max(0, contribution.weighted_contribution),
+    0,
+  );
+  // Rounded to the precision the lines are rendered at, so float noise from
+  // summing numerics never surfaces as a phantom 0.0000001 Form line. `|| 0`
+  // normalises the negative zero that rounding a tiny negative remainder
+  // produces, which would otherwise be formatted and compared as its own value.
+  return Number((breakdown.form_score - listed).toFixed(2)) || 0;
+}
+
+/**
+ * The carry-over rendered as one more row in the same list, so the rows sum to
+ * the total. Deliberately does not name the cutover date or "rating v2" — a
+ * member never saw that migration; what they remember is that reporting started.
+ */
+export function describeCarriedForm(amount: number): string {
+  return `${formatForm(amount)} Form — carried over from before session reports began`;
+}
+
+/**
+ * The carry-over's second line, matching `describeDecay`'s shape for a session
+ * row. It fades over the first four sessions of the reporting era, which is the
+ * same ladder a session walks, so the wording stays in sessions and never weeks.
+ */
+export function describeCarriedDecay(): string {
+  return "From goals scored before self-reporting started · fading with every new session";
+}

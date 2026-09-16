@@ -595,3 +595,17 @@ owned, and expired; abuse vectors (collusion, vote-trading).
   boundary as KB-017), and add pgTAP assertions that `anon` and authenticated
   writes fail while the intended member read and owner/service paths still
   work. This needs no paid Supabase feature or recurring administration.
+- **Give carried Form its own column** — the KB-018 follow-up.
+  `kut.player_form_contributions` sees only the per-session half of
+  `kut._rebuild_season_core`'s Form, so the Form carried over a season's
+  rating-v2 cutover has no row. ADR-076 recovers it in the UI by subtracting the
+  listed rows from `form_score`, which renders the right number but attributes
+  it to carry-over on the client's say-so rather than the database's. In one
+  independently reviewable migration, add `legacy_form` and `legacy_weight` to
+  `kut.player_rating_breakdown`, derived from `kut.player_season_state` and
+  `kut.season_rating_rules` (the decay ladder is by count of published v2
+  sessions, mirroring the engine's `case v_v2_count when 1 then .75 …`), have
+  `src/lib/rating-story.ts` read them instead of inferring, and extend
+  `supabase/tests/database/rating_breakdown.test.sql` with a second fixture
+  whose season spans a cutover — the current one deliberately forces zero
+  carry-over, which is exactly why the defect shipped.

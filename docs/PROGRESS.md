@@ -3167,3 +3167,53 @@ rating-story reads degraded silently exactly as intended. But the next
 migration-bearing change whose code cannot degrade that gracefully needs a
 feature flag, a tolerant read, or a catalogue push queued to follow the merge
 immediately.
+
+## The rating story adds up again (KB-018 / ADR-076) — 2026-09-16
+
+Two screenshots, one day after the rating story shipped: a card listing 1.00 and
+1.25 Form under a stated total of **2.88**, and a card reading "FROM FORM **+2**"
+directly above the sentence "No recent session is adding Form right now, so this
+rating is all attendance".
+
+Both are the same omission. `kut._rebuild_season_core` builds Form as
+`least(8, greatest(0, v_contributions + v_legacy * <decay>))`, and
+`kut.player_form_contributions` reads `kut.session_report_results` — the
+`v_contributions` term only. `v_legacy` is the Form carried over the season's
+rating-v2 cutover, from goals scored before self-reporting existed, fading over
+the first four v2 sessions. It counts toward `form_score` and toward the OVR
+bonus, but has no session row, so it vanished from the itemisation while staying
+in the total. The first card's gap is 0.625 (2.5 legacy Form at the 0.25 weight
+of a third v2 session); the second card's entire 1.5 Form is carry-over (6.0 at
+the same weight), which is why its list was empty while its bonus was +2.
+
+The split itself was never wrong — `attendance_base + form_bonus = live_ovr`
+holds by construction, which is exactly what ADR-074 built it to do. What was
+wrong is that the panel then itemised only part of the Form it had just totalled.
+
+`carriedForm()` recovers the remainder as `form_score` minus the listed rows and
+`rating-breakdown.tsx` renders it as a row of its own, so the rows sum to the
+total. The "all attendance" sentence now requires the rows to be genuinely
+empty; a player whose Form is entirely carried keeps a "no recent session yet"
+note instead of being told their Form is zero. A negative remainder — the
+`least(8, …)` ceiling clipping a big week — says so rather than leaving rows
+that over-sum. The old `Carried Form: 1.5` footnote is gone, superseded by the
+row that explains it.
+
+No migration, so this can ship on its own. The amount is still **inferred**
+rather than read: the subtraction is exact, but it is the client deciding that
+the remainder is carry-over. Adding a term to the engine without adding a column
+to the view would mislabel it. `legacy_form` / `legacy_weight` on
+`kut.player_rating_breakdown`, plus a test fixture whose season spans a cutover,
+are in `docs/ROADMAP.md`.
+
+Worth noting why the pinning test stayed green. It forces the cutover so that
+"no legacy Form carries in" — and says in a comment that the sum assertion only
+holds that way. The fixture was built around the gap instead of over it, and
+ADR-074 never mentioned the legacy term at all. Also worth noting that the
+symptom self-clears at a season's fourth v2 session, when the legacy weight
+reaches 0, and returns on the next season spanning a rules cutover.
+
+Verified: `npm run verify:fast` (policy, format, lint, typecheck, 168 unit tests
+including ten new ones that use both reported cards as fixtures) and
+`npm run build`.
+

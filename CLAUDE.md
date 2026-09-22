@@ -83,6 +83,53 @@ don't add cross-repo coupling beyond the shared Supabase project.
 
 KUT is live at `https://kut.vibetrunk.com` as Vercel project `kut`.
 
+Deployed 2026-09-22 from `VibeTrunk/supabase` (catalogue PR #36 there, marked
+applied in #39), on its own additive `db push` immediately after the one below:
+
+- `20260928000000_active_member_projection_gate.sql` (ADR-079, closing KB-017,
+  tier additive/projection-only) &mdash; every member-only definer projection
+  now proves an active KUT profile. New `kut.is_active_member()`
+  (`stable security definer`, `search_path = kut, pg_catalog`) gates all ten
+  `security_invoker = false` views. `security definer` is required: `kut.profiles`
+  RLS lets a member read only their own row, so an invoker-rights probe could
+  never prove a *foreign* caller has no profile. The service role passes through
+  two disjuncts, one per transport &mdash; `auth.role()` for a service-key JWT,
+  which carries no `sub`, and `current_setting('role', true)` for a bare
+  `set role service_role` session. `current_user` and
+  `pg_has_role(session_user, 'service_role', 'member')` are recorded in ADR-079
+  as traps: the first is the function *owner* inside a definer body and the
+  second is true for everyone, so either would have shipped a no-op that looked
+  fixed.
+  - **Nothing was flipped to `security_invoker = true`.** That is the Security
+    Advisor's generic remedy and it is how KB-013 blacked out the Chronicle;
+    these are deliberate cross-RLS club projections.
+  - Each view body is copied byte-identically and wrapped as
+    `select * from ( &hellip; ) gated where kut.is_active_member()`, because the
+    risk was transcription across ten bodies and six source files rather than
+    semantics &mdash; and a wrapper makes it structurally impossible for
+    `create or replace view` to change a column's name, order or type. `EXPLAIN`
+    shows `One-Time Filter`, so a denied caller never executes the body.
+  - **Zero DML**, so it rode the backup taken for `20260927000000`
+    (`20260922-204443`). Afterwards `migration list --linked` showed 68 entries,
+    none pending, no remote-only drift.
+  - **Smoke-tested as an ordinary member, which is the only test that counts
+    here**: the failure mode is an empty screen, not an error. Home (activity
+    feed, Club Value, leaderboard), `/market`, `/leaderboard`, `/club/value`,
+    `/market/offers` and a finalized Chronicle issue all rendered populated.
+    Under `set role service_role`, `kut.activity_feed` returned 21 rows and
+    `kut.chronicle_session_reports` 66 &mdash; the latter consistent with three
+    finalized surveys across the roster, so the projection the KB-013 fix
+    restored is still whole.
+  - **Operator note.** `kut.is_active_member()` is false for a bare psql session
+    with no JWT and no `SET ROLE`. An ad-hoc query against any of these ten views
+    needs `set role service_role;` first, or it reads zero rows and looks exactly
+    like data loss.
+  - Rollback: re-emit the ten bodies without the wrapper as
+    `create or replace view` &mdash; never `drop view`, because
+    `kut.my_club_value` depends on `kut.my_club_value_editions` &mdash; then
+    `drop function kut.is_active_member();`. Grants are unchanged, so none need
+    re-granting. Fully reversible; no data involved.
+
 Deployed 2026-09-22 from `VibeTrunk/supabase` (catalogue PR #37 there, marked
 applied in #38), on its own `db push`:
 

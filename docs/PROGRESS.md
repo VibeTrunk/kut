@@ -3418,4 +3418,9 @@ assertions fail, and they are exactly the ones this migration is meant to flip.
 Verified: `npm run verify:fast`, and every pgTAP file — 20 files, 630
 assertions — against a local stack migrated through `20260929000000`.
 Migration policy passes for the working tree: one migration, isolated, tested.
-Hosted: not yet pushed; it goes through a `VibeTrunk/supabase` catalogue PR.
+Hosted: pushed 2026-09-23 from `VibeTrunk/supabase` (catalogue PR #40) on its
+own additive `db push`. Afterwards `migration list --linked` shows 69 entries,
+all present locally and remotely, with no drift. Smoke-tested on hosted: RLS is
+on and not forced, the one policy and the grants are as written, no `kut` table
+is left without RLS, and `/admin/attendance` still shows the member-reports
+notice for a post-cutover date.

@@ -607,8 +607,8 @@ owned, and expired; abuse vectors (collusion, vote-trading).
   non-zero escrow count at that moment — but it is the kind of thing you do
   not want to meet for the first time mid-incident. See `docs/BACKUP.md`.
 - **Enable RLS on `kut.season_rating_rules`** — **shipped 2026-09-23
-  (ADR-081, migration `20260929000000_season_rating_rules_rls.sql`; hosted push
-  pending via `VibeTrunk/supabase`).** Low-priority defense in depth from the
+  (ADR-081, migration `20260929000000_season_rating_rules_rls.sql`; pushed to
+  hosted 2026-09-23 via `VibeTrunk/supabase` catalogue PR #40).** Low-priority defense in depth from the
   2026-09-16 Supabase Security Advisor review. RLS is on, with one
   `select`-for-`authenticated` policy on `kut.is_active_member()` (ADR-079). The
   least-privilege grants from `20260920070000` are unchanged, and there is no

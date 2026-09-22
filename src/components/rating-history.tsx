@@ -1,6 +1,52 @@
 import { RARITY_BANDS, getRarityTier, type RarityTier } from "@/game/rating-engine";
+import { weekStart } from "@/game/football-week";
 
 export type RatingSnapshot = { week_start: string; live_ovr: number; rarity_tier?: RarityTier };
+
+/** A published session's admin-entered attendance, with the rules era it was published under. */
+export type AttendanceGoalRow = {
+  goals: number | null;
+  session_date: string;
+  rating_rules_version: number;
+};
+
+/** One `kut.player_form_contributions` row: a published v2 session's reported goals. */
+export type ReportedGoalRow = { session_date: string; effective_goals: number | null };
+
+/**
+ * Goals per football week, from the same two sources the rating engine reads.
+ *
+ * `kut._rebuild_season_core` switches goal source at the rating-v2 cutover: a
+ * week before it sums `kut.attendance.goals`, a week at or after it sums
+ * `kut.session_report_results.effective_goals`, because from that week on goals
+ * are member-reported rather than admin-entered. `kut.chronicle_player_season`
+ * makes the same distinction per session (`case when rating_rules_version = 1
+ * then attendance.goals else result.effective_goals end`).
+ *
+ * Reading only `attendance.goals` therefore renders every post-cutover week as a
+ * goalless dot no matter how many goals were reported (KB-021). Per session
+ * rather than per week, matching the Chronicle: `rating_rules_version` is set on
+ * the session, and both sources can be non-zero for the same v2 session, so
+ * summing them unconditionally would double-count.
+ */
+export function buildGoalsByWeek(
+  attendance: AttendanceGoalRow[],
+  contributions: ReportedGoalRow[],
+): Map<string, number> {
+  const goalsByWeek = new Map<string, number>();
+  const add = (sessionDate: string, goals: number | null) => {
+    if (!goals) return;
+    const week = weekStart(sessionDate);
+    goalsByWeek.set(week, (goalsByWeek.get(week) ?? 0) + goals);
+  };
+  for (const row of attendance) {
+    if (row.rating_rules_version === 1) add(row.session_date, row.goals);
+  }
+  // The view already restricts itself to published v2 sessions in the active
+  // season, so no era check is needed on this side.
+  for (const row of contributions) add(row.session_date, row.effective_goals);
+  return goalsByWeek;
+}
 
 type RatingHistoryProps = {
   snapshots: RatingSnapshot[];
@@ -103,6 +149,11 @@ export function RatingHistory({ snapshots, goalsByWeek, playerName }: RatingHist
       : left + (index * plotWidth) / (snapshots.length - 1);
   const y = (value: number) =>
     top + ((domainMax - value) / (domainMax - domainMin + 1)) * plotHeight;
+  // Half the gap between points, so the discs tile the series without a disc
+  // ever swallowing its neighbour's — at 8 weeks that is the full 14, and it
+  // shrinks as the series lengthens rather than mis-attributing a hover.
+  const hoverRadius =
+    snapshots.length < 2 ? 14 : Math.min(14, plotWidth / (snapshots.length - 1) / 2);
   const points = snapshots
     .map((snapshot, index) => `${x(index)},${y(snapshot.live_ovr)}`)
     .join(" ");
@@ -199,6 +250,14 @@ export function RatingHistory({ snapshots, goalsByWeek, playerName }: RatingHist
                   strokeWidth="2"
                 />
               )}
+              {/*
+                A plain point is a 3.5px circle in a 560-unit viewBox — roughly
+                11 screen pixels across, and nothing between points is hoverable
+                at all, so the tooltip was effectively unreachable. This
+                transparent disc is the hover target; `transparent` rather than
+                `none`, which takes no pointer events.
+              */}
+              <circle cx={x(index)} cy={y(snapshot.live_ovr)} fill="transparent" r={hoverRadius} />
               {showLabel && (
                 <text
                   className="fill-ink-faint text-[10px] font-bold"

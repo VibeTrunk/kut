@@ -2,10 +2,14 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { archetypeLabel } from "@/game/archetypes";
 import { AttributeBars } from "@/components/card-stats";
-import { RatingHistory, type RatingSnapshot } from "@/components/rating-history";
+import {
+  RatingHistory,
+  buildGoalsByWeek,
+  type AttendanceGoalRow,
+  type RatingSnapshot,
+} from "@/components/rating-history";
 import { RatingBreakdownStory } from "@/components/rating-breakdown";
 import type { FormContribution, RatingBreakdown } from "@/lib/rating-story";
-import { weekStart } from "@/game/football-week";
 import { LiveCard, type LiveCardPlayer } from "@/components/live-card";
 import { requireUser } from "@/lib/auth/user";
 import { resolvePhotoUrls } from "@/lib/player-photos";
@@ -55,7 +59,7 @@ export default async function PlayerProfilePage({ params }: PlayerProfilePagePro
     supabase
       .schema("kut")
       .from("attendance")
-      .select("goals, match_sessions!inner(session_date, status)")
+      .select("goals, match_sessions!inner(session_date, status, rating_rules_version)")
       .eq("player_id", player.id)
       .eq("match_sessions.status", "published"),
   ]);
@@ -98,18 +102,26 @@ export default async function PlayerProfilePage({ params }: PlayerProfilePagePro
   const snapshots = snapshotsResponse.error
     ? []
     : ((snapshotsResponse.data ?? []) as RatingSnapshot[]);
-  const goalsByWeek = new Map<string, number>();
-  if (!attendanceResponse.error) {
-    for (const row of (attendanceResponse.data ?? []) as unknown as {
-      goals: number;
-      match_sessions: { session_date: string } | null;
-    }[]) {
-      if (row.match_sessions?.session_date) {
-        const week = weekStart(row.match_sessions.session_date);
-        goalsByWeek.set(week, (goalsByWeek.get(week) ?? 0) + row.goals);
-      }
-    }
-  }
+  // Goals come from two sources, exactly as the rating engine reads them:
+  // admin-entered attendance before the rating-v2 cutover, member-reported
+  // results from it on (KB-021). `formContributions` is already loaded above for
+  // the story section and holds every published v2 session of the active season,
+  // so the second source costs no extra query.
+  const attendanceGoals = attendanceResponse.error
+    ? []
+    : (
+        (attendanceResponse.data ?? []) as unknown as {
+          goals: number | null;
+          match_sessions: { session_date: string; rating_rules_version: number } | null;
+        }[]
+      )
+        .filter((row) => row.match_sessions !== null)
+        .map((row): AttendanceGoalRow => ({
+          goals: row.goals,
+          session_date: row.match_sessions!.session_date,
+          rating_rules_version: row.match_sessions!.rating_rules_version,
+        }));
+  const goalsByWeek = buildGoalsByWeek(attendanceGoals, formContributions);
 
   const cardPlayer: LiveCardPlayer = {
     id: player.id,

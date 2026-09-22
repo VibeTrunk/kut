@@ -613,3 +613,12 @@ owned, and expired; abuse vectors (collusion, vote-trading).
   `supabase/tests/database/rating_breakdown.test.sql` with a second fixture
   whose season spans a cutover — the current one deliberately forces zero
   carry-over, which is exactly why the defect shipped.
+- **A `player_week_goals` view** — the KB-021 follow-up. Goals per football week
+  come from two tables either side of the rating-v2 cutover, and ADR-080 makes
+  the client choose between them per session. That knowledge belongs in SQL, next
+  to `kut.chronicle_player_season`, which already encodes the same `case when
+  rating_rules_version = 1 …`. In one independently reviewable migration, add a
+  `security_invoker = true` view keyed on `(player_id, season_id, week_start)`
+  summing the right source per session, have `/players/[slug]` read it instead of
+  joining two responses, and pin it with a database test whose fixture spans a
+  cutover. Deferred only because a migration-bearing change ships on its own.

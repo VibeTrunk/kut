@@ -3331,3 +3331,56 @@ this denies.
 
 Verified: `npm run verify:fast`, and `npm run test:db` — 19 files, 603
 assertions, against a local stack migrated through `20260928000000`.
+
+## The rating graph reads reported goals too (KB-021 / ADR-080) — 2026-09-22
+
+The "Rating over N published weeks" graph on `/players/[slug]` drew a goal
+football only on weeks before the rating-v2 cutover. Freek's 31 Aug point
+carried `×10` while 7, 14 and 21 Sept were plain dots — with the "What's in that
+Form" panel immediately below listing 3, 1 and 2 goals for those very sessions.
+
+The page built `goalsByWeek` from `kut.attendance.goals` alone. Since ADR-059
+the engine switches goal source at the cutover week:
+
+```sql
+if v_week.week_start < v_cutover then
+  select coalesce(sum(a.goals),0) into v_goals from kut.attendance a ...
+else
+  select coalesce(sum(r.effective_goals),0) into v_goals from kut.session_report_results r ...
+```
+
+So every reporting-era week has been drawn goalless since self-reporting shipped,
+and every future week would have been. Not a rendering bug that looked like a
+data bug: the graph was reading a table the game stopped writing to.
+
+`buildGoalsByWeek` now chooses per session on
+`kut.match_sessions.rating_rules_version`, mirroring `kut.chronicle_player_season`
+rather than re-deriving the cutover date on the client — the same choice the
+Chronicle already makes, and it means a v2 session that also carries a non-zero
+`attendance.goals` is never counted twice. The v2 side reads
+`kut.player_form_contributions`, already fetched on this page for the ADR-074
+story section, so no query was added and the finalized-survey gate (ADR-066)
+still applies.
+
+**This reopens the half of KB-019 that ADR-077 left open.** That ADR fixed a
+genuinely clipped `×N` badge on the last point, measured it properly, and said
+plainly that if the symptom survived on a week that is not last, the register
+should be reopened. It did, for an unrelated reason. Both fixes are real; the
+first explained why one badge could not be hovered, never why the September
+weeks had no badge at all.
+
+The reported "there is also no mouse over" is addressed in the same change: each
+point group gains a transparent hover disc of radius `min(14, spacing / 2)`,
+since a plain point is a 3.5px circle in a 560-unit viewBox with nothing
+hoverable between points. Unlike the structure ADR-077 measured and rejected,
+the `<title>` stays on the point group and the visual marks keep their pointer
+events, so the disc only adds reachable area — hovering the football or its
+badge resolves the same title as before.
+
+Queued in `docs/ROADMAP.md`: a `player_week_goals` view, so the client stops
+knowing that two goal sources exist. Deferred only because a migration-bearing
+change ships on its own.
+
+Verified: `npm run verify:fast`, with five new assertions in
+`tests/unit/rating-history.test.ts` pinning both sources, the no-double-count
+rule and multiple sessions in one week.

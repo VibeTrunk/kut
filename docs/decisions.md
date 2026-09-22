@@ -3987,3 +3987,79 @@ dropping `kut.public_live_ratings`, which has zero references in `src/` and
 survives only as a legacy projection; and RLS on `kut.season_rating_rules`,
 already queued in `docs/ROADMAP.md`, which asks for "the same active-KUT-member
 boundary as KB-017" and can now cite `kut.is_active_member()` by name.
+
+## ADR-080 — The rating graph reads goals from both eras, as the engine does
+
+Date: 2026-09-22
+
+Status: Accepted
+
+Decision: `/players/[slug]` builds `goalsByWeek` from **two** sources, switching
+per session on `kut.match_sessions.rating_rules_version` exactly as
+`kut._rebuild_season_core` and `kut.chronicle_player_season` do: admin-entered
+`kut.attendance.goals` for a v1 session, member-reported
+`kut.session_report_results.effective_goals` — read through the existing
+`kut.player_form_contributions` projection — for a v2 one. The mapping lives in
+one exported, tested function, `buildGoalsByWeek`. No migration.
+
+**The report.** A second screenshot of Freek's rating graph after ADR-077
+shipped: the 31 Aug point still carries the `×10` football while 7, 14 and 21
+Sept render as plain dots, even though the "What's in that Form" panel directly
+below lists 3 goals on 21 Sept, 1 on 14 Sept and 2 on 11 Sept. ADR-077 asked for
+exactly this reopening — "if the symptom survives on a week that is not the
+last" — and it did.
+
+**ADR-077 was not wrong, it was incomplete.** The clipped badge is a real defect
+and the measurement that found it stands. But it explained only why the *last*
+point's badge could not be hovered; it never explained why the September weeks
+had no badge to hover in the first place. The register's first guess, "a
+`goalsByWeek` keying issue", which ADR-077 recorded as disproved for the hover
+question, was the right instinct aimed at the wrong symptom.
+
+**The actual cause is a split goal source.** Since ADR-059 the engine reads
+goals from a different table on each side of the rating-v2 cutover week:
+
+```sql
+if v_week.week_start < v_cutover then
+  select coalesce(sum(a.goals),0) into v_goals from kut.attendance a ...
+else
+  select coalesce(sum(r.effective_goals),0) into v_goals from kut.session_report_results r ...
+```
+
+The page has only ever read the first branch. 31 Aug predates the cutover, so
+its admin-entered goals render; every reporting-era week is invisible no matter
+how many goals were reported. The graph has therefore been silently wrong for
+every week since self-reporting began, and it will stay wrong for every future
+week — this is not a rendering bug that happened to look like a data bug, it is
+the graph reading a table the game stopped writing to.
+
+**Per session, not per week.** `rating_rules_version` is a column on the
+session, and both sources can be non-zero for the same v2 session, so summing
+them unconditionally would double-count. `kut.chronicle_player_season:8` already
+makes the choice per session (`case when session.rating_rules_version = 1 then
+attendance.goals else result.effective_goals end`) and this mirrors it, rather
+than re-deriving the cutover date on the client. The engine's own week-level
+comparison and this session-level one agree, because a week's sessions all carry
+the same version: the version is assigned from
+`date_trunc('week', session_date) >= v2_starts_week`.
+
+**No new query.** `kut.player_form_contributions` is already fetched on this page
+for the ADR-074 story section, covers every published v2 session of the active
+season — the decay weight can be `0.00`, but the row is still there — and is
+`security_invoker = true`, so it stays gated to finalized surveys (ADR-066).
+Reusing it keeps the read path single, per ADR-064.
+
+**The hover target is widened in the same change.** A plain point is a 3.5px
+circle with a 2px stroke in a 560-unit viewBox — about 11 screen pixels — and
+nothing between points was hoverable at all, which is the second half of the
+report ("there is also no mouse over"). Each point group gains a transparent
+disc, radius `min(14, spacing / 2)` so a disc never swallows its neighbour's.
+This is **not** the structure ADR-077 measured and rejected: the `<title>` stays
+on the point group and the visual marks keep their pointer events, so the disc
+only adds reachable area. Hovering the football or the badge resolves the same
+title it did before, because the disc shares their group.
+
+**Deliberately not done.** Moving the choice into SQL as a `player_week_goals`
+view. It would be the better home — the client would stop knowing that two goal
+sources exist — but it needs a migration, and a migration-bearing change ships
+on its own (project CLAUDE.md). Queued in `docs/ROADMAP.md`.

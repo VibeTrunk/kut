@@ -103,6 +103,13 @@ try {
       $utf8NoBom
     )
   }
+  $escrowNote = if ($null -eq $candidate.escrowed_cards -or $candidate.escrowed_cards -lt 0) {
+    'unknown - the dump carries no held_by_offer_id column'
+  } elseif ($candidate.escrowed_cards -eq 0) {
+    '0 - the ADR-042 circular foreign key cannot bite, so this dump replays with foreign keys live'
+  } else {
+    "$($candidate.escrowed_cards) - a --data-only replay of this dump needs deferred or suspended FK checks; see docs/BACKUP.md"
+  }
   $entry = @(
     '', "## $timestamp - hosted kut backup", '',
     "- Candidate: ``$finalPath``",
@@ -112,7 +119,8 @@ try {
     "- Cold verification: passed in separate process at $($verification.verified_at)",
     "- Encryption credential locator: ``$PassphraseLocator``",
     "- Database credential locator: ``$DbPasswordLocator``",
-    '- Cipher: AES-256-CBC + HMAC-SHA256, PBKDF2 600,000'
+    '- Cipher: AES-256-CBC + HMAC-SHA256, PBKDF2 600,000',
+    "- Cards escrowed in open offers: $escrowNote"
   ) -join "`n"
   Add-Content -LiteralPath $logFile -Value $entry -Encoding UTF8
 
@@ -121,6 +129,7 @@ try {
     backup_path = $finalPath
     plaintext_sha256 = $candidate.plaintext_sha256
     cold_verification = 'passed'
+    escrowed_cards = $candidate.escrowed_cards
     credential_locator = $PassphraseLocator
     created_at = (Get-Date).ToUniversalTime().ToString('o')
   }

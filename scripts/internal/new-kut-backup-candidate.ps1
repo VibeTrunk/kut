@@ -50,6 +50,33 @@ try {
   Remove-Item Env:SUPABASE_DB_PASSWORD -ErrorAction SilentlyContinue
 
   if ((Get-Item -LiteralPath $schemaSql).Length -eq 0) { throw 'Schema dump is empty.' }
+
+  # Restore-safety signal. kut.user_cards and kut.trade_offers form a circular
+  # foreign key (ADR-042), and a --data-only replay can only satisfy both sides
+  # when no card is escrowed in an open offer. Counting it here, from the dump
+  # this backup actually contains, turns a mid-recovery unknown into a fact
+  # recorded at backup time -- see docs/BACKUP.md. -1 means "could not tell".
+  $escrowedCards = -1
+  $escrowIndex = -1
+  $inUserCards = $false
+  foreach ($line in [IO.File]::ReadLines($dataSql)) {
+    if (-not $inUserCards) {
+      # `supabase db dump` quotes every identifier -- COPY "kut"."user_cards"
+      # ("id", ..., "held_by_offer_id") -- while a bare pg_dump does not. Accept
+      # both, and strip the quotes before matching the column name.
+      if ($line -match '^COPY "?kut"?\."?user_cards"? \((?<cols>[^)]*)\) FROM stdin;') {
+        $columns = ($Matches['cols'] -split ',\s*') | ForEach-Object { $_.Trim('"') }
+        $escrowIndex = [Array]::IndexOf($columns, 'held_by_offer_id')
+        if ($escrowIndex -lt 0) { break }   # pre-ADR-042 dump: leave it unknown
+        $escrowedCards = 0
+        $inUserCards = $true
+      }
+      continue
+    }
+    if ($line -eq '\.') { break }
+    $fields = $line -split "`t"
+    if ($escrowIndex -lt $fields.Count -and $fields[$escrowIndex] -ne '\N') { $escrowedCards++ }
+  }
   $header = @(
     '-- KUT hosted backup',
     "-- project ref : $ProjectRef (shared VibeTrunk Supabase project)",
@@ -74,6 +101,7 @@ try {
     project_ref = $ProjectRef
     plaintext_sha256 = $hash
     plaintext_bytes = $size
+    escrowed_cards = $escrowedCards
     pending_path = $PendingPath
     created_at = (Get-Date).ToUniversalTime().ToString('o')
   } | ConvertTo-Json | Set-Content -LiteralPath $ManifestPath -Encoding UTF8

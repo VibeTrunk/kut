@@ -152,7 +152,30 @@ only when a card is genuinely escrowed in an open offer, i.e.
 the 2026-09-15 drill, so that backup restores cleanly either way. That is a
 property of the data on the day, not a guarantee.
 
-So, before a real restore, check the escrow count in the decrypted dump. If it
+**Every backup now records that count**, so this is no longer something to
+work out mid-recovery. `scripts/internal/new-kut-backup-candidate.ps1` counts
+rows in the dump's own `kut.user_cards` `COPY` block whose `held_by_offer_id`
+is not `\N`, and `BACKUP_LOG.md` carries the answer on the entry:
+
+```
+- Cards escrowed in open offers: 0 - the ADR-042 circular foreign key cannot
+  bite, so this dump replays with foreign keys live
+```
+
+A non-zero count says the replay needs deferred or suspended FK checks. The
+literal string `unknown` means the dump predates ADR-042 and carries no
+`held_by_offer_id` column at all. The count is taken from the dump that was
+encrypted, not from a separate query, so it describes *that* backup rather
+than the database at some nearby moment.
+
+The proper fix is to stop depending on the count: make both sides of the cycle
+`DEFERRABLE INITIALLY IMMEDIATE` so a restore can `SET CONSTRAINTS ALL
+DEFERRED` inside its transaction and satisfy the cycle at commit **with
+foreign keys enforced** — strictly better than `session_replication_role =
+replica`, which suspends enforcement and can load genuinely broken data
+silently. That needs its own migration and is tracked in `docs/ROADMAP.md`.
+
+Until then, before a real restore, check the recorded escrow count. If it
 is non-zero, replay with `--disable-triggers` semantics — the same
 `set session_replication_role = replica` the drill uses — and then re-enable
 and validate, rather than discovering the failure halfway through recovery:

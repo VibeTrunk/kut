@@ -585,6 +585,27 @@ owned, and expired; abuse vectors (collusion, vote-trading).
 - **`player-photos` storage bucket** is not covered by the SQL backup —
   `BACKUP.md`.
 - **Photo consent toggle + admin photo moderation** — still open (ADR-027).
+- **Make the `user_cards` / `trade_offers` cycle restore-safe** — since
+  ADR-042 the two tables reference each other (`user_cards.held_by_offer_id` →
+  `trade_offers`, `trade_offers.settled_card_id` → `user_cards`), and both
+  constraints are `NOT DEFERRABLE`. `pg_dump` warns on every backup: a
+  `--data-only` replay cannot order the two `COPY` blocks so both sides hold.
+  It only bites when a card is genuinely escrowed in an open offer, which was
+  0 at the 2026-09-15 drill and 0 at the 2026-09-22 backup — a property of the
+  data on the day, not a guarantee. Since 2026-09-22 every backup records the
+  count in `BACKUP_LOG.md`, so it is at least known before a recovery rather
+  than discovered during one. The fix is to `alter constraint … DEFERRABLE
+  INITIALLY IMMEDIATE` on both, which changes nothing day to day (they stay
+  checked per statement) but lets a restore `SET CONSTRAINTS ALL DEFERRED`
+  inside its transaction and satisfy the cycle at commit **with foreign keys
+  enforced**. That is strictly better than the `session_replication_role =
+  replica` the drill uses, which suspends enforcement entirely and can load
+  broken data silently. One migration, no table rewrite, no DML; a pgTAP
+  assertion on `pg_constraint.condeferrable` pins it. The schema already has
+  three deferrable FKs (`session_report_rewards.ledger_id` among them), so the
+  idiom is established. Not urgent — it needs a real disaster recovery *and* a
+  non-zero escrow count at that moment — but it is the kind of thing you do
+  not want to meet for the first time mid-incident. See `docs/BACKUP.md`.
 - **Enable RLS on `kut.season_rating_rules`** — low-priority defense in depth
   from the 2026-09-16 Supabase Security Advisor review. The table is in an
   exposed schema, but this is not a current write or data-integrity hole:

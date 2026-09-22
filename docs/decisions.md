@@ -4063,3 +4063,87 @@ title it did before, because the disc shares their group.
 view. It would be the better home — the client would stop knowing that two goal
 sources exist — but it needs a migration, and a migration-bearing change ships
 on its own (project CLAUDE.md). Queued in `docs/ROADMAP.md`.
+
+## ADR-081 — `kut.season_rating_rules` gets RLS and the active-member read policy
+
+Date: 2026-09-23
+
+Status: Accepted
+
+Decision: enable row level security on `kut.season_rating_rules` and add one
+policy, `"active members read rating rules"` — `for select to authenticated
+using (kut.is_active_member())`. No write policy, no grant change, no `FORCE`.
+Migration `20260929000000_season_rating_rules_rls.sql`, test
+`season_rating_rules_rls.test.sql`. No application code changes.
+
+**The finding.** The 2026-09-16 Supabase Security Advisor review flagged the
+table as the one in the exposed `kut` schema with RLS disabled — a deviation
+from `BUILD_SPEC.md` §78, "Enable Row Level Security on every exposed table".
+It was never a write or integrity hole: `20260920070000` revokes
+`public`/`anon` and grants only `SELECT` to `authenticated` and
+`service_role`, and nobody holds `INSERT`/`UPDATE`/`DELETE`. What remained was
+KB-017 in miniature: a JWT from another VibeTrunk tool, or a disabled KUT
+account with a live session, could read each season's rating-v2 cutover week.
+Low value, but the same boundary ADR-079 drew everywhere else, so the same
+predicate draws it here. Measured before the migration: both of those callers
+read all three local rows.
+
+**Filter, never raise.** A denied caller reads zero rows, the ADR-079 contract.
+The one app reader, `src/app/(app)/admin/attendance/page.tsx`, is an
+authenticated admin, and admins pass the predicate — it has no role filter. The
+service role is not named in the policy because it has `BYPASSRLS`; policies
+never apply to it.
+
+**No write policy.** Writes are refused by the missing grant (`42501`) before
+RLS is consulted, and with RLS on they would stay refused even if a grant ever
+appeared. Every legitimate writer is a `security definer` function.
+
+**Why the definer paths keep working.** `kut._rebuild_season_core`, the
+`match_sessions_rating_version` trigger (`kut._version_and_open_session_survey`)
+and the `seasons_initialize_rating_rules` trigger
+(`kut.initialize_season_rating_rules`) are all `security definer`, owned by the
+table's owner, `search_path = kut, pg_catalog`. A table's owner bypasses its RLS
+unless it is forced.
+
+**Why not `FORCE`, stated accurately.** The brief for this change said `FORCE`
+would break those three paths. Measured on the local stack, in a rolled-back
+transaction with `FORCE` and *no policy at all*, it does not: a season still
+seeded its row, publishing still stamped `rating_rules_version = 2`, and
+`kut.rebuild_season` still ran, while a direct `authenticated` read returned
+zero. The owning role, `postgres`, carries `BYPASSRLS` locally — it is not a
+superuser — and `BYPASSRLS` overrides `FORCE`. `FORCE` stays off anyway: it
+would buy nothing, since the only code running as the owner is those three
+reviewed functions, and it would rest them on a role attribute the platform
+grants and this repository cannot pin, instead of the bypass Postgres gives
+every owner. The test pins what this repository *can* pin:
+`relforcerowsecurity = false`, and that each of the three functions is
+`security definer` and owned by the table's owner.
+
+**The same fact limits the behavioural test, and this should not be
+overclaimed.** Because the owner has `BYPASSRLS` locally, the assertions that
+publishing, rebuilding and seeding still work cannot fail *because of RLS* on
+this stack. They guard against any other breakage; the structural pins above
+are what guard the RLS bypass. The version-stamp assertion is still
+discriminating in the sense that matters: if the trigger ever could not see the
+row, its subquery would return `NULL` and the session would be stamped `1`.
+
+**Existing tests.** Every other file that touches the table — setup
+`update`/`insert` in five of them — runs as `postgres`, which bypasses RLS, and
+`next_features_contracts.test.sql:48` reads it as an active member. All twenty
+files pass unchanged.
+
+**The survey found nothing else.** Before this migration
+`kut.season_rating_rules` was the only table in `kut` with
+`relrowsecurity = false`; after it, none is. The new test pins that, so
+§78 now holds for the whole schema and a new table created without RLS fails
+the suite.
+
+**Negative control.** The new test was run against the unmigrated schema first:
+seven of its 27 assertions fail — RLS off, the policy, its command and its role,
+the schema-wide RLS check, and the profileless and disabled reads — and the
+other twenty pass, which is exactly the change this migration makes and nothing
+more.
+
+**Rollback.** `drop policy "active members read rating rules" on
+kut.season_rating_rules; alter table kut.season_rating_rules disable row level
+security;` Grants are unchanged, so none need re-granting. No data involved.

@@ -3384,3 +3384,38 @@ change ships on its own.
 Verified: `npm run verify:fast`, with five new assertions in
 `tests/unit/rating-history.test.ts` pinning both sources, the no-double-count
 rule and multiple sessions in one week.
+
+## `kut.season_rating_rules` gets RLS (ADR-081) — 2026-09-23
+
+The last open item from the 2026-09-16 Supabase Security Advisor review, and
+defense in depth rather than a live hole. The table — one row per season, its
+rating-v2 cutover week — was the only one in `kut` with RLS off. Grants were
+already least-privilege (`SELECT` for `authenticated` and `service_role`, nothing
+for `anon`, no writes for anyone), but a JWT from another VibeTrunk tool or a
+disabled account with a live session could still read the cutover dates.
+
+Migration `20260929000000_season_rating_rules_rls.sql` enables RLS and adds one
+`select`-for-`authenticated` policy on `kut.is_active_member()`, the ADR-079
+predicate. It filters rather than raises. The admin who reads the cutover on
+`/admin/attendance` passes it; the service role bypasses RLS. Grants are
+unchanged, there is no write policy and no DML. Additive tier.
+
+No `FORCE`. The brief assumed `FORCE` would break the three `security definer`
+readers and writers — the season rebuild and the publish and season-creation
+triggers. Measured locally, it would not: the owning `postgres` role has
+`BYPASSRLS`, which overrides `FORCE`. It stays off regardless, because it buys
+nothing and would move those paths from the owner bypass onto a platform role
+attribute. The test pins `relforcerowsecurity = false` and that each function
+is owned by the table's owner.
+
+A read-only survey found no other `kut` table without RLS, so the build spec's
+"RLS on every table" now holds for the whole schema. A new schema-wide assertion
+keeps it that way.
+
+Negative control: against the unmigrated schema, 7 of the new file's 27
+assertions fail, and they are exactly the ones this migration is meant to flip.
+
+Verified: `npm run verify:fast`, and every pgTAP file — 20 files, 630
+assertions — against a local stack migrated through `20260929000000`.
+Migration policy passes for the working tree: one migration, isolated, tested.
+Hosted: not yet pushed; it goes through a `VibeTrunk/supabase` catalogue PR.

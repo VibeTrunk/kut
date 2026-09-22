@@ -23,6 +23,7 @@ export function ReportForm({
   goals: initialGoals,
   revision,
   rewardReceived,
+  reportStatus,
   savedNominations,
   explicitSkips,
 }: {
@@ -33,9 +34,15 @@ export function ReportForm({
   goals: number | null;
   revision: number;
   rewardReceived: boolean;
+  reportStatus: string | null;
   savedNominations: Record<string, string>;
   explicitSkips: string[];
 }) {
+  // Once a report is submitted it stays submitted: the RPC refuses to move it
+  // back, so offering "Save draft" would be offering an action the server will
+  // not perform (KB-020). rewardReceived is checked too, so a row that already
+  // regressed loses the button before the migration that repairs it lands.
+  const submitted = reportStatus === "submitted" || rewardReceived;
   const categoryIds = categories.map((category) => category.id);
   const [goals, setGoals] = useState(initialGoals === null ? "" : String(initialGoals));
   // Every field is React-controlled on purpose. A <form action={fn}> is reset by
@@ -139,7 +146,8 @@ export function ReportForm({
         <legend className="display text-3xl">Give kudos</legend>
         <p className="text-sm text-ink-dim">
           Choose a different teammate in each category, or explicitly Skip. Categories you leave
-          unanswered are not a Skip — you can save a draft and come back to them.
+          unanswered are not a Skip
+          {submitted ? "." : " — you can save a draft and come back to them."}
         </p>
         {categories.map((category) => {
           const choice = ballot[category.id] ?? UNDECIDED;
@@ -187,19 +195,23 @@ export function ReportForm({
           {blocker}
         </p>
       )}
-      <div className="grid gap-3 sm:grid-cols-2">
-        <button
-          className="min-h-13 rounded-xl border border-line bg-panel font-black"
-          disabled={pending || duplicates.size > 0}
-          name="intent"
-          value="draft"
-        >
-          Save draft
-        </button>
+      <div className={`grid gap-3 ${submitted ? "" : "sm:grid-cols-2"}`}>
+        {!submitted && (
+          <button
+            className="min-h-13 rounded-xl border border-line bg-panel font-black"
+            disabled={pending || duplicates.size > 0}
+            name="intent"
+            type="submit"
+            value="draft"
+          >
+            Save draft
+          </button>
+        )}
         <button
           className="min-h-13 rounded-xl bg-brass font-black text-ink-on-accent disabled:opacity-50"
           disabled={pending || blocker !== null}
           name="intent"
+          type="submit"
           value="submit"
         >
           {pending ? "Saving…" : rewardReceived ? "Save changes" : "Submit report → earn 50 coins"}

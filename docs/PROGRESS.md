@@ -3250,3 +3250,42 @@ does.
 
 Verified: `npm run verify:fast` (policy, format, lint, typecheck, 168 unit
 tests) plus the Chromium probe above.
+
+## A submitted report stops going back to draft (KB-020 / ADR-078) — 2026-09-22
+
+An admin screenshot showed Melle as "Draft · Reward paid". That state is
+reachable: the report form kept offering "Save draft" after a report was
+submitted, and the RPC's upsert overwrote `status` unconditionally while the
+reward row — written once, never deleted — stayed put.
+
+The damage is not on the roster. `kut._finalize_one_session` scores only
+`status='submitted'` rows and uses that same filter for the `v_turnout>=3` gate,
+so a report left this way at finalization drops that member's goals and kudos
+*and* can wipe kudos recognition for everyone in the session — while their
+`session_kudos` rows still count toward recipients' two-nominator threshold.
+
+The fix is one derived local, resolved before any validation runs: a `draft`
+call against a submitted report becomes an edit that stays submitted. A guarded
+upsert was rejected — it would hold the status while letting the row be
+rewritten under the weaker draft rules, so a submitted report could end up
+submitted and hollow. The `on conflict` clause needed no change at all.
+
+The form now receives `report_status`, which the page had been selecting and
+discarding, and drops "Save draft" once the report is submitted. Both buttons
+gained an explicit `type="submit"`: "Save draft" had none, so it was the form's
+default submit button and **Enter in the goals field regressed a submitted
+report without a click**. That was not in the report; it turned up while
+reading.
+
+Rows that already regressed are repaired by the migration. Sessions already
+finalized are **not** replayed — available (`admin_correct_session_goals` re-runs
+the finalizer routinely) but declined by the owner, because it would move live
+OVR retroactively. So for an already-finalized session the lost goals and kudos
+stay lost, and ADR-078 says so.
+
+The 16-assertion pgTAP file was run against the old function as a negative
+control and fails five of them there, the standing "no draft holding a reward"
+invariant among them.
+
+Verified: `npm run verify:fast`, and `npm run test:db` — 18 files, 532
+assertions, against a local stack migrated through `20260927000000`.

@@ -3809,3 +3809,81 @@ is that this is a real defect producing exactly the reported symptom, and that
 no other geometry produces it. If the symptom survives on a week that is not
 the last, KB-019 should be reopened with the browser and the week's position in
 the series recorded.
+
+## ADR-078 — A submitted session report never goes back to draft
+
+Date: 2026-09-22
+
+Status: Accepted
+
+Decision: `kut.submit_session_report` derives an effective intent from the
+stored row before it validates anything, so a `draft` call against an
+already-submitted report is an *edit that stays submitted*. Rows that already
+regressed are repaired. Sessions already finalized with a regressed report are
+deliberately **not** re-scored. Migration
+`20260927000000_session_report_status_is_monotonic.sql`.
+
+**The defect.** The report form rendered "Save draft" even once a report was
+submitted — `rewardReceived` only relabelled the Submit button — and the RPC's
+upsert wrote `status=excluded.status` unconditionally, collapsing `submitted_at`
+to null whenever the new status was not `submitted`. So a member could press
+Save draft and move their own report backwards, while
+`kut.session_report_rewards`, written once on the original submit and never
+deleted, kept the 50 coins. The admin roster joins the two independently and
+displayed the result verbatim: "Draft · Reward paid" (KB-020).
+
+**Why it was not cosmetic.** `kut._finalize_one_session` scores only
+`r.status='submitted'` rows, and uses the same filter for the `v_turnout>=3`
+gate that decides whether *any* kudos are recognised in that session. A report
+left in this state at finalization therefore drops that member's goals and kudos
+from scoring, and can wipe kudos recognition for everyone present — while their
+`session_kudos` rows still count toward recipients'
+`count(distinct nominator_player_id)>=2`, so the session is internally
+inconsistent as well as wrong.
+
+**Why one derived local rather than a guarded upsert.** The obvious fix is to
+hold `status` in the `on conflict do update`. It is not enough: the row would
+stay `submitted` while being rewritten under the *draft* validation, which
+permits a null goal count and an incomplete ballot. A submitted report could
+then end up submitted and hollow. Promoting the intent first —
+
+    v_intent := case when v_report.status='submitted' then 'submit' else p_intent end;
+
+— means an edit must satisfy the same completeness rules that earned the status.
+The `on conflict` clause is then unchanged: the BEFORE trigger normalises
+`excluded.status` to `submitted`, and `submitted_at` resolves to
+`coalesce(session_reports.submitted_at, now())`, preserving the original time.
+The table's `check ((status='submitted') = (submitted_at is not null))` holds in
+all four transitions. The reward insert remains `on conflict do nothing`.
+
+**The UI stops the user reaching it at all.** `report_status` was already
+selected from `kut.my_session_reports` and then dropped on the floor; it is now
+passed to the form, and "Save draft" is not rendered once the report is
+submitted. Hiding beats disabling — a disabled button invites a question the
+page cannot answer. Both buttons also gained an explicit `type="submit"`: "Save
+draft" had none, which made it the form's default submit button, so **Enter in
+the goals field regressed a submitted report with no click at all.** That was
+not in the original report; it was found while reading the form.
+
+**Deliberately not replaying finalized sessions.** `_finalize_one_session` is
+re-runnable — `kut.admin_correct_session_goals` calls it exactly that way — so
+replaying the affected sessions was available and was considered. It was
+declined by the owner on 2026-09-22: it would move live OVR for real members
+retroactively, push `finalized_at` forward, and disturb the ADR-067 reading of
+`finalized_at < closes_at` as "closed early". The consequence is stated plainly:
+for any session already finalized with a regressed report, that member's goals
+and kudos stay out of that week's scoring, and a session whose turnout had
+fallen below three keeps its lost kudos recognition. A later
+`admin_correct_session_goals` on such a session re-scores it correctly.
+
+**The backfill's victim predicate is exact.** A `session_report_rewards` row is
+written only by a real submit and is never deleted, so `status='draft'` beside
+one is reachable by no other path. `submitted_at` is recovered from
+`updated_at`, the closest surviving evidence. The repair is not reversible —
+nothing records which rows were draft beforehand — which the migration header
+says.
+
+**Test.** `supabase/tests/database/session_report_status.test.sql`, 16
+assertions. It was run against the *old* function as a negative control and
+fails five of them there, including the standing invariant that no report is
+left as a draft while holding a completion reward.

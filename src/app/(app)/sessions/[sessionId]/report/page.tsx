@@ -123,6 +123,7 @@ export default async function SessionReportPage({ params }: Props) {
             explicitSkips={report.explicit_skips ?? []}
             goals={report.goals}
             playerId={report.player_id}
+            reportStatus={report.report_status}
             revision={report.revision}
             rewardReceived={report.reward_received}
             savedNominations={nominations}

@@ -117,6 +117,11 @@ insert into kut.wallets (user_id, balance) values
   ('00000000-0000-4000-8000-00000009d002', 400)
 on conflict (user_id) do update set balance = excluded.balance;
 
+-- Read as a member: since KB-017 the leaderboard returns nothing to a caller
+-- without an active KUT profile, and the test superuser has none. Without this,
+-- the "admin is absent" assertion would pass for the wrong reason.
+set local role authenticated;
+set local request.jwt.claim.sub = '00000000-0000-4000-8000-00000009d003';
 select is(
   (select count(*)::int from kut.club_value_leaderboard where display_name = 'Links Admin'),
   0,
@@ -127,6 +132,8 @@ select is(
   1,
   'a member account with a wallet still appears on the leaderboard'
 );
+reset role;
+select set_config('request.jwt.claim.sub', '', true);
 
 -- admin_set_account_disabled ------------------------------------------------
 set local role authenticated;

@@ -184,11 +184,17 @@ select is(
   'The Cellar Dwellers',
   'the club name is trimmed and stored'
 );
+-- Read as the member: since KB-017 the leaderboard returns nothing to a caller
+-- without an active KUT profile, and the test superuser has none.
+set local role authenticated;
+set local request.jwt.claim.sub = '00000000-0000-4000-8000-00000009b002';
 select is(
   (select club_name from kut.club_value_leaderboard where display_name = 'Unlinked Member'),
   'The Cellar Dwellers',
   'the leaderboard shows the custom club name'
 );
+reset role;
+select set_config('request.jwt.claim.sub', '', true);
 
 set local role authenticated;
 set local request.jwt.claim.sub = '00000000-0000-4000-8000-00000009b002';
@@ -203,11 +209,15 @@ select ok(
   (select club_name from kut.profiles where id = '00000000-0000-4000-8000-00000009b002') is null,
   'a blank club name resets the column to NULL'
 );
+set local role authenticated;
+set local request.jwt.claim.sub = '00000000-0000-4000-8000-00000009b002';
 select is(
   (select club_name from kut.club_value_leaderboard where display_name = 'Unlinked Member'),
   'Unlinked Member''s Club',
   'the leaderboard falls back to the synthesised default when club_name is NULL'
 );
+reset role;
+select set_config('request.jwt.claim.sub', '', true);
 
 set local role authenticated;
 set local request.jwt.claim.sub = '00000000-0000-4000-8000-00000009b002';

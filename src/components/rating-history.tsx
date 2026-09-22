@@ -34,7 +34,17 @@ function shortDate(value: string) {
   }).format(new Date(Date.UTC(year, month - 1, day)));
 }
 
-function GoalFootball({ goals, x, y }: { goals: number; x: number; y: number }) {
+function GoalFootball({
+  goals,
+  x,
+  y,
+  labelOnLeft,
+}: {
+  goals: number;
+  x: number;
+  y: number;
+  labelOnLeft: boolean;
+}) {
   return (
     <g aria-label={`${goals} goal${goals === 1 ? "" : "s"} in this week`}>
       <circle cx={x} cy={y} fill="#e0ac4a" r="7" stroke="#15130f" strokeWidth="2" />
@@ -47,7 +57,16 @@ function GoalFootball({ goals, x, y }: { goals: number; x: number; y: number }) 
         strokeWidth="1.2"
       />
       {goals > 1 && (
-        <text className="fill-brass text-[11px] font-black" x={x + 9} y={y - 7}>
+        // On the last point the badge would otherwise be drawn at x + 9 = 557
+        // in a 560-wide viewBox: the glyphs run past the edge, and the part of
+        // them outside it cannot be hovered at all, so the week's tooltip was
+        // unreachable from the one mark that invites a hover (KB-019).
+        <text
+          className="fill-brass text-[11px] font-black"
+          textAnchor={labelOnLeft ? "end" : "start"}
+          x={labelOnLeft ? x - 9 : x + 9}
+          y={y - 7}
+        >
           ×{goals}
         </text>
       )}
@@ -163,7 +182,13 @@ export function RatingHistory({ snapshots, goalsByWeek, playerName }: RatingHist
             <g key={snapshot.week_start}>
               <title>{`${shortDate(snapshot.week_start)}: ${snapshot.live_ovr} OVR${goals ? `, ${goals} goal${goals === 1 ? "" : "s"}` : ""}`}</title>
               {goals > 0 ? (
-                <GoalFootball goals={goals} x={x(index)} y={y(snapshot.live_ovr)} />
+                <GoalFootball
+                  goals={goals}
+                  // 9px offset plus a measured 25px glyph box for "×10".
+                  labelOnLeft={x(index) + 34 > width}
+                  x={x(index)}
+                  y={y(snapshot.live_ovr)}
+                />
               ) : (
                 <circle
                   cx={x(index)}

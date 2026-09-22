@@ -3748,3 +3748,64 @@ names the 8 Form ceiling on a negative remainder. The `Carried Form: N` footnote
 is removed, superseded by the row. Ten new unit assertions in
 `tests/unit/rating-story.test.ts`, including both reported cards as fixtures.
 
+
+## ADR-077 — The goal badge stays inside the graph so it can be hovered
+
+Date: 2026-09-22
+
+Status: Accepted
+
+Decision: `GoalFootball` draws its `×N` badge on the left of the football when
+the badge would otherwise cross the right edge of the graph's viewBox. No other
+change to `src/components/rating-history.tsx`; no migration.
+
+**The report.** A card screenshot of Freek's rating graph: hovering the week
+carrying the `×10` badge showed no goal count, while other weeks tooltipped
+normally (KB-019). The register recorded two guesses — a `goalsByWeek` keying
+problem, or something about the badge specifically — and said neither had been
+tested.
+
+**What was measured.** The component was rendered to static markup and probed
+in real Chromium with `document.elementFromPoint`, walking up from the hit
+element to the nearest `<title>`, across six geometries: 1, 6, 18 and 30
+published weeks, with the multi-goal week placed mid-series, penultimate and
+last. Four probe points per graph — the football's centre, the gap beside it,
+the badge's glyph box and the badge's far edge.
+
+This **disproved the standing hypotheses.** Mid-series, every probe resolved the
+correct week's title, including the badge and the space around it, at both 6 and
+18 weeks. The overlap theory — that at ~17+ weeks the badge reaches into the
+next point's group, which is painted later and wins the hit test — is false: the
+badge belongs to its own point's group, and a neighbour only wins where the
+neighbour's own marks are painted.
+
+**The one geometry that fails** is the multi-goal week as the *last* point.
+`x(last) = left + plotWidth = 548`, the badge is drawn at `x + 9 = 557`, and its
+glyph box measures 25px wide in a viewBox 560 wide — so most of the badge is
+outside the frame. Probing it hits `<body>`: the part of an SVG element outside
+the viewBox is not hoverable, so the badge, which is the most salient thing on
+that point and the natural place to aim, could not be hovered at all. The
+football itself still tooltipped, which is why the failure reads as "only that
+week is broken". The same clipping hits the penultimate point once a season
+passes ~30 published weeks and the spacing closes up.
+
+**The fix** flips the badge to `textAnchor="end"` at `x - 9` when
+`x + 34 > width` — the 9px offset plus the measured 25px glyph box. After it,
+all four probes resolve the correct title in all six geometries, including the
+two that previously hit `<body>`.
+
+**An earlier attempt is worth recording because it was wrong.** The first
+version moved every point's `<title>` onto a transparent hit circle painted last
+and set `pointer-events: none` on the visual marks. Measured, it was a
+regression: the hit circle's radius does not reach the badge, so disabling
+pointer events on the marks *removed* hover from the badge in the mid-series
+case where it had been working. A structural change made without measuring the
+structure it replaced.
+
+**What this does not establish.** Freek's actual snapshot series was not
+available — the local stack was down and hosted data is not read from here — so
+it is not confirmed that 31 Aug was his last published week. What is confirmed
+is that this is a real defect producing exactly the reported symptom, and that
+no other geometry produces it. If the symptom survives on a week that is not
+the last, KB-019 should be reopened with the browser and the week's position in
+the series recorded.

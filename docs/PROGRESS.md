@@ -3217,3 +3217,36 @@ Verified: `npm run verify:fast` (policy, format, lint, typecheck, 168 unit tests
 including ten new ones that use both reported cards as fixtures) and
 `npm run build`.
 
+
+## The goal badge comes back inside the frame (KB-019 / ADR-077) — 2026-09-22
+
+Hovering the `×10` week on a player's rating graph showed nothing, while every
+other week tooltipped. The register held two untested guesses; both turned out
+to be wrong.
+
+The component was rendered to static markup and probed in Chromium with
+`elementFromPoint`, walking up to the nearest `<title>` — six geometries (1, 6,
+18 and 30 weeks; the scoring week mid-series, penultimate and last), four probe
+points each. Mid-series everything already worked, badge included, at every
+density. The failure is specific: when the scoring week is the **last** point,
+`x = 548` and the badge is drawn at `557` with a 25px glyph box inside a 560-wide
+viewBox, so most of it sits outside the frame — and what is outside the viewBox
+cannot be hovered. The badge is the obvious thing to aim at, so the week reads as
+having lost its tooltip even though the football beside it still had one.
+
+The badge now flips to the left of the football when it would cross the edge.
+All four probes resolve the correct title in all six geometries afterwards.
+
+A first attempt went the other way — one transparent hit circle per point
+carrying the `<title>`, with `pointer-events: none` on the marks — and measuring
+it showed it *removed* working hover from the badge, because the circle's radius
+never reaches the badge. It was reverted before it went anywhere. Measuring the
+old structure first would have skipped that.
+
+Not established: whether Freek's 31 Aug was his last published week. The local
+stack was down, so the reported instance was never reproduced against real data
+— only a defect that produces exactly that symptom, and no other geometry that
+does.
+
+Verified: `npm run verify:fast` (policy, format, lint, typecheck, 168 unit
+tests) plus the Chromium probe above.

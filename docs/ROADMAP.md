@@ -196,6 +196,7 @@ Raw triage (who asked, de-duplication, disposition) lives in
 | Market auctions | idea | ADR-042 added fixed-price listings + escrow trade offers; ADR-072 let the seller choose a 24- or 72-hour window. A timed ascending auction is still a separate mechanic. |
 | Weather bonus — extra coins for rain / snow / freeze / >25 °C | idea | No weather data source today. |
 | In-app FAQ | idea | There is a "How KUT works" page; a short FAQ is a smaller, distinct surface. |
+| Show owned copies when buying | idea | When browsing cards on the market to buy, show how many copies the member already owns of that card. Low-priority UX improvement; requires no new queries since owned card counts are already fetched for the collection. |
 
 ## Product-fit ideas
 

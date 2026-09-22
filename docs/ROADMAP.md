@@ -606,20 +606,17 @@ owned, and expired; abuse vectors (collusion, vote-trading).
   idiom is established. Not urgent — it needs a real disaster recovery *and* a
   non-zero escrow count at that moment — but it is the kind of thing you do
   not want to meet for the first time mid-incident. See `docs/BACKUP.md`.
-- **Enable RLS on `kut.season_rating_rules`** — low-priority defense in depth
-  from the 2026-09-16 Supabase Security Advisor review. The table is in an
-  exposed schema, but this is not a current write or data-integrity hole:
-  `20260920070000_rating_rules_read_permission.sql` revokes `public`/`anon`
-  and grants only `SELECT` to `authenticated` and `service_role`; its rows are
-  deliberately readable by signed-in screens. In a separate independently
-  reviewable migration, enable RLS, retain the least-privilege grants, add an
-  authenticated read policy using `kut.is_active_member()` — the predicate
-  KB-017 introduced in `20260928000000_active_member_projection_gate.sql`
-  (ADR-079), already `stable security definer` with execute granted to
-  `authenticated` and `service_role`, so this needs no new helper — and add
-  pgTAP assertions that `anon` and authenticated
-  writes fail while the intended member read and owner/service paths still
-  work. This needs no paid Supabase feature or recurring administration.
+- **Enable RLS on `kut.season_rating_rules`** — **shipped 2026-09-23
+  (ADR-081, migration `20260929000000_season_rating_rules_rls.sql`; hosted push
+  pending via `VibeTrunk/supabase`).** Low-priority defense in depth from the
+  2026-09-16 Supabase Security Advisor review. RLS is on, with one
+  `select`-for-`authenticated` policy on `kut.is_active_member()` (ADR-079). The
+  least-privilege grants from `20260920070000` are unchanged, and there is no
+  `FORCE`. `season_rating_rules_rls.test.sql` covers anon, a profileless JWT, a
+  disabled member, an active member, an admin, the service role, member writes
+  and the three definer paths. The read-only survey that closed this item found
+  **no other `kut` table with RLS disabled**. The same test now asserts that for
+  the whole schema.
 - **Give carried Form its own column** — the KB-018 follow-up.
   `kut.player_form_contributions` sees only the per-session half of
   `kut._rebuild_season_core`'s Form, so the Form carried over a season's

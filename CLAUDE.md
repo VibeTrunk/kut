@@ -83,6 +83,56 @@ don't add cross-repo coupling beyond the shared Supabase project.
 
 KUT is live at `https://kut.vibetrunk.com` as Vercel project `kut`.
 
+Deployed 2026-09-22 from `VibeTrunk/supabase` (catalogue PR #37 there, marked
+applied in #38), on its own `db push`:
+
+- `20260927000000_session_report_status_is_monotonic.sql` (ADR-078, fixing
+  KB-020, tier data-changing) &mdash; a submitted session report can no longer
+  regress to `draft`. `kut.submit_session_report` derives an effective intent
+  from the stored row **before** any validation runs
+  (`v_intent := case when v_report.status='submitted' then 'submit' else
+  p_intent end`), so a `draft` call against a submitted report is an *edit that
+  stays submitted*, held to the same completeness rules that earned the status.
+  A guard inside the `on conflict do update` was rejected: it would have held
+  the status while letting the row be rewritten under the weaker draft
+  validation, leaving a submitted report with a null goal count or an
+  incomplete ballot. With the intent promoted first the `on conflict` clause
+  needed no change at all &mdash; the BEFORE trigger normalises
+  `excluded.status`, `submitted_at` stays
+  `coalesce(session_reports.submitted_at, now())`, and the table's
+  `check ((status='submitted') = (submitted_at is not null))` holds in all four
+  transitions. The reward insert is still `on conflict do nothing`, so nothing
+  is ever paid twice.
+  - **The backfill matched zero rows on hosted.** Both reconnaissance queries
+    run before the push came back empty: no report sat at `status='draft'`
+    beside a `session_report_rewards` row, and no survey was open. The reported
+    "Draft &middot; Reward paid" row had evidently been re-submitted in the
+    meantime, which restores the status and leaves the reward alone. So on
+    hosted this shipped as **preventive, not corrective** &mdash; it closed the
+    path rather than repairing damage. No false negative was possible: the
+    query inner-joins `session_surveys` and `players`, and both keys are
+    `not null` with `on delete restrict` foreign keys.
+  - **Already-finalized sessions are deliberately never replayed** (owner
+    decision, 2026-09-22). `kut._finalize_one_session` is re-runnable and
+    `admin_correct_session_goals` calls it exactly that way, but replaying
+    would move live OVR retroactively and push `finalized_at` forward. Moot in
+    the event, since nothing needed repair, but the decision stands for any
+    future occurrence.
+  - Pushed on a fresh cold-verified backup (`20260922-204443`) rather than the
+    scheduled one, because the tier follows what the file *can* do rather than
+    what it happens to do on the day. Afterwards `migration list --linked`
+    showed 67 entries, none pending, no remote-only drift.
+  - **The UI half shipped ahead of the schema and that was safe**, unlike the
+    PR #86 ordering trap: PR #91 removed the "Save draft" button once a report
+    is submitted, which degrades gracefully with or without the migration. It
+    also gave both buttons an explicit `type="submit"` &mdash; "Save draft" had
+    none, so it was the form's default submit button and **Enter in the goals
+    field regressed a submitted report with no click at all**.
+  - Rollback: re-emit the pre-KB-020 body of `kut.submit_session_report`
+    verbatim from `20260920000000_session_reports_rating_v2.sql:242-308`. The
+    backfill is not reversible &mdash; nothing records which rows were draft
+    beforehand &mdash; but it changed nothing, so there is nothing to reverse.
+
 Deployed 2026-09-16 from `VibeTrunk/supabase` (catalogue PR #34 there), on its
 own additive `db push` after everything below:
 

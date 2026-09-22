@@ -592,8 +592,11 @@ owned, and expired; abuse vectors (collusion, vote-trading).
   and grants only `SELECT` to `authenticated` and `service_role`; its rows are
   deliberately readable by signed-in screens. In a separate independently
   reviewable migration, enable RLS, retain the least-privilege grants, add an
-  authenticated read policy (preferably using the same active-KUT-member
-  boundary as KB-017), and add pgTAP assertions that `anon` and authenticated
+  authenticated read policy using `kut.is_active_member()` — the predicate
+  KB-017 introduced in `20260928000000_active_member_projection_gate.sql`
+  (ADR-079), already `stable security definer` with execute granted to
+  `authenticated` and `service_role`, so this needs no new helper — and add
+  pgTAP assertions that `anon` and authenticated
   writes fail while the intended member read and owner/service paths still
   work. This needs no paid Supabase feature or recurring administration.
 - **Give carried Form its own column** — the KB-018 follow-up.

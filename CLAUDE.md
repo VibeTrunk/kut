@@ -83,6 +83,44 @@ don't add cross-repo coupling beyond the shared Supabase project.
 
 KUT is live at `https://kut.vibetrunk.com` as Vercel project `kut`.
 
+Deployed 2026-09-23 from `VibeTrunk/supabase` (catalogue PR #40 there), on its
+own additive `db push`:
+
+- `20260929000000_season_rating_rules_rls.sql` (ADR-081, KUT PR #98, tier
+  additive/access-only) &mdash; `kut.season_rating_rules` gets RLS and one
+  policy, `"active members read rating rules"`: `for select to authenticated
+  using (kut.is_active_member())`. This was the last `kut` table with RLS off,
+  and the last open item from the 2026-09-16 Security Advisor review. Grants
+  are unchanged and there is no write policy, so writes stay refused by the
+  missing grant.
+  - **No `FORCE`.** The three `security definer` paths (the season rebuild and
+    the publish-versioning and season-seeding triggers) run as the table's owner
+    and keep working through the owner bypass. Measured locally, `FORCE` would
+    not break them either, because `postgres` has `BYPASSRLS`. It is left off
+    anyway, so those paths rest on ownership rather than on a platform role
+    attribute.
+  - **Zero DML**, so it rode the latest scheduled backup, `20260922-214356`,
+    cold-verified. Pre-push `migration list --linked` showed 68 entries with
+    `20260929000000` the only local-only one, and the dry run named exactly that
+    file. Afterwards it showed 69 entries, all present locally and remotely, no
+    drift.
+  - **Smoke-tested on hosted.** In the SQL editor: `relrowsecurity = true`,
+    `relforcerowsecurity = false`, the one policy exactly as written, and grants
+    unchanged (`SELECT` for `authenticated` and `service_role`, nothing for
+    `anon`). The schema-wide check returned no `kut` table without RLS. In the
+    app, a superadmin on `/admin/attendance` still sees "This date uses member
+    reports" for a post-cutover date. That check is discriminating:
+    `sessionUsesMemberReports()` returns `false` when the cutover is missing, so
+    a hidden row would have shown the admin-goals wording instead of an error.
+    The remaining check, that the next session publishes and finalizes normally,
+    waits for a real session.
+  - **Operator note.** Like the ADR-079 views, a denied read here returns zero
+    rows, not an error. A bare `postgres` psql session is unaffected, because
+    that role bypasses RLS.
+  - Rollback: `drop policy "active members read rating rules" on
+    kut.season_rating_rules; alter table kut.season_rating_rules disable row
+    level security;`. Grants are unchanged, so none need re-granting.
+
 Deployed 2026-09-22 from `VibeTrunk/supabase` (catalogue PR #36 there, marked
 applied in #39), on its own additive `db push` immediately after the one below:
 

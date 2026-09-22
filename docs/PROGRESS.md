@@ -3289,3 +3289,45 @@ invariant among them.
 
 Verified: `npm run verify:fast`, and `npm run test:db` — 18 files, 532
 assertions, against a local stack migrated through `20260927000000`.
+
+## Member-only projections prove an active profile (KB-017 / ADR-079) — 2026-09-22
+
+The Supabase Security Advisor's finding, closed. Ten `security_invoker = false`
+views granted `SELECT` to the shared project's `authenticated` role and
+deliberately bypassed their sources' RLS, but never proved the caller was a KUT
+member — so a JWT from another VibeTrunk tool, or a disabled account with a live
+session, could read member-only data through the Data API.
+
+One predicate, `kut.is_active_member()`, now gates all ten. `security definer`
+because `kut.profiles` RLS lets a member read only their own row, so invoker
+rights could never prove a foreign caller has *no* profile. The service role
+passes through two disjuncts, one per transport; `current_user` and
+`pg_has_role(session_user, …)` are both recorded in ADR-079 as traps that would
+have made the predicate unconditionally true.
+
+Each view body is copied byte-identically and wrapped — the risk here is
+transcription across ten bodies and six files, not semantics, and a wrapper also
+makes it impossible for `create or replace view` to change the column shape.
+`EXPLAIN` shows `One-Time Filter: kut.is_active_member()`, so a denied caller
+never executes the body.
+
+Nothing was flipped to `security_invoker = true`. That is the generic advice and
+it is how KB-013 blacked out the Chronicle.
+
+The new 71-assertion file was run against the ungated views as a negative
+control: 15 fail, and *which* 15 confirms the register's accounting exactly — a
+profileless JWT reads all six club-wide projections, a disabled member reads
+those six plus three of their own personal views, while `my_club_value` holds
+because it already had its own `is_disabled` check and the profileless caller
+never reached the caller-scoped four at all.
+
+Three existing assertions needed a member's role and claim, having read the
+leaderboard as the test superuser. One of them — "an admin account is absent
+from the club value leaderboard" — would otherwise have kept passing for the
+wrong reason.
+
+No application code changed: `getNavContext()` already redirects every caller
+this denies.
+
+Verified: `npm run verify:fast`, and `npm run test:db` — 19 files, 603
+assertions, against a local stack migrated through `20260928000000`.

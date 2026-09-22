@@ -3887,3 +3887,103 @@ says.
 assertions. It was run against the *old* function as a negative control and
 fails five of them there, including the standing invariant that no report is
 left as a draft while holding a completion reward.
+
+## ADR-079 — One active-member predicate gates every definer projection
+
+Date: 2026-09-22
+
+Status: Accepted
+
+Decision: `kut.is_active_member()`, one `stable security definer` predicate,
+gates all ten `security_invoker = false` views. Migration
+`20260928000000_active_member_projection_gate.sql`. No application code changes.
+
+**The finding.** The Supabase Security Advisor flagged ten views that grant
+`SELECT` to the shared project's `authenticated` role and deliberately bypass
+their source tables' RLS, without proving the caller is a KUT member. A JWT
+issued for another VibeTrunk tool in this project, or a disabled KUT account
+with a still-valid session, could therefore read member-only names, market and
+activity data, Club Values, ratings and Chronicle results through the Data API
+(KB-017). A bounded read disclosure: these are read projections and `anon` has
+no `SELECT` on any of them.
+
+**Measured, not assumed.** The new pgTAP file was run against the *ungated*
+views as a negative control. Fifteen assertions fail there, and which fifteen
+matters: a profileless JWT reads all six club-wide projections; a disabled
+member reads those six *plus* their own trade offers, editions and copies. The
+disabled member's `my_club_value` does **not** fail — it already carried its own
+`not profile.is_disabled` — and the profileless caller never reached the four
+caller-scoped views, which are keyed on `auth.uid()`. That is exactly the
+accounting KB-017 claimed, confirmed rather than restated.
+
+**`security definer` is required.** `kut.profiles` RLS lets a member read only
+their own row, so an invoker-rights probe could never prove that a *foreign*
+caller has no profile. The predicate mirrors `kut.is_survey_finalized`
+(ADR-066): `sql`, `stable`, `security definer`, `search_path = kut, pg_catalog`,
+revoke-then-grant.
+
+**Why the service role is inside the predicate.** A service-key JWT carries no
+`sub`, so `auth.uid()` is null and the profile branch would deny it. Two
+disjuncts cover the two transports: `auth.role()` — already the house idiom at
+`20260920000000:348` — for PostgREST, and `current_setting('role', true)` for a
+bare `set role service_role` psql session, since entering a definer function
+changes `current_user` but not the `role` GUC. Neither is reachable from
+`authenticated`: GoTrue only issues `role: authenticated` user tokens, and
+`authenticated` is not a member of `service_role`, so `SET ROLE` is refused.
+
+Two shapes were explicitly rejected and are recorded so they are not proposed
+again. `current_user` inside a `SECURITY DEFINER` body is the function *owner*,
+which would make the predicate unconditionally true — the migration would ship
+as a no-op that looks fixed. `pg_has_role(session_user, 'service_role',
+'member')` is true for everyone, because `session_user` is `authenticator` for
+every PostgREST request and `authenticator` *is* a member of `service_role`.
+
+**Never `security_invoker = true`.** That is the Advisor's generic remedy and it
+is wrong here. These are cross-RLS club projections by design; doing it to
+`kut.chronicle_session_reports` is literally KB-013, the live Chronicle
+blackout, and doing it to `activity_feed` or `club_value_leaderboard` would
+empty them for everyone. Named here so the next audit does not re-propose it.
+
+**Why wrap rather than edit ten WHERE clauses.** The risk in this migration is
+transcription across ten bodies and six source files, not semantics. Each body
+is copied byte-identically and the only new text is
+`select * from ( … ) gated where kut.is_active_member()`, which also means
+`create or replace view` cannot change the column names, order or types (the
+ADR-073 lesson) — `select *` is expanded from an unchanged body. It gates
+`activity_feed`'s five `UNION ALL` branches and `club_value_leaderboard`'s
+aggregation in one place each. `EXPLAIN` confirms the predicate is a
+pseudoconstant qual: the plan reads `One-Time Filter: kut.is_active_member()`
+above the body, so a denied caller never executes it.
+
+**The four caller-scoped views are gated too, and this should not be
+overclaimed.** They never leaked another member's data — the negative control
+proves it. The residue was the *disabled caller's own* data on three of them.
+They are gated for uniformity: one function replaces four hand-rolled variants
+of the same idea, and it removes a per-view judgement call from every future
+reviewer. `my_club_value`'s own `not profile.is_disabled` is left in place:
+redundant now, but removing it would be an interior edit to a verbatim body.
+
+**No role filter.** Admins and superadmins read as members. The
+`role <> 'superadmin'` guards in `activity_feed` (KB-009) and the `p.role='user'`
+filter in `club_value_leaderboard` scope those views' *subjects*, which is a
+different question from who may read them.
+
+**The gate filters; it never raises.** `src/lib/nav/context.ts:47-52` reads
+`kut.my_trade_offers` in the same `Promise.all` as the profile read, before the
+disabled-user redirect at `:55-58`. A gate that raised would turn every disabled
+member's `/` render into a 500 instead of a redirect to `/login`. Every deny
+assertion in the test is `is(count, 0)`, never `throws_ok`, which pins it.
+
+**Consequences.** Three pre-existing assertions — one in
+`member_admin_links.test.sql`, two in `member_self_service.test.sql` — read
+`kut.club_value_leaderboard` as the test superuser with the `sub` claim cleared,
+and now need a member's role and claim. One of them, "an admin account is absent
+from the club value leaderboard", would otherwise have gone on passing for the
+wrong reason. No application code changed: `getNavContext()` already redirects
+every caller this denies.
+
+**Deliberately not done.** Revoking `anon`'s lingering `usage on schema kut`;
+dropping `kut.public_live_ratings`, which has zero references in `src/` and
+survives only as a legacy projection; and RLS on `kut.season_rating_rules`,
+already queued in `docs/ROADMAP.md`, which asks for "the same active-KUT-member
+boundary as KB-017" and can now cite `kut.is_active_member()` by name.

@@ -3603,5 +3603,11 @@ Verified:
 - The deploy window: with both views rolled back to their previous bodies, every
   market and pack page still rendered 200 with every card and no cast.
 
-Hosted: not pushed yet. Tier additive, so it rides the scheduled backup; the
-push goes through `VibeTrunk/supabase` after merge.
+Hosted: pushed 2026-09-23 from `VibeTrunk/supabase` (catalogue PR #46) on its
+own additive `db push`, riding the scheduled backup `20260923-112450`
+(cold-verified). Afterwards `migration list --linked` shows 72 entries, all
+present locally and remotely, with no drift. Smoke-tested on hosted: both views
+end in `player_id, is_live`, the market view is still gated and the pack view
+still invoker, `anon` can select neither, and `kut.my_wanted_cards` still
+resolves. `/market` loads normally. No Player is in injury mode on hosted today,
+so the cast itself has only been seen locally.

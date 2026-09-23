@@ -83,6 +83,43 @@ don't add cross-repo coupling beyond the shared Supabase project.
 
 KUT is live at `https://kut.vibetrunk.com` as Vercel project `kut`.
 
+Deployed 2026-09-23 from `VibeTrunk/supabase` (catalogue PR #46 there, marked
+applied in #47), on its own additive `db push`:
+
+- `20261002000000_cast_on_market_and_packs.sql` (ADR-086, KUT PR #108, tier
+  additive) &mdash; the market and pack openings carry the card's Player, so an
+  injured Player's Live card shows the plaster cast there too. With PR #107
+  (ADR-085), every card screen now follows one rule: a Live card of a Player in
+  injury mode right now.
+  - **What changed.** `kut.active_market_listings` and
+    `kut.my_pack_opening_results` gain `player_id` and `is_live` as their last
+    two columns. Each body is copied from its latest version. Access is
+    unchanged: the market keeps its `kut.is_active_member()` gate, and the pack
+    view stays a `security_invoker` view over the member's own openings. It was
+    never ADR-079 gated; ADR-086 records the disabled-member gap this leaves.
+  - **Zero DML**, so it rode the latest scheduled backup (`20260923-112450`,
+    cold-verified). Pre-push `migration list --linked` showed 72 entries with
+    `20261002000000` the only local-only one, and the dry run named exactly that
+    file. Afterwards it showed 72 entries, all present locally and remotely, no
+    drift.
+  - **Smoke-tested on hosted.** In the SQL editor, one row confirmed:
+    - both views end in `player_id, is_live`
+    - the market view is still definer and gated
+    - the pack view is still invoker
+    - no `anon` select on either
+    - `kut.my_wanted_cards` still resolves
+
+    In the app, `/market` loads normally. No Player is in injury mode on hosted
+    today, so the cast itself hasn't been seen there. Locally it was checked on
+    the market list, a listing page and a pack result.
+  - **Deploy ordering held.** The pages read both views with `select("*")` and
+    shipped on merge, before the push. Checked locally against the old views,
+    they render with no cast and no error in that window.
+  - Rollback (optional, the columns are harmless): drop and re-run
+    `kut.my_wanted_cards` and `kut.active_market_listings` from
+    `20260928000000` / `20260920060000`, and `kut.my_pack_opening_results` from
+    `20260902000000` block 5, as in the migration header.
+
 Deployed 2026-09-23 from `VibeTrunk/supabase` (catalogue PR #44 there, marked
 applied in #45), on its own `db push`:
 

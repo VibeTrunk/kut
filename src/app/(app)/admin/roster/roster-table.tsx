@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { formatDate } from "@/lib/format";
 import { manageRoster, type RosterActionState } from "./actions";
 
 export type RosterRow = {
@@ -10,9 +11,13 @@ export type RosterRow = {
   archetype: string;
   is_active: boolean;
   has_history: boolean;
+  /** Linked to an active (not disabled) account. */
+  has_account: boolean;
+  /** ADR-082. null: not injured. undefined: the injury read failed. */
+  injury: { started_on: string; protected_weeks: number } | null | undefined;
 };
 
-export function RosterTable({ players }: { players: RosterRow[] }) {
+export function RosterTable({ players, today }: { players: RosterRow[]; today: string }) {
   const [state, formAction, isPending] = useActionState<RosterActionState, FormData>(
     manageRoster,
     null,
@@ -33,6 +38,7 @@ export function RosterTable({ players }: { players: RosterRow[] }) {
               <th className="px-4 py-3">Slug</th>
               <th className="px-4 py-3">Archetype</th>
               <th className="px-4 py-3">Active</th>
+              <th className="px-4 py-3">Injury</th>
               <th className="px-4 py-3 text-right">Manage</th>
             </tr>
           </thead>
@@ -43,6 +49,14 @@ export function RosterTable({ players }: { players: RosterRow[] }) {
                 <td className="px-4 py-3 text-ink-dim">{player.slug}</td>
                 <td className="px-4 py-3 text-ink-dim">{player.archetype}</td>
                 <td className="px-4 py-3 text-ink-dim">{player.is_active ? "y" : "n"}</td>
+                <td className="px-4 py-3 align-top">
+                  <InjuryCell
+                    formAction={formAction}
+                    isPending={isPending}
+                    player={player}
+                    today={today}
+                  />
+                </td>
                 <td className="px-4 py-3">
                   <div className="flex justify-end gap-2">
                     <form action={formAction}>
@@ -100,6 +114,93 @@ export function RosterTable({ players }: { players: RosterRow[] }) {
         cards people own — it is reversible. Delete is permanent and only goes through for a player
         with no attendance, account, invite, or owned cards.
       </p>
+      <p className="text-sm text-ink-faint">
+        Injury mode protects a long-term injured player&rsquo;s card: each football week they sit
+        out, they check in from Home for 100 KUT Coins and their rating doesn&rsquo;t drop that
+        week. It ends by itself when they play a published session again. The note is visible to
+        admins only.
+      </p>
     </div>
+  );
+}
+
+const INPUT = "min-h-9 w-full rounded-lg border border-line bg-panel-2 px-2 text-xs text-ink";
+const BUTTON =
+  "rounded-lg border border-line px-3 py-1.5 text-xs font-bold text-ink-dim hover:text-ink disabled:cursor-not-allowed disabled:opacity-50";
+
+function InjuryCell({
+  player,
+  today,
+  formAction,
+  isPending,
+}: {
+  player: RosterRow;
+  today: string;
+  formAction: (formData: FormData) => void;
+  isPending: boolean;
+}) {
+  if (player.injury === undefined) return <span className="text-ink-faint">—</span>;
+
+  if (player.injury) {
+    const weeks = player.injury.protected_weeks;
+    return (
+      <details className="min-w-44">
+        <summary className="cursor-pointer text-xs font-bold text-brick">
+          Injured since {formatDate(player.injury.started_on)} · {weeks}{" "}
+          {weeks === 1 ? "week" : "weeks"} protected
+        </summary>
+        <form action={formAction} className="mt-2 space-y-2">
+          <input name="intent" type="hidden" value="end_injury" />
+          <input name="player_id" type="hidden" value={player.id} />
+          <input
+            aria-label="Reason for ending injury mode"
+            className={INPUT}
+            maxLength={200}
+            minLength={3}
+            name="reason"
+            placeholder="Reason, e.g. fit again"
+            required
+          />
+          <button className={BUTTON} disabled={isPending} type="submit">
+            End injury mode
+          </button>
+        </form>
+      </details>
+    );
+  }
+
+  if (!player.has_account || !player.is_active) {
+    return <span className="text-xs text-ink-faint">Needs an active account</span>;
+  }
+
+  return (
+    <details className="min-w-44">
+      <summary className="cursor-pointer text-xs font-bold text-ink-dim">Mark injured…</summary>
+      <form action={formAction} className="mt-2 space-y-2">
+        <input name="intent" type="hidden" value="start_injury" />
+        <input name="player_id" type="hidden" value={player.id} />
+        <label className="block space-y-1 text-xs text-ink-faint">
+          <span>Injury date</span>
+          <input
+            className={INPUT}
+            defaultValue={today}
+            max={today}
+            name="started_on"
+            required
+            type="date"
+          />
+        </label>
+        <input
+          aria-label="Private note (admins only)"
+          className={INPUT}
+          maxLength={200}
+          name="note"
+          placeholder="Private note (admins only)"
+        />
+        <button className={BUTTON} disabled={isPending} type="submit">
+          Start injury mode
+        </button>
+      </form>
+    </details>
   );
 }

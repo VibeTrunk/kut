@@ -15,7 +15,8 @@ type NotificationEventType =
   | "session_report"
   | "session_results"
   | "report_correction"
-  | "kudos_awarded";
+  | "kudos_awarded"
+  | "injury_check_in";
 
 type UserNotification = {
   id: string;
@@ -41,6 +42,7 @@ const EVENT_LABELS: Record<NotificationEventType, string> = {
   session_results: "Session results",
   report_correction: "Report correction",
   kudos_awarded: "Kudos awarded",
+  injury_check_in: "Rehab check-in",
 };
 
 export default async function MessagesPage() {

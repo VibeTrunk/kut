@@ -27,6 +27,8 @@ type Props = {
   pageValue?: string;
   ownPlayerId: string | null;
   photoUrls: Map<string, string>;
+  /** Players in injury mode (ADR-082), for the card badge. */
+  injuredPlayerIds: Set<string>;
   clubValue: number | null;
 };
 function href(lens: string, page: string | number) {
@@ -56,7 +58,15 @@ function SlotFrame({ index, children }: { index: number; children: ReactNode }) 
   );
 }
 
-function AlbumSlotView({ slot, photoUrls }: { slot: AlbumSlot; photoUrls: Map<string, string> }) {
+function AlbumSlotView({
+  slot,
+  photoUrls,
+  injuredPlayerIds,
+}: {
+  slot: AlbumSlot;
+  photoUrls: Map<string, string>;
+  injuredPlayerIds: Set<string>;
+}) {
   const card = slot.copies[0];
   if (!card)
     return (
@@ -116,7 +126,7 @@ function AlbumSlotView({ slot, photoUrls }: { slot: AlbumSlot; photoUrls: Map<st
         className="relative z-10 block rounded-[0.9rem] outline-offset-4 outline-brass focus-visible:outline-2"
         href={`/club/collection/${card.card_id}`}
       >
-        <LiveCard player={player} />
+        <LiveCard injured={injuredPlayerIds.has(slot.player.id)} player={player} />
       </Link>
       {card.active_listing_id && (
         <span className="absolute left-1/2 top-8 z-20 -translate-x-1/2 rounded-full border border-brass/55 bg-board-deep/90 px-2 py-1 text-[0.55rem] font-black uppercase tracking-[0.1em] text-brass">
@@ -144,10 +154,12 @@ function Leaf({
   number,
   slots,
   photoUrls,
+  injuredPlayerIds,
 }: {
   number: number;
   slots: AlbumSlot[];
   photoUrls: Map<string, string>;
+  injuredPlayerIds: Set<string>;
 }) {
   const collected = slots.filter((slot) => slot.copies.length > 0).length;
   return (
@@ -165,7 +177,12 @@ function Leaf({
       </header>
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
         {slots.map((slot) => (
-          <AlbumSlotView key={slot.player.id} photoUrls={photoUrls} slot={slot} />
+          <AlbumSlotView
+            injuredPlayerIds={injuredPlayerIds}
+            key={slot.player.id}
+            photoUrls={photoUrls}
+            slot={slot}
+          />
         ))}
       </div>
       <span className="mt-4 block text-right text-xs font-bold tabular-nums text-ink-faint">
@@ -182,6 +199,7 @@ export function CollectionAlbum({
   pageValue,
   ownPlayerId,
   photoUrls,
+  injuredPlayerIds,
   clubValue,
 }: Props) {
   const allSlots = buildSlots(roster, cards);
@@ -253,7 +271,13 @@ export function CollectionAlbum({
       {requested === "all" ? (
         <div className="space-y-6">
           {pages.map((slots, index) => (
-            <Leaf key={index} number={index + 1} photoUrls={photoUrls} slots={slots} />
+            <Leaf
+              injuredPlayerIds={injuredPlayerIds}
+              key={index}
+              number={index + 1}
+              photoUrls={photoUrls}
+              slots={slots}
+            />
           ))}
         </div>
       ) : (
@@ -276,7 +300,12 @@ export function CollectionAlbum({
             <div className="grid gap-0 lg:grid-cols-2">
               {spreadPages.map(([number, slots]) => (
                 <div className={number === currentPage ? "" : "hidden lg:block"} key={number}>
-                  <Leaf number={number} photoUrls={photoUrls} slots={slots} />
+                  <Leaf
+                    injuredPlayerIds={injuredPlayerIds}
+                    number={number}
+                    photoUrls={photoUrls}
+                    slots={slots}
+                  />
                 </div>
               ))}
             </div>

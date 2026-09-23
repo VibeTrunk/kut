@@ -4147,3 +4147,108 @@ more.
 **Rollback.** `drop policy "active members read rating rules" on
 kut.season_rating_rules; alter table kut.season_rating_rules disable row level
 security;` Grants are unchanged, so none need re-granting. No data involved.
+
+## ADR-082 — Injury mode: a weekly check-in protects Activity and pays a stipend
+
+Date: 2026-09-23
+
+Status: Accepted
+
+Decision: an admin can put a Player with an active account into **injury
+mode**. Each football week the Player sits out, the member does a **rehab
+check-in** from Home. It pays 100 KUT Coins and **protects** that week: Activity
+carries over unchanged instead of decaying ×0.90. Form is not protected. A 🩹
+Injured chip marks the Player's Live cards. Migration
+`20260930000000_injury_protection.sql`, test `injury_protection.test.sql`,
+spec §11.3, Part 145 `INJURY_WEEKLY_STIPEND`, Part L #24.
+
+**The problem.** A long-term injured Player's card falls from 75 to ~62 after
+four football weeks out, ~53 after eight and ~35 after six months. That punishes
+the Player for something outside their control, and every member who owns the
+card loses Club Value with them. "Retirement is never automatic… so injury…
+can be handled humanely" (ROADMAP, roster pruning) already anticipated this.
+
+**A protected week is a week off for that one Player.** §9 already says a week
+with no TFH session decays nobody. A protected week applies the same rule to
+one Player's Activity, so no new decay maths is invented. The engine change is
+one guard in `kut._rebuild_season_core`'s week loop. The body is otherwise
+verbatim from `20260920000000:406-463`, and a rebuild of the real local data
+before and after the migration produced zero differences across 29 players and
+174 snapshots.
+
+**Form still fades.** v2 Form ages by club sessions, not weeks, and it rewards
+what happened on the pitch. Freezing it would carry a pre-injury hot streak
+through months without football. The card settles onto its attendance base and
+stays there.
+
+**The check-in, not the admin flag, protects a week.** The rebuild reads only
+`kut.injury_check_ins`, so it stays deterministic (Part L #16) and a protected
+week is a fact the member created. Two consequences are deliberate:
+
+- **No backdating** (owner decision, 2026-09-23). Weeks lost before the first
+  check-in stay lost; there is no admin "protect past weeks" path.
+- **A Player who drifts away stops being protected.** If check-ins stop, the
+  weeks decay normally, without anyone having to notice and end the period.
+
+**"Active" is derived.** A period is active while it is open and the Player has
+no attendance at a published session dated *strictly after* `started_on`.
+Strictly, because a Player is often injured during a session they attended, and
+the admin enters that date. Playing again ends injury mode with no trigger, and
+an attendance correction re-derives it. `admin_start_injury` closes a stale open
+period whose Player has since returned (`end_reason 'returned to play'`,
+`ended_by` null) before starting a new one. Ending a period never rewrites
+history: weeks already protected stay protected, so no rebuild runs.
+
+**The check-in window** is the current or the previous ISO week in
+Europe/Amsterdam, a week of the active season with a published session, no
+appearance by the Player, not before the injury week, and not already checked
+in. The previous-week grace covers a session published after its week has
+ended. The rule lives only in SQL (`kut._injury_checkable_week`), per ADR-064.
+`kut.my_injury_status()` tells Home which week, if any, to offer.
+
+**The stipend is a bounded faucet.** It pays at most 100 per Player per football
+week, enforced by the `(player_id, week_start)` primary key, the
+`kut.bibs_rewards` pattern, plus the ledger's idempotency key. That is well below
+showing up (250 attendance plus 50 for the report), so injury mode never pays
+better than playing. An admin cannot switch it on for their own player.
+
+**Immediate rebuild.** A check-in rebuilds the active season so the protection
+shows at once rather than at the next survey finalization. A season-scoped
+advisory lock serialises check-in rebuilds with each other. Nothing serialised
+`kut.rebuild_season` against the finalizer before this either, and both rebuild
+from the same facts, so the last writer is correct.
+
+**Privacy.** The admin note may hold medical detail. `kut.injury_periods` is
+admin-read only. Members see injury status through `kut.injured_players`, which
+projects only `player_id`, `started_on` and `protected_weeks`. It is a definer
+view gated on `kut.is_active_member()` (ADR-079), with the active rule inlined,
+because a view's function calls are checked against the caller.
+
+**Notices.** `admin_notice` on start and end (distinct `reference_type`s, so the
+end notice isn't swallowed by the unique index), and a new `injury_check_in`
+notice when a recent week's *first* session of the active season is published.
+
+**Deliberately left out:**
+
+- **The market badge.** `kut.active_market_listings` has no `player_id`, and
+  adding one means re-emitting an ADR-079 gated view. That is its own small
+  change.
+- **Players without an account.** They can't check in, so `admin_start_injury`
+  refuses them.
+- **The Comeback Form boost on return.** It changes the Form formula and the
+  ADR-074 breakdown view, so it gets its own PR and ADR, after this one reaches
+  hosted.
+
+**Tier: data-changing** (`docs/OPERATIONS.md`): a new `wallet_ledger` reason
+and a rating-engine change, even though no existing row is written. Fresh
+backup before the hosted push.
+
+**Deploy ordering.** Vercel deploys on merge, before the hosted push. Every new
+read degrades gracefully: Home hides the check-in card, the badge is omitted,
+and the roster shows "—" when the schema is missing. The admin and check-in
+actions return an error message. Still, push the catalogue right after merge.
+
+**Rollback** is in the migration header. It drops the objects, restores the
+`20260920000000` rebuild body and narrows both check constraints (after deleting
+any `injury_stipend` / `injury_check_in` rows). Protected weeks then decay again
+on the next rebuild.

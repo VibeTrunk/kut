@@ -3424,3 +3424,35 @@ all present locally and remotely, with no drift. Smoke-tested on hosted: RLS is
 on and not forced, the one policy and the grants are as written, no `kut` table
 is left without RLS, and `/admin/attendance` still shows the member-reports
 notice for a post-cutover date.
+
+## Injury mode update — 2026-09-23
+
+ADR-082. A long-term injured Player's card no longer has to decay towards 30.
+An admin marks the Player injured from `/admin/roster` (with an injury date and
+an admin-only note). Each football week the Player sits out, the member checks
+in from Home: +100 KUT Coins, and Activity carries over instead of decaying
+×0.90. Form still fades. A 🩹 Injured chip shows on the Player's Live cards in
+the directory, player page, collection and album. Injury mode ends by itself
+when the Player plays a published session again, or when an admin ends it.
+Protection is never backdated.
+"How KUT works" has a new section 4 explaining injury mode to members; later
+sections moved down one number. The roster table on `/admin/roster` is now
+wider than the add-player form, so the injury column fits.
+
+Migration `20260930000000_injury_protection.sql`: `kut.injury_periods`
+(admin-read only), `kut.injury_check_ins` (the only fact the rebuild reads, and
+the idempotency key for the stipend), `admin_start_injury` / `admin_end_injury`,
+`my_injury_status` / `injury_check_in`, the `kut.injured_players` projection
+gated on `kut.is_active_member()`, and an `injury_check_in` notice when a recent
+week's first session is published. `kut._rebuild_season_core` is re-emitted
+verbatim apart from the protected-week guard. Rebuilding the real local data
+before and after gave zero differences in 29 players and 174 snapshots.
+Spec: §9, §11.3, Part 145 `INJURY_WEEKLY_STIPEND`, Part L #24. Data-changing
+tier.
+
+Not in this slice: the Comeback Form boost (own PR, ADR-083), the chip on market
+listings (no `player_id` on that view), and Players without an account.
+
+Verified: `npm run verify:fast`, and every pgTAP file — 21 files, 678
+assertions, 48 of them in the new `injury_protection.test.sql` — against a local
+stack migrated through `20260930000000`.

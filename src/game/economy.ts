@@ -19,6 +19,11 @@ export const ECONOMY = {
   // BUILD_SPEC Part 145.
   bibsCoinBonus: 100,
   sessionReportReward: 50,
+  // Weekly rehab-check-in stipend for a Player in injury mode (ADR-082). Paid at
+  // most once per (Player, football week). Mirrored by the `v_amount` constant
+  // in kut.injury_check_in (20260930000000_injury_protection.sql) and
+  // BUILD_SPEC Part 145.
+  injuryStipend: 100,
   starterCoinGrant: 250,
   basicPackPrice: 175,
   basicPackCardCount: 3,

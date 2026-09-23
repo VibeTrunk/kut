@@ -351,6 +351,9 @@ If TFH plays no official game in a week:
 
 If Monday and Friday both happen in one week, they belong to the same activity calculation.
 
+A Player in injury mode who checked in for a football week is treated, for
+Activity only, as though that week had no session — see §11.3 (ADR-082).
+
 ---
 
 # PART V — LIVE PLAYER PROGRESSION
@@ -475,6 +478,26 @@ This is intentional:
 - attendance alone does not produce 90+ cards — the Live OVR ceiling (Part
   14) is unchanged at 83, and this cap is reached by activity alone (75) plus
   only the maximum form bonus (8).
+
+### 11.3 Injury protection (ADR-082)
+
+An admin may put a Player with an active account into **injury mode** from the
+date of the injury. While it lasts, the member may do one **rehab check-in** per
+football week they did not play, for the current or the previous ISO week
+(Europe/Amsterdam). A check-in:
+
+- pays `INJURY_WEEKLY_STIPEND` (100) KUT Coins, at most once per
+  (Player, football week), ledger reason `injury_stipend`;
+- **protects** that week: if the Player made zero appearances in it,
+  `activity_next = activity_previous` instead of the ×0.90 decay.
+
+Form is **not** protected; it keeps fading as sessions pass. A week with an
+appearance is always scored normally. Injury mode ends by itself when the
+Player attends a published session dated after the injury date, or when an
+admin ends it; weeks already protected stay protected. Protection is never
+backdated — a week counts only through a check-in the member made. The check-in
+table (`kut.injury_check_ins`) is the only input the rebuild reads, so rebuilding
+stays deterministic.
 
 ---
 
@@ -4240,6 +4263,7 @@ LIVE_OVR_MAX = 83
 
 ATTENDANCE_COIN_REWARD = 250  # raised from 75 on 2026-08-29, ADR-029
 BIBS_COIN_BONUS = 100  # one-off, for the session's bibs bringer, ADR-037 (copy fixed ADR-044)
+INJURY_WEEKLY_STIPEND = 100  # per rehab check-in, at most once per Player and football week, ADR-082
 STARTER_COIN_GRANT = 250
 STARTER_CARD_COUNT = 3
 
@@ -4546,6 +4570,7 @@ Tasks:
 21. Bibs bonus is a bounded faucet: at most once per `(session, Player)`, never re-paid on a correction of the same washer (ADR-037).
 22. Trade-offer escrow is conserved (ADR-042): coins/cards offered are removed from the proposer at propose time and are either returned in full (reject / withdraw / expire / listing gone) or transferred atomically on accept — never both, never neither. A `held_by_offer_id` card cannot be listed, discarded, burned, or re-offered.
 23. An accepted trade offer is never written to `market_sales`, so it never affects Reference Value (ADR-042).
+24. An injury check-in protects at most one (Player, football week), pays its stipend at most once, and protects only a week in which that Player made zero appearances (ADR-082).
 
 Every coding agent should treat this section as a regression checklist.
 

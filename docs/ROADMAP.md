@@ -383,6 +383,28 @@ historical market / Chronicle / album records, current-season ratings, and
 possible future reactivation. Never delete the historical Player or silently
 invalidate economy records.
 
+## Injury mode — protect a long-term injured Player's card
+
+**Status: partial.** Raised 2026-09-23 for a Player out with a long-term
+injury, whose card would otherwise decay towards 30 OVR (and take every owner's
+Club Value with it).
+
+**Shipped in the first slice (ADR-082, migration `20260930000000`):** an admin
+puts a Player with an account into injury mode. Each football week they sit
+out, the member does a rehab check-in from Home: 100 KUT Coins, and Activity
+doesn't decay that week. Form still fades. Cards carry a 🩹 Injured chip.
+Injury mode ends by itself when they play again. There is no backdating, by
+owner decision.
+
+**Open remainder:**
+
+| Item | Status | Notes / next step |
+|---|---|---|
+| Comeback Form boost | specified | On the first published session attended after a period with ≥ 3 protected weeks, a Form input of `least(2, 0.25 × protected_weeks)` that ages like a v2 session input and counts under the Form cap of 8. It changes the Form formula, so it needs its own migration, ADR-083, a comeback row in `kut.player_form_contributions` (new last column `source`) and an extended `rating_breakdown.test.sql` that still sums to `form_score`. |
+| Injured chip on the market | idea | `kut.active_market_listings` has no `player_id`; appending one means re-emitting that ADR-079 gated view. |
+| Sideline supporter | idea | An injured Player who comes to watch: coins but no Activity, and perhaps a kudos vote, since they saw the game. |
+| Chronicle "treatment room" | idea | Injured Players and comebacks in the weekly issue. |
+
 ## Generated default player portraits
 
 **Status: idea.** Replace the visually empty initials-only state for Players

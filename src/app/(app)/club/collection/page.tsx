@@ -2,6 +2,7 @@ import Link from "next/link";
 import { FilterBar } from "@/components/filter-bar";
 import { LiveCard, type LiveCardPlayer } from "@/components/live-card";
 import { requireUser } from "@/lib/auth/user";
+import { fetchInjuredPlayerIds } from "@/lib/injuries";
 import { resolvePhotoUrls } from "@/lib/player-photos";
 import { createClient } from "@/lib/supabase/server";
 import { CollectionAlbum } from "@/components/album/collection-album";
@@ -140,7 +141,10 @@ export default async function CollectionPage({ searchParams }: CollectionPagePro
             ];
           })();
     const visiblePaths = visibleSlots.flatMap((slot) => slot.copies.map((card) => card.photo_path));
-    const photoUrls = await resolvePhotoUrls(supabase, visiblePaths);
+    const [photoUrls, injuredPlayerIds] = await Promise.all([
+      resolvePhotoUrls(supabase, visiblePaths),
+      fetchInjuredPlayerIds(supabase),
+    ]);
     return (
       <main className="board-ground min-h-screen p-5 text-ink sm:p-10">
         <section className="mx-auto max-w-6xl py-4 sm:py-8">
@@ -150,6 +154,7 @@ export default async function CollectionPage({ searchParams }: CollectionPagePro
             lensValue={query.lens}
             ownPlayerId={profileResponse.data?.player_id ?? null}
             pageValue={page}
+            injuredPlayerIds={injuredPlayerIds}
             photoUrls={photoUrls}
             roster={roster}
           />
@@ -174,10 +179,13 @@ export default async function CollectionPage({ searchParams }: CollectionPagePro
           : b.ovr - a.ovr || a.display_name.localeCompare(b.display_name),
     );
 
-  const photoUrls = await resolvePhotoUrls(
-    supabase,
-    cards.map((card) => card.photo_path),
-  );
+  const [photoUrls, injuredPlayerIds] = await Promise.all([
+    resolvePhotoUrls(
+      supabase,
+      cards.map((card) => card.photo_path),
+    ),
+    fetchInjuredPlayerIds(supabase),
+  ]);
   const uniquePlayers = new Set(all.map((card) => card.player_id)).size;
   const discardValue = all.reduce((total, card) => total + (card.discard_value ?? 0), 0);
   const totalPlayers = directory.length;
@@ -275,7 +283,10 @@ export default async function CollectionPage({ searchParams }: CollectionPagePro
                         href={`/club/collection/${card.card_id}`}
                         key={card.card_id}
                       >
-                        <LiveCard player={cardPlayer} />
+                        <LiveCard
+                          injured={injuredPlayerIds.has(card.player_id)}
+                          player={cardPlayer}
+                        />
                         {/* Status rides the card rather than floating as loose text
                               beneath it, so a scanned grid reads in one pass. */}
                         {card.active_listing_id && (

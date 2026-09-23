@@ -96,7 +96,8 @@ applied in #47), on its own additive `db push`:
     two columns. Each body is copied from its latest version. Access is
     unchanged: the market keeps its `kut.is_active_member()` gate, and the pack
     view stays a `security_invoker` view over the member's own openings. It was
-    never ADR-079 gated; ADR-086 records the disabled-member gap this leaves.
+    never ADR-079 gated and doesn't need to be: ADR-086 explains why a disabled
+    member reading their own pack history is not a gap.
   - **Zero DML**, so it rode the latest scheduled backup (`20260923-112450`,
     cold-verified). Pre-push `migration list --linked` showed 72 entries with
     `20261002000000` the only local-only one, and the dry run named exactly that

@@ -4465,3 +4465,70 @@ these pages to the helper.
 Player is not cast, a Live card of an injured Player is, a Live card of a Player
 who isn't injured is not, and the same Player gets the same `id` from every row
 shape, never the card id.
+
+## ADR-086 — The market and pack openings carry the card's Player, so they show the cast too
+
+Date: 2026-09-23
+
+Status: Accepted
+
+Decision: `kut.active_market_listings` and `kut.my_pack_opening_results` each
+gain two trailing columns, `player_id` and `is_live`, both straight from
+`kut.card_editions`. The market list, the listing page, pack results and the pack
+reveal then build their cards through the ADR-085 rule, so the market shows the
+cast as the owner decided (ADR-085 (a)). Migration
+`20261002000000_cast_on_market_and_packs.sql`, test
+`cast_on_market_and_packs.test.sql`, spec §11.3. This is PR B of ROADMAP
+"Plaster cast on every card", and it supersedes ADR-084's "Market and pack cards
+unchanged".
+
+**Copied, then appended.** Each body is copied from its latest version, and the
+only new text is the two appended select-list items. A line-by-line comparison
+against the source files confirmed that. `create or replace view` can only
+append columns, and appending last keeps every existing column's name, order and
+type (the ADR-073 lesson). `kut.my_wanted_cards` reads
+`kut.active_market_listings`, which is one more reason never to `drop view` here.
+
+**Access is unchanged, and the two views differ in how.** The ROADMAP plan
+assumed both views sit behind the ADR-079 gate. Only the market does:
+
+- `kut.active_market_listings` stays a definer view wrapped in
+  `where kut.is_active_member()`. The new columns sit inside the gated body, so
+  `select *` exposes them and a denied caller still reads zero rows.
+- `kut.my_pack_opening_results` is `security_invoker = true`, scoped by
+  `opening.user_id = auth.uid()`, and was never one of ADR-079's ten definer
+  projections. It has no gate to keep. Its access model is left exactly as it
+  was: a member reads only their own openings. **Not changed here:** a
+  *disabled* member with a still-valid session can still read their own pack
+  openings, the same "disabled caller's own data" residue ADR-079 described for
+  the caller-scoped views. Gating it would be an access change, which belongs in
+  its own PR if wanted, not in a zero-DML column append.
+
+**The helper gains one entry point.** `toListedCardPlayer` takes a market or pack
+row and hands it to `toLiveCardPlayer` once `player_id` and `is_live` are both
+present. The rule stays in one place. A row without them yields
+`{ id: null, injured: false }`.
+
+**Deploy ordering.** Vercel deploys on merge, before the hosted push. The three
+pages now read these views with `select("*")`, never a column list naming the new
+fields, because naming a missing column would fail the read and empty the market
+(PR #86). Until the push the fields are absent, and the helper reads that as "no
+cast". Measured locally: with the views rolled back to their previous bodies,
+the market list, both listing pages and both pack results rendered 200 with every
+card and no cast. With the migration re-applied, the cast was back.
+
+**Tier: additive** (`docs/OPERATIONS.md`): two view re-emits, no table, grant or
+row change, zero DML. It rides the scheduled backup.
+
+**Rollback** is in the migration header and optional, since the extra columns
+are harmless to every reader. `create or replace` cannot drop columns, so the
+rollback drops and re-runs three views: `kut.my_wanted_cards` and
+`kut.active_market_listings`, from `20260928000000` and `20260920060000`, and
+`kut.my_pack_opening_results`, from `20260902000000` block 5. That DDL was
+exercised locally twice, once inside the negative control and once for the
+deploy-ordering check.
+
+**Negative control.** Run after the rollback DDL, against the old views, the new
+test's six schema assertions fail. Its first value query then errors on the
+missing `player_id`. The access assertions pass either way, because access didn't
+change.

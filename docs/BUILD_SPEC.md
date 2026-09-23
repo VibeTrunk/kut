@@ -516,6 +516,13 @@ into one comeback, still capped at 2. The rebuild re-derives these inputs from
 check-ins and attendance every time (`kut.comeback_form_inputs`), and the rating
 story lists them as their own row.
 
+**On the card (ADR-084, ADR-085, ADR-086).** A card is drawn in a signed plaster
+cast when it is a **Live card of a Player in injury mode right now**, on every
+card screen: players list and detail, Home, collection, album, card detail, the
+market list and listing page, pack results and both reveals. A Special edition
+never is, because its rating is a frozen snapshot that nothing protects. The
+cast's signatures are chosen from the Player id, so every copy looks the same.
+
 ---
 
 ## 12. Activity-based Overall

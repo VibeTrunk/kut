@@ -2,7 +2,8 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { AlbumKeyboardNavigation } from "@/components/album/album-keyboard-navigation";
 import { LensMenu } from "@/components/album/lens-menu";
-import { LiveCard, type LiveCardPlayer } from "@/components/live-card";
+import { LiveCard } from "@/components/live-card";
+import { toLiveCardPlayer } from "@/lib/live-card-player";
 import { CollectionHeader, Completion } from "@/components/album/collection-header";
 import { ARCHETYPES, ARCHETYPE_LABELS } from "@/game/archetypes";
 import type { RarityTier } from "@/game/rating-engine";
@@ -27,7 +28,7 @@ type Props = {
   pageValue?: string;
   ownPlayerId: string | null;
   photoUrls: Map<string, string>;
-  /** Players in injury mode (ADR-082), for the card badge. */
+  /** Players in injury mode (ADR-082), for the plaster cast (ADR-084). */
   injuredPlayerIds: Set<string>;
   clubValue: number | null;
 };
@@ -99,20 +100,8 @@ function AlbumSlotView({
         </Link>
       </SlotFrame>
     );
-  const player: LiveCardPlayer = {
-    id: card.card_id,
-    displayName: card.display_name,
-    archetype: card.archetype,
-    liveOvr: card.live_ovr,
-    pac: card.pac,
-    sho: card.sho,
-    pas: card.pas,
-    dri: card.dri,
-    def: card.def,
-    phy: card.phy,
-    rarityTier: card.rarity_tier,
-    photoUrl: card.photo_path ? (photoUrls.get(card.photo_path) ?? null) : null,
-  };
+  // The slot shows its first copy, which can be a Special edition.
+  const player = toLiveCardPlayer(card, injuredPlayerIds, photoUrls);
   return (
     <SlotFrame index={slot.index}>
       {slot.copies.length > 1 && (
@@ -126,7 +115,7 @@ function AlbumSlotView({
         className="relative z-10 block rounded-[0.9rem] outline-offset-4 outline-brass focus-visible:outline-2"
         href={`/club/collection/${card.card_id}`}
       >
-        <LiveCard injured={injuredPlayerIds.has(slot.player.id)} player={player} />
+        <LiveCard player={player} />
       </Link>
       {card.active_listing_id && (
         <span className="absolute left-1/2 top-8 z-20 -translate-x-1/2 rounded-full border border-brass/55 bg-board-deep/90 px-2 py-1 text-[0.55rem] font-black uppercase tracking-[0.1em] text-brass">

@@ -1,9 +1,19 @@
+import { useId } from "react";
 import { archetypeLabel } from "@/game/archetypes";
 import { CardTilt } from "@/components/card-tilt";
 import { injuryCast } from "@/lib/injury-cast";
 
-export type LiveCardPlayer = {
-  id: string;
+/**
+ * Whose card this is, and whether it goes into the plaster cast (ADR-084).
+ * `id` is always the Player id, never a card or listing id: the cast's
+ * signatures hash it, so every copy of a Player's card carries the same cast.
+ * Build it with `toLiveCardPlayer` (`src/lib/live-card-player.ts`), which owns
+ * the one rule for `injured` (ADR-085). `id: null` is a row that doesn't carry
+ * its Player id yet, and such a card can never be cast.
+ */
+type LiveCardIdentity = { id: string; injured: boolean } | { id: null; injured: false };
+
+export type LiveCardPlayer = LiveCardIdentity & {
   displayName: string;
   archetype: string;
   liveOvr: number;
@@ -22,8 +32,6 @@ type LiveCardProps = {
   size?: "grid" | "detail";
   /** Optional week-over-week OVR change. A positive value renders a small "▲ +N" pill. */
   trend?: number | null;
-  /** The Player is in injury mode (ADR-082); the card goes into a signed plaster cast (ADR-084). */
-  injured?: boolean;
 };
 
 const TIER_LABEL: Record<LiveCardPlayer["rarityTier"], string> = {
@@ -91,8 +99,9 @@ function ShirtPlasters() {
  */
 function ShirtBack({ player, injured }: { player: LiveCardPlayer; injured: boolean }) {
   const name = surname(player.displayName).toUpperCase();
-  // Distinct per card so duplicate arcs on one page cannot collide.
-  const arcId = `shirt-arc-${player.id}`;
+  // Distinct per rendered card, so two copies of one Player on a page cannot
+  // collide. Not the Player id: that is shared by every copy.
+  const arcId = `shirt-arc-${useId()}`;
 
   return (
     <>
@@ -191,8 +200,9 @@ function BandageClip() {
   );
 }
 
-export function LiveCard({ player, size = "grid", trend, injured = false }: LiveCardProps) {
+export function LiveCard({ player, size = "grid", trend }: LiveCardProps) {
   const tier = player.rarityTier;
+  const injured = player.injured;
 
   const card = (
     <article
@@ -238,7 +248,7 @@ export function LiveCard({ player, size = "grid", trend, injured = false }: Live
 
         {/* After both scrims and before the pennant: they share z-index 3, so
             DOM order puts the pennant over the corner plaster. */}
-        {injured && <InjuryCast playerId={player.id} />}
+        {player.injured && <InjuryCast playerId={player.id} />}
 
         <span aria-hidden="true" className="live-card__pennant">
           <span className={`live-card__tier-icon live-card__tier-icon--${tier}`} />

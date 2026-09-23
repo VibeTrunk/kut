@@ -1,7 +1,5 @@
 import { redirect } from "next/navigation";
 import { StarterReveal } from "@/components/starter-reveal";
-import { type LiveCardPlayer } from "@/components/live-card";
-import { resolvePhotoUrls } from "@/lib/player-photos";
 import { createClient } from "@/lib/supabase/server";
 import { loadStarterCards } from "./starter-cards";
 
@@ -31,14 +29,6 @@ export default async function WelcomePage() {
   }
 
   const cards = await loadStarterCards(supabase);
-  const photoUrls = await resolvePhotoUrls(
-    supabase,
-    cards.map((card) => card.photo_path),
-  );
-  const players: LiveCardPlayer[] = cards.map(({ photo_path, ...card }) => ({
-    ...card,
-    photoUrl: photo_path ? (photoUrls.get(photo_path) ?? null) : null,
-  }));
 
   return (
     <main className="board-ground min-h-screen p-5 text-ink sm:p-10">
@@ -49,7 +39,7 @@ export default async function WelcomePage() {
           </p>
           <h1 className="display mt-3 text-5xl sm:text-6xl">Your starter pack is waiting</h1>
         </header>
-        <StarterReveal cards={players} />
+        <StarterReveal cards={cards} />
       </section>
     </main>
   );

@@ -3535,3 +3535,35 @@ same markup as before, apart from one attribute-less `<g>` in the shirt-back SVG
 which draws nothing. Local injury periods had to be inserted directly: every
 local account holder has an appearance at a fixture session dated after today,
 so the roster form refuses the date.
+
+## Plaster cast rule update — 2026-09-23
+
+ADR-085, PR A of ROADMAP "Plaster cast on every card". UI only. Every card
+screen now applies one rule for the plaster cast: a Live card of a Player who is
+injured right now. The rule is in one helper, `toLiveCardPlayer`
+(`src/lib/live-card-player.ts`). Fixes KB-022 (a Special copy wore the cast in
+the collection list and the album) and KB-023 (card detail and the album hashed
+the card id, so their signatures differed from `/players`).
+
+- `LiveCardPlayer.injured` is required and `id` always means the Player id. A
+  row without one is `{ id: null, injured: false }`, which can't be cast.
+- The shirt-back arc gets its own key from `useId()` instead of the id.
+- Home risers and the starter reveal on `/welcome` now show the cast too. The
+  starter query adds `player_id` and `is_live`.
+- The market and pack results set `injured: false` explicitly until PR B adds
+  `player_id` and `is_live` to their views. The pack reveal keeps each copy's
+  id in its own `cardId` field for its links.
+- Owner decisions recorded as settled in ADR-085: the market shows the cast, and
+  only Live cards get it.
+
+Verified: `npm run verify:fast` (189 unit tests, 5 of them new in
+`tests/unit/live-card-player.test.ts`). Checked on the local app with Playwright
+at 390 px and 1280 px, reading each card's cast attributes as well as looking at
+it. Djanco's Live card showed the same cast on `/players`, `/players/djanco`, the
+collection list, the album and card detail: green "Snel weer terug!", then "Walk
+it off (later)" and a heart. Oussama's differs from Djanco's, as it should, and
+Freek, who isn't injured, is unchanged. A temporary Special copy of Djanco,
+inserted into the local DB for the check and deleted afterwards, showed no cast
+in the list, its album slot or on its detail page. Home risers and the starter
+reveal were not checked by eye. No local injured Player is a riser, and the
+reveal needs a new account, so the unit tests cover them.

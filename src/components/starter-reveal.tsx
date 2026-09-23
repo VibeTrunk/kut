@@ -2,12 +2,11 @@
 
 import { useState, useTransition } from "react";
 import { markStarterOpened } from "@/app/welcome/actions";
-import { type LiveCardPlayer } from "@/components/live-card";
-import { PackReveal } from "@/components/pack-reveal";
+import { PackReveal, type RevealCard } from "@/components/pack-reveal";
 
-export function StarterReveal({ cards }: { cards: LiveCardPlayer[] }) {
+export function StarterReveal({ cards }: { cards: RevealCard[] }) {
   const [phase, setPhase] = useState<"sealed" | "revealing">("sealed");
-  const [revealCards, setRevealCards] = useState<LiveCardPlayer[]>(cards);
+  const [revealCards, setRevealCards] = useState<RevealCard[]>(cards);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -19,7 +18,7 @@ export function StarterReveal({ cards }: { cards: LiveCardPlayer[] }) {
         setError(result.error);
         return;
       }
-      setRevealCards(result.players.length > 0 ? result.players : cards);
+      setRevealCards(result.cards.length > 0 ? result.cards : cards);
       setPhase("revealing");
     });
   }

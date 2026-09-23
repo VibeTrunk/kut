@@ -19,10 +19,16 @@ const RARITY_LABEL: Record<LiveCardPlayer["rarityTier"], string> = {
   elite: "Elite",
 };
 
+/**
+ * One revealed copy. The copy's own id lives beside the card face, never in
+ * it: `player.id` is the Player id the plaster cast hashes (ADR-085).
+ */
+export type RevealCard = { cardId: string; player: LiveCardPlayer };
+
 type PackRevealProps = {
-  cards: LiveCardPlayer[];
+  cards: RevealCard[];
   title?: string;
-  /** When set, each summary card links to `${cardHrefBase}${card.id}`. */
+  /** When set, each summary card links to `${cardHrefBase}${card.cardId}`. */
   cardHrefBase?: string;
   doneHref: string;
   doneLabel: string;
@@ -68,10 +74,10 @@ export function PackReveal({
         </h1>
         <div className="mt-6 grid grid-cols-[repeat(auto-fit,minmax(190px,1fr))] gap-5">
           {cards.map((card, i) => {
-            const href = cardHrefBase ? `${cardHrefBase}${card.id}` : null;
-            const cardEl = <LiveCard player={card} />;
+            const href = cardHrefBase ? `${cardHrefBase}${card.cardId}` : null;
+            const cardEl = <LiveCard player={card.player} />;
             return (
-              <div className="pack-reveal__summary-card" key={`${card.id}-${i}`}>
+              <div className="pack-reveal__summary-card" key={`${card.cardId}-${i}`}>
                 {href ? (
                   <Link
                     className="block rounded-[1.25rem] outline-offset-4 outline-brass focus-visible:outline-2"
@@ -106,7 +112,7 @@ export function PackReveal({
     );
   }
 
-  const card = cards[state.index];
+  const card = cards[state.index].player;
   const total = cards.length;
 
   return (

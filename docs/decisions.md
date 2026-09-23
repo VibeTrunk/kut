@@ -4498,11 +4498,19 @@ assumed both views sit behind the ADR-079 gate. Only the market does:
 - `kut.my_pack_opening_results` is `security_invoker = true`, scoped by
   `opening.user_id = auth.uid()`, and was never one of ADR-079's ten definer
   projections. It has no gate to keep. Its access model is left exactly as it
-  was: a member reads only their own openings. **Not changed here:** a
-  *disabled* member with a still-valid session can still read their own pack
-  openings, the same "disabled caller's own data" residue ADR-079 described for
-  the caller-scoped views. Gating it would be an access change, which belongs in
-  its own PR if wanted, not in a zero-DML column append.
+  was: a member reads only their own openings.
+
+**A disabled member's own pack history is not a gap** (owner decision,
+2026-09-23). A disabled account can't use the app: every page redirects it to
+`/login`. With a still-valid session, a direct Data API call could read that
+member's own pack openings, but that is data they already saw, never anyone
+else's, and read-only. It is also nothing this view adds: the member's own rows
+in `kut.user_cards`, `kut.wallets` and `kut.wallet_ledger` are readable the same
+way, because their policies ask only "is this your row?". So the view is not
+gated, and this needs no follow-up. If disabling ever has to mean "sees nothing
+at all", the fix is a Supabase auth ban or one rule across all of a member's own
+data, not a gate on one view. The `20261002000000` header, which is immutable,
+still calls this "left open"; this paragraph supersedes that wording.
 
 **The helper gains one entry point.** `toListedCardPlayer` takes a market or pack
 row and hands it to `toLiveCardPlayer` once `player_id` and `is_live` are both

@@ -401,7 +401,7 @@ owner decision.
 
 | Item | Status | Notes / next step |
 |---|---|---|
-| Comeback Form boost | shipped | ADR-083, migration `20261001000000`. The first published session attended after ≥ 3 protected weeks carries `least(2, 0.25 × protected_weeks)` Form, ageing like a session input under the Form cap of 8. It shows as its own row in the rating story. |
+| Comeback Form boost | shipped | ADR-083, migration `20261001000000`, pushed to hosted 2026-09-23 via `VibeTrunk/supabase` catalogue PR #44. The first published session attended after ≥ 3 protected weeks carries `least(2, 0.25 × protected_weeks)` Form, ageing like a session input under the Form cap of 8. It shows as its own row in the rating story. |
 | Injured chip on the market | idea | `kut.active_market_listings` has no `player_id`; appending one means re-emitting that ADR-079 gated view. |
 | Sideline supporter | idea | An injured Player who comes to watch: coins but no Activity, and perhaps a kudos vote, since they saw the game. |
 | Chronicle "treatment room" | idea | Injured Players and comebacks in the weekly issue. |

@@ -83,6 +83,45 @@ don't add cross-repo coupling beyond the shared Supabase project.
 
 KUT is live at `https://kut.vibetrunk.com` as Vercel project `kut`.
 
+Deployed 2026-09-23 from `VibeTrunk/supabase` (catalogue PR #44 there, marked
+applied in #45), on its own `db push`:
+
+- `20261001000000_injury_comeback_form.sql` (ADR-083, KUT PR #102, tier
+  data-changing) &mdash; **Comeback Form**, the second slice of injury mode. The
+  first published v2 session a Player attends after an injury period with at
+  least 3 protected weeks carries `least(2, 0.25 × protected_weeks)` Form,
+  ageing like a session input under the Form cap of 8. Only weeks before the
+  return week count, only the first return counts, and periods ending in the
+  same return are summed once.
+  - **New objects.** `kut.comeback_form_inputs` holds derived rows:
+    `kut._rebuild_season_core` deletes and re-derives them from check-ins and
+    attendance on every rebuild, like `player_rating_snapshots`. Members read it
+    under `kut.is_active_member()`. The rebuild is re-emitted with that
+    derivation and a union into the v2 session inputs.
+    `kut.player_form_contributions` unions the comeback rows in, with `source`
+    and `protected_weeks` appended. The rating story lists a comeback as its own
+    row, and the pages read the view with `select("*")`.
+  - **Zero DML.** Pushed on a fresh cold-verified backup (`20260923-112450`,
+    0 escrowed cards). Pre-push `migration list --linked` showed 71 entries with
+    `20261001000000` the only local-only one, and the dry run named exactly that
+    file. Afterwards it showed 71 entries, all present locally and remotely, no
+    drift.
+  - **Smoke-tested on hosted.** In the SQL editor, one row confirmed:
+    - the table exists, with RLS on and its one policy
+    - no `anon` select
+    - zero rows
+    - both engine guards
+    - both appended view columns
+
+    In the app, Freek's "Why this rating" story still lists three sessions that
+    sum to the stated 2.31 Form and +2 OVR, read through the new `select("*")`.
+    No comeback row can appear until someone on hosted returns from injury mode
+    with 3+ protected weeks.
+  - Rollback: `drop view kut.player_form_contributions`, because
+    `create or replace` cannot drop the appended columns. Then re-run its
+    `20260926000000` block, re-run the `20260930000000` rebuild body, drop the
+    table and rebuild the active season.
+
 Deployed 2026-09-23 from `VibeTrunk/supabase` (catalogue PR #42 there, marked
 applied in #43), on its own `db push`:
 

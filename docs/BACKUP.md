@@ -173,9 +173,12 @@ The proper fix is to stop depending on the count: make both sides of the cycle
 DEFERRED` inside its transaction and satisfy the cycle at commit **with
 foreign keys enforced** — strictly better than `session_replication_role =
 replica`, which suspends enforcement and can load genuinely broken data
-silently. That needs its own migration and is tracked in `docs/ROADMAP.md`.
+silently. That needs its own migration, and it was considered and declined on
+2026-09-23: the fix only pays off in a real recovery that meets a non-zero
+escrow count, and the recorded count plus the procedure below already covers
+that case.
 
-Until then, before a real restore, check the recorded escrow count. If it
+So before a real restore, check the recorded escrow count. If it
 is non-zero, replay with `--disable-triggers` semantics — the same
 `set session_replication_role = replica` the drill uses — and then re-enable
 and validate, rather than discovering the failure halfway through recovery:

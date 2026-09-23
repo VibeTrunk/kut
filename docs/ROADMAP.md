@@ -608,27 +608,6 @@ owned, and expired; abuse vectors (collusion, vote-trading).
 - **`player-photos` storage bucket** is not covered by the SQL backup —
   `BACKUP.md`.
 - **Photo consent toggle + admin photo moderation** — still open (ADR-027).
-- **Make the `user_cards` / `trade_offers` cycle restore-safe** — since
-  ADR-042 the two tables reference each other (`user_cards.held_by_offer_id` →
-  `trade_offers`, `trade_offers.settled_card_id` → `user_cards`), and both
-  constraints are `NOT DEFERRABLE`. `pg_dump` warns on every backup: a
-  `--data-only` replay cannot order the two `COPY` blocks so both sides hold.
-  It only bites when a card is genuinely escrowed in an open offer, which was
-  0 at the 2026-09-15 drill and 0 at the 2026-09-22 backup — a property of the
-  data on the day, not a guarantee. Since 2026-09-22 every backup records the
-  count in `BACKUP_LOG.md`, so it is at least known before a recovery rather
-  than discovered during one. The fix is to `alter constraint … DEFERRABLE
-  INITIALLY IMMEDIATE` on both, which changes nothing day to day (they stay
-  checked per statement) but lets a restore `SET CONSTRAINTS ALL DEFERRED`
-  inside its transaction and satisfy the cycle at commit **with foreign keys
-  enforced**. That is strictly better than the `session_replication_role =
-  replica` the drill uses, which suspends enforcement entirely and can load
-  broken data silently. One migration, no table rewrite, no DML; a pgTAP
-  assertion on `pg_constraint.condeferrable` pins it. The schema already has
-  three deferrable FKs (`session_report_rewards.ledger_id` among them), so the
-  idiom is established. Not urgent — it needs a real disaster recovery *and* a
-  non-zero escrow count at that moment — but it is the kind of thing you do
-  not want to meet for the first time mid-incident. See `docs/BACKUP.md`.
 - **Enable RLS on `kut.season_rating_rules`** — **shipped 2026-09-23
   (ADR-081, migration `20260929000000_season_rating_rules_rls.sql`; pushed to
   hosted 2026-09-23 via `VibeTrunk/supabase` catalogue PR #40).** Low-priority defense in depth from the
@@ -640,26 +619,3 @@ owned, and expired; abuse vectors (collusion, vote-trading).
   and the three definer paths. The read-only survey that closed this item found
   **no other `kut` table with RLS disabled**. The same test now asserts that for
   the whole schema.
-- **Give carried Form its own column** — the KB-018 follow-up.
-  `kut.player_form_contributions` sees only the per-session half of
-  `kut._rebuild_season_core`'s Form, so the Form carried over a season's
-  rating-v2 cutover has no row. ADR-076 recovers it in the UI by subtracting the
-  listed rows from `form_score`, which renders the right number but attributes
-  it to carry-over on the client's say-so rather than the database's. In one
-  independently reviewable migration, add `legacy_form` and `legacy_weight` to
-  `kut.player_rating_breakdown`, derived from `kut.player_season_state` and
-  `kut.season_rating_rules` (the decay ladder is by count of published v2
-  sessions, mirroring the engine's `case v_v2_count when 1 then .75 …`), have
-  `src/lib/rating-story.ts` read them instead of inferring, and extend
-  `supabase/tests/database/rating_breakdown.test.sql` with a second fixture
-  whose season spans a cutover — the current one deliberately forces zero
-  carry-over, which is exactly why the defect shipped.
-- **A `player_week_goals` view** — the KB-021 follow-up. Goals per football week
-  come from two tables either side of the rating-v2 cutover, and ADR-080 makes
-  the client choose between them per session. That knowledge belongs in SQL, next
-  to `kut.chronicle_player_season`, which already encodes the same `case when
-  rating_rules_version = 1 …`. In one independently reviewable migration, add a
-  `security_invoker = true` view keyed on `(player_id, season_id, week_start)`
-  summing the right source per session, have `/players/[slug]` read it instead of
-  joining two responses, and pin it with a database test whose fixture spans a
-  cutover. Deferred only because a migration-bearing change ships on its own.

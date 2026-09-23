@@ -4332,3 +4332,76 @@ because schema, access and "nothing earned" cases are true either way.
 **Rollback** is in the migration header. Drop and recreate the contributions view
 from `20260926000000` (`create or replace` cannot drop appended columns), re-run
 the `20260930000000` rebuild body, drop the table and rebuild the active season.
+
+## ADR-084 — An injured Player's card goes into a signed plaster cast
+
+Date: 2026-09-23
+
+Status: Accepted
+
+Decision: while a Player is in injury mode (ADR-082), every `LiveCard`
+rendered with `injured` swaps its tier material for a **signed plaster cast**.
+This supersedes ADR-082's sentence "A 🩹 Injured chip marks the Player's Live
+cards"; the chip's markup and CSS are deleted. The card skeleton is unchanged:
+OVR, tier pennant, art, nameplate and ruled stat table. The change is one data
+attribute (`data-injured` on the `<article>`), a CSS block after the Elite tier
+in `globals.css`, decorative markup in `src/components/live-card.tsx` and the new
+`src/lib/injury-cast.ts`. **Visual only:** no migration, RPC, economy or rating
+change, and Part L is unchanged. The design and handoff are in
+`docs/design/injury-cast/README.md`.
+
+**The cast is the card, not the photo.** Writing goes only where there is
+plaster: the signature band (the bottom 40% of the art, where the picture fades
+into solid plaster), the nameplate and the stat table. The top 60% of the art is
+where a face sits in an uploaded photo, so it carries only the "set in plaster"
+note under OVR and one corner plaster. That is what makes the design work over
+any custom photo.
+
+**Rarity still reads.** The plaster replaces all six materials, including
+Elite's inverted lacquer, and the tier effects (sheen, film, glow and foil) are
+off. Rarity survives twice: the pennant silhouette keeps its tier icon, and the
+tier word stays on the nameplate. Elite keeps its pointer tilt. The selector
+`.live-card[data-rarity][data-injured]` outranks every tier rule whatever the
+source order.
+
+**The nameplate line is not extended with "In plaster".** "All-rounder · Common
+· In plaster" overflows the plate at grid size, and the look already says it. A
+`sr-only` line carries the meaning instead ("Injured: the rating is protected
+during recovery", the chip's old tooltip), and everything drawn on the cast is
+`aria-hidden`.
+
+**The photo is never tinted, blurred or re-cropped.** It keeps
+`object-fit: cover`; only the band and the corner plaster cover it. The known
+trade-off is that a face sitting unusually low in the crop gets its chin
+softened by the band. That is accepted, because the upload is a square
+head-and-shoulders crop. On the shirt back, the shirt lifts 14 viewBox units so
+the number clears the band, and two crossed plasters go over the number. The
+bust fallback is unchanged; the band covers its base.
+
+**Signatures are fixed per Player.** Two lines, an ink and a doodle are chosen by
+an FNV-1a hash of `player.id`, so every copy of the Player's card shows the same
+cast on every page, and the server render stays deterministic (no
+`Math.random`). The second line is offset from the first by 1 to 11 places, so
+the two always differ. Pinned by `tests/unit/injury-cast.test.ts`.
+
+**Never write the injury note on the cast.** `kut.injury_periods.note` is
+admin-only and may hold medical detail (ADR-082). The signatures come only from
+a fixed pool of twelve English and Dutch lines, each at most 20 characters so
+slot 1 fits at every size, and none names a real member.
+
+**Grid size drops the fine print.** Below 224 px (two-up on a phone), a
+container query hides the second signature, the doodle, the cast note and "hop".
+One signature, the plasters, the clip and the PAC strike remain.
+
+**Market and pack cards unchanged.** The scope is the call sites that already
+pass `injured`: the players list and detail, the collection and card detail, and
+the album. The market and pack openings can't pass it yet, because their views
+carry no `player_id`. ROADMAP "Plaster cast on every card" tracks the fix: add
+the id, then make injury status a required part of the card's data.
+
+**Two new fonts**, Caveat 700 (`--font-hand`) and Permanent Marker 400
+(`--font-marker`), both through `next/font/google`. They are self-hosted, so the
+CSP's `font-src 'self'` holds, and they use `preload: false`, because only
+injured cards use them.
+
+**Nothing on the cast animates**, so reduced motion needs no extra rule.

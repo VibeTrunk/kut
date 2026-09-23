@@ -3497,3 +3497,41 @@ remotely, with no drift. Smoke-tested on hosted: the table (RLS on, one policy,
 no `anon` select, empty), both engine guards and both appended view columns are
 in place, and a Live card's rating story still sums to its Form total. Negative control: against the PR-1 engine, 15 of them fail, covering
 every rule, engine and rating-story assertion.
+
+## Plaster cast update — 2026-09-23
+
+ADR-084, visual only. An injured Player's Live cards no longer carry the small
+🩹 Injured chip. The whole card goes into a signed plaster cast instead, at every
+tier including Elite:
+- plaster stock replaces the tier material, and the nameplate and pennant
+  become an elastic bandage;
+- "set in plaster" is written under OVR, and a plaster tapes the art's corner
+  down;
+- the bottom of the art fades into a signature band carrying two signatures
+  and a doodle;
+- a bandage clip holds the nameplate, and PAC is crossed out with "hop" beside
+  it.
+
+The pennant icon and the tier word still name the tier. The photo itself is
+never tinted or re-cropped. The shirt back lifts so its number clears the band,
+and gets two crossed plasters. On two-up phone cards (under 224 px) only one
+signature, the plasters, the clip and the strike remain. The
+signatures come from a fixed pool of twelve lines, chosen by a hash of the Player
+id, so every copy shows the same cast and the admin injury note is never used.
+Same call sites as before: players list and detail, collection, card detail and
+album; market cards are unchanged. Two self-hosted fonts, Caveat and Permanent
+Marker, are loaded without preload. How KUT works section 4 describes the cast.
+
+Design and handoff: `docs/design/injury-cast/README.md`. New
+`src/lib/injury-cast.ts` and `tests/unit/injury-cast.test.ts`. No migration, RPC,
+economy or rating change.
+
+Verified: `npm run verify:fast` (184 unit tests, 6 of them new). Checked by eye
+on the local app at 390 px and 1280 px on `/players`, `/players/[slug]` and
+`/club/collection`, with a shirt back and a custom photo, and across all six
+tiers, including Elite, with the shirt, two photos and the bust fallback at
+detail and grid size, against the design canvas. A non-injured card renders the
+same markup as before, apart from one attribute-less `<g>` in the shirt-back SVG,
+which draws nothing. Local injury periods had to be inserted directly: every
+local account holder has an appearance at a fixture session dated after today,
+so the roster form refuses the date.

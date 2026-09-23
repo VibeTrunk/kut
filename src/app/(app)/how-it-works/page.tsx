@@ -156,9 +156,9 @@ export default async function HowItWorksPage() {
             </li>
           </ul>
           <p>
-            Form still fades as usual, so your card settles on its attendance base. Your cards show
-            a <strong>&#129657; Injured</strong> chip while it lasts. Injury mode ends by itself the
-            first time you play a session again.
+            Form still fades as usual, so your card settles on its attendance base. Your cards go
+            into <strong>plaster, signed by the club</strong>, while it lasts. Injury mode ends by
+            itself the first time you play a session again.
           </p>
           <p className="rounded-xl bg-moss-bg/50 p-3 text-sm font-semibold text-moss">
             Coming back pays off too. If you checked in for at least 3 weeks, your first session

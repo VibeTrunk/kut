@@ -1,5 +1,11 @@
 # Design reference — album, Chronicle, rating history
 
+**Injury mode card (2026-09-23):** see
+[`injury-cast/README.md`](injury-cast/README.md) for the "plaster cast" that
+replaces the injured chip on `LiveCard`. It includes the full handoff code and
+a [build prompt](injury-cast/BUILD_PROMPT.md). Built 2026-09-23 (ADR-084), so
+the app now wins over the design where they disagree.
+
 **New feature design package (2026-09-05):** see
 [`features/README.md`](features/README.md) for wanted cards/trade matching,
 goals and kudos, 175-coin packs, duplicate Club Value and Special-edition

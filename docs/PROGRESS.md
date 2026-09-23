@@ -3489,5 +3489,11 @@ Data-changing tier.
 
 Verified: `npm run verify:fast` (178 unit tests), and every pgTAP file — 22
 files, 703 assertions — against a local stack migrated through `20261001000000`.
-The new `injury_comeback.test.sql` has 25 assertions. Negative control: against the PR-1 engine, 15 of them fail, covering
+The new `injury_comeback.test.sql` has 25 assertions.
+Hosted: pushed 2026-09-23 from `VibeTrunk/supabase` (catalogue PR #44) on its
+own `db push`, after a fresh cold-verified backup (`20260923-112450`).
+Afterwards `migration list --linked` shows 71 entries, all present locally and
+remotely, with no drift. Smoke-tested on hosted: the table (RLS on, one policy,
+no `anon` select, empty), both engine guards and both appended view columns are
+in place, and a Live card's rating story still sums to its Form total. Negative control: against the PR-1 engine, 15 of them fail, covering
 every rule, engine and rating-story assertion.

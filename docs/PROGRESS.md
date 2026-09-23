@@ -3463,3 +3463,31 @@ remotely, with no drift. Smoke-tested on hosted: the new tables (with RLS),
 functions, view, trigger, both widened constraints and the engine guard are in
 place, `anon` cannot execute the check-in, and `/admin/roster` shows the Injury
 column.
+
+## Comeback Form update — 2026-09-23
+
+ADR-083, the second slice of injury mode. A Player returning from injury mode
+with at least 3 protected weeks gets a comeback boost on their first session
+back: 0.25 Form per protected week, capped at 2. It ages like any session input
+over the next four sessions and counts under the Form cap of 8. The rating story
+on the card and player pages lists it as its own row ("0.75 Form — comeback
+after 3 weeks out injured"), and How KUT works section 4 explains it.
+
+Migration `20261001000000_injury_comeback_form.sql`:
+- `kut.comeback_form_inputs`: derived rows the rebuild deletes and re-derives
+  from check-ins and attendance, like the snapshots. Read under
+  `kut.is_active_member()`.
+- `kut._rebuild_season_core`: re-emitted from `20260930000000` with the
+  derivation and a union into the session inputs.
+- `kut.player_form_contributions`: comeback rows unioned in, with `source` and
+  `protected_weeks` appended.
+
+Rebuilding the local data before and after gave zero differences, since no
+player there has an injury. The pages now read the contributions view with
+`select("*")`, so they keep working in the window before the hosted push.
+Data-changing tier.
+
+Verified: `npm run verify:fast` (178 unit tests), and every pgTAP file — 22
+files, 703 assertions — against a local stack migrated through `20261001000000`.
+The new `injury_comeback.test.sql` has 25 assertions. Negative control: against the PR-1 engine, 15 of them fail, covering
+every rule, engine and rating-story assertion.

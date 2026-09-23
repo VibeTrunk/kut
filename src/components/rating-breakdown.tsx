@@ -1,5 +1,6 @@
 import {
   carriedForm,
+  contributionKey,
   describeCarriedDecay,
   describeCarriedForm,
   describeContribution,
@@ -88,7 +89,7 @@ export function RatingBreakdownStory({
             {live.map(({ contribution, line }) => (
               <FormRow
                 detail={describeDecay(contribution)}
-                key={contribution.session_id}
+                key={contributionKey(contribution)}
                 line={line}
               />
             ))}

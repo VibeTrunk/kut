@@ -401,7 +401,7 @@ owner decision.
 
 | Item | Status | Notes / next step |
 |---|---|---|
-| Comeback Form boost | specified | On the first published session attended after a period with ≥ 3 protected weeks, a Form input of `least(2, 0.25 × protected_weeks)` that ages like a v2 session input and counts under the Form cap of 8. It changes the Form formula, so it needs its own migration, ADR-083, a comeback row in `kut.player_form_contributions` (new last column `source`) and an extended `rating_breakdown.test.sql` that still sums to `form_score`. |
+| Comeback Form boost | shipped | ADR-083, migration `20261001000000`. The first published session attended after ≥ 3 protected weeks carries `least(2, 0.25 × protected_weeks)` Form, ageing like a session input under the Form cap of 8. It shows as its own row in the rating story. |
 | Injured chip on the market | idea | `kut.active_market_listings` has no `player_id`; appending one means re-emitting that ADR-079 gated view. |
 | Sideline supporter | idea | An injured Player who comes to watch: coins but no Activity, and perhaps a kudos vote, since they saw the game. |
 | Chronicle "treatment room" | idea | Injured Players and comebacks in the weekly issue. |

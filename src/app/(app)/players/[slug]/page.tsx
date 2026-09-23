@@ -86,10 +86,10 @@ export default async function PlayerProfilePage({ params }: PlayerProfilePagePro
       .maybeSingle(),
     supabase
       .schema("kut")
+      // "*" rather than a column list: ADR-083 appended source and
+      // protected_weeks, and the page ships before the hosted schema does.
       .from("player_form_contributions")
-      .select(
-        "session_id, session_date, session_type, effective_goals, goal_form, kudos_form, session_input, session_age, weight, weighted_contribution, recognized_categories",
-      )
+      .select("*")
       .eq("player_id", player.id)
       .order("session_date", { ascending: false }),
   ]);

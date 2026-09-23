@@ -389,7 +389,8 @@ invalidate economy records.
 injury, whose card would otherwise decay towards 30 OVR (and take every owner's
 Club Value with it).
 
-**Shipped in the first slice (ADR-082, migration `20260930000000`):** an admin
+**Shipped in the first slice (ADR-082, migration `20260930000000`; pushed to
+hosted 2026-09-23 via `VibeTrunk/supabase` catalogue PR #42):** an admin
 puts a Player with an account into injury mode. Each football week they sit
 out, the member does a rehab check-in from Home: 100 KUT Coins, and Activity
 doesn't decay that week. Form still fades. Cards carry a 🩹 Injured chip.

@@ -3456,3 +3456,10 @@ listings (no `player_id` on that view), and Players without an account.
 Verified: `npm run verify:fast`, and every pgTAP file — 21 files, 678
 assertions, 48 of them in the new `injury_protection.test.sql` — against a local
 stack migrated through `20260930000000`.
+Hosted: pushed 2026-09-23 from `VibeTrunk/supabase` (catalogue PR #42) on its
+own `db push`, after a fresh cold-verified backup (`20260923-105756`).
+Afterwards `migration list --linked` shows 70 entries, all present locally and
+remotely, with no drift. Smoke-tested on hosted: the new tables (with RLS),
+functions, view, trigger, both widened constraints and the engine guard are in
+place, `anon` cannot execute the check-in, and `/admin/roster` shows the Injury
+column.

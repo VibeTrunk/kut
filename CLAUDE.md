@@ -83,6 +83,53 @@ don't add cross-repo coupling beyond the shared Supabase project.
 
 KUT is live at `https://kut.vibetrunk.com` as Vercel project `kut`.
 
+Deployed 2026-09-23 from `VibeTrunk/supabase` (catalogue PR #42 there, marked
+applied in #43), on its own `db push`:
+
+- `20260930000000_injury_protection.sql` (ADR-082, KUT PR #100, tier
+  data-changing) &mdash; **injury mode**. An admin puts a Player with an active
+  account into injury mode from `/admin/roster`. Each football week the Player
+  sits out, the member does a rehab check-in from Home: +100 KUT Coins, and that
+  week's Activity carries over instead of decaying &times;0.90. Form still
+  fades, a 🩹 chip marks the Player's Live cards, and injury mode ends by itself
+  when the Player attends a published session dated after the injury date.
+  Protection is never backdated (owner decision).
+  - **New objects.** Tables `kut.injury_periods` (admin-read only; the note may
+    hold medical detail) and `kut.injury_check_ins` (primary key
+    `(player_id, week_start)`: the stipend's idempotency guard and the only fact
+    the rebuild reads). Six functions, the `kut.injured_players` projection gated
+    on `kut.is_active_member()`, and a notice trigger on `kut.match_sessions`.
+    `wallet_ledger` gains the `injury_stipend` reason and `user_notifications`
+    the `injury_check_in` type. Part L #24.
+  - **`kut._rebuild_season_core` was re-emitted** with one protected-week guard.
+    Its output does not change until a check-in row exists: on the local data a
+    rebuild before and after gave zero differences.
+  - **Zero DML.** Pushed on a fresh cold-verified backup (`20260923-105756`,
+    0 escrowed cards), as the tier requires. Pre-push
+    `migration list --linked` showed 70 entries with `20260930000000` the only
+    local-only one, and the dry run named exactly that file. Afterwards it showed
+    70 entries, all present locally and remotely, no drift.
+  - **Smoke-tested on hosted.** In the SQL editor, one row confirmed:
+    - both tables, with RLS on
+    - all six functions, the view and the trigger
+    - both widened check constraints
+    - the engine guard
+    - no `anon` execute on `kut.injury_check_in`
+    - zero injury periods
+
+    In the app, `/admin/roster` shows the Injury column and Home renders
+    normally. The code had shipped ahead of the schema (Vercel deploys on merge),
+    and every new read is written to degrade gracefully, so there was no PR #86
+    style breakage in between.
+  - **Operator note.** Like the ADR-079 views, `kut.injured_players` is gated on
+    `kut.is_active_member()`, so a bare `postgres` session in the SQL editor
+    reads zero rows from it. Query `kut.injury_periods` directly instead.
+  - Rollback: the reverse DDL is in the migration header. It drops the trigger,
+    view, functions and both tables, re-runs the `20260920000000` rebuild body,
+    and narrows both check constraints after deleting rows that use the new
+    values. Once those check-in rows are gone, protected weeks decay again on
+    the next rebuild.
+
 Deployed 2026-09-23 from `VibeTrunk/supabase` (catalogue PR #40 there), on its
 own additive `db push`:
 

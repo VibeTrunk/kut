@@ -2,10 +2,11 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AttributeBars } from "@/components/card-stats";
 import { IconCoin } from "@/components/icons";
-import { LiveCard, type LiveCardPlayer } from "@/components/live-card";
+import { LiveCard } from "@/components/live-card";
 import { archetypeLabel } from "@/game/archetypes";
 import { requireUser } from "@/lib/auth/user";
-import { cardFace } from "@/lib/live-card-player";
+import { fetchInjuredPlayerIds } from "@/lib/injuries";
+import { toListedCardPlayer, type ListedCardRow } from "@/lib/live-card-player";
 import { resolvePhotoUrls } from "@/lib/player-photos";
 import { createClient } from "@/lib/supabase/server";
 import { isUuid } from "@/lib/uuid";
@@ -16,22 +17,11 @@ export const metadata = { title: "Listing" };
 
 type ListingPageProps = { params: Promise<{ listingId: string }> };
 
-type Listing = {
+type Listing = ListedCardRow & {
   listing_id: string;
   price: number;
   seller_id: string;
   seller_display_name: string;
-  display_name: string;
-  archetype: string;
-  photo_path: string | null;
-  ovr: number;
-  pac: number;
-  sho: number;
-  pas: number;
-  dri: number;
-  def: number;
-  phy: number;
-  rarity_tier: LiveCardPlayer["rarityTier"];
 };
 
 /**
@@ -54,10 +44,10 @@ export default async function ListingPage({ params }: ListingPageProps) {
   const [{ data, error }, { data: wallet }, { data: ownCards }] = await Promise.all([
     supabase
       .schema("kut")
+      // "*" rather than a column list: ADR-086 appended player_id and is_live,
+      // and the page ships before the hosted schema does.
       .from("active_market_listings")
-      .select(
-        "listing_id, price, seller_id, seller_display_name, display_name, archetype, photo_path, ovr, pac, sho, pas, dri, def, phy, rarity_tier",
-      )
+      .select("*")
       .eq("listing_id", listingId)
       .maybeSingle(),
     supabase.schema("kut").from("wallets").select("balance").eq("user_id", user.id).maybeSingle(),
@@ -76,7 +66,10 @@ export default async function ListingPage({ params }: ListingPageProps) {
   const listing = data as Listing;
   const balance = wallet?.balance ?? 0;
   const isOwnListing = listing.seller_id === user.id;
-  const photoUrls = await resolvePhotoUrls(supabase, [listing.photo_path]);
+  const [photoUrls, injuredPlayerIds] = await Promise.all([
+    resolvePhotoUrls(supabase, [listing.photo_path]),
+    fetchInjuredPlayerIds(supabase),
+  ]);
 
   const offerableCards: OfferableCard[] = (
     (ownCards ?? []) as (OfferableCard & {
@@ -92,14 +85,7 @@ export default async function ListingPage({ params }: ListingPageProps) {
       rarity_tier: card.rarity_tier,
     }));
 
-  // kut.active_market_listings has no player_id or is_live yet, so a listing
-  // can't be cast. The ROADMAP "Plaster cast on every card" PR B adds both and
-  // switches this to toLiveCardPlayer.
-  const cardPlayer: LiveCardPlayer = {
-    ...cardFace(listing, listing.ovr, photoUrls),
-    id: null,
-    injured: false,
-  };
+  const cardPlayer = toListedCardPlayer(listing, injuredPlayerIds, photoUrls);
 
   return (
     <main className="board-ground min-h-screen p-5 text-ink sm:p-10">

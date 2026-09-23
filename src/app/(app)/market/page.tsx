@@ -2,9 +2,10 @@ import Link from "next/link";
 import { IconCoin } from "@/components/icons";
 import { FilterBar } from "@/components/filter-bar";
 import { SectionTabs } from "@/components/app-shell/section-tabs";
-import { LiveCard, type LiveCardPlayer } from "@/components/live-card";
+import { LiveCard } from "@/components/live-card";
 import { requireUser } from "@/lib/auth/user";
-import { cardFace } from "@/lib/live-card-player";
+import { fetchInjuredPlayerIds } from "@/lib/injuries";
+import { toListedCardPlayer, type ListedCardRow } from "@/lib/live-card-player";
 import { getNavContext } from "@/lib/nav/context";
 import { buildMarketTabs } from "@/lib/nav/routes";
 import { resolvePhotoUrls } from "@/lib/player-photos";
@@ -15,22 +16,11 @@ type MarketPageProps = {
   searchParams: Promise<{ q?: string; rarity?: string; sort?: string; min?: string; max?: string }>;
 };
 
-type Listing = {
+type Listing = ListedCardRow & {
   listing_id: string;
   price: number;
   seller_id: string;
   seller_display_name: string;
-  display_name: string;
-  archetype: string;
-  photo_path: string | null;
-  ovr: number;
-  pac: number;
-  sho: number;
-  pas: number;
-  dri: number;
-  def: number;
-  phy: number;
-  rarity_tier: LiveCardPlayer["rarityTier"];
 };
 
 const rarities = ["common", "bronze", "silver", "gold", "holo", "elite"] as const;
@@ -52,12 +42,9 @@ export default async function MarketPage({ searchParams }: MarketPageProps) {
   // Lazily retire trade offers past their 12h window (mirrors the listing lazy-expire).
   await supabase.schema("kut").rpc("expire_trade_offers");
 
-  let request = supabase
-    .schema("kut")
-    .from("active_market_listings")
-    .select(
-      "listing_id, price, seller_id, seller_display_name, display_name, archetype, photo_path, ovr, pac, sho, pas, dri, def, phy, rarity_tier",
-    );
+  // "*" rather than a column list: ADR-086 appended player_id and is_live, and
+  // the page ships before the hosted schema does.
+  let request = supabase.schema("kut").from("active_market_listings").select("*");
 
   const term = query.q?.trim().slice(0, 80);
   if (term) request = request.ilike("display_name", `%${term}%`);
@@ -84,10 +71,13 @@ export default async function MarketPage({ searchParams }: MarketPageProps) {
 
   const listings = (data ?? []) as Listing[];
   const balance = wallet?.balance ?? 0;
-  const photoUrls = await resolvePhotoUrls(
-    supabase,
-    listings.map((listing) => listing.photo_path),
-  );
+  const [photoUrls, injuredPlayerIds] = await Promise.all([
+    resolvePhotoUrls(
+      supabase,
+      listings.map((listing) => listing.photo_path),
+    ),
+    fetchInjuredPlayerIds(supabase),
+  ]);
   // getNavContext is React.cache()d and the (app) layout already called it this
   // request, so this is free and guarantees the tab badge matches the chrome one.
   const { incomingOfferCount } = await getNavContext();
@@ -145,14 +135,7 @@ export default async function MarketPage({ searchParams }: MarketPageProps) {
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
             {listings.map((listing) => {
               const isOwnListing = listing.seller_id === user.id;
-              // kut.active_market_listings has no player_id or is_live yet, so a
-              // listing can't be cast. The ROADMAP "Plaster cast on every card"
-              // PR B adds both and switches this to toLiveCardPlayer.
-              const cardPlayer: LiveCardPlayer = {
-                ...cardFace(listing, listing.ovr, photoUrls),
-                id: null,
-                injured: false,
-              };
+              const cardPlayer = toListedCardPlayer(listing, injuredPlayerIds, photoUrls);
               return (
                 <article className="flex flex-col gap-2.5" key={listing.listing_id}>
                   <div className="relative">

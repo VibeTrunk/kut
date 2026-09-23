@@ -30,8 +30,19 @@ export type OwnedCardRow = CardFaceRow & { player_id: string; is_live: boolean }
     { ovr: number } | { live_ovr: number }
   );
 
-/** The face alone, for a row that has no Player id yet. */
-export function cardFace(row: CardFaceRow, ovr: number, photoUrls: ReadonlyMap<string, string>) {
+/**
+ * A `kut.active_market_listings` or `kut.my_pack_opening_results` row. Both
+ * views gained `player_id` and `is_live` in `20261002000000` (ADR-086). The
+ * pages read them with `select("*")` and deploy before the hosted push, so
+ * until then both fields are absent, which means no cast.
+ */
+export type ListedCardRow = CardFaceRow & {
+  ovr: number;
+  player_id?: string | null;
+  is_live?: boolean | null;
+};
+
+function cardFace(row: CardFaceRow, ovr: number, photoUrls: ReadonlyMap<string, string>) {
   return {
     displayName: row.display_name,
     archetype: row.archetype,
@@ -61,4 +72,21 @@ export function toLiveCardPlayer(
     id: playerId,
     injured: isLive && injuredPlayerIds.has(playerId),
   };
+}
+
+/** The same rule for a market or pack row, which may not carry its Player yet. */
+export function toListedCardPlayer(
+  row: ListedCardRow,
+  injuredPlayerIds: ReadonlySet<string>,
+  photoUrls: ReadonlyMap<string, string>,
+): LiveCardPlayer {
+  const { player_id: playerId, is_live: isLive } = row;
+  if (typeof playerId !== "string" || typeof isLive !== "boolean") {
+    return { ...cardFace(row, row.ovr, photoUrls), id: null, injured: false };
+  }
+  return toLiveCardPlayer(
+    { ...row, player_id: playerId, is_live: isLive },
+    injuredPlayerIds,
+    photoUrls,
+  );
 }

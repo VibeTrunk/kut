@@ -1,31 +1,20 @@
 import { notFound } from "next/navigation";
 import { PackReveal, type RevealCard } from "@/components/pack-reveal";
-import { type LiveCardPlayer } from "@/components/live-card";
 import { requireUser } from "@/lib/auth/user";
-import { cardFace } from "@/lib/live-card-player";
+import { fetchInjuredPlayerIds } from "@/lib/injuries";
+import { toListedCardPlayer, type ListedCardRow } from "@/lib/live-card-player";
 import { resolvePhotoUrls } from "@/lib/player-photos";
 import { createClient } from "@/lib/supabase/server";
 
 type PackResultPageProps = { params: Promise<{ openingId: string }> };
 
-type PackResultCard = {
+type PackResultCard = ListedCardRow & {
   opening_id: string;
   opened_at: string;
   price_paid: number;
   pack_title: string;
   slot: number;
   card_id: string;
-  display_name: string;
-  archetype: string;
-  ovr: number;
-  pac: number;
-  sho: number;
-  pas: number;
-  dri: number;
-  def: number;
-  phy: number;
-  rarity_tier: LiveCardPlayer["rarityTier"];
-  photo_path: string | null;
 };
 
 export default async function PackResultPage({ params }: PackResultPageProps) {
@@ -34,10 +23,10 @@ export default async function PackResultPage({ params }: PackResultPageProps) {
   const supabase = await createClient();
   const { data, error } = await supabase
     .schema("kut")
+    // "*" rather than a column list: ADR-086 appended player_id and is_live, and
+    // the page ships before the hosted schema does.
     .from("my_pack_opening_results")
-    .select(
-      "opening_id, opened_at, price_paid, pack_title, slot, card_id, display_name, archetype, ovr, pac, sho, pas, dri, def, phy, rarity_tier, photo_path",
-    )
+    .select("*")
     .eq("opening_id", openingId)
     .order("slot");
 
@@ -45,17 +34,17 @@ export default async function PackResultPage({ params }: PackResultPageProps) {
   if (!data || data.length === 0) notFound();
 
   const cards = data as PackResultCard[];
-  const photoUrls = await resolvePhotoUrls(
-    supabase,
-    cards.map((card) => card.photo_path),
-  );
+  const [photoUrls, injuredPlayerIds] = await Promise.all([
+    resolvePhotoUrls(
+      supabase,
+      cards.map((card) => card.photo_path),
+    ),
+    fetchInjuredPlayerIds(supabase),
+  ]);
 
   const revealCards: RevealCard[] = cards.map((card) => ({
     cardId: card.card_id,
-    // kut.my_pack_opening_results has no player_id or is_live yet, so a pack
-    // result can't be cast. The ROADMAP "Plaster cast on every card" PR B adds
-    // both and switches this to toLiveCardPlayer.
-    player: { ...cardFace(card, card.ovr, photoUrls), id: null, injured: false },
+    player: toListedCardPlayer(card, injuredPlayerIds, photoUrls),
   }));
 
   return (

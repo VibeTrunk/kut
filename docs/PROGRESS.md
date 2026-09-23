@@ -3567,3 +3567,41 @@ inserted into the local DB for the check and deleted afterwards, showed no cast
 in the list, its album slot or on its detail page. Home risers and the starter
 reveal were not checked by eye. No local injured Player is a riser, and the
 reveal needs a new account, so the unit tests cover them.
+
+## Plaster cast on the market and in packs — 2026-09-23
+
+ADR-086, PR B of ROADMAP "Plaster cast on every card", which is now shipped. An
+injured Player's Live card shows the plaster cast on the market list, its listing
+page, pack results and the pack reveal too, so every card screen follows the
+ADR-085 rule. A buyer can see the Player is out and the card's rating is frozen.
+Special editions stay uncast everywhere. Spec §11.3 now states the rule.
+
+Migration `20261002000000_cast_on_market_and_packs.sql`, additive with zero DML:
+`kut.active_market_listings` and `kut.my_pack_opening_results` each gain
+`player_id` and `is_live` as their last two columns. Both bodies are copied from
+their latest versions (`20260928000000` and `20260902000000`), and a
+line-by-line comparison confirmed the only difference is the appended columns.
+The market view keeps its `kut.is_active_member()` gate. The pack view never had
+one: it is an invoker view scoped to the member's own openings, and it stays
+that way. New `toListedCardPlayer` passes these rows to the same rule, and
+reads a row without the new fields as "no cast". The three pages now read the
+views with `select("*")`.
+
+Verified:
+- `npm run verify:fast` (193 unit tests, 4 new for `toListedCardPlayer`).
+- Every pgTAP file against the local stack migrated through `20261002000000`:
+  23 files, 729 assertions, 26 of them in the new
+  `cast_on_market_and_packs.test.sql`. Negative control: run after the rollback
+  DDL, its six schema assertions fail and its first value query errors.
+- Playwright at 390 px and 1280 px, with temporary local fixtures deleted
+  afterwards: a listing of Djanco's Live card, and a Special copy of him that was
+  both listed and in a pack opening.
+  - Djanco's Live listings on `/market`, the listing page and his slot in a real
+    local pack result all showed the same cast as `/players`.
+  - The Special showed none on the market, its listing page or its pack result,
+    and the pack's other cards were unchanged.
+- The deploy window: with both views rolled back to their previous bodies, every
+  market and pack page still rendered 200 with every card and no cast.
+
+Hosted: not pushed yet. Tier additive, so it rides the scheduled backup; the
+push goes through `VibeTrunk/supabase` after merge.

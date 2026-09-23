@@ -107,10 +107,10 @@ export default async function CardDetailPage({ params, searchParams }: CardPageP
       card.is_live
         ? supabase
             .schema("kut")
+            // "*" rather than a column list: ADR-083 appended source and
+            // protected_weeks, and the page ships before the hosted schema does.
             .from("player_form_contributions")
-            .select(
-              "session_id, session_date, session_type, effective_goals, goal_form, kudos_form, session_input, session_age, weight, weighted_contribution, recognized_categories",
-            )
+            .select("*")
             .eq("player_id", card.player_id)
             .order("session_date", { ascending: false })
         : Promise.resolve({ data: null, error: null }),

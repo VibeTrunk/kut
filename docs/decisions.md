@@ -4252,3 +4252,83 @@ actions return an error message. Still, push the catalogue right after merge.
 `20260920000000` rebuild body and narrows both check constraints (after deleting
 any `injury_stipend` / `injury_check_in` rows). Protected weeks then decay again
 on the next rebuild.
+
+## ADR-083 — A comeback from injury mode earns a capped, fading Form boost
+
+Date: 2026-09-23
+
+Status: Accepted
+
+Decision: the first published v2 session a Player attends after an injury
+period with at least 3 protected weeks carries a comeback Form input of
+`least(2, 0.25 × protected_weeks)`. It ages exactly like a session's
+goals-and-kudos input and counts under the unchanged Form cap of 8. Migration
+`20261001000000_injury_comeback_form.sql`, test `injury_comeback.test.sql`,
+spec §11.3 and three Part 145 constants. Part L unchanged.
+
+**Why Form, and why on the return.** ADR-082 deliberately pays nothing in rating
+for being absent: a protected week only holds Activity still. "KUT rewards
+showing up above everything else" (the attendance-backbone brainstorm), so the
+reward for the rehab goes to the session where the Player shows up again. Form
+is the right currency: it is temporary by construction, it fades over four
+sessions, and it cannot compound into a permanent advantage. The +0.25 per week
+makes a long, conscientious rehab worth more than a short one, and the cap of 2
+equals the kudos maximum from a single session.
+
+**The threshold is 3 weeks** so a short knock isn't a Form farm. A single
+protected week pays the stipend and holds the card, and that's all.
+
+**Counted weeks are the ones actually protected.** Only check-ins for weeks
+*before* the return week count. A check-in in the return week protected nothing,
+since a week with an appearance is always scored normally (ADR-082).
+
+**One comeback per return.** Periods that end in the same return session (an
+admin ended one and started another without the Player playing in between) are
+summed into a single comeback, still capped at 2. Only the first session after
+the injury counts; later sessions are ordinary.
+
+**Derived, not recorded.** `kut.comeback_form_inputs` holds rows the rebuild
+deletes and re-derives from `kut.injury_check_ins` and attendance every time,
+exactly as it re-derives `kut.player_rating_snapshots`. An attendance
+correction that moves the return session therefore moves the comeback with it,
+and the rebuild stays deterministic (Part L #16). A persisted table rather than
+a view, for two reasons:
+
+- **The rebuild must not depend on who calls it.** A view gated on
+  `kut.is_active_member()` would read zero rows for a bare `postgres` rebuild and
+  silently drop every comeback.
+- **The rating story has to see it.** The story's view is `security_invoker`, and
+  members can only read their own `injury_check_ins`, so an ungated rule over that
+  table would have hidden other players' comebacks. The table instead carries one
+  `is_active_member()` read policy.
+
+**The rating story still sums to the total.** `kut.player_form_contributions`
+unions the comeback rows in, and appends two columns: `source` (`session` /
+`comeback`) and `protected_weeks`. Without that, `carriedForm()` would have
+mislabelled a comeback as Form "carried over from before session reports began".
+The story renders "0.75 Form — comeback after 6 weeks out injured", in Form and
+never per-line OVR, per `RATING_BALANCE_REVIEW.md`. A comeback row shares its
+session's `session_id`, so rows are now keyed by `source:session_id`.
+
+**Deploy ordering.** Both pages read the contributions view with `select("*")`
+instead of a column list. In the window between merge and hosted push, the new
+columns don't exist yet; a list naming them would fail the read and briefly
+turn every player's Form into "carried over". With `*`, every row is simply a
+session row until the schema arrives.
+
+**No new notice.** The comeback appears in the rating story and the card rating.
+A "Welcome back" inbox notice would need `kut._finalize_one_session`
+re-emitted, which isn't worth it for this change.
+
+**Tier: data-changing.** It is a rating-formula change, even though the migration
+writes no row and output only changes for a Player with an injury period, 3+
+protected weeks and a return. Rebuilding local data before and after gave zero
+differences.
+
+**Negative control.** Run against the ADR-082 engine, 15 of the new file's 25
+assertions fail: every rule, engine and rating-story check. The other ten pass,
+because schema, access and "nothing earned" cases are true either way.
+
+**Rollback** is in the migration header. Drop and recreate the contributions view
+from `20260926000000` (`create or replace` cannot drop appended columns), re-run
+the `20260930000000` rebuild body, drop the table and rebuild the active season.

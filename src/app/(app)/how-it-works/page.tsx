@@ -160,6 +160,11 @@ export default async function HowItWorksPage() {
             a <strong>&#129657; Injured</strong> chip while it lasts. Injury mode ends by itself the
             first time you play a session again.
           </p>
+          <p className="rounded-xl bg-moss-bg/50 p-3 text-sm font-semibold text-moss">
+            Coming back pays off too. If you checked in for at least 3 weeks, your first session
+            back earns a <strong>comeback boost</strong>: 0.25 Form for every week you checked in,
+            up to 2 Form. Like any Form, it fades over your next four sessions.
+          </p>
         </Section>
 
         <Section title="5. OVR sets your rarity tier">

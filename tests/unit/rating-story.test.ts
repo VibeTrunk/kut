@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   carriedForm,
+  contributionKey,
   describeCarriedDecay,
   describeCarriedForm,
   describeContribution,
@@ -98,6 +99,49 @@ describe("describeContribution", () => {
         recognized_categories: [],
       }),
     ).toBe("3 Form — this session");
+  });
+});
+
+// ADR-083: the boost for returning from injury mode is its own row.
+describe("comeback contributions", () => {
+  const comeback: FormContribution = {
+    ...contribution,
+    source: "comeback",
+    protected_weeks: 6,
+    effective_goals: null,
+    goal_form: 0,
+    kudos_form: 0,
+    session_input: 1.5,
+    session_age: 2,
+    weight: 0.5,
+    weighted_contribution: 0.75,
+    recognized_categories: null,
+  };
+
+  it("names the comeback and the weeks that earned it, in Form", () => {
+    const line = describeContribution(comeback);
+    expect(line).toBe("0.75 Form — comeback after 6 weeks out injured");
+    expect(line).not.toMatch(/OVR/);
+  });
+
+  it("uses the singular for one week", () => {
+    expect(describeContribution({ ...comeback, protected_weeks: 1 })).toBe(
+      "0.75 Form — comeback after 1 week out injured",
+    );
+  });
+
+  it("drops a comeback that has faded to nothing, like a session", () => {
+    expect(describeContribution({ ...comeback, weight: 0, weighted_contribution: 0 })).toBeNull();
+  });
+
+  // The comeback shares its return session's id with that session's own row.
+  it("keys a comeback apart from the session row it sits on", () => {
+    expect(contributionKey(comeback)).not.toBe(contributionKey(contribution));
+    expect(contributionKey(contribution)).toBe("session:s1");
+  });
+
+  it("counts toward the listed total, so it is never mistaken for carried Form", () => {
+    expect(carriedForm({ ...breakdown, form_score: 3.75 }, [contribution, comeback])).toBe(0);
   });
 });
 

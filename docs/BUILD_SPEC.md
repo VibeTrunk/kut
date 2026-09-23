@@ -499,6 +499,23 @@ backdated — a week counts only through a check-in the member made. The check-i
 table (`kut.injury_check_ins`) is the only input the rebuild reads, so rebuilding
 stays deterministic.
 
+**Comeback Form (ADR-083).** The first published v2 session a Player attends
+after an injury period carries a comeback Form input when at least
+`INJURY_COMEBACK_MIN_WEEKS` (3) weeks were protected before the return week:
+
+```text
+comeback_input = least(INJURY_COMEBACK_FORM_CAP, INJURY_COMEBACK_FORM_PER_WEEK × protected_weeks)
+               = least(2, 0.25 × protected_weeks)
+```
+
+It ages exactly like a session's goals-and-kudos input (100 / 75 / 50 / 25 / 0 %
+over the following published v2 sessions) and counts under the unchanged Form cap
+of 8. It is Form, so it never lifts a card permanently. Only the first return
+after a period counts. Periods that end in the same return session are summed
+into one comeback, still capped at 2. The rebuild re-derives these inputs from
+check-ins and attendance every time (`kut.comeback_form_inputs`), and the rating
+story lists them as their own row.
+
 ---
 
 ## 12. Activity-based Overall
@@ -4264,6 +4281,9 @@ LIVE_OVR_MAX = 83
 ATTENDANCE_COIN_REWARD = 250  # raised from 75 on 2026-08-29, ADR-029
 BIBS_COIN_BONUS = 100  # one-off, for the session's bibs bringer, ADR-037 (copy fixed ADR-044)
 INJURY_WEEKLY_STIPEND = 100  # per rehab check-in, at most once per Player and football week, ADR-082
+INJURY_COMEBACK_MIN_WEEKS = 3  # protected weeks before a return earns comeback Form, ADR-083
+INJURY_COMEBACK_FORM_PER_WEEK = 0.25  # ADR-083
+INJURY_COMEBACK_FORM_CAP = 2  # one comeback input never exceeds this; the Form cap of 8 still applies, ADR-083
 STARTER_COIN_GRANT = 250
 STARTER_CARD_COUNT = 3
 

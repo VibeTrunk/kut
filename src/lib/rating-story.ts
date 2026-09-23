@@ -42,7 +42,21 @@ export type FormContribution = {
   weight: number;
   weighted_contribution: number;
   recognized_categories: string[] | null;
+  /**
+   * ADR-083. A comeback-from-injury input shares its return session's id with
+   * that session's own row. Optional because the column is newer than the
+   * pages that read the view: until the hosted schema has it, every row is a
+   * session row.
+   */
+  source?: "session" | "comeback";
+  /** Protected injury weeks behind a comeback row; null on a session row. */
+  protected_weeks?: number | null;
 };
+
+/** A stable React key: a comeback and its return session share a session_id. */
+export function contributionKey(contribution: FormContribution): string {
+  return `${contribution.source ?? "session"}:${contribution.session_id}`;
+}
 
 /** Trims trailing zeros so 1.50 reads as "1.5" and 2.00 as "2". */
 export function formatForm(value: number): string {
@@ -69,6 +83,15 @@ export function describeRatingBase(name: string, breakdown: RatingBreakdown): st
  */
 export function describeContribution(contribution: FormContribution): string | null {
   if (contribution.weighted_contribution <= 0) return null;
+
+  // ADR-083: the boost for coming back after injury mode. Worded in weeks,
+  // because that is what earned it; its fading is still counted in sessions.
+  if (contribution.source === "comeback") {
+    const weeks = contribution.protected_weeks ?? 0;
+    return `${formatForm(contribution.weighted_contribution)} Form — comeback after ${weeks} ${
+      weeks === 1 ? "week" : "weeks"
+    } out injured`;
+  }
 
   const parts: string[] = [];
   const goals = contribution.effective_goals;

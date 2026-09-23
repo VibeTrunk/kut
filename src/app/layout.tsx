@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import { Archivo, Instrument_Serif } from "next/font/google";
+import { Archivo, Caveat, Instrument_Serif, Permanent_Marker } from "next/font/google";
 import { connection } from "next/server";
 import "./globals.css";
 
@@ -22,6 +22,23 @@ const instrumentSerif = Instrument_Serif({
   display: "swap",
 });
 
+// Handwriting for the injury cast only (ADR-084), so neither face is preloaded.
+const caveat = Caveat({
+  subsets: ["latin"],
+  weight: "700",
+  variable: "--font-hand",
+  display: "swap",
+  preload: false,
+});
+
+const permanentMarker = Permanent_Marker({
+  subsets: ["latin"],
+  weight: "400",
+  variable: "--font-marker",
+  display: "swap",
+  preload: false,
+});
+
 export const metadata: Metadata = {
   title: "Kelderklasse Ultimate Team",
   description: "A live football-card game for Terrible Football Haarlem.",
@@ -33,7 +50,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   return (
     <html
       lang="en"
-      className={`${archivo.variable} ${instrumentSerif.variable} h-full antialiased`}
+      className={`${archivo.variable} ${instrumentSerif.variable} ${caveat.variable} ${permanentMarker.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>
     </html>

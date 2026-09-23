@@ -339,28 +339,6 @@ body {
   opacity: 0.75;
 }
 
-/* Injury mode (ADR-082): bottom-left of the art, clear of the OVR and the
-   trend pill. It marks the Player, not the copy, so every copy shows it. */
-.live-card__injured {
-  position: absolute;
-  bottom: 0.9em;
-  left: 0.9em;
-  z-index: 3;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3em;
-  margin: 0;
-  padding: 0.3em 0.65em;
-  border-radius: 999px;
-  font-size: 3.6cqi;
-  font-weight: 900;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  background: var(--color-brick);
-  color: #2a1712;
-  box-shadow: 0 0.3em 0.6em rgb(0 0 0 / 32%);
-}
-
 /* ---- nameplate ----------------------------------------------------------- */
 .live-card__plate {
   position: relative;
@@ -723,6 +701,219 @@ body {
 }
 .live-card[data-rarity="elite"] .live-card__pennant {
   transform: translateZ(30px);
+}
+
+/* ===== INJURY MODE — the plaster cast ======================================
+   While a Player is in injury mode (ADR-082, ADR-084) the tier's material is
+   swapped for a signed cast. Rarity still reads from the pennant silhouette
+   and the tier word. The cast is the card, not the photo: writing sits only on
+   plaster (the band the art fades into, the nameplate, the stats), never
+   across a face. `[data-rarity][data-injured]` outranks every tier rule,
+   whatever the source order. */
+.live-card[data-rarity][data-injured] {
+  --stock: #efeadf;
+  --ci: #3d3a33;
+  --plate: #d4ae8c;
+  --plate-ink: #3a2413;
+  --rule: rgb(63 59 51 / 20%);
+  --edge: rgb(255 255 255 / 60%);
+  --shirt: #5a554b;
+  --shirt-ink: #f3efe4;
+  --ink-blue: #27459a;
+  --ink-green: #2f6b3a;
+  --ink-black: #1f1d1a;
+  --ink-red: #b8322a;
+  background-color: var(--stock);
+  background-image:
+    repeating-linear-gradient(0deg, rgb(120 110 90 / 8%) 0 1px, transparent 1px 5px),
+    repeating-linear-gradient(90deg, rgb(120 110 90 / 8%) 0 1px, transparent 1px 5px);
+  box-shadow: var(--lift);
+}
+
+.live-card[data-rarity][data-injured] :is(.live-card__sheen, .live-card__film, .live-card__glow) {
+  display: none;
+}
+
+.live-card[data-rarity][data-injured] .live-card__grain {
+  opacity: 0.4;
+  background-image: radial-gradient(rgb(0 0 0 / 17%) 0.5px, transparent 0.6px);
+  background-size: 3px 3px;
+  mix-blend-mode: multiply;
+}
+
+.live-card[data-rarity][data-injured] .live-card__frame {
+  box-shadow:
+    inset 0 0 0 0.1em var(--edge),
+    inset 0 0 0 0.34em rgb(0 0 0 / 5.5%);
+}
+
+/* Elastic bandage: the nameplate and the pennant. */
+.live-card[data-rarity][data-injured] :is(.live-card__plate, .live-card__pennant) {
+  background-color: var(--plate);
+  background-image:
+    repeating-linear-gradient(45deg, rgb(90 55 25 / 14%) 0 1px, transparent 1px 4px),
+    repeating-linear-gradient(-45deg, rgb(90 55 25 / 14%) 0 1px, transparent 1px 4px);
+  background-size: auto;
+  animation: none;
+  color: var(--plate-ink);
+}
+
+/* Undo the gold emboss and the Elite leaf on type. */
+.live-card[data-rarity][data-injured]
+  :is(.live-card__plate h2, .live-card__ovr b, .live-card__ovr span, .live-card__stats dd) {
+  color: inherit;
+  text-shadow: none;
+}
+
+/* The signature band: the art fades to solid plaster at the bottom, so the
+   writing sits on plaster over any photo. */
+.live-card[data-rarity][data-injured] .live-card__scrim {
+  height: 40%;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    color-mix(in srgb, var(--stock) 82%, transparent) 38%,
+    var(--stock) 62%
+  );
+}
+
+/* "set in plaster", under the rating. An <em>, so the tier rules that
+   restyle `.live-card__ovr span` never reach it. */
+.live-card__cast-note {
+  margin-top: 1.6cqi;
+  font-family: var(--font-hand), cursive;
+  font-size: 5cqi;
+  font-style: normal;
+  font-weight: 700;
+  color: var(--ink-blue);
+  white-space: nowrap;
+  transform: rotate(-4deg);
+  transform-origin: left center;
+}
+
+/* Everything written on the cast. Same z-index as the pennant but earlier in
+   the DOM, so the pennant sits on top of the corner plaster. */
+.live-card__cast {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+
+/* A plaster taping the art's top-right corner down. */
+.live-card__tape {
+  position: absolute;
+  top: 3.6cqi;
+  right: -5.6cqi;
+  width: 24.8cqi;
+  height: 6cqi;
+  border-radius: 3cqi;
+  background:
+    radial-gradient(circle, #b9895c 0.3cqi, transparent 0.36cqi) 0 0 / 2cqi 2cqi,
+    #e0b58a;
+  box-shadow: 0 0.4cqi 1cqi rgb(0 0 0 / 22%);
+  transform: rotate(38deg);
+}
+
+.live-card__tape::after {
+  content: "";
+  position: absolute;
+  inset: 0.9cqi 8.4cqi;
+  border-radius: 0.8cqi;
+  background: #f3dcc0;
+}
+
+.live-card__sig {
+  position: absolute;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.live-card__sig--1 {
+  right: 4cqi;
+  bottom: 15cqi;
+  font-family: var(--font-hand), cursive;
+  font-size: 5.8cqi;
+  font-weight: 700;
+  color: var(--ink-blue);
+  transform: rotate(-5deg);
+}
+.live-card__sig--1[data-ink="green"] {
+  color: var(--ink-green);
+}
+.live-card__sig--1[data-ink="black"] {
+  color: var(--ink-black);
+}
+
+.live-card__sig--2 {
+  left: 4cqi;
+  bottom: 2.8cqi;
+  font-family: var(--font-marker), cursive;
+  font-size: 4.2cqi;
+  color: var(--ink-red);
+  transform: rotate(3deg);
+}
+
+.live-card__doodle {
+  position: absolute;
+  left: 4.8cqi;
+  bottom: 12.5cqi;
+  width: 6cqi;
+  height: 6cqi;
+  fill: none;
+  stroke: var(--ink-red);
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transform: rotate(-12deg);
+}
+.live-card__doodle[data-kind="smiley"] {
+  stroke: var(--ink-blue);
+}
+
+/* The bandage clip, straddling the art/nameplate seam. */
+.live-card__clip {
+  position: absolute;
+  top: -2.35cqi;
+  right: 6cqi;
+  width: 10cqi;
+  height: 4.7cqi;
+}
+
+/* PAC in red marker. The value underneath stays legible. */
+.live-card__struck {
+  position: relative;
+}
+.live-card__struck::after {
+  content: "";
+  position: absolute;
+  top: 48%;
+  right: -8%;
+  left: -8%;
+  height: 0.7cqi;
+  border-radius: 0.4cqi;
+  background: var(--ink-red);
+  transform: rotate(-10deg);
+}
+
+.live-card__hop {
+  position: absolute;
+  top: -2.6cqi;
+  left: calc(100% + 1.2cqi);
+  font-family: var(--font-hand), cursive;
+  font-size: 5.4cqi;
+  font-weight: 700;
+  color: var(--ink-red);
+  white-space: nowrap;
+  transform: rotate(-8deg);
+}
+
+/* Two-up on a phone: keep one signature, the plasters, the clip and the
+   strike. The rest would only be noise at ~7px. */
+@container (max-width: 224px) {
+  :is(.live-card__sig--2, .live-card__doodle, .live-card__cast-note, .live-card__hop) {
+    display: none;
+  }
 }
 
 /* ---- no-photo card ------------------------------------------------------- */

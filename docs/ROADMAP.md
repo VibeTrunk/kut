@@ -393,7 +393,8 @@ Club Value with it).
 hosted 2026-09-23 via `VibeTrunk/supabase` catalogue PR #42):** an admin
 puts a Player with an account into injury mode. Each football week they sit
 out, the member does a rehab check-in from Home: 100 KUT Coins, and Activity
-doesn't decay that week. Form still fades. Cards carry a 🩹 Injured chip.
+doesn't decay that week. Form still fades. Cards go into a signed plaster
+cast (ADR-084, which replaced the first slice's 🩹 Injured chip).
 Injury mode ends by itself when they play again. There is no backdating, by
 owner decision.
 
@@ -402,7 +403,7 @@ owner decision.
 | Item | Status | Notes / next step |
 |---|---|---|
 | Comeback Form boost | shipped | ADR-083, migration `20261001000000`, pushed to hosted 2026-09-23 via `VibeTrunk/supabase` catalogue PR #44. The first published session attended after ≥ 3 protected weeks carries `least(2, 0.25 × protected_weeks)` Form, ageing like a session input under the Form cap of 8. It shows as its own row in the rating story. |
-| Injured chip on the market | idea | `kut.active_market_listings` has no `player_id`; appending one means re-emitting that ADR-079 gated view. |
+| Plaster cast on every card | planned | ADR-084 shows the cast only where a page knows the Player's id and passes `injured`: players, collection, card detail, album. The market (`kut.active_market_listings`) and pack openings (`kut.my_pack_opening_results`, which also feeds the reveal) show an injured Player's card without it, because neither view has a `player_id`. Both pages hand `LiveCard` a listing or card id instead, which would also give each copy different signatures. Fix: one additive migration appending `player_id` to both ADR-079 gated views, then make injury status a required part of the card's data, so a screen that forgets it fails typecheck instead of silently showing a plain card. |
 | Sideline supporter | idea | An injured Player who comes to watch: coins but no Activity, and perhaps a kudos vote, since they saw the game. |
 | Chronicle "treatment room" | idea | Injured Players and comebacks in the weekly issue. |
 

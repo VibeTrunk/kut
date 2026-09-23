@@ -1,50 +1,37 @@
-import { type LiveCardPlayer } from "@/components/live-card";
+import type { RevealCard } from "@/components/pack-reveal";
+import { fetchInjuredPlayerIds } from "@/lib/injuries";
+import { toLiveCardPlayer, type OwnedCardRow } from "@/lib/live-card-player";
+import { resolvePhotoUrls } from "@/lib/player-photos";
 import type { createClient } from "@/lib/supabase/server";
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
 
-export type StarterCard = Omit<LiveCardPlayer, "photoUrl"> & { photo_path: string | null };
+type Row = OwnedCardRow & { card_id: string; ovr: number };
 
-type Row = {
-  card_id: string;
-  display_name: string;
-  archetype: string;
-  ovr: number;
-  pac: number;
-  sho: number;
-  pas: number;
-  dri: number;
-  def: number;
-  phy: number;
-  rarity_tier: LiveCardPlayer["rarityTier"];
-  photo_path: string | null;
-};
-
-/** The three `source = 'starter'` copies for the current member. */
-export async function loadStarterCards(supabase: SupabaseServerClient): Promise<StarterCard[]> {
+/** The three `source = 'starter'` copies for the current member, ready to reveal. */
+export async function loadStarterCards(supabase: SupabaseServerClient): Promise<RevealCard[]> {
   const { data, error } = await supabase
     .schema("kut")
     .from("my_collection_cards")
     .select(
-      "card_id, display_name, archetype, ovr, pac, sho, pas, dri, def, phy, rarity_tier, photo_path",
+      "card_id, player_id, is_live, display_name, archetype, ovr, pac, sho, pas, dri, def, phy, rarity_tier, photo_path",
     )
     .eq("source", "starter")
     .order("acquired_at");
 
   if (error || !data) return [];
 
-  return (data as Row[]).map((row) => ({
-    id: row.card_id,
-    displayName: row.display_name,
-    archetype: row.archetype,
-    liveOvr: row.ovr,
-    pac: row.pac,
-    sho: row.sho,
-    pas: row.pas,
-    dri: row.dri,
-    def: row.def,
-    phy: row.phy,
-    rarityTier: row.rarity_tier,
-    photo_path: row.photo_path,
+  const rows = data as Row[];
+  const [photoUrls, injuredPlayerIds] = await Promise.all([
+    resolvePhotoUrls(
+      supabase,
+      rows.map((row) => row.photo_path),
+    ),
+    fetchInjuredPlayerIds(supabase),
+  ]);
+
+  return rows.map((row) => ({
+    cardId: row.card_id,
+    player: toLiveCardPlayer(row, injuredPlayerIds, photoUrls),
   }));
 }

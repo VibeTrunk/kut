@@ -6,6 +6,7 @@ import { RatingBreakdownStory } from "@/components/rating-breakdown";
 import { requireUser } from "@/lib/auth/user";
 import type { FormContribution, RatingBreakdown } from "@/lib/rating-story";
 import { fetchInjuredPlayerIds } from "@/lib/injuries";
+import { toLiveCardPlayer } from "@/lib/live-card-player";
 import { resolvePhotoUrls } from "@/lib/player-photos";
 import { createClient } from "@/lib/supabase/server";
 import { isUuid } from "@/lib/uuid";
@@ -127,20 +128,7 @@ export default async function CardDetailPage({ params, searchParams }: CardPageP
   const ratingBreakdown = (breakdownResponse.data as RatingBreakdown | null) ?? null;
   const formContributions = (contributionsResponse.data as FormContribution[] | null) ?? [];
 
-  const cardPlayer: LiveCardPlayer = {
-    id: card.card_id,
-    displayName: card.display_name,
-    archetype: card.archetype,
-    liveOvr: card.ovr,
-    pac: card.pac,
-    sho: card.sho,
-    pas: card.pas,
-    dri: card.dri,
-    def: card.def,
-    phy: card.phy,
-    rarityTier: card.rarity_tier,
-    photoUrl: card.photo_path ? (photoUrls.get(card.photo_path) ?? null) : null,
-  };
+  const cardPlayer = toLiveCardPlayer(card, injuredPlayerIds, photoUrls);
 
   return (
     <main className="board-ground min-h-screen p-5 text-ink sm:p-10">
@@ -151,12 +139,7 @@ export default async function CardDetailPage({ params, searchParams }: CardPageP
 
         <div className="grid gap-10 md:grid-cols-[minmax(240px,330px)_minmax(0,1fr)] md:items-start lg:gap-16">
           <div>
-            <LiveCard
-              // A Special edition is a frozen snapshot, so only a Live card is badged.
-              injured={card.is_live && injuredPlayerIds.has(card.player_id)}
-              size="detail"
-              player={cardPlayer}
-            />
+            <LiveCard size="detail" player={cardPlayer} />
           </div>
 
           <div className="space-y-8">

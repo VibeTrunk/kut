@@ -3,6 +3,7 @@ import { FilterBar } from "@/components/filter-bar";
 import { LiveCard, type LiveCardPlayer } from "@/components/live-card";
 import { requireUser } from "@/lib/auth/user";
 import { fetchInjuredPlayerIds } from "@/lib/injuries";
+import { toLiveCardPlayer } from "@/lib/live-card-player";
 import { resolvePhotoUrls } from "@/lib/player-photos";
 import { createClient } from "@/lib/supabase/server";
 import { CollectionAlbum } from "@/components/album/collection-album";
@@ -262,20 +263,7 @@ export default async function CollectionPage({ searchParams }: CollectionPagePro
               <>
                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5 lg:gap-6">
                   {cards.map((card) => {
-                    const cardPlayer: LiveCardPlayer = {
-                      id: card.player_id,
-                      displayName: card.display_name,
-                      archetype: card.archetype,
-                      liveOvr: card.ovr,
-                      pac: card.pac,
-                      sho: card.sho,
-                      pas: card.pas,
-                      dri: card.dri,
-                      def: card.def,
-                      phy: card.phy,
-                      rarityTier: card.rarity_tier,
-                      photoUrl: card.photo_path ? (photoUrls.get(card.photo_path) ?? null) : null,
-                    };
+                    const cardPlayer = toLiveCardPlayer(card, injuredPlayerIds, photoUrls);
                     return (
                       <Link
                         aria-label={`Open ${card.display_name}'s card`}
@@ -283,10 +271,7 @@ export default async function CollectionPage({ searchParams }: CollectionPagePro
                         href={`/club/collection/${card.card_id}`}
                         key={card.card_id}
                       >
-                        <LiveCard
-                          injured={injuredPlayerIds.has(card.player_id)}
-                          player={cardPlayer}
-                        />
+                        <LiveCard player={cardPlayer} />
                         {/* Status rides the card rather than floating as loose text
                               beneath it, so a scanned grid reads in one pass. */}
                         {card.active_listing_id && (

@@ -8,7 +8,8 @@ import {
   type ActivityRow,
 } from "@/lib/activity";
 import { formatDate } from "@/lib/format";
-import type { InjuryStatus } from "@/lib/injuries";
+import { fetchInjuredPlayerIds, type InjuryStatus } from "@/lib/injuries";
+import { toLiveCardPlayer } from "@/lib/live-card-player";
 import { resolvePhotoUrls } from "@/lib/player-photos";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
@@ -26,7 +27,7 @@ type TopRiser = {
   dri: number;
   def: number;
   phy: number;
-  rarity_tier: string;
+  rarity_tier: LiveCardPlayer["rarityTier"];
   photo_path: string | null;
   ovr_delta: number;
 };
@@ -100,10 +101,13 @@ export default async function Home() {
   }
 
   const risers = (risersResponse.data ?? []) as TopRiser[];
-  const photoUrls = await resolvePhotoUrls(
-    supabase,
-    risers.map((player) => player.photo_path),
-  );
+  const [photoUrls, injuredPlayerIds] = await Promise.all([
+    resolvePhotoUrls(
+      supabase,
+      risers.map((player) => player.photo_path),
+    ),
+    fetchInjuredPlayerIds(supabase),
+  ]);
   // A failed read is not a zero balance (KB-014): both stats degrade to "we
   // don't know" rather than asserting a figure the member never had. The
   // `?? balance` on Club Value stays — a member with no cards has no
@@ -269,22 +273,7 @@ export default async function Home() {
                   key={player.id}
                 >
                   <LiveCard
-                    player={{
-                      id: player.id,
-                      displayName: player.display_name,
-                      archetype: player.archetype,
-                      liveOvr: player.live_ovr,
-                      pac: player.pac,
-                      sho: player.sho,
-                      pas: player.pas,
-                      dri: player.dri,
-                      def: player.def,
-                      phy: player.phy,
-                      rarityTier: player.rarity_tier as LiveCardPlayer["rarityTier"],
-                      photoUrl: player.photo_path
-                        ? (photoUrls.get(player.photo_path) ?? null)
-                        : null,
-                    }}
+                    player={toLiveCardPlayer(player, injuredPlayerIds, photoUrls)}
                     trend={player.ovr_delta}
                   />
                 </Link>

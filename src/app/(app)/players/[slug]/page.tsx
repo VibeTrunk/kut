@@ -13,6 +13,7 @@ import type { FormContribution, RatingBreakdown } from "@/lib/rating-story";
 import { LiveCard, type LiveCardPlayer } from "@/components/live-card";
 import { requireUser } from "@/lib/auth/user";
 import { fetchInjuredPlayerIds } from "@/lib/injuries";
+import { toLiveCardPlayer } from "@/lib/live-card-player";
 import { resolvePhotoUrls } from "@/lib/player-photos";
 import { createClient } from "@/lib/supabase/server";
 
@@ -99,7 +100,6 @@ export default async function PlayerProfilePage({ params }: PlayerProfilePagePro
   const formContributions = contributionsResponse.error
     ? []
     : ((contributionsResponse.data ?? []) as FormContribution[]);
-  const photoUrl = player.photo_path ? (photoUrls.get(player.photo_path) ?? null) : null;
   // Both chart queries are deliberately non-critical.
   const snapshots = snapshotsResponse.error
     ? []
@@ -125,20 +125,7 @@ export default async function PlayerProfilePage({ params }: PlayerProfilePagePro
         }));
   const goalsByWeek = buildGoalsByWeek(attendanceGoals, formContributions);
 
-  const cardPlayer: LiveCardPlayer = {
-    id: player.id,
-    displayName: player.display_name,
-    archetype: player.archetype,
-    liveOvr: player.live_ovr,
-    pac: player.pac,
-    sho: player.sho,
-    pas: player.pas,
-    dri: player.dri,
-    def: player.def,
-    phy: player.phy,
-    rarityTier: player.rarity_tier,
-    photoUrl,
-  };
+  const cardPlayer = toLiveCardPlayer(player, injuredPlayerIds, photoUrls);
 
   return (
     <main className="board-ground min-h-screen p-5 text-ink sm:p-10">
@@ -149,7 +136,7 @@ export default async function PlayerProfilePage({ params }: PlayerProfilePagePro
 
         <div className="grid gap-10 md:grid-cols-[minmax(240px,330px)_minmax(0,1fr)] md:items-start lg:gap-16">
           <div>
-            <LiveCard injured={injuredPlayerIds.has(player.id)} size="detail" player={cardPlayer} />
+            <LiveCard size="detail" player={cardPlayer} />
           </div>
 
           <div className="space-y-8">

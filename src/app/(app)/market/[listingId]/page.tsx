@@ -5,6 +5,7 @@ import { IconCoin } from "@/components/icons";
 import { LiveCard, type LiveCardPlayer } from "@/components/live-card";
 import { archetypeLabel } from "@/game/archetypes";
 import { requireUser } from "@/lib/auth/user";
+import { cardFace } from "@/lib/live-card-player";
 import { resolvePhotoUrls } from "@/lib/player-photos";
 import { createClient } from "@/lib/supabase/server";
 import { isUuid } from "@/lib/uuid";
@@ -91,19 +92,13 @@ export default async function ListingPage({ params }: ListingPageProps) {
       rarity_tier: card.rarity_tier,
     }));
 
+  // kut.active_market_listings has no player_id or is_live yet, so a listing
+  // can't be cast. The ROADMAP "Plaster cast on every card" PR B adds both and
+  // switches this to toLiveCardPlayer.
   const cardPlayer: LiveCardPlayer = {
-    id: listing.listing_id,
-    displayName: listing.display_name,
-    archetype: listing.archetype,
-    liveOvr: listing.ovr,
-    pac: listing.pac,
-    sho: listing.sho,
-    pas: listing.pas,
-    dri: listing.dri,
-    def: listing.def,
-    phy: listing.phy,
-    rarityTier: listing.rarity_tier,
-    photoUrl: listing.photo_path ? (photoUrls.get(listing.photo_path) ?? null) : null,
+    ...cardFace(listing, listing.ovr, photoUrls),
+    id: null,
+    injured: false,
   };
 
   return (

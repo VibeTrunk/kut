@@ -4,6 +4,7 @@ import { FilterBar } from "@/components/filter-bar";
 import { SectionTabs } from "@/components/app-shell/section-tabs";
 import { LiveCard, type LiveCardPlayer } from "@/components/live-card";
 import { requireUser } from "@/lib/auth/user";
+import { cardFace } from "@/lib/live-card-player";
 import { getNavContext } from "@/lib/nav/context";
 import { buildMarketTabs } from "@/lib/nav/routes";
 import { resolvePhotoUrls } from "@/lib/player-photos";
@@ -144,19 +145,13 @@ export default async function MarketPage({ searchParams }: MarketPageProps) {
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
             {listings.map((listing) => {
               const isOwnListing = listing.seller_id === user.id;
+              // kut.active_market_listings has no player_id or is_live yet, so a
+              // listing can't be cast. The ROADMAP "Plaster cast on every card"
+              // PR B adds both and switches this to toLiveCardPlayer.
               const cardPlayer: LiveCardPlayer = {
-                id: listing.listing_id,
-                displayName: listing.display_name,
-                archetype: listing.archetype,
-                liveOvr: listing.ovr,
-                pac: listing.pac,
-                sho: listing.sho,
-                pas: listing.pas,
-                dri: listing.dri,
-                def: listing.def,
-                phy: listing.phy,
-                rarityTier: listing.rarity_tier,
-                photoUrl: listing.photo_path ? (photoUrls.get(listing.photo_path) ?? null) : null,
+                ...cardFace(listing, listing.ovr, photoUrls),
+                id: null,
+                injured: false,
               };
               return (
                 <article className="flex flex-col gap-2.5" key={listing.listing_id}>

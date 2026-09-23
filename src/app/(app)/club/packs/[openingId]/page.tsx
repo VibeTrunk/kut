@@ -1,7 +1,8 @@
 import { notFound } from "next/navigation";
-import { PackReveal } from "@/components/pack-reveal";
+import { PackReveal, type RevealCard } from "@/components/pack-reveal";
 import { type LiveCardPlayer } from "@/components/live-card";
 import { requireUser } from "@/lib/auth/user";
+import { cardFace } from "@/lib/live-card-player";
 import { resolvePhotoUrls } from "@/lib/player-photos";
 import { createClient } from "@/lib/supabase/server";
 
@@ -49,19 +50,12 @@ export default async function PackResultPage({ params }: PackResultPageProps) {
     cards.map((card) => card.photo_path),
   );
 
-  const players: LiveCardPlayer[] = cards.map((card) => ({
-    id: card.card_id,
-    displayName: card.display_name,
-    archetype: card.archetype,
-    liveOvr: card.ovr,
-    pac: card.pac,
-    sho: card.sho,
-    pas: card.pas,
-    dri: card.dri,
-    def: card.def,
-    phy: card.phy,
-    rarityTier: card.rarity_tier,
-    photoUrl: card.photo_path ? (photoUrls.get(card.photo_path) ?? null) : null,
+  const revealCards: RevealCard[] = cards.map((card) => ({
+    cardId: card.card_id,
+    // kut.my_pack_opening_results has no player_id or is_live yet, so a pack
+    // result can't be cast. The ROADMAP "Plaster cast on every card" PR B adds
+    // both and switches this to toLiveCardPlayer.
+    player: { ...cardFace(card, card.ovr, photoUrls), id: null, injured: false },
   }));
 
   return (
@@ -71,7 +65,7 @@ export default async function PackResultPage({ params }: PackResultPageProps) {
           Pack opening saved — the result was fixed before this reveal.
         </p>
         <PackReveal
-          cards={players}
+          cards={revealCards}
           cardHrefBase="/club/collection/"
           doneHref="/club/collection"
           doneLabel="View Collection"

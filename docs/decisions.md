@@ -4405,3 +4405,63 @@ CSP's `font-src 'self'` holds, and they use `preload: false`, because only
 injured cards use them.
 
 **Nothing on the cast animates**, so reduced motion needs no extra rule.
+
+## ADR-085 — One rule decides the plaster cast on every card screen
+
+Date: 2026-09-23
+
+Status: Accepted
+
+Decision: a card shows the plaster cast (ADR-084) when it is **a Live card of a
+Player who is injured right now**:
+`injured = is_live && injuredPlayerIds.has(player_id)`. The rule lives in one
+helper, `toLiveCardPlayer` in `src/lib/live-card-player.ts`, and every screen
+whose view row carries `player_id` and `is_live` builds its card through it.
+UI only: no migration, RPC or economy change, and Part L is unchanged. Fixes
+KB-022 and KB-023. This is PR A of ROADMAP "Plaster cast on every card".
+
+**Owner decisions (2026-09-23), settled:**
+
+- **(a) The market shows the cast.** A buyer should know the Player is out and
+  that the card's rating is frozen, not rising.
+- **(b) Live cards only.** A Special edition is a frozen snapshot whose rating
+  nothing protects (ADR-082), so it never gets the cast, even when its Player is
+  injured.
+
+**Why the screens drifted.** Each page applied its own version of the rule.
+Card detail checked `is_live`, but the collection list and the album didn't, so
+a Special copy wore the cast in its grid and album slot and lost it when opened
+(KB-022). Card detail and the album passed the *card* id as the card's `id`,
+which the cast hashes for its signatures, so the same Player showed different
+lines there than on `/players` (KB-023). Measured locally before the fix: Djanco
+read "Snel weer terug!" on `/players` and "TFH misses you" in the album.
+
+**The type makes skipping the rule a compile error.** `LiveCardPlayer.injured`
+is now required, and the separate `injured` prop on `LiveCard` is gone. `id`
+always means the Player id. The type is a union: either `{ id: <Player id>,
+injured: boolean }` or `{ id: null, injured: false }`. A row with no Player id
+can therefore never be cast, and a card or listing id has nowhere to go that the
+signature hash reads. The shirt-back arc used to key its SVG `<path>` on `id`;
+it now uses `useId()`, because two copies of one Player on a page would
+otherwise share an element id.
+
+**Which rows go through the helper.** It accepts a `player_directory` /
+`top_risers` row (always Live, Player id in `id`) or a `my_collection_cards` row
+and its album shape (Player id in `player_id`, `is_live` read from the row). That
+covers the players list and detail, Home risers, the collection list, card
+detail, the album and the starter reveal on `/welcome`. Home risers and the
+starter reveal showed no cast before this; the starter query now selects
+`player_id` and `is_live` from a view that already had them.
+
+**The market and pack openings wait for PR B.** `kut.active_market_listings` and
+`kut.my_pack_opening_results` have no `player_id` or `is_live`, so those pages
+build `{ id: null, injured: false }` explicitly, with a comment naming PR B. The
+pack reveal's links used `card.id`, so `PackReveal` now takes
+`{ cardId, player }`: the copy's id stays beside the card face, never in it.
+PR B appends both columns to both views in one additive migration and switches
+these pages to the helper.
+
+**Pinned by** `tests/unit/live-card-player.test.ts`: a Special of an injured
+Player is not cast, a Live card of an injured Player is, a Live card of a Player
+who isn't injured is not, and the same Player gets the same `id` from every row
+shape, never the card id.

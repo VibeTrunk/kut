@@ -6,6 +6,7 @@ import { requireUser } from "@/lib/auth/user";
 import { SectionTabs } from "@/components/app-shell/section-tabs";
 import { LEADERBOARD_TABS } from "@/lib/nav/routes";
 import { fetchInjuredPlayerIds } from "@/lib/injuries";
+import { toLiveCardPlayer } from "@/lib/live-card-player";
 import { resolvePhotoUrls } from "@/lib/player-photos";
 import { createClient } from "@/lib/supabase/server";
 
@@ -127,20 +128,7 @@ export default async function PlayerDirectoryPage({ searchParams }: PlayerDirect
         ) : (
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5 lg:gap-6">
             {players.map((player) => {
-              const cardPlayer: LiveCardPlayer = {
-                id: player.id,
-                displayName: player.display_name,
-                archetype: player.archetype,
-                liveOvr: player.live_ovr,
-                pac: player.pac,
-                sho: player.sho,
-                pas: player.pas,
-                dri: player.dri,
-                def: player.def,
-                phy: player.phy,
-                rarityTier: player.rarity_tier,
-                photoUrl: player.photo_path ? (photoUrls.get(player.photo_path) ?? null) : null,
-              };
+              const cardPlayer = toLiveCardPlayer(player, injuredPlayerIds, photoUrls);
               return (
                 <Link
                   aria-label={`Open ${player.display_name}'s profile`}
@@ -148,7 +136,7 @@ export default async function PlayerDirectoryPage({ searchParams }: PlayerDirect
                   href={`/players/${player.slug}`}
                   key={player.id}
                 >
-                  <LiveCard injured={injuredPlayerIds.has(player.id)} player={cardPlayer} />
+                  <LiveCard player={cardPlayer} />
                 </Link>
               );
             })}

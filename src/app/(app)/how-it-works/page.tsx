@@ -135,7 +135,34 @@ export default async function HowItWorksPage() {
           </p>
         </Section>
 
-        <Section title="4. OVR sets your rarity tier">
+        <Section title="4. Injured? Your card is protected">
+          <p>
+            A long-term injury shouldn&rsquo;t cost you your card. Ask an admin to put you in{" "}
+            <strong>injury mode</strong> from the date you got hurt. From then on, every football
+            week you sit out:
+          </p>
+          <ul className="ml-5 list-disc space-y-1">
+            <li>
+              A <strong>rehab check-in</strong> appears on Home once that week&rsquo;s session is
+              published. You can still do it the following week if you missed it.
+            </li>
+            <li>
+              Checking in pays <strong>{ECONOMY.injuryStipend} KUT Coins</strong> and keeps your
+              Activity where it was, so your OVR doesn&rsquo;t drop for that week.
+            </li>
+            <li>
+              A week you don&rsquo;t check in for decays as normal. Only this week and last week can
+              be checked in, so older weeks can&rsquo;t be protected afterwards.
+            </li>
+          </ul>
+          <p>
+            Form still fades as usual, so your card settles on its attendance base. Your cards show
+            a <strong>&#129657; Injured</strong> chip while it lasts. Injury mode ends by itself the
+            first time you play a session again.
+          </p>
+        </Section>
+
+        <Section title="5. OVR sets your rarity tier">
           <table className="w-full max-w-md text-left text-sm">
             <thead className="text-ink-faint">
               <tr>
@@ -162,7 +189,7 @@ export default async function HowItWorksPage() {
           </p>
         </Section>
 
-        <Section title="5. Archetypes reshape the six stats">
+        <Section title="6. Archetypes reshape the six stats">
           <p>
             Your archetype doesn&rsquo;t change your OVR &mdash; it redistributes it across the six
             attributes. There&rsquo;s one for each style of player, including a Goalkeeper profile.
@@ -203,7 +230,7 @@ export default async function HowItWorksPage() {
           </div>
         </Section>
 
-        <Section title="6. Packs">
+        <Section title="7. Packs">
           <p>
             A <strong>TFH Pack</strong> costs {ECONOMY.basicPackPrice} KUT Coins and gives{" "}
             {ECONOMY.basicPackCardCount} Live Cards. Draws are weighted by rarity, so Common players
@@ -215,7 +242,7 @@ export default async function HowItWorksPage() {
           </Link>
         </Section>
 
-        <Section title="7. Discard">
+        <Section title="8. Discard">
           <p>
             Discarding permanently burns a card for a guaranteed payout based on its current OVR (
             <code>
@@ -242,7 +269,7 @@ export default async function HowItWorksPage() {
           </table>
         </Section>
 
-        <Section title="8. Transfer market & trade offers">
+        <Section title="9. Transfer market & trade offers">
           <p>
             List any card at a buy-now price (within server-set bounds), choosing whether it runs
             for {ECONOMY.listingDurationChoiceHours.join(" or ")} hours. When it sells, a{" "}
@@ -267,7 +294,7 @@ export default async function HowItWorksPage() {
           </Link>
         </Section>
 
-        <Section title="9. Club Value & the leaderboard">
+        <Section title="10. Club Value & the leaderboard">
           <p>Your Club Value is a plain sum of three numbers:</p>
           <ul className="ml-5 list-disc space-y-1">
             <li>your wallet balance in KUT Coins;</li>
@@ -294,7 +321,7 @@ export default async function HowItWorksPage() {
           </p>
         </Section>
 
-        <Section title="10. Messages">
+        <Section title="11. Messages">
           <p>
             Your{" "}
             <Link className="font-semibold text-brass underline" href="/messages">

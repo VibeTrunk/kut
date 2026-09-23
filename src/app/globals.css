@@ -339,6 +339,28 @@ body {
   opacity: 0.75;
 }
 
+/* Injury mode (ADR-082): bottom-left of the art, clear of the OVR and the
+   trend pill. It marks the Player, not the copy, so every copy shows it. */
+.live-card__injured {
+  position: absolute;
+  bottom: 0.9em;
+  left: 0.9em;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
+  margin: 0;
+  padding: 0.3em 0.65em;
+  border-radius: 999px;
+  font-size: 3.6cqi;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: var(--color-brick);
+  color: #2a1712;
+  box-shadow: 0 0.3em 0.6em rgb(0 0 0 / 32%);
+}
+
 /* ---- nameplate ----------------------------------------------------------- */
 .live-card__plate {
   position: relative;

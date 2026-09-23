@@ -5,6 +5,7 @@ import { LiveCard, type LiveCardPlayer } from "@/components/live-card";
 import { requireUser } from "@/lib/auth/user";
 import { SectionTabs } from "@/components/app-shell/section-tabs";
 import { LEADERBOARD_TABS } from "@/lib/nav/routes";
+import { fetchInjuredPlayerIds } from "@/lib/injuries";
 import { resolvePhotoUrls } from "@/lib/player-photos";
 import { createClient } from "@/lib/supabase/server";
 
@@ -67,10 +68,13 @@ export default async function PlayerDirectoryPage({ searchParams }: PlayerDirect
   if (error) throw new Error("Could not load the player directory.");
 
   const players = (data ?? []) as DirectoryRow[];
-  const photoUrls = await resolvePhotoUrls(
-    supabase,
-    players.map((player) => player.photo_path),
-  );
+  const [photoUrls, injuredPlayerIds] = await Promise.all([
+    resolvePhotoUrls(
+      supabase,
+      players.map((player) => player.photo_path),
+    ),
+    fetchInjuredPlayerIds(supabase),
+  ]);
 
   return (
     <main className="board-ground min-h-screen p-5 text-ink sm:p-10">
@@ -144,7 +148,7 @@ export default async function PlayerDirectoryPage({ searchParams }: PlayerDirect
                   href={`/players/${player.slug}`}
                   key={player.id}
                 >
-                  <LiveCard player={cardPlayer} />
+                  <LiveCard injured={injuredPlayerIds.has(player.id)} player={cardPlayer} />
                 </Link>
               );
             })}

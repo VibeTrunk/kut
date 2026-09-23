@@ -12,6 +12,7 @@ import { RatingBreakdownStory } from "@/components/rating-breakdown";
 import type { FormContribution, RatingBreakdown } from "@/lib/rating-story";
 import { LiveCard, type LiveCardPlayer } from "@/components/live-card";
 import { requireUser } from "@/lib/auth/user";
+import { fetchInjuredPlayerIds } from "@/lib/injuries";
 import { resolvePhotoUrls } from "@/lib/player-photos";
 import { createClient } from "@/lib/supabase/server";
 
@@ -53,7 +54,7 @@ export default async function PlayerProfilePage({ params }: PlayerProfilePagePro
   if (!data) notFound();
 
   const player = data as DirectoryRow;
-  const [photoUrls, seasonResponse, attendanceResponse] = await Promise.all([
+  const [photoUrls, seasonResponse, attendanceResponse, injuredPlayerIds] = await Promise.all([
     resolvePhotoUrls(supabase, [player.photo_path]),
     supabase.schema("kut").from("seasons").select("id").eq("is_active", true).maybeSingle(),
     supabase
@@ -62,6 +63,7 @@ export default async function PlayerProfilePage({ params }: PlayerProfilePagePro
       .select("goals, match_sessions!inner(session_date, status, rating_rules_version)")
       .eq("player_id", player.id)
       .eq("match_sessions.status", "published"),
+    fetchInjuredPlayerIds(supabase),
   ]);
   const snapshotsResponse = seasonResponse.data
     ? await supabase
@@ -147,7 +149,7 @@ export default async function PlayerProfilePage({ params }: PlayerProfilePagePro
 
         <div className="grid gap-10 md:grid-cols-[minmax(240px,330px)_minmax(0,1fr)] md:items-start lg:gap-16">
           <div>
-            <LiveCard size="detail" player={cardPlayer} />
+            <LiveCard injured={injuredPlayerIds.has(player.id)} size="detail" player={cardPlayer} />
           </div>
 
           <div className="space-y-8">

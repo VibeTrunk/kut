@@ -5,6 +5,7 @@ import { LiveCard, type LiveCardPlayer } from "@/components/live-card";
 import { RatingBreakdownStory } from "@/components/rating-breakdown";
 import { requireUser } from "@/lib/auth/user";
 import type { FormContribution, RatingBreakdown } from "@/lib/rating-story";
+import { fetchInjuredPlayerIds } from "@/lib/injuries";
 import { resolvePhotoUrls } from "@/lib/player-photos";
 import { createClient } from "@/lib/supabase/server";
 import { isUuid } from "@/lib/uuid";
@@ -73,7 +74,10 @@ export default async function CardDetailPage({ params, searchParams }: CardPageP
   }
 
   const card = data as CollectionCard;
-  const photoUrls = await resolvePhotoUrls(supabase, [card.photo_path]);
+  const [photoUrls, injuredPlayerIds] = await Promise.all([
+    resolvePhotoUrls(supabase, [card.photo_path]),
+    fetchInjuredPlayerIds(supabase),
+  ]);
   // ADR-074: the rating story applies only to a Live card. A Special edition is
   // a frozen snapshot, so explaining a current OVR would misdescribe it. Both
   // reads are non-critical — a failure renders the page without the story
@@ -147,7 +151,12 @@ export default async function CardDetailPage({ params, searchParams }: CardPageP
 
         <div className="grid gap-10 md:grid-cols-[minmax(240px,330px)_minmax(0,1fr)] md:items-start lg:gap-16">
           <div>
-            <LiveCard size="detail" player={cardPlayer} />
+            <LiveCard
+              // A Special edition is a frozen snapshot, so only a Live card is badged.
+              injured={card.is_live && injuredPlayerIds.has(card.player_id)}
+              size="detail"
+              player={cardPlayer}
+            />
           </div>
 
           <div className="space-y-8">

@@ -8,9 +8,11 @@ import {
   type ActivityRow,
 } from "@/lib/activity";
 import { formatDate } from "@/lib/format";
+import type { InjuryStatus } from "@/lib/injuries";
 import { resolvePhotoUrls } from "@/lib/player-photos";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { InjuryCheckInCard } from "./injury/check-in-card";
 
 type TopRiser = {
   id: string;
@@ -46,6 +48,7 @@ export default async function Home() {
     rankResponse,
     activityResponse,
     reportResponse,
+    injuryResponse,
   ] = await Promise.all([
     supabase.schema("kut").from("profiles").select("is_disabled").eq("id", userId).maybeSingle(),
     supabase
@@ -80,6 +83,7 @@ export default async function Home() {
       .order("closes_at")
       .limit(1)
       .maybeSingle(),
+    supabase.schema("kut").rpc("my_injury_status"),
   ]);
 
   if (profileError) {
@@ -115,6 +119,10 @@ export default async function Home() {
   // The activity feed is a non-critical widget — never fail the Home page over it.
   const activity = (activityResponse.data ?? []) as ActivityRow[];
   const openReport = reportResponse.data;
+  // Injury mode (ADR-082) is non-critical here too: a failed read hides the
+  // check-in card rather than failing Home.
+  if (injuryResponse.error) console.error("home injury status read failed", injuryResponse.error);
+  const injury = (injuryResponse.error ? null : injuryResponse.data) as InjuryStatus | null;
 
   return (
     <main className="board-ground min-h-screen p-5 text-ink sm:p-10">
@@ -178,6 +186,24 @@ export default async function Home() {
             </span>
           </Link>
         )}
+
+        {injury?.injured &&
+          (injury.checkable_week_start ? (
+            <InjuryCheckInCard
+              stipend={injury.stipend}
+              weekLabel={formatDate(injury.checkable_week_start)}
+              weekStart={injury.checkable_week_start}
+            />
+          ) : (
+            <p className="rounded-2xl border border-line/60 bg-panel/60 p-5 text-sm text-ink-dim">
+              <span className="font-bold text-ink">Injury mode.</span>{" "}
+              {injury.checked_in_this_week
+                ? "Your card is protected this week. ✓"
+                : "Your next rehab check-in opens once this week's session is published."}{" "}
+              {injury.protected_weeks > 0 &&
+                `${injury.protected_weeks} ${injury.protected_weeks === 1 ? "week" : "weeks"} protected so far.`}
+            </p>
+          ))}
 
         <dl className="grid grid-cols-1 overflow-hidden rounded-2xl border border-line/60 bg-gradient-to-b from-panel-2/70 to-panel/70 sm:grid-cols-3">
           <div className="border-b border-line/50 px-6 py-5 sm:border-b-0 sm:border-l sm:first:border-l-0">

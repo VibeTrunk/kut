@@ -21,6 +21,8 @@ type LiveCardProps = {
   size?: "grid" | "detail";
   /** Optional week-over-week OVR change. A positive value renders a small "▲ +N" pill. */
   trend?: number | null;
+  /** The Player is in injury mode (ADR-082); renders a small "Injured" chip. */
+  injured?: boolean;
 };
 
 const TIER_LABEL: Record<LiveCardPlayer["rarityTier"], string> = {
@@ -123,7 +125,7 @@ function BustFallback({ player }: { player: LiveCardPlayer }) {
   );
 }
 
-export function LiveCard({ player, size = "grid", trend }: LiveCardProps) {
+export function LiveCard({ player, size = "grid", trend, injured = false }: LiveCardProps) {
   const tier = player.rarityTier;
 
   const card = (
@@ -155,6 +157,15 @@ export function LiveCard({ player, size = "grid", trend }: LiveCardProps) {
           <p className="live-card__trend">
             <span aria-hidden="true">&#9650;</span> +{trend}{" "}
             <span className="live-card__trend-unit">OVR this week</span>
+          </p>
+        )}
+
+        {injured && (
+          <p
+            className="live-card__injured"
+            title="Injured: the rating is protected during recovery"
+          >
+            <span aria-hidden="true">&#129657;</span> Injured
           </p>
         )}
 

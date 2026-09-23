@@ -111,5 +111,54 @@ export async function manageRoster(
     return { ok: true, message: `${row?.display_name ?? "Player"} deleted.` };
   }
 
+  if (intent === "start_injury") {
+    const startedOn = String(formData.get("started_on") ?? "");
+    const note = String(formData.get("note") ?? "").trim();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(startedOn)) {
+      return { ok: false, error: "Pick the date of the injury." };
+    }
+    if (note.length > 200) return { ok: false, error: "Keep the note to 200 characters." };
+    const { data, error } = await supabase.schema("kut").rpc("admin_start_injury", {
+      p_player_id: playerId,
+      p_started_on: startedOn,
+      p_note: note || null,
+    });
+    if (error) return { ok: false, error: injuryError(error.message) };
+    revalidateRoster();
+    const row = data as { display_name?: string } | null;
+    return { ok: true, message: `${row?.display_name ?? "Player"} is now in injury mode.` };
+  }
+
+  if (intent === "end_injury") {
+    const reason = String(formData.get("reason") ?? "").trim();
+    if (reason.length < 3 || reason.length > 200) {
+      return { ok: false, error: "Give a reason of 3–200 characters." };
+    }
+    const { data, error } = await supabase.schema("kut").rpc("admin_end_injury", {
+      p_player_id: playerId,
+      p_reason: reason,
+    });
+    if (error) return { ok: false, error: injuryError(error.message) };
+    revalidateRoster();
+    const row = data as { display_name?: string } | null;
+    return { ok: true, message: `Injury mode ended for ${row?.display_name ?? "the player"}.` };
+  }
+
   return { ok: false, error: "Unknown action." };
+}
+
+// kut.admin_start_injury / admin_end_injury raise short, stable messages
+// (ADR-082); map the ones an admin can act on, and fall back for the rest.
+function injuryError(message: string): string {
+  if (message.includes("admin access")) return "You don't have permission to do this.";
+  if (message.includes("own player"))
+    return "Another admin has to put your own player in injury mode.";
+  if (message.includes("no active account"))
+    return "Injury mode needs a linked, active account: the player checks in themselves.";
+  if (message.includes("played since"))
+    return "The player has played a published session after that date. Pick a later date.";
+  if (message.includes("already in injury mode")) return "This player is already in injury mode.";
+  if (message.includes("not in injury mode")) return "This player isn't in injury mode.";
+  if (message.includes("injury date")) return "The injury date can't be in the future.";
+  return "Couldn't update injury mode. Please try again.";
 }

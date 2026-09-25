@@ -1711,9 +1711,12 @@ Design goals, which the targets in §44.12 put numbers on:
 4. every match produces a report in which each line traces back to a number;
 5. zero weekly admin work.
 
-Values marked *starting value* are tuned by the simulation harness before any
-schema work and signed off by the owner in `docs/archive/MIDWEEK_TUNING.md`;
-the sign-off updates this section and §145 with the final values.
+The numbers below are the tuned values from the simulation harness (ADR-092),
+recorded with their evidence in `docs/archive/MIDWEEK_TUNING.md` and signed
+off by the owner on 2026-09-25. The
+executable definition of every rule in §44.3–§44.6 is the pure engine in
+`src/game/midweek/`, pinned by `tests/fixtures/midweek-golden.json`; the SQL
+engine must reproduce that file (ADR-090).
 
 ### 44.1 The week
 
@@ -1747,14 +1750,16 @@ the sign-off updates this section and §145 with the final values.
   market or held in trade escrow is still owned and still plays. If no saved
   card survives, the member is treated as not having picked.
 - **Trialists fill empty slots.** A trialist is a Common All-rounder at
-  `MIDWEEK_TRIALIST_OVR` (*starting value* 30), with its own form roll, a
-  neutral pick factor (1.00) and fitness 1.00. Leaving a slot empty on purpose
-  must never be the best play (§44.12).
+  `MIDWEEK_TRIALIST_OVR` (30), with its own form roll, a neutral pick factor
+  (1.00), fitness 1.00, and its power multiplied by `MIDWEEK_TRIALIST_FACTOR`
+  (0.825). The factor keeps a trialist below the worst real card: OVR 30,
+  picked by every owner and injured. Leaving a slot empty on purpose must never
+  be the best play (§44.12).
 - **Members who did not pick get an auto squad:** up to five random distinct
   Players from their own collection, drawn from the tournament seed, one copy
-  each, with trialists for the rest. Every card in an auto squad has its power
-  multiplied by `MIDWEEK_AUTO_FACTOR` (*starting value* 0.65) and gets the
-  neutral pick factor. **Auto squads are left out of pick shares.** An auto
+  each, with trialists for the rest. Every card in an auto squad, trialists
+  included, has its power multiplied by `MIDWEEK_AUTO_FACTOR` (0.575) and gets
+  the neutral pick factor. **Auto squads are left out of pick shares.** An auto
   squad that wins is paid like any other.
 - **Opting out.** A member can opt out in settings and is then never entered,
   picked or auto. An opt-out saved before the lock applies to that week. An
@@ -1767,19 +1772,21 @@ the sign-off updates this section and §145 with the final values.
 ### 44.3 Card power
 
 ```text
-card_power  = ovr_factor × form_roll × pick_factor × fitness × auto_factor   (fixed for the week)
-match_power = card_power × day_roll                                         (fresh every match)
+card_power  = ovr_factor × form_roll × pick_factor × fitness × handicap   (fixed for the week)
+match_power = card_power × day_roll                                      (fresh every match)
 ```
 
-`auto_factor` is 1.00 outside auto squads. Each factor:
+`handicap` is `auto_factor` in an auto squad, times `MIDWEEK_TRIALIST_FACTOR`
+for a trialist, else 1.00. Each factor, multiplied left to right in parts per
+million and floored after each step:
 
-| Factor | Rule | Starting value |
+| Factor | Rule | Value (ADR-092; started at) |
 |---|---|---|
-| `ovr_factor` | Linear in the locked OVR, clamped to 30–83: 1.00 at 30, `MIDWEEK_OVR_FACTOR_MAX` at 83. Flattening OVR is what stops the richest collection winning by default. | max 1.35 |
-| `form_roll` | One roll per Player per tournament, shared by every squad that fields the Player. Most rolls land near 1.00; the tails reach a big week or a quiet one. Trialists roll their own. | range 0.75–1.45, mode 1.00 |
-| `pick_factor` | Decreasing in the Player's pick share (below). Neutral is 1.00. | through (0, 1.30), (0.40, 1.00), (1, 0.85), piecewise linear |
-| `fitness` | `MIDWEEK_INJURED_FITNESS` when the card is a Live card of a Player in injury mode at the lock (the ADR-085 cast rule), else 1.00. | 0.95 |
-| `day_roll` | A fresh roll per card per match. | uniform ±10% |
+| `ovr_factor` | Linear in the locked OVR, clamped to 30–83: 1.00 at 30, `MIDWEEK_OVR_FACTOR_MAX` at 83. Flattening OVR is what stops the richest collection winning by default. | max 1.10 (1.35) |
+| `form_roll` | One roll per Player per tournament, shared by every squad that fields the Player: the mean of two uniform draws, its lower half mapped onto [min, 1.00) and its upper half onto [1.00, max), so most rolls land near 1.00. Trialists roll their own. | range 0.80–1.25, mode 1.00 (0.75–1.45) |
+| `pick_factor` | Decreasing in the Player's pick share (below). Neutral is 1.00. | through (0, 1.25), (0.40, 1.00), (1, 0.875), piecewise linear ((0, 1.30), (0.40, 1.00), (1, 0.85)) |
+| `fitness` | `MIDWEEK_INJURED_FITNESS` when the card is a Live card of a Player in injury mode at the lock (the ADR-085 cast rule), else 1.00. | 0.95 (0.95) |
+| `day_roll` | A fresh roll per card per match. | uniform ±12% (±10%) |
 
 **Pick share** measures choice, not scarcity, and uses owners as the baseline:
 
@@ -1801,8 +1808,8 @@ that tournament.
 
 - **Archetypes set the shape, not the size.** A card contributes to three lines
   according to its archetype's §15.1 offsets, averaged over the line's
-  attributes and scaled by `MIDWEEK_SHAPE_SCALE` (*starting value* 0.5 per 10
-  offset points), times `card_power`. Absolute attributes are never used; they
+  attributes and scaled by `MIDWEEK_SHAPE_SCALE` (0.5 per 10 offset points),
+  times `card_power`: `line_mult = 1 + 0.5 × mean_offset / 10`, floored at 0.10. Absolute attributes are never used; they
   would bring raw OVR back in at full weight.
   - attack: SHO, PAC, DRI;
   - midfield: PAS, DRI;
@@ -1810,8 +1817,9 @@ that tournament.
 - **Exactly one card plays in goal;** the other four make up the lines.
   - The keeper is the Goalkeeper-archetype card with the highest `card_power`.
   - A squad without a Goalkeeper puts the outfielder with the highest defence
-    contribution in goal, at `MIDWEEK_KEEPERLESS_FACTOR` (*starting value*
-    0.60).
+    contribution in goal, at `MIDWEEK_KEEPERLESS_FACTOR` (0.45; started at
+    0.60). Keeper strength is the keeper's defence contribution, times that
+    factor when keeperless.
   - A second or third Goalkeeper plays outfield with the Goalkeeper offsets,
     including SHO −12.
 - **All-rounders are average everywhere,** so the default archetype stays
@@ -1820,23 +1828,32 @@ that tournament.
 
 ### 44.5 A match
 
-- **Chances, not a score draw.** Each side gets a random number of chances,
-  driven by its midfield against the other side's. Each chance records:
+- **Chances, not a score draw.** A match has `MIDWEEK_CHANCE_SLOTS` (14)
+  slots across 90 minutes. Each slot holds a chance with probability 0.686,
+  and the chance goes to a side in proportion to the two midfields (contrast
+  1: a plain ratio). Each chance records:
   - a **creator**, weighted by midfield contribution;
   - a **shooter**, weighted by attack contribution;
   - a **chance type**, weighted by the two cards' archetypes (§44.10);
-  - an **outcome**: goal, save, woodwork, block or wide, with the goal
-    probability from the shooter's power against the defence and keeper;
+  - an **outcome**: goal, save, woodwork, block or wide. The goal
+    probability is `0.30 × chance-type difficulty × 2 × S / (S + R)`, clamped
+    to 0.02–0.85, where `S` is the shooter's attack contribution and `R` the
+    mean of the defending side's average outfield defence and its keeper. A
+    miss is a save (45), block (25), woodwork (8) or shot forced wide (22),
+    credited to the keeper or a defender;
   - a **minute** in 1–90, so a report reads as a timeline.
-- **The chance model must reproduce the intended expected goals.** The
-  per-match goal target and the weights are fixed at the tuning sign-off.
+- **The chance model reproduces the intended goals:** about 2.5 per match
+  between two equal balanced sides, 2.85 across a simulated bracket. The keeper
+  starts a chance occasionally (long throws) and scores about once a season
+  club-wide.
 - **A draw goes to penalties:** five kicks each, then sudden death, each kick
   an event decided by kicker against keeper. After
-  `MIDWEEK_SHOOTOUT_MAX_ROUNDS` (*starting value* 20) sudden-death rounds a
+  `MIDWEEK_SHOOTOUT_MAX_ROUNDS` (20) sudden-death rounds a
   seeded draw decides, so every match has a winner.
 - **Odds.** Each match stores a pre-match win chance in ppm, a closed-form
-  estimate from both squads' week-long factors (before `day_roll`), published
-  with its result.
+  estimate from both squads' week-long factors (before `day_roll`): each side's
+  rating is its outfield attack, midfield and defence plus its keeper, and the
+  chance is `a³ / (a³ + b³)`. It is published with its result.
 
 ### 44.6 Bracket
 
@@ -1979,17 +1996,21 @@ is the only weekly input.
 The harness simulates at least 5,000 seasons against a mix of manager
 strategies; a fast smoke version runs in the unit suite.
 
-| Target | Starting value |
-|---|---|
-| Strongest collection beats the weakest in a single match | about 65% |
-| Strongest collection wins the whole tournament (8 entrants) | about 25–30% |
-| A thought-through five beats a random five from the same collection | at least 60% |
-| No fixed habit wins over a 20-week season (highest OVR, least popular, last week's winners, random) | none ahead by more than a few percent |
-| A Common or Bronze card is a match's standout | most weeks, at least once |
-| An empty slot is never the best choice | always |
-| An auto squad beats a typical picked squad | at most about 20% |
-| An auto squad reaches the last four | about 2% or less |
-| The squad that looks strongest after round 1 reaches the final | at most about 35% |
+| Target | Starting value | Simulated, 5,000 seasons (ADR-092) |
+|---|---|---|
+| Strongest collection beats the weakest in a single match | about 65% | 70.6% |
+| Strongest collection wins the whole tournament (8 entrants) | about 25–30% | 28.2% |
+| A thought-through five beats a random five from the same collection | at least 60% | **58.7%** |
+| No fixed habit wins over a 20-week season (highest OVR, least popular, last week's winners, random) | none ahead by more than a few percent | 4.5% lead |
+| A Common or Bronze card is a match's standout | most weeks, at least once | every week |
+| An empty slot is never the best choice | always | yes |
+| An auto squad beats a typical picked squad | at most about 20% | 12.0% |
+| An auto squad reaches the last four | about 2% or less | 1.9% |
+| The squad that looks strongest after round 1 reaches the final | at most about 35% | 31.8% |
+
+The first and third rows pull against each other, and no tuning the harness
+found meets both. The owner accepted both as they are (ADR-092); the harness
+fails if either drifts past 72% or below 58%.
 
 ### 44.13 Invariants to come
 
@@ -4575,25 +4596,29 @@ ARCHETYPE_CHANGE_COOLDOWN_DAYS = 14  # self-service changes only, ADR-089
 STARTER_COIN_GRANT = 250
 STARTER_CARD_COUNT = 3
 
-# Midweek Madness, §44 (ADR-089). Values marked "starting" are tuned in the
-# simulation harness and fixed at the owner's sign-off.
+# Midweek Madness, §44 (ADR-089). Tuned values, signed off 2026-09-25 (ADR-092);
+# the code is src/game/midweek/config.ts.
 MIDWEEK_CHAMPION_TOTAL = 250  # a champion's total over all rounds; its own constant
 MIDWEEK_SQUAD_SIZE = 5
 MIDWEEK_LOCK = Wednesday 20:00 Europe/Amsterdam
 MIDWEEK_REVEAL_INTERVAL_MINUTES = 30
 MIDWEEK_MIN_ENTRANTS = 4
 MIDWEEK_OWNER_COUNT_MIN = 3  # owner counts below this are never shown, ADR-091
-MIDWEEK_OVR_FACTOR_MAX = 1.35  # starting; 1.00 at OVR 30
-MIDWEEK_FORM_ROLL = 0.75 .. 1.45, mode 1.00  # starting
-MIDWEEK_PICK_FACTOR = (0, 1.30) (0.40, 1.00) (1, 0.85)  # starting; piecewise linear in share
+MIDWEEK_OVR_FACTOR_MAX = 1.10  # 1.00 at OVR 30; started at 1.35
+MIDWEEK_FORM_ROLL = 0.80 .. 1.25, mode 1.00  # started at 0.75 .. 1.45
+MIDWEEK_PICK_FACTOR = (0, 1.25) (0.40, 1.00) (1, 0.875)  # piecewise linear in share
 MIDWEEK_PICK_SHARE_SMOOTHING = +1 / +3
-MIDWEEK_DAY_ROLL = ±0.10  # starting
-MIDWEEK_INJURED_FITNESS = 0.95  # starting
-MIDWEEK_AUTO_FACTOR = 0.65  # starting
-MIDWEEK_TRIALIST_OVR = 30  # starting
-MIDWEEK_SHAPE_SCALE = 0.5  # starting; per 10 offset points
-MIDWEEK_KEEPERLESS_FACTOR = 0.60  # starting
-MIDWEEK_SHOOTOUT_MAX_ROUNDS = 20  # starting
+MIDWEEK_DAY_ROLL = ±0.12  # started at ±0.10
+MIDWEEK_INJURED_FITNESS = 0.95
+MIDWEEK_AUTO_FACTOR = 0.575  # started at 0.65
+MIDWEEK_TRIALIST_OVR = 30
+MIDWEEK_TRIALIST_FACTOR = 0.825  # new at tuning: keeps a trialist below the worst real card
+MIDWEEK_SHAPE_SCALE = 0.5  # per 10 offset points
+MIDWEEK_KEEPERLESS_FACTOR = 0.45  # started at 0.60
+MIDWEEK_CHANCE_SLOTS = 14  # each holds a chance with probability 0.686
+MIDWEEK_GOAL_BASE = 0.30  # before chance-type difficulty and finishing
+MIDWEEK_WIN_CHANCE_CONTRAST = 3
+MIDWEEK_SHOOTOUT_MAX_ROUNDS = 20
 
 BASIC_PACK_PRICE = 250
 BASIC_PACK_CARD_COUNT = 3

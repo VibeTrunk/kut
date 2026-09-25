@@ -4758,3 +4758,100 @@ threshold is about never printing a count that points at a person.
 **Consequences:** "See other members' squads" stays blocked. This exception
 covers only cards a member entered in a Midweek tournament. It is not a
 collection view.
+
+## ADR-092 — Midweek Madness tuning: the engine's numbers, and one trade-off for the owner
+
+Date: 2026-09-25
+
+Status: Accepted — signed off by the owner on 2026-09-25 (option 1 below)
+
+Decision: the pure TypeScript engine (`src/game/midweek/`) and its simulation
+harness (`npm run sim:midweek`) are built, and the engine is tuned to the values
+now in BUILD_SPEC §44 and §145. The evidence is
+`docs/archive/MIDWEEK_TUNING.md`, generated from 5,000 simulated 20-week seasons.
+Seven of the nine §44.12 targets pass. Two sit just outside their bands, and they
+pull against each other:
+
+| Target | Goal | Simulated |
+|---|---|---|
+| Strongest collection beats the weakest in a single match | about 65% (60–70%) | 70.6% |
+| A thought-through five beats a random five from the same collection | at least 60% | 58.7% |
+
+**Why they cannot both be met here.** A random search over eleven knobs
+(OVR weight, form range, pick curve, day roll, keeper value, auto factor,
+chance count, contrasts), confirmed at 1,000 seasons per candidate, found a
+frontier: every point off the first row costs about one point of the third.
+
+- The weakest collection in a KUT-shaped club is almost always a starter pack:
+  three cards and two trialists. The trialist factor is already as high as the
+  "empty slot is never best" rule allows. Against the weakest collection that
+  fields five *real* cards, the strongest wins only about 58%, so wealth alone is
+  a modest edge; the trialists make up most of the first row.
+- The edge of thinking comes mostly from fielding a Goalkeeper, not from OVR.
+  Raising the keeper's value lifts the third row but also the first, and lets
+  whichever fixed habit tends to include keepers pull ahead of the rest, which
+  breaks the "no habit wins" row.
+
+**The owner's choice at the sign-off.** The options put to the owner, in rough
+order of preference:
+
+1. Accept both rows as they are, reading "about 65%" as met at 70.6% and 60% as
+   met at 58.7%.
+2. Relax one target: the first row to "about 70%", or the third to "at least
+   55%". The harness can then move along the frontier to favour the other one.
+3. Change a rule, not a number. For example, make a trialist a card the member
+   can see and pick around, or give the Goalkeeper less weight. Either reopens
+   part of ADR-089 and needs its own decision.
+
+**Changed from the starting values**, each within §44's "starting value" remit:
+OVR factor max 1.35 → 1.10; form 0.75–1.45 → 0.80–1.25; pick curve
+(0, 1.30) … (1, 0.85) → (0, 1.25) … (1, 0.875); day roll ±10% → ±12%; auto
+factor 0.65 → 0.575; keeperless factor 0.60 → 0.45. Injured fitness (0.95), the
+line-shape scale (0.5), trialist OVR (30) and the shoot-out cap (20) are
+unchanged.
+
+**New knobs, added where §44 left the model open:**
+
+- `MIDWEEK_TRIALIST_FACTOR` (0.825). At OVR 30 with a neutral pick factor, a
+  trialist would out-power the worst real card: an OVR-30 card picked by every
+  owner and injured. The factor keeps it just below, so an empty slot is never
+  the best play. It also applies, on top of the auto factor, to trialists in an
+  auto squad.
+- **The chance model:** 14 slots, a chance in each with probability 0.686, the
+  side chosen by the ratio of midfields; goal probability
+  `0.30 × difficulty × 2S / (S + R)`; the chance-type weights and difficulties
+  in `config.ts`. It gives about 2.5 goals between equal balanced sides and 2.85
+  across a bracket, with 21.5% of matches going to penalties.
+- **The published odds:** a closed-form `a³ / (a³ + b³)` over the sides'
+  week-long ratings. The report's calibration table shows how it tracks what
+  happens.
+
+**How the harness measures** (all in `tests/sim/midweek-world.ts`):
+
+- The club: 30 Players, low-rated on the whole, about 80% All-rounders and two
+  Goalkeepers. 22 members, each with a starter pack plus a skewed number of
+  packs drawn with the real pack weights. 30% don't pick, and the rest keep one
+  habit all season: highest OVR, least popular last week, last week's
+  finalists' Players, random, or thought-through.
+- "Thought-through" means a Goalkeeper if one is owned, then the best OVR,
+  avoiding injured Players. A thinker that also predicted this week's pick
+  shares from last week's did worse, which is the "no pick stays best" goal
+  working.
+- "No habit wins" is measured as the best habit's lead over the runner-up
+  among the four fixed habits, at most 5%.
+- The engine runs on a fast tag-hashing generator in the harness and on
+  sha256 in production. Draws stay keyed by tag, so a counterfactual squad in
+  the same week sees the same form rolls.
+
+**Consequences:**
+
+- The golden vectors (`tests/fixtures/midweek-golden.json`, 8 matches including
+  shoot-outs, 8 tournaments including byes, a skipped field and edge squads)
+  pin the engine for the SQL twin (ADR-090).
+- A 200-season smoke run of the targets, with a 5-point tolerance, runs in the
+  unit suite, so a later tweak can't silently break the balance.
+- **Signed off 2026-09-25: option 1.** The owner accepted both rows as they
+  are. The harness bands follow: the first row passes up to 72%, the third
+  from 58%, so `npm run sim:midweek` passes at the tuned values and a drift
+  past either still fails it. The §44.12 targets keep their wording; the
+  accepted values sit beside them.

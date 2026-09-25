@@ -23,7 +23,8 @@
     "test:backup-pipeline": "powershell -NoProfile -File scripts/test-kut-backup-pipeline.ps1",
     "verify:fast": "npm run policy:check && npm run format:check && npm run lint && npm run typecheck && npm run test",
     "verify:full": "npm run verify:fast && npm run test:db && npm run test:integration && npm run test:e2e && npm run build",
-    "test:session-receipt": "powershell -NoProfile -File scripts/test-kut-session-receipt.ps1"
+    "test:session-receipt": "powershell -NoProfile -File scripts/test-kut-session-receipt.ps1",
+    "sim:midweek": "vitest run --config vitest.sim.config.mts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

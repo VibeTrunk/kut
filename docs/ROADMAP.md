@@ -807,8 +807,8 @@ Ten PRs, each on its own branch, one migration or invariant each (ADR-070):
 
 | PR | Content | Status |
 |---:|---|---|
-| 0 | Specification: BUILD_SPEC §44, §120, §145; ADR-089–091 | in review |
-| 1 | Pure TypeScript engine, simulation harness, golden vectors. **Checkpoint:** the owner signs off `archive/MIDWEEK_TUNING.md` | planned |
+| 0 | Specification: BUILD_SPEC §44, §120, §145; ADR-089–091 | shipped (#114) |
+| 1 | Pure TypeScript engine, simulation harness, golden vectors. **Checkpoint:** the owner signs off `archive/MIDWEEK_TUNING.md` | in review; tuning signed off 2026-09-25 (ADR-092) |
 | 2 | Report renderer and the full phrasebook, TypeScript only. **Checkpoint:** the owner reads the phrasebook | planned |
 | 3 | Migration: config, tournaments, squads, opt-outs, `save_midweek_squad` | planned |
 | 4 | Migration: the 14-day archetype cooldown | planned |
@@ -821,7 +821,6 @@ Ten PRs, each on its own branch, one migration or invariant each (ADR-070):
 It lives under the Club tab, which ADR-053 kept free for squad building.
 
 Still open:
-- the exact weights (they come out of the simulation in PR 1);
 - whether a season leaderboard or badge sits on top of the coins (parked).
 
 ## KUT Five Cup — superseded

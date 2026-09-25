@@ -808,18 +808,18 @@ Ten PRs, each on its own branch, one migration or invariant each (ADR-070):
 | PR | Content | Status |
 |---:|---|---|
 | 0 | Specification: BUILD_SPEC §44, §120, §145; ADR-089–091 | shipped (#114) |
-| 1 | Pure TypeScript engine, simulation harness, golden vectors. **Checkpoint:** the owner signs off `archive/MIDWEEK_TUNING.md` | in review; tuning signed off 2026-09-25 (ADR-092) |
-| 2 | Report renderer and the full phrasebook (512 lines), TypeScript only, plus an invented sample tournament for design (`design/midweek/`). **Checkpoint:** the owner reads the phrasebook | in review (ADR-093) |
-| — | **Design pass** in a separate session, from the sample: mockups for the pages of PRs 7–8. **Checkpoint:** the owner approves the mockups | after PR 2 |
-| 3 | Migration: config, tournaments, squads, opt-outs, `save_midweek_squad` | planned |
+| 1 | Pure TypeScript engine, simulation harness, golden vectors. **Checkpoint:** the owner signs off `archive/MIDWEEK_TUNING.md` | shipped (#115); tuning signed off 2026-09-25 (ADR-092) |
+| 2 | Report renderer and the full phrasebook (512 lines), TypeScript only, plus an invented sample tournament for design (`design/midweek/`). **Checkpoint:** the owner reads the phrasebook | shipped (#117) |
+| — | **Design pass** in a separate session, from the sample: mockups for the pages of PRs 7–8, handoff in `design/midweek/HANDOFF.md` with owner decisions D1–D4. **Checkpoint:** the owner approves the mockups | approved; #119 open |
+| 3 | Migration `20261003000000`: config, tournaments (skip and void reason codes), squads, opt-outs, `save_midweek_squad`, and the gated views `midweek_current`, `midweek_tournaments_public` and `my_midweek_squad` | in review |
 | 4 | Migration: the 14-day archetype cooldown | planned |
-| 5 | Migration: SQL engine, `run_midweek_due`, reveal views, admin void and rehearsal; Part L #25 | planned |
-| 6 | Migration: payouts, ledger reason `midweek_win`, the faucet ADR; Part L #26 | planned |
-| 7 | Entry UI, built to the approved mockups: the picker, opt-out, navigation, tolerant reads | planned |
-| 8 | Results UI, built to the approved mockups: bracket, match report, admin page, the lazy trigger | planned |
+| 5 | Migration: SQL engine, `run_midweek_due`, reveal views, admin void and rehearsal; Part L #25. Per HANDOFF.md: bye positions, per-card per-match day rolls, goals per side, the champion on `midweek_tournaments_public`, owner counts withheld until `complete` (D3), admin counts and the rehearsal's return shape | planned |
+| 6 | Migration: payouts, ledger reason `midweek_win`, the faucet ADR; Part L #26. Per HANDOFF.md: a member view of their own midweek rewards | planned |
+| 7 | Entry UI, built to the approved mockups: the picker, opt-out, navigation (Home owns the route, D1; the Collection strip, D2), tolerant reads | planned |
+| 8 | Results UI, built to the approved mockups: bracket, match report (a renderer `ownersPublished` flag, D3), the result leading until Thursday 23:59 (D4), admin page, the lazy trigger | planned |
 | 9 | Launch: hosted rehearsal with the owner, enable the config | planned |
 
-It lives under the Club tab, which ADR-053 kept free for squad building.
+It lives at `/club/midweek`, owned by Home in the navigation, next to the Chronicle (owner decision D1 in `design/midweek/HANDOFF.md`); the Club page card became a Collection strip (D2).
 
 Still open:
 - whether a season leaderboard or badge sits on top of the coins (parked).

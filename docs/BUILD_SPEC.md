@@ -2039,6 +2039,29 @@ Added to Part L by the PR that makes each hold:
   member), and one tournament pays any member at most
   `MIDWEEK_CHAMPION_TOTAL`.
 
+### 44.14 Data and functions
+
+Each Midweek migration adds its part here.
+
+**Entry (`20261003000000_midweek_entry.sql`).** Members read nothing directly;
+the functions write and two gated projections read.
+
+| Object | What it holds or does |
+|---|---|
+| `kut.midweek_config` | One row: `enabled`, default `false`. The launch and pause switch. |
+| `kut.midweek_tournaments` | One per football week: `week_start`, `lock_at`, `seed_hash`, `status` (`open`, `skipped`, `simulated`, `complete`, `void`), `rounds` and `final_reveal_at` once drawn, and `seed`, only once `complete`. A skip or void carries `status_reason` as a code (`club_break` or `too_few_entrants` for a skip, `admin_void` for a void), and a void carries the admin's `void_note`, which members read. |
+| `kut.midweek_tournament_secrets` | The seed from creation. The service role alone reads it. |
+| `kut.midweek_squads`, `kut.midweek_squad_cards` | A member's saved squad: slots 1–5, one Card Copy and one Player per slot. |
+| `kut.midweek_opt_outs` | Members who never take part. |
+| `kut.save_midweek_squad(uuid[])` | Saves the caller's squad for the open tournament, replacing any earlier one. Refuses: no active account (`42501`); opted out, or `now() >= lock_at` (`P0001`); no open tournament (`P0002`); not 1–5 distinct cards, a card that isn't the caller's and active, or two cards of one Player (`22023`). |
+| `kut.set_midweek_opt_out(boolean)` | Opts the caller out, withdrawing a squad saved for a tournament that hasn't locked yet, or back in. |
+| `kut.midweek_current` | The switch, the latest tournament (with its reason and void note, and its seed only once complete) and whether the caller has opted out. One row even before any tournament exists. |
+| `kut.midweek_tournaments_public` | Every tournament, newest first, with the same fields. Next week's tournament opens as soon as one ends, so this is how a page reports last week's outcome (owner decision D4). The engine migration appends the champion. |
+| `kut.my_midweek_squad` | The caller's own squads, one row per slot. |
+
+All three projections are definer views gated on `kut.is_active_member()`
+(ADR-079): a denied caller reads zero rows.
+
 ---
 
 # PART XVI — FUTURE COMMUNITY VOTING

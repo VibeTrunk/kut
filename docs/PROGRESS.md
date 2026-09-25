@@ -3656,3 +3656,25 @@ no database, UI or migration.
 Verified: `npm run verify:fast`, including the phrasebook rules and a thousand
 simulated reports (no repeats within a match, injury lines only for injured
 cards, every fact kind reachable).
+
+## Midweek Madness squad entry — 2026-09-25
+
+PR 3 of the Midweek Madness build: migration `20261003000000_midweek_entry.sql`
+(BUILD_SPEC §44.14; ADR-089, ADR-091). Additive, no UI.
+
+- Tables for the launch switch (off by default), tournaments, the seed (service
+  role only), saved squads and opt-outs.
+- `kut.save_midweek_squad(uuid[])` and `kut.set_midweek_opt_out(boolean)`.
+- The gated projections `kut.midweek_current`, `kut.midweek_tournaments_public`
+  and `kut.my_midweek_squad`. Skips and voids carry a reason code and a void its
+  admin note, and the tournament list lets the page report last week's outcome
+  after next week's has opened. Both came from the design handoff
+  (`design/midweek/HANDOFF.md`).
+
+Nothing creates a tournament yet, so nothing is enterable until the engine
+migration's worker ships.
+
+Verified locally: `midweek_entry.test.sql` (89 assertions: the access matrix,
+every refusal with its error code, the reason-code rules, private squads before
+the lock, the opt-out and the lock), the whole pgTAP suite,
+`npm run test:integration` and `npm run verify:fast`.

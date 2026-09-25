@@ -83,8 +83,8 @@ don't add cross-repo coupling beyond the shared Supabase project.
 
 KUT is live at `https://kut.vibetrunk.com` as Vercel project `kut`.
 
-**Latest hosted migration:** `20261004000000_archetype_cooldown.sql`
-(ADR-094), pushed 2026-09-25; `migration list --linked` showed 74
+**Latest hosted migration:** `20261005000000_midweek_engine.sql`
+(ADR-095), pushed 2026-09-26; `migration list --linked` showed 75
 entries, all present locally and remotely, no drift. Every hosted deploy, with its backup,
 smoke test and rollback, is in [`docs/DEPLOYMENTS.md`](docs/DEPLOYMENTS.md).
 

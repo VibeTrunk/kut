@@ -3740,3 +3740,6 @@ switch and the open step), the whole pgTAP suite (27 files, 1,153 assertions),
 `npm run test:integration` with the new `midweek-race.test.ts` (three
 concurrent worker calls: each week locked once and completed once, no error)
 and `npm run verify:fast`.
+
+Merged as #125 and pushed to hosted on 2026-09-26 (catalogue PR #52 in
+`VibeTrunk/supabase`); the record is in `docs/DEPLOYMENTS.md`.

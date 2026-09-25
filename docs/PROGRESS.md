@@ -5,8 +5,9 @@ one shipped slice: what changed, the migrations involved, verification
 results, and (where relevant) the hosted-deploy status.
 
 **Current state is not tracked here.** See `CLAUDE.md` ("Status so far" /
-"Current hosted deployment") for what is live, `ROADMAP.md` for what is next,
-and `KNOWN_BUGS.md` for open defects. The doc map is `docs/README.md`.
+"Current hosted deployment") for what is live, `DEPLOYMENTS.md` for every
+hosted deploy since 2026-08-30, `ROADMAP.md` for what is next, and
+`KNOWN_BUGS.md` for open defects. The doc map is `docs/README.md`.
 
 > **Historical note.** This file originally opened with the fixed
 > `# Current phase / # Completed / # In progress / # Tests currently passing /

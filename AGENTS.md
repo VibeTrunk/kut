@@ -32,7 +32,7 @@ This block is generated from `policy/PRODUCTION_INVARIANTS.md`. Run
 - A backup becomes final only after a separate-process decrypt produces the expected plaintext SHA-256. Failure removes only the new pending candidate and never overwrites or bulk-deletes existing backups.
 - Rekeying always writes a new staged candidate. It verifies old and new plaintext hashes in separate processes and never overwrites the source backup.
 - The release gate is fail-closed and does not deploy. It requires the merge gate, secret scan, dependency scan, database and concurrency suites, authenticated mobile E2E, finalizer readiness, migration/catalogue parity, a cold-verified backup, and valid agent-session evidence.
-- The 23 game/economy invariants in `docs/BUILD_SPEC.md` Part L remain the canonical product regression checklist and must all stay true.
+- Every game/economy invariant in `docs/BUILD_SPEC.md` Part L remains part of the canonical product regression checklist and must stay true.
 <!-- END:KUT-PRODUCTION-INVARIANTS -->
 
 ## Codex-specific safety and permissions

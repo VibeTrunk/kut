@@ -4571,3 +4571,190 @@ cannot check are for review: never a member's name and nothing medical.
 **An entry outlives the injury.** It is keyed by Player, not by injury period,
 so it applies to every future injury of that Player too. Delete the entry when
 the injury ends if the next one should get fresh lines.
+
+## ADR-088 — Friday Five is removed from the specification
+
+Date: 2026-09-25
+
+Status: Accepted
+
+Decision: BUILD_SPEC Part XV §44 ("Friday Five" / "TFH Five") and the Friday
+Five item in §120 (Phase 3) are removed. Both sections keep their numbers, so
+existing references still resolve; ADR-089 fills them with Midweek Madness in
+the same change. **Docs only:** nothing was built, so no code, migration, RPC or
+Part L invariant changes.
+
+**Why.** Friday Five was fantasy football over the club's own attendance and
+goals: a squad scored when its Players turned up and scored. The club does not
+want to go that way. The successor, Midweek Madness, is played on the cards
+themselves, deliberately "without attendance-guessing as the object of play".
+It inherits no rule from Friday Five.
+
+**Kept:** the removed section's constraint that matchday rewards must not
+inject enough currency to overpower the market economy. §44 carries that line
+forward.
+
+ADR-053's reference to "BUILD_SPEC Part XV can place squad building" is
+historical and stays as written.
+
+## ADR-089 — Midweek Madness is specified and will be built
+
+Date: 2026-09-25
+
+Status: Accepted
+
+Decision: BUILD_SPEC §44 specifies **Midweek Madness**, a weekly 5-card squad
+knockout, and §120 makes it the Phase 3 build. §145 gains its constants. The
+design was worked out with the owner on 2026-09-25; its rationale stays in
+`docs/ROADMAP.md`, and the spec is canonical. **Docs only in this change:**
+nothing is built yet, and Part L gains #25 and #26 only in the PRs that make
+them hold (§44.13).
+
+**Why build it now.** §120 said not to implement Phase 3 until market and
+collection usage proved sustained. That gate was the owner's call, and the
+owner has made it: members' cards need a weekly purpose beyond collecting and
+trading, and the design has a go/no-go of its own before any schema exists.
+The TypeScript engine and simulation harness come first; if tuning cannot hit
+the §44.12 targets, the build stops there.
+
+**The rules in short** (§44 has them in full):
+
+- Squads lock Wednesday 20:00 Europe/Amsterdam; one round is revealed every
+  30 minutes from 20:30.
+- The whole roster is entered. A member who doesn't pick gets a random auto
+  squad at a heavy penalty; opt-out is in settings. Trialists fill empty slots.
+- Card power is `ovr_factor × form_roll × pick_factor × fitness × day_roll`,
+  with OVR flattened to 1.00–1.35, a pick factor that rewards the unpopular
+  pick among owners, and a small penalty for an injured Player.
+- Archetypes shape a squad's lines; one card plays in goal.
+- Matches are played as chances; a draw goes to penalties.
+- Each win pays `250·r/(R(R+1)/2)`, so a champion totals 250.
+- The seed's hash is published before the lock, the seed after the final.
+- Targets: the nine-row table in §44.12.
+
+**Owner decisions recorded here:**
+
+- **Coins are live from week one;** there are no shadow weeks. The safety net
+  is the admin rehearsal (engine run on real squads, writes nothing), void
+  before payout, and the audited `admin_adjust_wallet` after it.
+- **The full phrasebook ships at launch.** This replaces the brainstorm's
+  "launch with about 100 lines".
+- **The self-service archetype cooldown is 14 days.** Without it a member could
+  retune their own card for the week, say by becoming the club's only
+  Goalkeeper. The admin path is not limited.
+
+**Filled in where the brainstorm was silent** (none changes a rule the owner
+set; each can be revisited at the tuning sign-off):
+
+- **The pick-factor curve.** The brainstorm gives 1.30 near share 0 and 0.85 at
+  share 1, and calls a sole owner's share of 0.50 "a mild penalty". A straight
+  line between the two ends puts 0.50 at 1.075, a bonus, so the starting curve
+  is piecewise linear through (0, 1.30), (0.40, 1.00) and (1, 0.85): 0.50 lands
+  at 0.975, just below the neutral 1.00 that auto squads and trialists get.
+- **Rounding of the per-round pay:** rounds before the final round half up, and
+  the final takes the remainder. This reproduces every figure in the
+  brainstorm's table, and the amounts keep increasing up to six rounds.
+- **Fewer than four entrants** marks the week `skipped`, like the club-break
+  gate.
+- **A saved card sold or burned before the lock** becomes a trialist; a card
+  listed on the market or held in trade escrow is still owned and still
+  plays. If no saved card survives, the member gets an auto squad.
+- **The launch switch** stops new tournaments; one already open still runs
+  unless voided.
+- **Bracket placement:** byes go to seeded random round-1 pairings, and
+  entrants are shuffled into the slots.
+- **New tunables** with starting values: trialist OVR 30, a line-shape scale,
+  the keeperless keeper factor and a shoot-out cap.
+
+**Supersedes the ROADMAP "KUT Five Cup" item.** It was an earlier sketch of the
+same idea and proposed a hard cap of 50 coins per member per week. That cap is
+deliberately not carried over. The champion's 250 matches the attendance
+reward, and a full bracket of 17–32 entrants issues 953 coins a week, about
+four attendance rewards. That is within §44's constraint that matchday rewards
+must not overpower the market economy. The faucet gets its own ADR with the
+payout migration, which checks it against Part L.
+
+**Consequences:** the build runs as ten PRs, one migration or invariant each
+(ADR-070): spec, engine and harness (owner signs off tuning), report renderer
+and phrasebook (owner reads it through), squad entry, archetype cooldown,
+engine and worker (#25), payout (#26), entry UI, results UI, launch. The
+Midweek pages live under the Club tab, which ADR-053 kept free for squad
+building.
+
+## ADR-090 — The Midweek engine runs in SQL, with a TypeScript twin pinned by shared golden vectors
+
+Date: 2026-09-25
+
+Status: Accepted
+
+Decision: the Midweek Madness engine is **authoritative in SQL**: the stored
+result decides coins. It also exists as a pure TypeScript module under
+`src/game/midweek/`. **Both must reproduce one committed golden-vector file,**
+`tests/fixtures/midweek-golden.json`:
+
+- a Vitest test checks the TypeScript side;
+- a pgTAP file generated from the fixture checks the SQL side;
+- a unit test fails when the generated pgTAP file is stale against the
+  fixture.
+
+To make bit-for-bit agreement possible, the engine uses no floating point:
+
+- **Randomness** is `sha256(seed ‖ tag)`, with the first 6 bytes read as an
+  integer in `[0, 2^48)`. That is core Postgres `sha256()` and Node's
+  `crypto`, with no extension or dependency.
+- **Every factor is an integer in parts per million:** `bigint` in SQL, plain
+  numbers in TypeScript, kept well under 2^53. No `exp`, `log` or float
+  division, so the two engines cannot drift by a rounding difference.
+
+**Why a twin, given ADR-064.** ADR-064 deleted TypeScript copies of SQL
+formulas because they were asserted only against themselves and nothing
+reachable used them. It named the one condition for bringing a mirror back: a
+parity harness over shared fixtures. This twin has that harness, and a real job
+the SQL cannot do. Tuning needs thousands of simulated seasons against
+simulated managers, which plpgsql cannot run in reasonable time. The twin also
+powers the unit-level balance smoke test, so a later tweak cannot silently
+break a target.
+
+**Why not TypeScript only.** Results pay coins, so they must be computed
+server-side and atomically with the lock, like every other economy operation
+(Part XX–XXIII). An Edge Function would add a second runtime and deployment
+path for no gain.
+
+**Consequences:** any change to the engine changes both sides and regenerates
+the fixture in the same PR. The report renderer is presentation only and has no
+SQL twin. This is an exception for Midweek Madness, not a reversal of ADR-064:
+the rating and economy formulas stay SQL-only.
+
+## ADR-091 — Midweek Madness shows entered squads: entry is the default, opting out is the consent
+
+Date: 2026-09-25
+
+Status: Accepted
+
+Decision: KUT deliberately hides who owns which card, and "See other members'
+squads" is a blocked ROADMAP item. Midweek Madness has to show squads in its
+bracket and reports, so it gets a narrow exception with these rules:
+
+- **Taking part is the default, and the opt-out is the consent mechanism.**
+  Auto entry means a member can be entered without doing anything, so entry
+  alone isn't treated as consent. The rules page says plainly that your five
+  entered cards are shown to members, and the opt-out in settings takes you
+  out entirely: not picked, not auto-entered, never shown.
+- **Only the entered cards are shown,** and only from round 1's reveal, never
+  before the lock. Before the lock a member sees only their own squad. The
+  rest of a collection is never shown.
+- **Owner counts appear only as aggregates of at least three.** Below that the
+  count is null in SQL and the report says "a rare pick", so "1 of 1 owners"
+  never names who holds an Elite.
+- **Only active members can read any of it** (ADR-079); nothing is public.
+- **The seed is readable only by `service_role`** until the tournament is
+  complete. Before that only its hash is visible.
+
+**What this does not guarantee.** The "why" panel shows each card's pick
+factor, and together with the visible pickers a determined reader can work out
+how many entrants own a Player. That reveals a count, never which members; the
+threshold is about never printing a count that points at a person.
+
+**Consequences:** "See other members' squads" stays blocked. This exception
+covers only cards a member entered in a Midweek tournament. It is not a
+collection view.

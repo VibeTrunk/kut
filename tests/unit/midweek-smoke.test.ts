@@ -8,7 +8,9 @@ import { DEFAULT_SIM, evaluateTargets, runSimulation } from "../sim/midweek-worl
  * seasons with a sampling tolerance.
  */
 describe("midweek balance smoke test", () => {
-  it("keeps every target within tolerance", () => {
+  // About 3 s on its own, but it can pass Vitest's 5 s default when the whole
+  // suite runs in parallel, so it gets an explicit budget.
+  it("keeps every target within tolerance", { timeout: 30_000 }, () => {
     const stats = runSimulation({ ...DEFAULT_SIM, seasons: 200, weeksPerSeason: 3, seed: 77 });
     const failures = evaluateTargets(stats, 0.05).filter((target) => !target.pass);
     expect(failures.map((f) => `${f.name}: ${f.value}`)).toEqual([]);

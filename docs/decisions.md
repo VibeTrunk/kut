@@ -4971,3 +4971,104 @@ is too. It reveals when a member last changed their archetype, which the
 archetype itself already shows on every card; it is not treated as private.
 
 Tier: additive (ADR-032). Rides the last scheduled backup.
+
+## ADR-095 — The Midweek engine migration: one pure SQL tournament, a stored result that cannot change, and when the lock is read
+
+Date: 2026-09-25
+
+Status: Accepted
+
+Context: PR 5 of the Midweek Madness build is migration
+`20261005000000_midweek_engine.sql`: the SQL engine, the lazy worker, the
+stored result, the reveal projections and the admin controls, and Part L #25.
+The plan fixed the scope; the design handoff (`design/midweek/HANDOFF.md`)
+added bye positions, day rolls per card and match, goals per side, the
+champion, owner counts withheld until complete (D3), admin counts and the
+rehearsal's return shape. Several details were open, and a few depart from the
+plan's text.
+
+Decision:
+
+- **The SQL engine speaks the TypeScript twin's shapes.** `kut._mm_simulate`
+  takes `EntrantInput[]` and returns `TournamentResult` as JSON, and
+  `_mm_play_match` takes two `MatchSide`s and returns a `MatchOutcome`. The
+  plan said "pure; returns rows". JSON lets the parity test compare each golden
+  tournament and match whole, and lets the worker and the rehearsal share the
+  one function: the worker stores what it returns, the rehearsal only reads it.
+  All 160 golden values matched on the first run, and perturbing one constant
+  fails 20 of them.
+- **Stored results use the engine's 0-based indexes** (slot 0–4, side 0–1,
+  pairing from 0), so a page hands them to the renderer without translating.
+  Squad slots in `kut.midweek_squad_cards` stay 1–5: they are the member's
+  picks in order, and the lock moves the surviving picks up into engine slots,
+  with trialists after them, as the engine does.
+- **A bye is a row in `kut.midweek_matches`** (`bye = true`, no side 1, side 0
+  the round-1 winner), so the bracket has its position (HANDOFF question 2).
+- **Day rolls live on the match row**, one `integer[]` per side, indexed by
+  slot. The plan put `day_roll` on events and the hand-off asked for a
+  (match, side, slot) home; an array per side is that home and matches the
+  engine's `dayRollsPpm` exactly (HANDOFF question 4). Goals and penalties are
+  stored per side, side 0 first (question 5).
+- **The champion is appended to `kut.midweek_tournaments_public` as two
+  columns**, `champion_user_id` then `champion_name`, shown once the final is
+  revealed and never for a void week.
+- **Reveal timing is read from the stored rows.** Matches and events appear at
+  their `reveal_at`; entries appear once a round-1 row is revealed. The views
+  call no `_mm_` function, because members cannot execute the engine and a
+  definer view checks function grants against the caller.
+- **Owner counts (D3, ADR-091).** `midweek_entries_public` carries `picks` and
+  `owners` as null until the week is `complete`, and `owners` below three
+  always. `midweek_pick_shares_public` lists a Player nobody picked only when at
+  least three own it, and does not publish the smoothed share: a row for an
+  unpicked Player owned by one or two members, or its share, would point at
+  them.
+- **Part L #25 is enforced in the tables, not only by the worker.** Result rows
+  can be inserted only while their tournament is `open` (inside the lock step)
+  and never updated or deleted directly; a status moves only forward; the week,
+  seed hash, a passed lock and a drawn bracket never change; a published seed
+  must hash to `seed_hash`; squads cannot change once `now() >= lock_at`. Deletes
+  cascading from a deleted tournament or account pass (they run one trigger
+  level down), so account deletion and test clean-up still work. The squad
+  guard is an AFTER trigger so a bad row still fails with its own constraint's
+  error.
+- **When the lock is read.** KUT has no scheduler, so the lock step runs at the
+  first worker call at or after `lock_at` and reads the field then: active
+  members, owned cards, OVR as `my_collection_cards` reads it, the archetype
+  from the Player (as every card screen shows it, including on Special editions),
+  and the ADR-085 injury flag. **Opt-outs alone count as of `lock_at`**
+  (`opted_out_at <= lock_at`), which keeps PR 3's rule that a locked squad is
+  not withdrawn. A trade, a published session or an archetype change between
+  `lock_at` and that first call is therefore seen. This qualifies §44.11's "the
+  result is identical whenever it is computed", which now reads "given the
+  field". KUT keeps no ownership or rating history to read an earlier moment
+  from; page visits on a Wednesday evening make the gap minutes, and the
+  archetype cooldown (ADR-094) limits what a late change can do.
+- **The club-break gate** reads the football week before `week_start`
+  (Monday − 7 to Sunday − 1) for a session with status `published`.
+- **The open step** creates the first ISO week whose lock is still ahead and
+  which has no tournament, so a voided or skipped week is never run again. The
+  seed is sha256 of two version-4 UUIDs (`gen_random_uuid`, 244 random bits from
+  `pg_strong_random`), which needs no extension.
+- **The worker returns `{locked, completed, opened}`**, not a count, and logs
+  each call in `kut.midweek_jobs`. A lock or completion that fails rolls back
+  that tournament alone, is recorded, and is retried by the next call.
+- **Void** records `voided_at` and `voided_by` (two new nullable columns). It
+  is allowed for an `open` or `simulated` week, including mid-evening after
+  rounds have shown (§44.9: a void week shows no results; HANDOFF question 7
+  stands as specified). A voided open week is not re-run; the next week opens.
+- **The rehearsal** runs the earliest open week's saved squads plus auto squads,
+  or everyone as auto when no week is open (the Tuesday before launch, with the
+  switch still off), with a throwaway seed. It returns the shape in BUILD_SPEC
+  §44.14, including `would_skip` and warnings for lost saved cards, the gate and
+  the switch. **Admin counts** come from `kut.midweek_admin_overview`, an
+  admins-only view.
+
+Consequences: the payout migration adds coins to the worker's complete step
+and a member view of their own rewards; the pages (PRs 7–8) read the views
+above and tolerate their absence before the hosted push. The concurrency test
+`tests/integration/midweek-race.test.ts` runs three worker calls at once and
+finds each week locked once and completed once, with no error.
+
+Tier: additive (ADR-032). The migration writes no row, and the worker writes
+only once a tournament exists, which needs the switch, off on hosted. Rides the
+last scheduled backup.

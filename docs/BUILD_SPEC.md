@@ -1933,7 +1933,10 @@ Everything is gated by time in definer projections on
 - **Pick shares** appear once the tournament is `complete`. An owner count is
   shown only when at least `MIDWEEK_OWNER_COUNT_MIN` (3) entrants own the
   Player; below that it is null and the report says "a rare pick". This rule
-  lives in SQL.
+  lives in SQL. Until the week is complete the entries carry no pick or owner
+  count at all (owner decision D3), and a Player nobody picked is listed only
+  when at least three own it, so no row hints that one or two members hold it
+  (ADR-095).
 - **Only the entered cards are ever shown,** never the rest of a collection.
   Entry is the default; the rules page says plainly that your five are shown,
   and the opt-out takes you out entirely (ADR-091).
@@ -2003,10 +2006,18 @@ KUT has no scheduler; like ADR-061, one idempotent, service-role-only worker
 - **pay:** after `final_reveal_at`, pay, publish the seed and pick shares
   (`complete`).
 
-Claims use `for update skip locked`, so concurrent calls do the work once. The
-result is identical whenever it is computed; only the moment coins land
-depends on when someone visits. Publishing sessions, which admins already do,
-is the only weekly input.
+Claims use `for update skip locked`, so concurrent calls do the work once.
+Given the field, the result is identical whenever it is computed; only the
+moment coins land depends on when someone visits. Publishing sessions, which
+admins already do, is the only weekly input.
+
+**When the lock snapshot is taken (ADR-095).** The lock step runs at the first
+worker call at or after `lock_at`, and reads the field then: who is active,
+which cards they own, and each card's OVR, archetype and injury flag. Opt-outs
+alone count as of `lock_at` itself (`opted_out_at <= lock_at`). A trade, a
+published session or an archetype change between `lock_at` and that first call
+is therefore seen. Page visits on a Wednesday evening make the gap minutes, and
+KUT keeps no history to read an earlier moment from.
 
 ### 44.12 Simulation targets
 
@@ -2035,7 +2046,8 @@ Added to Part L by the PR that makes each hold:
 
 - **#25 (engine PR):** a tournament is simulated at most once, its stored
   result never changes (a void hides it, never recomputes), and squads are
-  immutable after the lock.
+  immutable after the lock. **Added to Part L by
+  `20261005000000_midweek_engine.sql` (ADR-095).**
 - **#26 (payout PR):** a midweek win pays at most once per (tournament, round,
   member), and one tournament pays any member at most
   `MIDWEEK_CHAMPION_TOTAL`.
@@ -2069,6 +2081,36 @@ All three projections are definer views gated on `kut.is_active_member()`
 |---|---|
 | `kut.players.archetype_changed_at` | When the member last changed the Player's archetype through self-service. Null means never; nothing is backfilled, and admin changes don't set it. |
 | `kut.set_own_player_archetype(text)` | Now refuses a change within 336 hours of `archetype_changed_at` (`22023`, message `archetype change cooldown: next change allowed from <ISO-8601 UTC>`, the exact moment to the microsecond as DETAIL), and stamps it on a change. Re-saving the current archetype is neither refused nor stamped. Its other refusals are unchanged. |
+
+**Engine (`20261005000000_midweek_engine.sql`, ADR-095).** The engine, the
+worker, the stored result, the reveal projections and the admin controls; adds
+Part L #25. Stored results use the engine's 0-based indexes (slot 0–4, side
+0–1, pairing from 0), so a page hands them to the renderer unchanged; squad
+slots stay 1–5, and the lock moves the surviving picks up into engine slots.
+
+| Object | What it holds or does |
+|---|---|
+| `kut._mm_*` | The engine, a line-for-line port of `src/game/midweek/` in bigint ppm. `_mm_simulate(seed, entrants)` takes the engine's `EntrantInput[]` and returns its `TournamentResult` as JSON; `_mm_play_match` likewise one `MatchOutcome`. Internal: no member, admin or service-role grant. Pinned by the generated `midweek_engine_parity.test.sql`. |
+| `kut.midweek_entries`, `kut.midweek_entry_cards` | One row per entrant (`auto`, keeper slot, keeperless) and per entered card: the lock-time Card Copy, Player, OVR, archetype and injury flag, and every week-long factor, `power_ppm` and the three line multipliers. Trialists have no card or Player. |
+| `kut.midweek_pick_shares` | Per Player owned in the field: owners, picks (auto squads left out), share and pick factor. |
+| `kut.midweek_matches` | Every round-1 pairing, a bye included (`bye`, no side 1, a round-1 win for side 0), and every later match: goals and penalties per side, winner, side 0's pre-match win chance, each side's day rolls by slot, and `reveal_at = lock_at + 30 min × round`. |
+| `kut.midweek_match_events` | A match's events in engine order (`seq`): a chance (minute, creator, shooter, defender, chance type, outcome, goal chance in ppm), a penalty kick (round, kicker, keeper, outcome, chance) or the draw that settles a shoot-out. |
+| `kut.midweek_jobs` | One row per worker call: what it locked, completed and opened, and any error. |
+| `kut.midweek_tournaments.voided_at`, `.voided_by` | When a void happened and which admin did it. |
+| Part L #25 guards | Result rows can be inserted only while their tournament is `open` (inside the lock step) and never updated or deleted directly; a tournament's status only moves forward, its week and seed hash never change, its lock only while open, its bracket once drawn, and a published seed must hash to `seed_hash`; squads and their cards cannot change once `now() >= lock_at`. Deletes cascading from a deleted tournament or account pass. |
+| `kut.run_midweek_due(integer)` | The service-role worker (§44.11). **Lock:** each open week whose lock has passed — the club-break gate, the field (opt-outs as of the lock), the simulation with the week's secret seed, every stored row, then `simulated` with `rounds` and `final_reveal_at`; or `skipped` with its reason. **Complete:** each simulated week whose final is revealed — publishes the seed, `complete`. **Open:** with the switch on and no week open or simulated, the next ISO week whose lock is ahead and which has no tournament (a voided or skipped week never runs again), with a fresh seed. Claims skip rows another call holds. Returns `{locked, completed, opened}`. |
+| `kut.midweek_tournaments_public` | Gains `champion_user_id` and `champion_name` at the end, from the final once it is revealed. |
+| `kut.midweek_matches_public` | Revealed pairings (`reveal_at <= now()`) of simulated and complete weeks, byes included, with both managers' names. |
+| `kut.midweek_events_public` | The events of revealed matches. |
+| `kut.midweek_entries_public` | Every entered card with its manager, Player name and photo, snapshot and factors, from round 1's reveal. `picks` and `owners` stay null until the week is `complete` (owner decision D3), and `owners` below three always. |
+| `kut.midweek_pick_shares_public` | A complete week's pick shares: picks, owners (null below three) and pick factor. A Player nobody picked is listed only when at least three own it. |
+| `kut.midweek_admin_overview` | Admins only: the switch, the latest tournament and its times and seed hash, how many squads are saved for it, how many members opted out, and the worker's last run and error. |
+| `kut.admin_set_midweek_enabled(boolean)` | The launch and pause switch, recording who flipped it. |
+| `kut.admin_void_midweek(uuid, text)` | Voids an `open` or `simulated` week with a 3–200-character note members read. Refuses: not an admin (`42501`); a bad note (`22023`); no such week (`P0002`); a complete (paid) week, or one that did not run (`P0001`). |
+| `kut.admin_midweek_rehearsal()` | Runs the engine on the earliest open week's saved squads plus auto squads (everyone auto when no week is open) with a throwaway seed, and writes nothing. Returns `ran_at`, `tournament_id`, `week_start`, `lock_at`, `status`, `would_skip` (`club_break`, `too_few_entrants` or null), `field`, `picked`, `auto`, `opted_out`, `auto_managers`, `size`, `rounds`, `by_round` (each round's `reveal_at` and pairings: names, goals, penalties, winner), `champion` (`user_id`, `name`) and `warnings` (`{level, message}`: lost saved cards, the gate, too few entrants, no open week, the switch off). |
+
+All projections are definer views gated on `kut.is_active_member()` (the admin
+overview on `kut.is_admin()`), and a void week shows no result in any of them.
 
 ---
 
@@ -4974,6 +5016,7 @@ Tasks:
 22. Trade-offer escrow is conserved (ADR-042): coins/cards offered are removed from the proposer at propose time and are either returned in full (reject / withdraw / expire / listing gone) or transferred atomically on accept — never both, never neither. A `held_by_offer_id` card cannot be listed, discarded, burned, or re-offered.
 23. An accepted trade offer is never written to `market_sales`, so it never affects Reference Value (ADR-042).
 24. An injury check-in protects at most one (Player, football week), pays its stipend at most once, and protects only a week in which that Player made zero appearances (ADR-082).
+25. A Midweek Madness tournament is simulated at most once and its stored result never changes: a void hides it, never recomputes it. A tournament only moves forward (`open` → `skipped`, `simulated` or `void`; `simulated` → `complete` or `void`), and squads are immutable after the lock (§44.8, ADR-095).
 
 Every coding agent should treat this section as a regression checklist.
 

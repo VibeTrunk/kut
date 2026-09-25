@@ -3637,3 +3637,22 @@ Verified: `npm run verify:fast`, including the new `midweek-*` unit suites
 (rng uniformity, factor bounds, keeper choice, the match model, bracket,
 payouts, DST lock times, the golden vectors and a 200-season balance smoke
 test).
+
+## Midweek Madness match reports — 2026-09-25
+
+PR 2 of the Midweek Madness build (BUILD_SPEC §44.10, ADR-093). TypeScript only:
+no database, UI or migration.
+
+- `src/lib/midweek/report/`: `renderMatchReport` turns a stored match into a
+  headline, up to three fact lines, a timeline, the shoot-out and a "why"
+  panel. Phrase choice is keyed on the published seed hash.
+- The phrasebook: 512 lines in layers (build-up, finishes by chance type and
+  quality, saves, woodwork, blocks, shots forced wide, injury asides,
+  penalties, headlines, fact lines), awaiting the owner's read-through.
+- `design/midweek/sample-tournament.{md,json}` (`node scripts/midweek/sample.mjs`):
+  an invented 22-entrant tournament with every report rendered, the input for
+  the design pass before PRs 7–8.
+
+Verified: `npm run verify:fast`, including the phrasebook rules and a thousand
+simulated reports (no repeats within a match, injury lines only for injured
+cards, every fact kind reachable).

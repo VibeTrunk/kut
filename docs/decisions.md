@@ -4855,3 +4855,72 @@ unchanged.
   from 58%, so `npm run sim:midweek` passes at the tuned values and a drift
   past either still fails it. The §44.12 targets keep their wording; the
   accepted values sit beside them.
+
+## ADR-093 — Midweek match reports: a seeded renderer over a reviewed phrasebook
+
+Date: 2026-09-25
+
+Status: Accepted (the phrasebook itself awaits the owner's read-through in
+review)
+
+Decision: match reports are rendered by `renderMatchReport` in
+`src/lib/midweek/report/`, a pure TypeScript function of the stored match (the
+events, both squads' lock-time factors and names) and the tournament's
+**published `seed_hash`**. It returns a headline, up to three fact lines, a
+timeline, the shoot-out and a "why" panel (BUILD_SPEC §44.10). Every line comes
+from the phrasebook in `src/lib/midweek/report/phrasebook/`: 512 lines at
+launch, the full phrasebook ADR-089 promised.
+
+**Why the seed hash, not the seed.** The plan said "a pure function of the
+stored events and the seed". The seed stays secret until the final is revealed
+(ADR-091), but rounds are shown from 20:30. Rendering from the secret would need
+service-role access on every report page. The hash is public from the start,
+unique per tournament, and just as good a key for picking phrases. Revealing
+which phrases were picked says nothing about the seed.
+
+**The rules the tests pin** (`midweek-phrasebook.test.ts`,
+`midweek-report.test.ts`):
+
+- every placeholder is valid for its layer, and lines stay short and
+  punctuated;
+- no line appears twice in the phrasebook, and no phrase repeats within one
+  report across a thousand simulated matches;
+- no gendered words (he, him, his, she, her and so on) and no medical terms
+  anywhere;
+- injury words only in the injury layers, and no body parts there;
+- a miss always credits the keeper, a defender or the woodwork, with a
+  ridicule list as a backstop;
+- an injury phrase appears only when a card in that match was injured at the
+  lock;
+- every fact kind can be produced;
+- minimum sizes per layer, so variety cannot quietly shrink.
+
+What a test cannot judge (tone, humour, nothing hurtful to a clubmate) is the
+owner's read-through in the PR.
+
+**Choices made in writing it:**
+
+- A goal's quality tier follows the engine's probability: below 15%
+  sensational, 35% or more routine. Saves are graded the same way by the chance
+  they denied.
+- The timeline holds every goal plus the biggest other chances, 4–8 moments. A
+  shoot-out narrates only misses and the deciding kick, so a long sudden death
+  doesn't drain the phrasebook.
+- Injury mentions are asides added after the moment ("Not bad for someone still
+  in plaster."). The finish itself stays true to the engine's chance type, so an
+  injured Player's long shot is never described as a header.
+- Names: display names, with a double full stop tidied when a name ends in an
+  initial. A trialist is "Sanne's trialist", numbered when a side has two or
+  more. A Player fielded by both sides gets the manager's name added.
+- In an auto squad, the "why" panel labels each pick "auto squad" rather than
+  quoting owner counts for a choice the member didn't make.
+- Headline priority: hat trick, upset, thrashing, three-keeper gamble,
+  shoot-out, comeback, late winner, keeperless side, then a comfortable or
+  narrow win. Keeperless squads are common while the roster has few
+  Goalkeepers, so that headline sits low.
+
+**Design pass (owner, 2026-09-25).** The pages (PRs 7–8) get a design pass
+first, in a separate session. `node scripts/midweek/sample.mjs` exports an
+invented tournament with every report rendered (`design/midweek/`) as its
+input, and PRs 7–8 implement the approved mockups. PRs 3–6 carry on
+meanwhile.

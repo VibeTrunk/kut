@@ -1940,12 +1940,17 @@ Everything is gated by time in definer projections on
 
 ### 44.10 Match reports
 
-- **Layout:** a headline, a timeline of 4–8 key moments (minute, event and
-  colour), and a "why" panel with each card's factors as numbers.
+- **Layout:** a headline, up to three fact lines, a timeline of key moments
+  (minute, event, colour and the running score), the shoot-out if there was
+  one, and a "why" panel with each card's factors as numbers. The timeline
+  holds every goal, topped up with the biggest other chances to 4–8 moments.
+  A shoot-out narrates its misses and the deciding kick; scored kicks show as
+  a tally.
 - **Colour comes from engine events, never invented.** Every phrase is chosen
   from the stored creator, shooter, chance type, outcome and probability.
-  Quality follows the odds: an unlikely chance that goes in is "sensational",
-  a routine one "tidy" or "scrappy".
+  Quality follows the odds: a goal from a chance below 15% is "sensational",
+  from 35% or more "routine", "quality" in between. A save is graded the same
+  way by the chance it denied.
 - **Chance types lean on archetype:**
 
   | Archetype | Typical chances |
@@ -1957,8 +1962,14 @@ Everything is gated by time in definer projections on
   | Goalkeeper | long throws that start a chance; a keeper goal is a once-a-season event |
   | All-rounder | any of these at an average rate |
 
-- **The renderer is presentation only:** a pure TypeScript function of the
-  stored events and the seed. It decides nothing and needs no SQL twin.
+- **The renderer is presentation only:** a pure TypeScript function
+  (`src/lib/midweek/report/`) of the stored events, the lock-time factors and
+  the tournament's published `seed_hash`, which keys every phrase choice. It
+  decides nothing, needs no SQL twin, and never reads the secret seed
+  (ADR-093).
+- **Names:** Players by display name; a trialist as the manager's ("Sanne's
+  trialist", numbered when there are two or more); a Player fielded by both
+  sides with the manager's name added.
 - **The full phrasebook ships at launch:** several hundred lines in layers
   (build-up and assist, finishes by chance type and quality, injured variants,
   saves, woodwork and blocks, penalty kicks, headlines, fact lines such as
@@ -1973,6 +1984,11 @@ Everything is gated by time in definer projections on
     ridicules the shooter; teasing managers' choices is fine;
   - no phrasing repeats within one match;
   - every line reaches members through a reviewed PR.
+- **Fact thresholds:** a contrarian or form hero has that factor at 1.15 or
+  more and scored or was the standout for the winner; an upset is a winner
+  under 35% before kick-off; a cheap standout is Common or Bronze (OVR under
+  50); a thrashing is three goals or more. The standout scores goal 3, assist 2,
+  save 1, block 1, penalty scored 1, penalty saved 2.
 
 ### 44.11 Running without admin
 

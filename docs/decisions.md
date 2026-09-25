@@ -4540,3 +4540,34 @@ deploy-ordering check.
 test's six schema assertions fail. Its first value query then errors on the
 missing `player_id`. The access assertions pass either way, because access didn't
 change.
+
+## ADR-087 — The club can pick a Player's cast lines in code
+
+Date: 2026-09-25
+
+Status: Accepted
+
+Decision: `CAST_OVERRIDES` in `src/lib/injury-cast.ts` maps a Player id to the
+two lines on that Player's cast. When a Player has an entry, those lines replace
+the hashed pair from ADR-084. Ink and doodle stay hashed. A Player without an
+entry keeps the hashed lines, so every existing cast is unchanged. This amends
+ADR-084's "Signatures are fixed per Player": they are still fixed per Player, but
+the club may choose them. **Visual only:** no migration, RPC, economy or rating
+change, and Part L is unchanged.
+
+**Why code, not an admin field.** Custom casts are rare: the first one is for a
+long-term injury. An admin field would need a column on `kut.injury_periods`, a
+new admin RPC, a view change and a hosted push for something set once in a long
+while. It would also put free text in front of every member, including on the
+market, which is the risk ADR-084 avoided by never showing the admin note. A PR
+means someone reviews every line before members see it.
+
+**The pool's rules still hold**, and `tests/unit/injury-cast.test.ts` pins them
+for every entry: two different, non-empty lines of at most 20 characters, keyed
+by a lowercase Player id (Postgres returns ids in lowercase, and the lookup is an
+exact match). A line may come from `CAST_LINES` or be new. The rules the tests
+cannot check are for review: never a member's name and nothing medical.
+
+**An entry outlives the injury.** It is keyed by Player, not by injury period,
+so it applies to every future injury of that Player too. Delete the entry when
+the injury ends if the next one should get fresh lines.

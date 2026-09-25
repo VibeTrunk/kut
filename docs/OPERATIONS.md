@@ -40,6 +40,12 @@ Always, both tiers:
    is not required.
 5. Explicit sign-off, then the real push from `VibeTrunk/supabase` only.
 
+After the push, record it: a new entry at the top of `docs/DEPLOYMENTS.md`
+(tier, backup id, pre/post `migration list --linked` counts, the hosted smoke
+row, rollback) and the "Latest hosted migration" line in `CLAUDE.md`. Only
+that one line changes in `CLAUDE.md`, so the file stays orientation rather
+than a changelog.
+
 Data-changing tier also requires, before the push:
 
 6. A **fresh** `scripts/backup-kut-hosted.ps1` run (not just the last

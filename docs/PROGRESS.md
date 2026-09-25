@@ -3681,3 +3681,24 @@ the lock, the opt-out and the lock), the whole pgTAP suite,
 
 Merged as #120 and pushed to hosted the same day (catalogue PR #48 in
 `VibeTrunk/supabase`); the record is in `docs/DEPLOYMENTS.md`.
+
+## Midweek Madness archetype cooldown — 2026-09-25
+
+PR 4 of the Midweek Madness build: migration
+`20261004000000_archetype_cooldown.sql` (BUILD_SPEC §44.2, §44.14; ADR-089,
+ADR-094). Additive.
+
+- `kut.players.archetype_changed_at`, stamped by `set_own_player_archetype`
+  when a member actually changes their archetype. Nothing is backfilled, so
+  everyone's first change is allowed.
+- `set_own_player_archetype` refuses another change within 14 days (336
+  hours) with `22023`, carrying the next allowed moment. Re-saving the current
+  archetype is not a change. The admin path is not limited.
+- `/settings/card` shows when the archetype can next change, in club time, and
+  disables the form until then. It reads the stamp separately, so the page
+  works before the hosted push.
+
+Verified locally: `archetype_cooldown.test.sql` (28 assertions: the first
+change, the refusal and its DETAIL, the same-archetype re-save, both edges of
+the window, the admin path, the other refusals unchanged), the whole pgTAP
+suite, `npm run test:integration` and `npm run verify:fast`.

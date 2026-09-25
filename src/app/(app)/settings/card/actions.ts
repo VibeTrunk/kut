@@ -1,7 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { isArchetype } from "@/game/archetypes";
+import {
+  ARCHETYPE_CHANGE_COOLDOWN_DAYS,
+  formatArchetypeChangeAt,
+  isArchetype,
+} from "@/game/archetypes";
 import { requireUser } from "@/lib/auth/user";
 import { createClient } from "@/lib/supabase/server";
 
@@ -14,9 +18,20 @@ function revalidateCard() {
   revalidatePath("/club/collection");
 }
 
-function friendlyError(code: string | undefined, message: string | undefined): string {
+function friendlyError(
+  code: string | undefined,
+  message: string | undefined,
+  details?: string | null,
+): string {
   if (message?.includes("no linked player")) {
     return "Your account isn't linked to a player yet. Ask an admin to link it.";
+  }
+  // Migration 20261004000000 (ADR-094): the DETAIL is the next allowed moment.
+  if (code === "22023" && message?.includes("archetype change cooldown")) {
+    const next = details ? new Date(details) : null;
+    return next && !Number.isNaN(next.getTime())
+      ? `You changed your archetype recently. You can change it again from ${formatArchetypeChangeAt(next)}.`
+      : `You can change your archetype once every ${ARCHETYPE_CHANGE_COOLDOWN_DAYS} days.`;
   }
   if (code === "22023") {
     return "That value wasn't accepted. Please try again.";
@@ -78,7 +93,7 @@ export async function savePlayerArchetype(
     .schema("kut")
     .rpc("set_own_player_archetype", { p_archetype: archetype });
   if (error) {
-    return { ok: false, error: friendlyError(error.code, error.message) };
+    return { ok: false, error: friendlyError(error.code, error.message, error.details) };
   }
 
   revalidateCard();

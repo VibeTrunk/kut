@@ -9,7 +9,12 @@ import {
   useState,
   useTransition,
 } from "react";
-import { ARCHETYPES, ARCHETYPE_LABELS, type Archetype } from "@/game/archetypes";
+import {
+  ARCHETYPES,
+  ARCHETYPE_CHANGE_COOLDOWN_DAYS,
+  ARCHETYPE_LABELS,
+  type Archetype,
+} from "@/game/archetypes";
 import { createClient } from "@/lib/supabase/client";
 import { PLAYER_PHOTO_BUCKET, playerPhotoPath } from "@/lib/player-photos";
 import {
@@ -28,6 +33,8 @@ type CardEditorProps = {
   displayName: string;
   currentArchetype: Archetype;
   currentPhotoUrl: string | null;
+  /** Formatted date the archetype can next change, or null when it can now. */
+  nextArchetypeChange: string | null;
 };
 
 function Feedback({ state }: { state: CardActionState }) {
@@ -44,6 +51,7 @@ export function CardEditor({
   displayName,
   currentArchetype,
   currentPhotoUrl,
+  nextArchetypeChange,
 }: CardEditorProps) {
   const [archetypeState, archetypeAction, archetypePending] = useActionState(
     savePlayerArchetype,
@@ -248,12 +256,20 @@ export function CardEditor({
           <h2 className="text-base font-extrabold">Archetype</h2>
           <p className="mt-1 text-sm text-ink-faint">
             This reshapes the six stats on your <strong>{displayName}</strong> card. It does not
-            change your OVR. Saving recalculates every stat.
+            change your OVR. Saving recalculates every stat. You can change it once every{" "}
+            {ARCHETYPE_CHANGE_COOLDOWN_DAYS} days.
           </p>
         </div>
+        {nextArchetypeChange && (
+          <p className="rounded-xl border border-line bg-board-deep/60 p-3 text-sm text-ink-dim">
+            You changed your archetype recently. You can change it again from{" "}
+            <strong className="text-ink">{nextArchetypeChange}</strong>.
+          </p>
+        )}
         <form className="space-y-3" onSubmit={submitArchetype}>
           <select
-            className={fieldClass}
+            className={`${fieldClass} disabled:cursor-not-allowed disabled:text-ink-faint`}
+            disabled={nextArchetypeChange !== null}
             name="archetype"
             onChange={(event) => setArchetype(event.target.value as Archetype)}
             value={archetype}
@@ -266,7 +282,7 @@ export function CardEditor({
           </select>
           <button
             className="min-h-12 w-full rounded-xl bg-brass px-4 py-3 font-bold text-ink-on-accent disabled:cursor-not-allowed disabled:bg-line disabled:text-ink-faint"
-            disabled={archetypePending}
+            disabled={archetypePending || nextArchetypeChange !== null}
             type="submit"
           >
             {archetypePending ? "Saving…" : "Save archetype"}

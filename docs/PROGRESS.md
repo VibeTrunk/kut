@@ -3702,3 +3702,6 @@ Verified locally: `archetype_cooldown.test.sql` (28 assertions: the first
 change, the refusal and its DETAIL, the same-archetype re-save, both edges of
 the window, the admin path, the other refusals unchanged), the whole pgTAP
 suite, `npm run test:integration` and `npm run verify:fast`.
+
+Merged as #122 and pushed to hosted the same day (catalogue PR #50 in
+`VibeTrunk/supabase`); the record is in `docs/DEPLOYMENTS.md`.

@@ -18,6 +18,38 @@ dated "Hosted deployment…" entries in `PROGRESS.md`.
 then bump the "Latest hosted migration" line in `CLAUDE.md`. Record the tier,
 backup id, pre/post `migration list` counts, the smoke row, and the rollback.
 
+## 2026-09-25 — `20261004000000` archetype cooldown (ADR-089, ADR-094)
+
+Deployed 2026-09-25 from `VibeTrunk/supabase` (catalogue PR #50 there), on its
+own additive `db push`:
+
+- `20261004000000_archetype_cooldown.sql` (BUILD_SPEC §44.2, §44.14, ADR-094,
+  KUT PR #122, tier additive) &mdash; Midweek Madness migration B: a member may
+  change their own Player's archetype at most once every 14 days.
+  - **What changed.** A nullable column, `kut.players.archetype_changed_at`,
+    with no default. `kut.set_own_player_archetype(text)` now locks the Player
+    row, refuses a change within 336 hours of the stamp (`22023`, next allowed
+    moment in the DETAIL) and stamps `now()` on an actual change. Grants
+    unchanged. The admin path is untouched.
+  - **No DML**, nothing backfilled, so every member's first change is allowed.
+    It rode the latest scheduled backup (`20260923-112450`, cold-verified).
+    Pre-push `migration list --linked` showed 74 entries with `20261004000000`
+    the only local-only one, and the dry run named exactly that file.
+    Afterwards it showed 74 entries, all present locally and remotely, no
+    drift.
+  - **Smoke-tested on hosted.** In the SQL editor, one row,
+    `timestamp with time zone:YES:none | 0 | true | true | false | true`,
+    confirmed:
+    - the column is a nullable timestamptz with no default;
+    - no Player is stamped yet;
+    - the function is definer and carries the guard and the row lock;
+    - `anon` cannot execute it and `authenticated` can.
+  - **Deploy ordering** was safe: `/settings/card` reads the column in its own
+    query and treats a missing one as "never changed", so the merge deployed
+    ahead of the push harmlessly. The rule applies from the push.
+  - Rollback: re-create `kut.set_own_player_archetype` from `20260906000000`,
+    then drop the column, as in the migration header.
+
 ## 2026-09-25 — `20261003000000` Midweek Madness squad entry (ADR-089, ADR-091)
 
 Deployed 2026-09-25 from `VibeTrunk/supabase` (catalogue PR #48 there), on its

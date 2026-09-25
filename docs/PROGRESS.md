@@ -3678,3 +3678,6 @@ Verified locally: `midweek_entry.test.sql` (89 assertions: the access matrix,
 every refusal with its error code, the reason-code rules, private squads before
 the lock, the opt-out and the lock), the whole pgTAP suite,
 `npm run test:integration` and `npm run verify:fast`.
+
+Merged as #120 and pushed to hosted the same day (catalogue PR #48 in
+`VibeTrunk/supabase`); the record is in `docs/DEPLOYMENTS.md`.

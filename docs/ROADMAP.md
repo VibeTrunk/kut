@@ -810,8 +810,8 @@ Ten PRs, each on its own branch, one migration or invariant each (ADR-070):
 | 0 | Specification: BUILD_SPEC §44, §120, §145; ADR-089–091 | shipped (#114) |
 | 1 | Pure TypeScript engine, simulation harness, golden vectors. **Checkpoint:** the owner signs off `archive/MIDWEEK_TUNING.md` | shipped (#115); tuning signed off 2026-09-25 (ADR-092) |
 | 2 | Report renderer and the full phrasebook (512 lines), TypeScript only, plus an invented sample tournament for design (`design/midweek/`). **Checkpoint:** the owner reads the phrasebook | shipped (#117) |
-| — | **Design pass** in a separate session, from the sample: mockups for the pages of PRs 7–8, handoff in `design/midweek/HANDOFF.md` with owner decisions D1–D4. **Checkpoint:** the owner approves the mockups | approved; #119 open |
-| 3 | Migration `20261003000000`: config, tournaments (skip and void reason codes), squads, opt-outs, `save_midweek_squad`, and the gated views `midweek_current`, `midweek_tournaments_public` and `my_midweek_squad` | in review |
+| — | **Design pass** in a separate session, from the sample: mockups for the pages of PRs 7–8, handoff in `design/midweek/HANDOFF.md` with owner decisions D1–D4. **Checkpoint:** the owner approves the mockups | approved, merged (#119) |
+| 3 | Migration `20261003000000`: config, tournaments (skip and void reason codes), squads, opt-outs, `save_midweek_squad`, and the gated views `midweek_current`, `midweek_tournaments_public` and `my_midweek_squad` | shipped (#120); on hosted 2026-09-25 |
 | 4 | Migration: the 14-day archetype cooldown | planned |
 | 5 | Migration: SQL engine, `run_midweek_due`, reveal views, admin void and rehearsal; Part L #25. Per HANDOFF.md: bye positions, per-card per-match day rolls, goals per side, the champion on `midweek_tournaments_public`, owner counts withheld until `complete` (D3), admin counts and the rehearsal's return shape | planned |
 | 6 | Migration: payouts, ledger reason `midweek_win`, the faucet ADR; Part L #26. Per HANDOFF.md: a member view of their own midweek rewards | planned |

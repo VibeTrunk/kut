@@ -18,6 +18,48 @@ dated "Hosted deployment…" entries in `PROGRESS.md`.
 then bump the "Latest hosted migration" line in `CLAUDE.md`. Record the tier,
 backup id, pre/post `migration list` counts, the smoke row, and the rollback.
 
+## 2026-09-25 — `20261003000000` Midweek Madness squad entry (ADR-089, ADR-091)
+
+Deployed 2026-09-25 from `VibeTrunk/supabase` (catalogue PR #48 there), on its
+own additive `db push`:
+
+- `20261003000000_midweek_entry.sql` (BUILD_SPEC §44.14, ADR-089, ADR-091, KUT
+  PR #120, tier additive) &mdash; Midweek Madness migration A, what a member
+  needs to enter a weekly squad knockout. The engine, worker, reveal views and
+  payouts follow as their own migrations.
+  - **What changed.** Six new tables, each with RLS on and readable by
+    `service_role` only:
+    - `kut.midweek_config`, the launch switch, off;
+    - `kut.midweek_tournaments`;
+    - `kut.midweek_tournament_secrets`, the seed (ADR-091);
+    - `kut.midweek_squads` and `kut.midweek_squad_cards`;
+    - `kut.midweek_opt_outs`.
+
+    Two definer RPCs for `authenticated`: `kut.save_midweek_squad(uuid[])` and
+    `kut.set_midweek_opt_out(boolean)`. Three definer views gated on
+    `kut.is_active_member()` (ADR-079): `kut.midweek_current`,
+    `kut.midweek_tournaments_public` and `kut.my_midweek_squad`.
+  - **The only DML** is the switch row in the new `kut.midweek_config`. It rode
+    the latest scheduled backup (`20260923-112450`, cold-verified). Pre-push
+    `migration list --linked` showed 73 entries with `20261003000000` the only
+    local-only one, and the dry run named exactly that file. Afterwards it
+    showed 73 entries, all present locally and remotely, no drift.
+  - **Smoke-tested on hosted.** In the SQL editor, one row confirmed:
+    - all six tables have RLS on;
+    - the switch row is present and off;
+    - no tournament exists;
+    - `anon` and `authenticated` can read none of the tables, and `anon` none
+      of the views;
+    - `anon` can execute neither RPC;
+    - all three views are definer and gated.
+
+    There is nothing to see in the app yet: no page reads these objects, and
+    no tournament exists until the engine migration's worker ships.
+  - **Deploy ordering** didn't matter here: no page reads these objects, so
+    the merge deployed ahead of the push harmlessly.
+  - Rollback: drop the three views, the two functions and the six tables, as
+    in the migration header.
+
 ## 2026-09-23 — `20261002000000` cast on the market and pack openings (ADR-086)
 
 Deployed 2026-09-23 from `VibeTrunk/supabase` (catalogue PR #46 there, marked

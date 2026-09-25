@@ -83,9 +83,9 @@ don't add cross-repo coupling beyond the shared Supabase project.
 
 KUT is live at `https://kut.vibetrunk.com` as Vercel project `kut`.
 
-**Latest hosted migration:** `20261002000000_cast_on_market_and_packs.sql`
-(ADR-086), pushed 2026-09-23; `migration list --linked` showed 72 entries, all
-present locally and remotely, no drift. Every hosted deploy, with its backup,
+**Latest hosted migration:** `20261003000000_midweek_entry.sql`
+(ADR-089, ADR-091), pushed 2026-09-25; `migration list --linked` showed 73
+entries, all present locally and remotely, no drift. Every hosted deploy, with its backup,
 smoke test and rollback, is in [`docs/DEPLOYMENTS.md`](docs/DEPLOYMENTS.md).
 
 Lessons that hold for every migration-bearing change:

@@ -3705,3 +3705,38 @@ suite, `npm run test:integration` and `npm run verify:fast`.
 
 Merged as #122 and pushed to hosted the same day (catalogue PR #50 in
 `VibeTrunk/supabase`); the record is in `docs/DEPLOYMENTS.md`.
+
+## Midweek Madness engine — 2026-09-25
+
+PR 5 of the Midweek Madness build: migration
+`20261005000000_midweek_engine.sql` (BUILD_SPEC §44.3–§44.11, §44.14; Part L
+#25; ADR-090, ADR-091, ADR-095). Additive.
+
+- **The engine in SQL** (`kut._mm_*`), a line-for-line port of
+  `src/game/midweek/`. `node scripts/midweek/golden.mjs` now also writes
+  `midweek_engine_parity.test.sql` from the golden fixture, and a unit test
+  fails when it is stale. All 160 golden values match.
+- **The stored result:** entries and their lock-time cards, pick shares,
+  matches (byes included, goals and penalties per side, each card's day roll)
+  and their events, plus a worker log.
+- **Part L #25 in the tables:** a result is written once and never changes, a
+  tournament only moves forward, and squads are immutable after the lock.
+- **The worker,** `kut.run_midweek_due`: lock (club-break gate, field,
+  simulation), complete (publish the seed) and open (the next week, while the
+  switch is on). Coins come with the payout migration.
+- **The reveal projections:** matches, events, entries (from round 1, no
+  counts until complete) and pick shares (once complete), and the champion
+  appended to the tournament list.
+- **Admin:** the switch, void before payout, the rehearsal (writes nothing) and
+  an admins-only overview with the saved-squad and opt-out counts.
+
+Nothing runs on hosted until the switch is turned on at launch (PR 9).
+
+Verified locally: `midweek_engine_parity.test.sql` (160 assertions),
+`midweek_engine.test.sql` (147: the access matrix, the worker's lifecycle and
+gates, the lock snapshot, reveal timing, owner counts, a second call changing
+nothing, the #25 guards, void, the rehearsal leaving every table unchanged, the
+switch and the open step), the whole pgTAP suite (27 files, 1,153 assertions),
+`npm run test:integration` with the new `midweek-race.test.ts` (three
+concurrent worker calls: each week locked once and completed once, no error)
+and `npm run verify:fast`.

@@ -1,0 +1,871 @@
+{
+  "pages": [
+    {
+      "id": "picking",
+      "name": "Picking your five"
+    },
+    {
+      "id": "wednesday",
+      "name": "Wednesday night"
+    },
+    {
+      "id": "bracket",
+      "name": "Bracket and reports"
+    },
+    {
+      "id": "entry",
+      "name": "Entry points"
+    },
+    {
+      "id": "settings",
+      "name": "Settings, rules and admin"
+    }
+  ],
+  "artboards": [
+    {
+      "file": "Picker-Empty.dc.html",
+      "title": "/club/midweek — open, nothing picked · 320",
+      "page": "picking",
+      "x": 0,
+      "y": 0,
+      "w": 320,
+      "h": 3345
+    },
+    {
+      "file": "Picker-Empty.dc.html",
+      "title": "/club/midweek — open, nothing picked · 412",
+      "page": "picking",
+      "x": 440,
+      "y": 0,
+      "w": 412,
+      "h": 3426
+    },
+    {
+      "file": "Picker-Empty.dc.html",
+      "title": "/club/midweek — open, nothing picked · 1440",
+      "page": "picking",
+      "x": 972,
+      "y": 0,
+      "w": 1440,
+      "h": 2422
+    },
+    {
+      "file": "Picker-Partial.dc.html",
+      "title": "/club/midweek — open, partial squad, unsaved · 320",
+      "page": "picking",
+      "x": 0,
+      "y": 3586,
+      "w": 320,
+      "h": 3216
+    },
+    {
+      "file": "Picker-Partial.dc.html",
+      "title": "/club/midweek — open, partial squad, unsaved · 412",
+      "page": "picking",
+      "x": 440,
+      "y": 3586,
+      "w": 412,
+      "h": 3381
+    },
+    {
+      "file": "Picker-Partial.dc.html",
+      "title": "/club/midweek — open, partial squad, unsaved · 1440",
+      "page": "picking",
+      "x": 972,
+      "y": 3586,
+      "w": 1440,
+      "h": 2414
+    },
+    {
+      "file": "Picker-Saved.dc.html",
+      "title": "/club/midweek — open, five saved · 320",
+      "page": "picking",
+      "x": 0,
+      "y": 7127,
+      "w": 320,
+      "h": 3116
+    },
+    {
+      "file": "Picker-Saved.dc.html",
+      "title": "/club/midweek — open, five saved · 412",
+      "page": "picking",
+      "x": 440,
+      "y": 7127,
+      "w": 412,
+      "h": 3353
+    },
+    {
+      "file": "Picker-Saved.dc.html",
+      "title": "/club/midweek — open, five saved · 1440",
+      "page": "picking",
+      "x": 972,
+      "y": 7127,
+      "w": 1440,
+      "h": 2433
+    },
+    {
+      "file": "Picker-OptedOut.dc.html",
+      "title": "/club/midweek — open, member opted out · 320",
+      "page": "picking",
+      "x": 0,
+      "y": 10640,
+      "w": 320,
+      "h": 867
+    },
+    {
+      "file": "Picker-OptedOut.dc.html",
+      "title": "/club/midweek — open, member opted out · 412",
+      "page": "picking",
+      "x": 440,
+      "y": 10640,
+      "w": 412,
+      "h": 800
+    },
+    {
+      "file": "Picker-OptedOut.dc.html",
+      "title": "/club/midweek — open, member opted out · 1440",
+      "page": "picking",
+      "x": 972,
+      "y": 10640,
+      "w": 1440,
+      "h": 900
+    },
+    {
+      "file": "Picker-Starter.dc.html",
+      "title": "/club/midweek — open, starter pack only (3 cards) · 320",
+      "page": "picking",
+      "x": 0,
+      "y": 11700,
+      "w": 320,
+      "h": 2092
+    },
+    {
+      "file": "Picker-Starter.dc.html",
+      "title": "/club/midweek — open, starter pack only (3 cards) · 412",
+      "page": "picking",
+      "x": 440,
+      "y": 11700,
+      "w": 412,
+      "h": 2018
+    },
+    {
+      "file": "Picker-Starter.dc.html",
+      "title": "/club/midweek — open, starter pack only (3 cards) · 1440",
+      "page": "picking",
+      "x": 972,
+      "y": 11700,
+      "w": 1440,
+      "h": 1608
+    },
+    {
+      "file": "Week-Locked.dc.html",
+      "title": "/club/midweek — locked, before round 1 (20:12) · 320",
+      "page": "wednesday",
+      "x": 0,
+      "y": 0,
+      "w": 320,
+      "h": 1267
+    },
+    {
+      "file": "Week-Locked.dc.html",
+      "title": "/club/midweek — locked, before round 1 (20:12) · 412",
+      "page": "wednesday",
+      "x": 440,
+      "y": 0,
+      "w": 412,
+      "h": 1415
+    },
+    {
+      "file": "Week-Locked.dc.html",
+      "title": "/club/midweek — locked, before round 1 (20:12) · 1440",
+      "page": "wednesday",
+      "x": 972,
+      "y": 0,
+      "w": 1440,
+      "h": 1038
+    },
+    {
+      "file": "Week-Revealing.dc.html",
+      "title": "/club/midweek — mid-reveal, rounds 1–2 out (21:05) · 320",
+      "page": "wednesday",
+      "x": 0,
+      "y": 1575,
+      "w": 320,
+      "h": 1472
+    },
+    {
+      "file": "Week-Revealing.dc.html",
+      "title": "/club/midweek — mid-reveal, rounds 1–2 out (21:05) · 412",
+      "page": "wednesday",
+      "x": 440,
+      "y": 1575,
+      "w": 412,
+      "h": 1426
+    },
+    {
+      "file": "Week-Revealing.dc.html",
+      "title": "/club/midweek — mid-reveal, rounds 1–2 out (21:05) · 1440",
+      "page": "wednesday",
+      "x": 972,
+      "y": 1575,
+      "w": 1440,
+      "h": 1204
+    },
+    {
+      "file": "Week-Complete.dc.html",
+      "title": "/club/midweek — complete (22:41) · 320",
+      "page": "wednesday",
+      "x": 0,
+      "y": 3207,
+      "w": 320,
+      "h": 1983
+    },
+    {
+      "file": "Week-Complete.dc.html",
+      "title": "/club/midweek — complete (22:41) · 412",
+      "page": "wednesday",
+      "x": 440,
+      "y": 3207,
+      "w": 412,
+      "h": 2064
+    },
+    {
+      "file": "Week-Complete.dc.html",
+      "title": "/club/midweek — complete (22:41) · 1440",
+      "page": "wednesday",
+      "x": 972,
+      "y": 3207,
+      "w": 1440,
+      "h": 1411
+    },
+    {
+      "file": "Week-SkippedBreak.dc.html",
+      "title": "/club/midweek — skipped: club break · 320",
+      "page": "wednesday",
+      "x": 0,
+      "y": 5431,
+      "w": 320,
+      "h": 1713
+    },
+    {
+      "file": "Week-SkippedBreak.dc.html",
+      "title": "/club/midweek — skipped: club break · 412",
+      "page": "wednesday",
+      "x": 440,
+      "y": 5431,
+      "w": 412,
+      "h": 1410
+    },
+    {
+      "file": "Week-SkippedBreak.dc.html",
+      "title": "/club/midweek — skipped: club break · 1440",
+      "page": "wednesday",
+      "x": 972,
+      "y": 5431,
+      "w": 1440,
+      "h": 1220
+    },
+    {
+      "file": "Week-SkippedField.dc.html",
+      "title": "/club/midweek — skipped: too few entrants · 320",
+      "page": "wednesday",
+      "x": 0,
+      "y": 7304,
+      "w": 320,
+      "h": 1671
+    },
+    {
+      "file": "Week-SkippedField.dc.html",
+      "title": "/club/midweek — skipped: too few entrants · 412",
+      "page": "wednesday",
+      "x": 440,
+      "y": 7304,
+      "w": 412,
+      "h": 1389
+    },
+    {
+      "file": "Week-SkippedField.dc.html",
+      "title": "/club/midweek — skipped: too few entrants · 1440",
+      "page": "wednesday",
+      "x": 972,
+      "y": 7304,
+      "w": 1440,
+      "h": 1220
+    },
+    {
+      "file": "Week-Void.dc.html",
+      "title": "/club/midweek (and /club/midweek/2026-10-05) — void (admin) · 320",
+      "page": "wednesday",
+      "x": 0,
+      "y": 9135,
+      "w": 320,
+      "h": 1713
+    },
+    {
+      "file": "Week-Void.dc.html",
+      "title": "/club/midweek (and /club/midweek/2026-10-05) — void (admin) · 412",
+      "page": "wednesday",
+      "x": 440,
+      "y": 9135,
+      "w": 412,
+      "h": 1410
+    },
+    {
+      "file": "Week-Void.dc.html",
+      "title": "/club/midweek (and /club/midweek/2026-10-05) — void (admin) · 1440",
+      "page": "wednesday",
+      "x": 972,
+      "y": 9135,
+      "w": 1440,
+      "h": 1220
+    },
+    {
+      "file": "Week-Disabled.dc.html",
+      "title": "/club/midweek — disabled (config off, nothing running) · 320",
+      "page": "wednesday",
+      "x": 0,
+      "y": 11008,
+      "w": 320,
+      "h": 800
+    },
+    {
+      "file": "Week-Disabled.dc.html",
+      "title": "/club/midweek — disabled (config off, nothing running) · 412",
+      "page": "wednesday",
+      "x": 440,
+      "y": 11008,
+      "w": 412,
+      "h": 800
+    },
+    {
+      "file": "Bracket-Revealing.dc.html",
+      "title": "/club/midweek/2026-10-05 — mid-reveal, rounds 1–2 out (21:05) · 320",
+      "page": "bracket",
+      "x": 0,
+      "y": 0,
+      "w": 320,
+      "h": 3371
+    },
+    {
+      "file": "Bracket-Revealing.dc.html",
+      "title": "/club/midweek/2026-10-05 — mid-reveal, rounds 1–2 out (21:05) · 412",
+      "page": "bracket",
+      "x": 440,
+      "y": 0,
+      "w": 412,
+      "h": 3346
+    },
+    {
+      "file": "Bracket-Revealing.dc.html",
+      "title": "/club/midweek/2026-10-05 — mid-reveal, rounds 1–2 out (21:05) · 1440",
+      "page": "bracket",
+      "x": 972,
+      "y": 0,
+      "w": 1440,
+      "h": 1493
+    },
+    {
+      "file": "Bracket-Complete.dc.html",
+      "title": "/club/midweek/2026-10-05 — complete, with pick shares · 320",
+      "page": "bracket",
+      "x": 0,
+      "y": 3531,
+      "w": 320,
+      "h": 5217
+    },
+    {
+      "file": "Bracket-Complete.dc.html",
+      "title": "/club/midweek/2026-10-05 — complete, with pick shares · 412",
+      "page": "bracket",
+      "x": 440,
+      "y": 3531,
+      "w": 412,
+      "h": 4729
+    },
+    {
+      "file": "Bracket-Complete.dc.html",
+      "title": "/club/midweek/2026-10-05 — complete, with pick shares · 1440",
+      "page": "bracket",
+      "x": 972,
+      "y": 3531,
+      "w": 1440,
+      "h": 2311
+    },
+    {
+      "file": "Report-Thrashing.dc.html",
+      "title": "/club/midweek/2026-10-05/match/[matchId] — report: a thrashing (Joris 7–0 Emma, auto squad) · 320",
+      "page": "bracket",
+      "x": 0,
+      "y": 8908,
+      "w": 320,
+      "h": 3689
+    },
+    {
+      "file": "Report-Thrashing.dc.html",
+      "title": "/club/midweek/2026-10-05/match/[matchId] — report: a thrashing (Joris 7–0 Emma, auto squad) · 412",
+      "page": "bracket",
+      "x": 440,
+      "y": 8908,
+      "w": 412,
+      "h": 3312
+    },
+    {
+      "file": "Report-Thrashing.dc.html",
+      "title": "/club/midweek/2026-10-05/match/[matchId] — report: a thrashing (Joris 7–0 Emma, auto squad) · 1440",
+      "page": "bracket",
+      "x": 972,
+      "y": 8908,
+      "w": 1440,
+      "h": 1899
+    },
+    {
+      "file": "Report-Shootout.dc.html",
+      "title": "/club/midweek/2026-10-05/match/[matchId] — report: a shoot-out, your match (Sophie 2–2 Sanne, 7–6 pens) · 320",
+      "page": "bracket",
+      "x": 0,
+      "y": 12757,
+      "w": 320,
+      "h": 3635
+    },
+    {
+      "file": "Report-Shootout.dc.html",
+      "title": "/club/midweek/2026-10-05/match/[matchId] — report: a shoot-out, your match (Sophie 2–2 Sanne, 7–6 pens) · 412",
+      "page": "bracket",
+      "x": 440,
+      "y": 12757,
+      "w": 412,
+      "h": 3399
+    },
+    {
+      "file": "Report-Shootout.dc.html",
+      "title": "/club/midweek/2026-10-05/match/[matchId] — report: a shoot-out, your match (Sophie 2–2 Sanne, 7–6 pens) · 1440",
+      "page": "bracket",
+      "x": 972,
+      "y": 12757,
+      "w": 1440,
+      "h": 1899
+    },
+    {
+      "file": "Report-Injured.dc.html",
+      "title": "/club/midweek/2026-10-05/match/[matchId] — report: injured Players (Mila 0–3 Eline) · 320",
+      "page": "bracket",
+      "x": 0,
+      "y": 16552,
+      "w": 320,
+      "h": 3357
+    },
+    {
+      "file": "Report-Injured.dc.html",
+      "title": "/club/midweek/2026-10-05/match/[matchId] — report: injured Players (Mila 0–3 Eline) · 412",
+      "page": "bracket",
+      "x": 440,
+      "y": 16552,
+      "w": 412,
+      "h": 3051
+    },
+    {
+      "file": "Report-Injured.dc.html",
+      "title": "/club/midweek/2026-10-05/match/[matchId] — report: injured Players (Mila 0–3 Eline) · 1440",
+      "page": "bracket",
+      "x": 972,
+      "y": 16552,
+      "w": 1440,
+      "h": 1899
+    },
+    {
+      "file": "Home-BeforeLock.dc.html",
+      "title": "/ — Home card before the lock (not picked) · 320",
+      "page": "entry",
+      "x": 0,
+      "y": 0,
+      "w": 320,
+      "h": 1696
+    },
+    {
+      "file": "Home-BeforeLock.dc.html",
+      "title": "/ — Home card before the lock (not picked) · 412",
+      "page": "entry",
+      "x": 440,
+      "y": 0,
+      "w": 412,
+      "h": 1852
+    },
+    {
+      "file": "Home-BeforeLock.dc.html",
+      "title": "/ — Home card before the lock (not picked) · 1440",
+      "page": "entry",
+      "x": 972,
+      "y": 0,
+      "w": 1440,
+      "h": 1081
+    },
+    {
+      "file": "Home-Live.dc.html",
+      "title": "/ — Home card during the reveal (round 2 is out) · 320",
+      "page": "entry",
+      "x": 0,
+      "y": 2012,
+      "w": 320,
+      "h": 1652
+    },
+    {
+      "file": "Home-Live.dc.html",
+      "title": "/ — Home card during the reveal (round 2 is out) · 412",
+      "page": "entry",
+      "x": 440,
+      "y": 2012,
+      "w": 412,
+      "h": 1846
+    },
+    {
+      "file": "Home-Live.dc.html",
+      "title": "/ — Home card during the reveal (round 2 is out) · 1440",
+      "page": "entry",
+      "x": 972,
+      "y": 2012,
+      "w": 1440,
+      "h": 1098
+    },
+    {
+      "file": "Collection-Card.dc.html",
+      "title": "/club/collection — Collection strip (before and after the lock) · 320",
+      "page": "entry",
+      "x": 0,
+      "y": 4018,
+      "w": 320,
+      "h": 1338
+    },
+    {
+      "file": "Collection-Card.dc.html",
+      "title": "/club/collection — Collection strip (before and after the lock) · 412",
+      "page": "entry",
+      "x": 440,
+      "y": 4018,
+      "w": 412,
+      "h": 1504
+    },
+    {
+      "file": "Collection-Card.dc.html",
+      "title": "/club/collection — Collection strip (before and after the lock) · 1440",
+      "page": "entry",
+      "x": 972,
+      "y": 4018,
+      "w": 1440,
+      "h": 1085
+    },
+    {
+      "file": "Settings-TakingPart.dc.html",
+      "title": "/settings — Midweek panel: taking part, opt-out confirmation open · 320",
+      "page": "settings",
+      "x": 0,
+      "y": 0,
+      "w": 320,
+      "h": 1185
+    },
+    {
+      "file": "Settings-TakingPart.dc.html",
+      "title": "/settings — Midweek panel: taking part, opt-out confirmation open · 412",
+      "page": "settings",
+      "x": 440,
+      "y": 0,
+      "w": 412,
+      "h": 1029
+    },
+    {
+      "file": "Settings-OptedOut.dc.html",
+      "title": "/settings — Midweek panel: opted out · 320",
+      "page": "settings",
+      "x": 0,
+      "y": 1345,
+      "w": 320,
+      "h": 801
+    },
+    {
+      "file": "Settings-OptedOut.dc.html",
+      "title": "/settings — Midweek panel: opted out · 412",
+      "page": "settings",
+      "x": 440,
+      "y": 1345,
+      "w": 412,
+      "h": 800
+    },
+    {
+      "file": "HowItWorks-Midweek.dc.html",
+      "title": "/how-it-works — section 12, Midweek Madness · 320",
+      "page": "settings",
+      "x": 0,
+      "y": 2306,
+      "w": 320,
+      "h": 2787
+    },
+    {
+      "file": "HowItWorks-Midweek.dc.html",
+      "title": "/how-it-works — section 12, Midweek Madness · 412",
+      "page": "settings",
+      "x": 440,
+      "y": 2306,
+      "w": 412,
+      "h": 2207
+    },
+    {
+      "file": "Admin-Midweek.dc.html",
+      "title": "/admin/midweek — running, with rehearsal output · 320",
+      "page": "settings",
+      "x": 0,
+      "y": 5253,
+      "w": 320,
+      "h": 1937
+    },
+    {
+      "file": "Admin-Midweek.dc.html",
+      "title": "/admin/midweek — running, with rehearsal output · 412",
+      "page": "settings",
+      "x": 440,
+      "y": 5253,
+      "w": 412,
+      "h": 1718
+    },
+    {
+      "file": "Admin-Midweek.dc.html",
+      "title": "/admin/midweek — running, with rehearsal output · 1440",
+      "page": "settings",
+      "x": 972,
+      "y": 5253,
+      "w": 1440,
+      "h": 1088
+    },
+    {
+      "file": "Admin-Void.dc.html",
+      "title": "/admin/midweek — void a week (mid-reveal, before payout) · 320",
+      "page": "settings",
+      "x": 0,
+      "y": 7350,
+      "w": 320,
+      "h": 1122
+    },
+    {
+      "file": "Admin-Void.dc.html",
+      "title": "/admin/midweek — void a week (mid-reveal, before payout) · 412",
+      "page": "settings",
+      "x": 440,
+      "y": 7350,
+      "w": 412,
+      "h": 956
+    },
+    {
+      "file": "Admin-Void.dc.html",
+      "title": "/admin/midweek — void a week (mid-reveal, before payout) · 1440",
+      "page": "settings",
+      "x": 972,
+      "y": 7350,
+      "w": 1440,
+      "h": 900
+    }
+  ],
+  "annotations": [
+    {
+      "id": "note-picker-empty",
+      "page": "picking",
+      "x": -380,
+      "y": 0,
+      "w": 300,
+      "text": "/CLUB/MIDWEEK — open, nothing picked\n\n§44.2 auto squads; §44.1 picking opens when the tournament exists\n\nNothing saved. The member is still in: an auto squad plays unless they pick. \"Load last week's five\" is the one-tap path for returning members; pre-filling saves nothing (§44.2), so the page stays unsaved until they press Save."
+    },
+    {
+      "id": "note-picker-partial",
+      "page": "picking",
+      "x": -380,
+      "y": 3586,
+      "w": 300,
+      "text": "/CLUB/MIDWEEK — open, partial squad, unsaved\n\n§44.2 1–5 cards, one per Player; trialists fill empty slots; injured cards (ADR-085 cast)\n\nLast week's five were loaded, but two of those cards have since been sold, so their slots are open. Slot 4 is being filled: the grid's buttons name the slot. Esther M. is injured, so her real LiveCard wears the cast and her slot says what it costs in words, not numbers."
+    },
+    {
+      "id": "note-picker-saved",
+      "page": "picking",
+      "x": -380,
+      "y": 7127,
+      "w": 300,
+      "text": "/CLUB/MIDWEEK — open, five saved\n\n§44.2 only a saved squad counts; §44.9 before the lock you see only your own squad\n\nThe steady state for most of the week. The strip at the top is last Wednesday's result: the next tournament opens as soon as the last one ends (§44.1), so the page has to carry both. The keeper check is worked out from archetypes alone, because no factor is known before the lock."
+    },
+    {
+      "id": "note-picker-optedout",
+      "page": "picking",
+      "x": -380,
+      "y": 10640,
+      "w": 300,
+      "text": "/CLUB/MIDWEEK — open, member opted out\n\n§44.2 opting out; ADR-091 the opt-out is the consent mechanism\n\nAn opted-out member cannot save a squad (save_midweek_squad refuses), so there is no picker at all, only the way back. Coming back is one tap here as well as in Settings. Opted-out members can still watch: the bracket is for every active member."
+    },
+    {
+      "id": "note-picker-starter",
+      "page": "picking",
+      "x": -380,
+      "y": 11700,
+      "w": 300,
+      "text": "/CLUB/MIDWEEK — open, starter pack only (3 cards)\n\n§44.2 trialists fill empty slots; leaving a slot empty is never the best play\n\nA new member (Pieter) with the three starter cards. The five can never be full, so the page says so plainly and points at packs, rather than showing two slots that look like a to-do. With a duplicate in the starter pack there are only two Players, and the copy says two."
+    },
+    {
+      "id": "note-week-locked",
+      "page": "wednesday",
+      "x": -380,
+      "y": 0,
+      "w": 300,
+      "text": "/CLUB/MIDWEEK — locked, before round 1 (20:12)\n\n§44.1 lock and reveal times; §44.2 cards re-checked at the lock; §44.9 entries appear with round 1\n\nBetween 20:00 and 20:30 there is nothing to show about anyone else: entries appear with round 1. The member sees their own five as it was locked, and the schedule for the evening."
+    },
+    {
+      "id": "note-week-revealing",
+      "page": "wednesday",
+      "x": -380,
+      "y": 1575,
+      "w": 300,
+      "text": "/CLUB/MIDWEEK — mid-reveal, rounds 1–2 out (21:05)\n\n§44.1 round r at lock + 30 min × r; §44.6 a bye counts as a round-1 win; §44.7 paid after the final\n\nThe page is about the member's own night first, then the round that just came out. Coins are shown as earned but not yet paid: payment is lazy and happens after the final (§44.7), and the page says so rather than letting the wallet look wrong."
+    },
+    {
+      "id": "note-week-complete",
+      "page": "wednesday",
+      "x": -380,
+      "y": 3207,
+      "w": 300,
+      "text": "/CLUB/MIDWEEK — complete (22:41)\n\n§44.7 champion total; §44.8 the seed is published at complete; §44.1 next week opens at once\n\nWednesday night, after the final. The champion leads, then the member's own result and coins (now paid). Next week's tournament already exists (§44.1), so its picker is one tap away but doesn't take over the page until Thursday. The seed is out, and the fairness seal shows its check."
+    },
+    {
+      "id": "note-week-skippedbreak",
+      "page": "wednesday",
+      "x": -380,
+      "y": 5431,
+      "w": 300,
+      "text": "/CLUB/MIDWEEK — skipped: club break\n\n§44.1 the club-break gate\n\nSkipped is decided at the lock, and the next week opens straight away, so the member meets it as a one-line notice above next week's picker. Needs status_reason on midweek_current as a code (see HANDOFF, data)."
+    },
+    {
+      "id": "note-week-skippedfield",
+      "page": "wednesday",
+      "x": -380,
+      "y": 7304,
+      "w": 300,
+      "text": "/CLUB/MIDWEEK — skipped: too few entrants\n\n§44.1 fewer than MIDWEEK_MIN_ENTRANTS (4) entrants\n\nRare, since everyone with a card is entered unless they opt out. Same shape as the club break, different reason."
+    },
+    {
+      "id": "note-week-void",
+      "page": "wednesday",
+      "x": -380,
+      "y": 9135,
+      "w": 300,
+      "text": "/CLUB/MIDWEEK (AND /CLUB/MIDWEEK/2026-10-05) — void (admin)\n\n§44.8 void hides results and pays nothing; §44.9 a void tournament shows no results\n\nVoid can happen mid-evening (simulated → void). Everything already revealed disappears, the bracket URL shows only this notice, and the reason is quoted as the admin wrote it. The next week opens as usual."
+    },
+    {
+      "id": "note-week-disabled",
+      "page": "wednesday",
+      "x": -380,
+      "y": 11008,
+      "w": 300,
+      "text": "/CLUB/MIDWEEK — disabled (config off, nothing running)\n\n§44.8 launch switch\n\nDisabled with nothing open or simulated: every entry point is hidden (Home card, Collection strip, how-it-works section stays as rules text) and the route returns the app's existing not-found page. Disabled with a tournament still running shows that tournament until it completes (§44.8), then this."
+    },
+    {
+      "id": "note-bracket-revealing",
+      "page": "bracket",
+      "x": -380,
+      "y": 0,
+      "w": 300,
+      "text": "/CLUB/MIDWEEK/2026-10-05 — mid-reveal, rounds 1–2 out (21:05)\n\n§44.6 32 slots, byes, winners of 2k−1 and 2k meet; §44.9 each round at its reveal time\n\n22 entrants in 32 slots. Phones get the bracket as a list of rounds in order, each pair joined by a bracket line that names the match its winners meet in, so it reads top to bottom and in the same order to a screen reader. From lg the same data draws as a five-column tree; the tree is aria-hidden and the list stays the accessible version. The quarter-finals are known (both round-2 winners are out) but unplayed; the semis show who they wait on."
+    },
+    {
+      "id": "note-bracket-complete",
+      "page": "bracket",
+      "x": -380,
+      "y": 3531,
+      "w": 300,
+      "text": "/CLUB/MIDWEEK/2026-10-05 — complete, with pick shares\n\n§44.9 pick shares at complete, owner counts only at 3 or more (ADR-091)\n\nAfter the final. Your path stays highlighted to where it ended. Pick shares follow the bracket: two of the 25 Players picked have fewer than three owners and read \"a rare pick\", never a count."
+    },
+    {
+      "id": "note-report-thrashing",
+      "page": "bracket",
+      "x": -380,
+      "y": 8908,
+      "w": 300,
+      "text": "/CLUB/MIDWEEK/2026-10-05/MATCH/[MATCHID] — report: a thrashing (Joris 7–0 Emma, auto squad)\n\n§44.10 layout; 8 moments is the timeline's maximum\n\nThe longest timeline the renderer makes (8 moments, every goal). Emma's side is an auto squad, so each card carries the handicap chip and no owner count (ADR-093: \"auto squad\" instead of a pick label)."
+    },
+    {
+      "id": "note-report-shootout",
+      "page": "bracket",
+      "x": -380,
+      "y": 12757,
+      "w": 300,
+      "text": "/CLUB/MIDWEEK/2026-10-05/MATCH/[MATCHID] — report: a shoot-out, your match (Sophie 2–2 Sanne, 7–6 pens)\n\n§44.5 penalties, sudden death; §44.10 scored kicks as a tally, misses narrated\n\nYour own quarter-final. The tally shows every kick (ringed ones are sudden death); the narrated lines are only the misses and the decider, as the renderer produces them. The score stays side-ordered (Sophie left, Sanne right) everywhere on the page; report.score is winner-first and is not used in the scoreboard."
+    },
+    {
+      "id": "note-report-injured",
+      "page": "bracket",
+      "x": -380,
+      "y": 16552,
+      "w": 300,
+      "text": "/CLUB/MIDWEEK/2026-10-05/MATCH/[MATCHID] — report: injured Players (Mila 0–3 Eline)\n\n§44.3 fitness for injured Live cards; §44.10 injured variants only for cards injured at the lock\n\nEsther M. and Roos N. were injured at the lock. The injury asides come from the phrasebook; the why panel shows the fitness factor below 1.00 and the plaster chip, with the word \"Injured\" so the cast is never colour alone."
+    },
+    {
+      "id": "note-home-beforelock",
+      "page": "entry",
+      "x": -380,
+      "y": 0,
+      "w": 300,
+      "text": "/ — Home card before the lock (not picked)\n\n§47 Home answers \"what changed?\"; §44.2 auto squads\n\nThe card sits directly under the Home header, above the stat bar: it is the one thing on Home with a deadline. The saved variant reads \"Your five are in\" with the five minis; see HANDOFF copy."
+    },
+    {
+      "id": "note-home-live",
+      "page": "entry",
+      "x": -380,
+      "y": 2012,
+      "w": 300,
+      "text": "/ — Home card during the reveal (round 2 is out)\n\n§44.1 reveal times\n\nSame slot, same size, Wednesday evening. It says what just happened to you and when the next thing happens, with the evening's clock in compact form."
+    },
+    {
+      "id": "note-collection-card",
+      "page": "entry",
+      "x": -380,
+      "y": 4018,
+      "w": 300,
+      "text": "/CLUB/COLLECTION — Collection strip (before and after the lock)\n\nADR-053 retired /club; the brief's \"Club page\" card goes here (owner decision)\n\nThe Club page no longer exists (ADR-053: /club redirects here). The card the plan put on club/page.tsx becomes a one-line strip under the Collection header, the page where your cards are. Before the lock it asks for a pick; from the lock to the final it links to tonight."
+    },
+    {
+      "id": "note-settings-takingpart",
+      "page": "settings",
+      "x": -380,
+      "y": 0,
+      "w": 300,
+      "text": "/SETTINGS — Midweek panel: taking part, opt-out confirmation open\n\nADR-091 entry is the default, the opt-out is the consent; §44.2 an opt-out before the lock applies that week\n\nThe panel sits between the club name and My card. Opting out is two steps because it deletes this week's saved squad (set_midweek_opt_out does that before the lock). After the lock the confirmation says it applies from next week instead."
+    },
+    {
+      "id": "note-settings-optedout",
+      "page": "settings",
+      "x": -380,
+      "y": 1345,
+      "w": 300,
+      "text": "/SETTINGS — Midweek panel: opted out\n\n§44.2 an opted-out member is never entered\n\nOne tap to come back, no confirmation: taking part again shows nothing until the member (or their auto squad) is entered at the next lock."
+    },
+    {
+      "id": "note-howitworks-midweek",
+      "page": "settings",
+      "x": -380,
+      "y": 2306,
+      "w": 300,
+      "text": "/HOW-IT-WORKS — section 12, Midweek Madness\n\n§44 in members' words; ADR-091 the rules page says plainly that your five are shown\n\nSection 12, after Messages, in the page's own Section style. Numbers come from shared config at render time (MIDWEEK, roundPayouts), as the other sections do; none are typed into the copy."
+    },
+    {
+      "id": "note-admin-midweek",
+      "page": "settings",
+      "x": -380,
+      "y": 5253,
+      "w": 300,
+      "text": "/ADMIN/MIDWEEK — running, with rehearsal output\n\n§44.8 launch switch, rehearsal writes nothing; §44.11 no weekly admin work\n\nUtilitarian, like the other admin tabs: the Midweek tab joins the row. Rehearsal output is the field, the auto squads, a round-by-round summary and the log. It uses a throwaway seed, so its champion is labelled as not the real result."
+    },
+    {
+      "id": "note-admin-void",
+      "page": "settings",
+      "x": -380,
+      "y": 7350,
+      "w": 300,
+      "text": "/ADMIN/MIDWEEK — void a week (mid-reveal, before payout)\n\n§44.8 void needs a reason, works only before payout, never recomputes\n\nVoid is destructive and member-visible, so it takes a reason (1–200 characters, shown to members verbatim) and a tick. After payout the section is replaced by a pointer to wallet adjustments."
+    }
+  ],
+  "launch": {
+    "view": "canvas",
+    "page": "picking"
+  }
+}

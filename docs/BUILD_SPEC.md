@@ -1689,39 +1689,318 @@ Potential later fun rule:
 
 ---
 
-# PART XV — MATCHDAY / FANTASY LAYER — PHASE 3
+# PART XV — MATCHDAY LAYER — PHASE 3
 
-## 44. "Friday Five" / "TFH Five"
+## 44. Midweek Madness — weekly 5-card squad knockout
 
-This is deliberately not MVP.
+**Specified 2026-09-25 (ADR-089).** Every Wednesday each member enters five of
+their own cards, and the squads play a seeded knockout bracket that evening.
+The design rationale and the brainstorm behind it are in `docs/ROADMAP.md`
+("Midweek Madness"); this section is the canonical rule set. The engine is
+authoritative in SQL with a TypeScript twin (ADR-090); privacy follows ADR-091.
 
-Once collecting and trading are proven fun, let each user select five owned cards before a deadline.
+It replaces "Friday Five" / "TFH Five", which ADR-088 removed and from which it
+inherits no rule except one: **matchday rewards must not inject enough
+currency to overpower the market economy.**
 
-Suggested five slots:
+Design goals, which the targets in §44.12 put numbers on:
 
-- 1 keeper/utility;
-- 1 defender;
-- 1 midfielder;
-- 2 attackers;
+1. a bigger, better collection gives an edge but does not decide the week;
+2. no pick stays best;
+3. cheap cards can decide matches, visibly;
+4. every match produces a report in which each line traces back to a number;
+5. zero weekly admin work.
 
-or simply five unrestricted cards initially.
+Values marked *starting value* are tuned by the simulation harness before any
+schema work and signed off by the owner in `docs/archive/MIDWEEK_TUNING.md`;
+the sign-off updates this section and §145 with the final values.
 
-Cards are selected by Card Copy ID.
+### 44.1 The week
 
-A copy may only occupy one slot.
+- **One tournament per football week (§9),** identified by that week's Monday
+  (`week_start`).
+- **The lock is Wednesday 20:00 Europe/Amsterdam** (`lock_at`), computed in
+  that time zone so daylight saving is handled.
+- **Round `r` is revealed at `lock_at + 30 min × r`,** so round 1 appears at
+  20:30 and the final at `lock_at + 30 min × R` (`final_reveal_at`).
+- **Picking opens when the tournament exists** and closes at the lock. The next
+  week's tournament is created as soon as the current one is complete, skipped
+  or void.
+- **The club-break gate.** At the lock the tournament runs only if the
+  previous football week had at least one published, non-cancelled session.
+  Otherwise it is marked `skipped`: nothing is simulated or paid.
+- **The field** is every active member (`kut.is_active_member()`) who, at the
+  lock, owns at least one active, unburned card and has not opted out, whether
+  they picked or not. **Fewer than `MIDWEEK_MIN_ENTRANTS` (4) entrants marks
+  the week `skipped`.**
 
-Squad locks before the relevant session.
+### 44.2 Squads
 
-Suggested scoring:
+- **A saved squad is 1–5 Card Copies** the member owns, active and unburned,
+  **each of a different Player.** Owning duplicates is fine; one Player fills
+  one slot. `save_midweek_squad` refuses anything else, and refuses every
+  change once `now() >= lock_at`.
+- **Only a squad saved for this tournament counts as picked.** The picker may
+  pre-fill last week's five, but pre-filling saves nothing.
+- **At the lock each saved card is re-checked.** A card the member no longer
+  owns, or that was burned, becomes a trialist. A card that is listed on the
+  market or held in trade escrow is still owned and still plays. If no saved
+  card survives, the member is treated as not having picked.
+- **Trialists fill empty slots.** A trialist is a Common All-rounder at
+  `MIDWEEK_TRIALIST_OVR` (*starting value* 30), with its own form roll, a
+  neutral pick factor (1.00) and fitness 1.00. Leaving a slot empty on purpose
+  must never be the best play (§44.12).
+- **Members who did not pick get an auto squad:** up to five random distinct
+  Players from their own collection, drawn from the tournament seed, one copy
+  each, with trialists for the rest. Every card in an auto squad has its power
+  multiplied by `MIDWEEK_AUTO_FACTOR` (*starting value* 0.65) and gets the
+  neutral pick factor. **Auto squads are left out of pick shares.** An auto
+  squad that wins is paid like any other.
+- **Opting out.** A member can opt out in settings and is then never entered,
+  picked or auto. An opt-out saved before the lock applies to that week. An
+  opted-out member cannot save a squad.
+- **Archetypes are frozen at the lock,** and a member may change their own
+  Player's archetype (`set_own_player_archetype`) at most once every
+  `ARCHETYPE_CHANGE_COOLDOWN_DAYS` (14). The first change is always allowed,
+  and the admin path is not limited.
 
-- selected player attends: +2;
-- goal: +3;
-- hat trick: +5 bonus;
-- future Player of Match: +5.
+### 44.3 Card power
 
-Weekly ranking provides modest rewards.
+```text
+card_power  = ovr_factor × form_roll × pick_factor × fitness × auto_factor   (fixed for the week)
+match_power = card_power × day_roll                                         (fresh every match)
+```
 
-Important: matchday rewards must not inject enough currency to overpower the market economy.
+`auto_factor` is 1.00 outside auto squads. Each factor:
+
+| Factor | Rule | Starting value |
+|---|---|---|
+| `ovr_factor` | Linear in the locked OVR, clamped to 30–83: 1.00 at 30, `MIDWEEK_OVR_FACTOR_MAX` at 83. Flattening OVR is what stops the richest collection winning by default. | max 1.35 |
+| `form_roll` | One roll per Player per tournament, shared by every squad that fields the Player. Most rolls land near 1.00; the tails reach a big week or a quiet one. Trialists roll their own. | range 0.75–1.45, mode 1.00 |
+| `pick_factor` | Decreasing in the Player's pick share (below). Neutral is 1.00. | through (0, 1.30), (0.40, 1.00), (1, 0.85), piecewise linear |
+| `fitness` | `MIDWEEK_INJURED_FITNESS` when the card is a Live card of a Player in injury mode at the lock (the ADR-085 cast rule), else 1.00. | 0.95 |
+| `day_roll` | A fresh roll per card per match. | uniform ±10% |
+
+**Pick share** measures choice, not scarcity, and uses owners as the baseline:
+
+```text
+share = (non-auto entrants who picked this Player + 1)
+      / (entrants who own a card of this Player    + 3)
+```
+
+A sole owner who picks their card lands at 0.50, just below neutral: a card
+nobody else can pick is not a brave choice. One picker among ten owners lands
+at 0.15, a big bonus; nine of ten at 0.77.
+
+**The lock snapshots every input.** For each entered card: the OVR
+(`coalesce(snapshot_ovr, live_ovr, 30)`, as `my_collection_cards`), the
+archetype, and the injury flag. A later change to any of them has no effect on
+that tournament.
+
+### 44.4 Squad shape
+
+- **Archetypes set the shape, not the size.** A card contributes to three lines
+  according to its archetype's §15.1 offsets, averaged over the line's
+  attributes and scaled by `MIDWEEK_SHAPE_SCALE` (*starting value* 0.5 per 10
+  offset points), times `card_power`. Absolute attributes are never used; they
+  would bring raw OVR back in at full weight.
+  - attack: SHO, PAC, DRI;
+  - midfield: PAS, DRI;
+  - defence: DEF, PHY.
+- **Exactly one card plays in goal;** the other four make up the lines.
+  - The keeper is the Goalkeeper-archetype card with the highest `card_power`.
+  - A squad without a Goalkeeper puts the outfielder with the highest defence
+    contribution in goal, at `MIDWEEK_KEEPERLESS_FACTOR` (*starting value*
+    0.60).
+  - A second or third Goalkeeper plays outfield with the Goalkeeper offsets,
+    including SHO −12.
+- **All-rounders are average everywhere,** so the default archetype stays
+  useful. There are no balance rules: "one keeper beats zero or three" and
+  "balance helps" follow from the numbers.
+
+### 44.5 A match
+
+- **Chances, not a score draw.** Each side gets a random number of chances,
+  driven by its midfield against the other side's. Each chance records:
+  - a **creator**, weighted by midfield contribution;
+  - a **shooter**, weighted by attack contribution;
+  - a **chance type**, weighted by the two cards' archetypes (§44.10);
+  - an **outcome**: goal, save, woodwork, block or wide, with the goal
+    probability from the shooter's power against the defence and keeper;
+  - a **minute** in 1–90, so a report reads as a timeline.
+- **The chance model must reproduce the intended expected goals.** The
+  per-match goal target and the weights are fixed at the tuning sign-off.
+- **A draw goes to penalties:** five kicks each, then sudden death, each kick
+  an event decided by kicker against keeper. After
+  `MIDWEEK_SHOOTOUT_MAX_ROUNDS` (*starting value* 20) sudden-death rounds a
+  seeded draw decides, so every match has a winner.
+- **Odds.** Each match stores a pre-match win chance in ppm, a closed-form
+  estimate from both squads' week-long factors (before `day_roll`), published
+  with its result.
+
+### 44.6 Bracket
+
+- The bracket has `P` slots, the smallest power of two ≥ the number of
+  entrants `N`, and `R = log2(P)` rounds.
+- Round 1 has `P / 2` pairings. A seeded draw picks `P − N` of them to hold a
+  single entrant (a **bye**), and a seeded shuffle places the entrants into the
+  slots. Every pairing holds at least one entrant, because `N > P / 2`.
+- The winners of pairings `2k − 1` and `2k` meet in the next round.
+- **A bye counts as a round-1 win** and is paid as one.
+
+### 44.7 Rewards
+
+Every match won pays coins, increasing by round, so the champion totals
+exactly `MIDWEEK_CHAMPION_TOTAL` (250, its own constant, equal today to the
+attendance reward):
+
+```text
+T     = R(R+1)/2
+pay_r = round_half_up(250 × r / T)          for r < R
+pay_R = 250 − Σ pay_r (r < R)                the final absorbs the rounding
+```
+
+| Entrants | Rounds | Pay per win, round by round | Coins issued in a full bracket |
+|---:|---:|---|---:|
+| 4 | 2 | 83 · 167 | 333 |
+| 5–8 | 3 | 42 · 83 · 125 | 459 |
+| 9–16 | 4 | 25 · 50 · 75 · 100 | 650 |
+| 17–32 | 5 | 17 · 33 · 50 · 67 · 83 | 953 |
+
+- Because the whole roster is entered and byes pay, every run issues a full
+  bracket's worth: with 17–32 entrants, 953 coins, about four attendance
+  rewards a week.
+- **Payment is lazy and happens once:** after `final_reveal_at`, never at
+  simulation time, so wallet balances cannot spoil results early. At most one
+  payment per (tournament, round, member), ledger reason `midweek_win`, through
+  a security-definer path shaped like `grant_bibs_reward`.
+- **One inbox message** (`midweek_result`) per member per tournament.
+- The faucet gets its own ADR with the payout migration.
+
+### 44.8 Determinism, fairness and controls
+
+- **The tournament is a pure function** of the locked squads, the snapshots
+  and one secret 32-byte seed per tournament.
+- **Randomness** is `sha256(seed ‖ tag)` with the first 6 bytes read as an
+  integer in `[0, 2^48)`, where the tag names the draw (for example the match,
+  chance and field). All arithmetic is integer fixed-point in parts per
+  million; no floats, `exp` or `log` (ADR-090).
+- **Commit and reveal.** `seed_hash = sha256(seed)` is visible from the moment
+  the tournament exists; the seed itself only once the tournament is
+  `complete`. Nobody, admins included, can re-roll a week.
+- **A stored result is final.** A tournament is simulated at most once, its
+  result never changes, and squads are immutable after the lock.
+- **States:** `open` → `skipped` or `simulated` → `complete`; `open` or
+  `simulated` → `void`.
+- **Void** (`admin_void_midweek`, with a required reason) works only before
+  payout. It hides the week's results and pays nothing; it never recomputes.
+  After payout, corrections go through the audited `admin_adjust_wallet`.
+- **Rehearsal** (`admin_midweek_rehearsal`) runs the engine on the current
+  saved squads plus auto squads with a throwaway seed, returns the result, and
+  **writes nothing**.
+- **Launch switch.** A single-row `kut.midweek_config` with `enabled` (default
+  `false`). Disabled, the worker creates no new tournament; one already open
+  still runs unless voided.
+
+### 44.9 Reveals and privacy
+
+Everything is gated by time in definer projections on
+`kut.is_active_member()` (ADR-079); no reveal is a job.
+
+- **Before the lock** a member sees only their own saved squad, plus the
+  tournament's times and `seed_hash`.
+- **Entries** (the five cards of every squad, with their week-long factors)
+  appear with round 1.
+- **Each round's matches and events** appear at that round's reveal time.
+- **Pick shares** appear once the tournament is `complete`. An owner count is
+  shown only when at least `MIDWEEK_OWNER_COUNT_MIN` (3) entrants own the
+  Player; below that it is null and the report says "a rare pick". This rule
+  lives in SQL.
+- **Only the entered cards are ever shown,** never the rest of a collection.
+  Entry is the default; the rules page says plainly that your five are shown,
+  and the opt-out takes you out entirely (ADR-091).
+- **A void tournament** shows no results.
+
+### 44.10 Match reports
+
+- **Layout:** a headline, a timeline of 4–8 key moments (minute, event and
+  colour), and a "why" panel with each card's factors as numbers.
+- **Colour comes from engine events, never invented.** Every phrase is chosen
+  from the stored creator, shooter, chance type, outcome and probability.
+  Quality follows the odds: an unlikely chance that goes in is "sensational",
+  a routine one "tidy" or "scrappy".
+- **Chance types lean on archetype:**
+
+  | Archetype | Typical chances |
+  |---|---|
+  | Speedster | breakaways, runs down the wing, a chase onto a through ball |
+  | Finisher | volleys, first-time finishes, the rare overhead kick |
+  | Playmaker | through balls, free kicks, a curled shot from the edge of the box |
+  | Tank, Defender | headers from set pieces, scrambles in the box, a thunderous long shot |
+  | Goalkeeper | long throws that start a chance; a keeper goal is a once-a-season event |
+  | All-rounder | any of these at an average rate |
+
+- **The renderer is presentation only:** a pure TypeScript function of the
+  stored events and the seed. It decides nothing and needs no SQL twin.
+- **The full phrasebook ships at launch:** several hundred lines in layers
+  (build-up and assist, finishes by chance type and quality, injured variants,
+  saves, woodwork and blocks, penalty kicks, headlines, fact lines such as
+  contrarian hero, form hero, Bronze standout, upset, keeperless side,
+  three-keeper gamble, thrashing, brace and hat trick).
+- **Phrasebook rules**, pinned by unit tests like `CAST_LINES` (ADR-087):
+  - names, never gendered pronouns;
+  - nothing medical, no body parts, and never `kut.injury_periods.note`;
+  - an injured variant only for a card injured at the lock, and the humour is
+    about playing on, never the injury;
+  - a miss always credits someone ("a stunning save", "off the post"), never
+    ridicules the shooter; teasing managers' choices is fine;
+  - no phrasing repeats within one match;
+  - every line reaches members through a reviewed PR.
+
+### 44.11 Running without admin
+
+KUT has no scheduler; like ADR-061, one idempotent, service-role-only worker
+(`kut.run_midweek_due`) runs lazily from page visits and does whatever is due:
+
+- **open:** create the next tournament with its seed and `seed_hash` when the
+  config is enabled;
+- **lock:** after `lock_at`, apply the gates, build auto squads, snapshot,
+  simulate the whole bracket and store it (`simulated`);
+- **pay:** after `final_reveal_at`, pay, publish the seed and pick shares
+  (`complete`).
+
+Claims use `for update skip locked`, so concurrent calls do the work once. The
+result is identical whenever it is computed; only the moment coins land
+depends on when someone visits. Publishing sessions, which admins already do,
+is the only weekly input.
+
+### 44.12 Simulation targets
+
+The harness simulates at least 5,000 seasons against a mix of manager
+strategies; a fast smoke version runs in the unit suite.
+
+| Target | Starting value |
+|---|---|
+| Strongest collection beats the weakest in a single match | about 65% |
+| Strongest collection wins the whole tournament (8 entrants) | about 25–30% |
+| A thought-through five beats a random five from the same collection | at least 60% |
+| No fixed habit wins over a 20-week season (highest OVR, least popular, last week's winners, random) | none ahead by more than a few percent |
+| A Common or Bronze card is a match's standout | most weeks, at least once |
+| An empty slot is never the best choice | always |
+| An auto squad beats a typical picked squad | at most about 20% |
+| An auto squad reaches the last four | about 2% or less |
+| The squad that looks strongest after round 1 reaches the final | at most about 35% |
+
+### 44.13 Invariants to come
+
+Added to Part L by the PR that makes each hold:
+
+- **#25 (engine PR):** a tournament is simulated at most once, its stored
+  result never changes (a void hides it, never recomputes), and squads are
+  immutable after the lock.
+- **#26 (payout PR):** a midweek win pays at most once per (tournament, round,
+  member), and one tournament pays any member at most
+  `MIDWEEK_CHAMPION_TOTAL`.
 
 ---
 
@@ -3745,18 +4024,18 @@ Build:
 
 ---
 
-## 120. Phase 3 — Squads / weekly fantasy
+## 120. Phase 3 — Squads
 
-Build:
+Build Midweek Madness (§44), which replaced Friday Five (ADR-088):
 
-- Friday Five / TFH Five;
-- lock deadline;
-- weekly scoring;
-- weekly leaderboard;
-- small rewards;
-- squad history.
+- the pure engine and simulation harness first, with the owner's tuning
+  sign-off before any schema work;
+- squad entry, the archetype cooldown, the engine and worker, the payout,
+  then the entry and results pages;
+- one migration or invariant per PR (ADR-070).
 
-Do not implement until market/collection usage proves sustained.
+The original gate, "do not implement until market/collection usage proves
+sustained", was the owner's call to make; ADR-089 records the decision to build.
 
 ---
 
@@ -4292,8 +4571,29 @@ INJURY_WEEKLY_STIPEND = 100  # per rehab check-in, at most once per Player and f
 INJURY_COMEBACK_MIN_WEEKS = 3  # protected weeks before a return earns comeback Form, ADR-083
 INJURY_COMEBACK_FORM_PER_WEEK = 0.25  # ADR-083
 INJURY_COMEBACK_FORM_CAP = 2  # one comeback input never exceeds this; the Form cap of 8 still applies, ADR-083
+ARCHETYPE_CHANGE_COOLDOWN_DAYS = 14  # self-service changes only, ADR-089
 STARTER_COIN_GRANT = 250
 STARTER_CARD_COUNT = 3
+
+# Midweek Madness, §44 (ADR-089). Values marked "starting" are tuned in the
+# simulation harness and fixed at the owner's sign-off.
+MIDWEEK_CHAMPION_TOTAL = 250  # a champion's total over all rounds; its own constant
+MIDWEEK_SQUAD_SIZE = 5
+MIDWEEK_LOCK = Wednesday 20:00 Europe/Amsterdam
+MIDWEEK_REVEAL_INTERVAL_MINUTES = 30
+MIDWEEK_MIN_ENTRANTS = 4
+MIDWEEK_OWNER_COUNT_MIN = 3  # owner counts below this are never shown, ADR-091
+MIDWEEK_OVR_FACTOR_MAX = 1.35  # starting; 1.00 at OVR 30
+MIDWEEK_FORM_ROLL = 0.75 .. 1.45, mode 1.00  # starting
+MIDWEEK_PICK_FACTOR = (0, 1.30) (0.40, 1.00) (1, 0.85)  # starting; piecewise linear in share
+MIDWEEK_PICK_SHARE_SMOOTHING = +1 / +3
+MIDWEEK_DAY_ROLL = ±0.10  # starting
+MIDWEEK_INJURED_FITNESS = 0.95  # starting
+MIDWEEK_AUTO_FACTOR = 0.65  # starting
+MIDWEEK_TRIALIST_OVR = 30  # starting
+MIDWEEK_SHAPE_SCALE = 0.5  # starting; per 10 offset points
+MIDWEEK_KEEPERLESS_FACTOR = 0.60  # starting
+MIDWEEK_SHOOTOUT_MAX_ROUNDS = 20  # starting
 
 BASIC_PACK_PRICE = 250
 BASIC_PACK_CARD_COUNT = 3
@@ -4375,7 +4675,9 @@ They should remain configurable decisions rather than questions that stop develo
 4. Whether users choose archetypes themselves or admin assigns them.
    — *Answered: both. Members self-serve at `/settings/card`
    (`set_own_player_archetype`, ADR-027); admins can also set it. New joiners
-   keep the `all_rounder` default and are not nudged (ADR-050).*
+   keep the `all_rounder` default and are not nudged (ADR-050). A member's
+   own changes have a 14-day cooldown, because the archetype shapes a
+   Midweek Madness squad (§44.2, ADR-089).*
 5. Whether custom SMTP is configured before alpha.
    — *Answered 2026-09-02: no. Password recovery is admin-assisted; see §89.1
    and ADR-050.*

@@ -4924,3 +4924,50 @@ first, in a separate session. `node scripts/midweek/sample.mjs` exports an
 invented tournament with every report rendered (`design/midweek/`) as its
 input, and PRs 7–8 implement the approved mockups. PRs 3–6 carry on
 meanwhile.
+
+## ADR-094 — The archetype cooldown: how the 14 days are measured and what counts as a change
+
+Date: 2026-09-25
+
+Status: Accepted
+
+Context: ADR-089 decided that a member may change their own Player's archetype
+at most once every 14 days, because the archetype shapes a Midweek Madness
+squad's lines (BUILD_SPEC §44.2). The plan for PR 4 said to copy
+`kut.set_own_player_archetype` verbatim from
+`20260906000000_goalkeeper_archetype.sql` and add the guard. Four details were
+left open.
+
+Decision (migration `20261004000000_archetype_cooldown.sql`):
+
+- **The stamp.** `kut.players.archetype_changed_at` (nullable, no default, no
+  backfill) records the last self-service change. Null means never, so the
+  first change is always allowed, including for a Player whose archetype an
+  admin chose. The admin path (`admin_add_player`, admin writes to
+  `kut.players`) neither checks nor sets it.
+- **14 days is 336 elapsed hours.** A change is refused while
+  `now() < archetype_changed_at + interval '336 hours'`. `interval '14 days'`
+  would add calendar days in the session's time zone, which can differ by an
+  hour across a DST change from what the settings page computes. Elapsed hours
+  keep SQL and `nextArchetypeChangeAt` in `src/game/archetypes.ts` identical.
+- **Re-saving the current archetype is not a change.** It is neither refused
+  nor stamped, so pressing Save twice doesn't start (or restart) a cooldown. The
+  rating rebuild still runs, as it always did.
+- **The guard locks the Player row** (`for update`) before reading the stamp,
+  so two concurrent saves cannot both pass it. This is the one change to the
+  copied body beyond the guard itself.
+
+The refusal is SQLSTATE `22023` with the message
+`archetype change cooldown: next change allowed from <ISO-8601 UTC>` and the
+exact moment, to the microsecond, as its DETAIL. The page rounds the time it
+shows up to the minute, so it never names a moment the RPC would still refuse. An invalid archetype is still checked first and
+keeps its own `22023` message. `/settings/card` reads the stamp separately and
+tolerates its absence (Vercel deploys before the hosted push), shows the next
+allowed date in club time and disables the form until then; the server action
+turns the refusal into the same sentence if a stale page submits anyway.
+
+Privacy: `kut.players` is readable by every authenticated caller, so the stamp
+is too. It reveals when a member last changed their archetype, which the
+archetype itself already shows on every card; it is not treated as private.
+
+Tier: additive (ADR-032). Rides the last scheduled backup.

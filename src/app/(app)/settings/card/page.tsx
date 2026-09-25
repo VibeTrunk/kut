@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { type Archetype } from "@/game/archetypes";
+import { type Archetype, formatArchetypeChangeAt, nextArchetypeChangeAt } from "@/game/archetypes";
 import { requireUser } from "@/lib/auth/user";
 import { resolvePhotoUrls } from "@/lib/player-photos";
 import { createClient } from "@/lib/supabase/server";
@@ -80,11 +80,25 @@ export default async function MyCardPage() {
   const photoUrls = await resolvePhotoUrls(supabase, [row.photo_path]);
   const currentPhotoUrl = row.photo_path ? (photoUrls.get(row.photo_path) ?? null) : null;
 
+  // archetype_changed_at arrives with migration 20261004000000 (ADR-094).
+  // Vercel deploys before the hosted push, so it is read on its own and a
+  // missing column reads as "never changed"; the RPC still enforces the rule.
+  const { data: stamp } = await supabase
+    .schema("kut")
+    .from("players")
+    .select("archetype_changed_at")
+    .eq("id", row.id)
+    .maybeSingle();
+  const changedAt =
+    (stamp as { archetype_changed_at: string | null } | null)?.archetype_changed_at ?? null;
+  const nextChange = nextArchetypeChangeAt(changedAt);
+
   return shell(
     <CardEditor
       currentArchetype={row.archetype as Archetype}
       currentPhotoUrl={currentPhotoUrl}
       displayName={row.display_name}
+      nextArchetypeChange={nextChange ? formatArchetypeChangeAt(nextChange) : null}
       playerId={row.id}
     />,
   );

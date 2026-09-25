@@ -1766,8 +1766,9 @@ engine must reproduce that file (ADR-090).
   opted-out member cannot save a squad.
 - **Archetypes are frozen at the lock,** and a member may change their own
   Player's archetype (`set_own_player_archetype`) at most once every
-  `ARCHETYPE_CHANGE_COOLDOWN_DAYS` (14). The first change is always allowed,
-  and the admin path is not limited.
+  `ARCHETYPE_CHANGE_COOLDOWN_DAYS` (14, measured as 336 elapsed hours). The
+  first change is always allowed, re-saving the archetype the Player already
+  has is not a change, and the admin path is not limited (ADR-094).
 
 ### 44.3 Card power
 
@@ -2061,6 +2062,13 @@ the functions write and two gated projections read.
 
 All three projections are definer views gated on `kut.is_active_member()`
 (ADR-079): a denied caller reads zero rows.
+
+**Archetype cooldown (`20261004000000_archetype_cooldown.sql`, ADR-094).**
+
+| Object | What it holds or does |
+|---|---|
+| `kut.players.archetype_changed_at` | When the member last changed the Player's archetype through self-service. Null means never; nothing is backfilled, and admin changes don't set it. |
+| `kut.set_own_player_archetype(text)` | Now refuses a change within 336 hours of `archetype_changed_at` (`22023`, message `archetype change cooldown: next change allowed from <ISO-8601 UTC>`, the exact moment to the microsecond as DETAIL), and stamps it on a change. Re-saving the current archetype is neither refused nor stamped. Its other refusals are unchanged. |
 
 ---
 
@@ -4631,7 +4639,7 @@ INJURY_WEEKLY_STIPEND = 100  # per rehab check-in, at most once per Player and f
 INJURY_COMEBACK_MIN_WEEKS = 3  # protected weeks before a return earns comeback Form, ADR-083
 INJURY_COMEBACK_FORM_PER_WEEK = 0.25  # ADR-083
 INJURY_COMEBACK_FORM_CAP = 2  # one comeback input never exceeds this; the Form cap of 8 still applies, ADR-083
-ARCHETYPE_CHANGE_COOLDOWN_DAYS = 14  # self-service changes only, ADR-089
+ARCHETYPE_CHANGE_COOLDOWN_DAYS = 14  # self-service changes only, as 336 elapsed hours, ADR-089, ADR-094
 STARTER_COIN_GRANT = 250
 STARTER_CARD_COUNT = 3
 
@@ -4741,7 +4749,8 @@ They should remain configurable decisions rather than questions that stop develo
    (`set_own_player_archetype`, ADR-027); admins can also set it. New joiners
    keep the `all_rounder` default and are not nudged (ADR-050). A member's
    own changes have a 14-day cooldown, because the archetype shapes a
-   Midweek Madness squad (§44.2, ADR-089).*
+   Midweek Madness squad (§44.2, ADR-089); `/settings/card` shows when the
+   next change is allowed (ADR-094).*
 5. Whether custom SMTP is configured before alpha.
    — *Answered 2026-09-02: no. Password recovery is admin-assisted; see §89.1
    and ADR-050.*

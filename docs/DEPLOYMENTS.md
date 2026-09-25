@@ -18,6 +18,48 @@ dated "Hosted deployment…" entries in `PROGRESS.md`.
 then bump the "Latest hosted migration" line in `CLAUDE.md`. Record the tier,
 backup id, pre/post `migration list` counts, the smoke row, and the rollback.
 
+## 2026-09-26 — `20261005000000` Midweek Madness engine (ADR-090, ADR-091, ADR-095)
+
+Deployed 2026-09-26 from `VibeTrunk/supabase` (catalogue PR #52 there), on its
+own additive `db push`:
+
+- `20261005000000_midweek_engine.sql` (BUILD_SPEC §44.3–§44.11, §44.14, Part L
+  #25, ADR-095, KUT PR #125, tier additive) &mdash; Midweek Madness migration C:
+  the engine, the lazy worker, the stored result, the reveal views and the
+  admin controls. No coins yet.
+  - **What changed.** The engine as internal `kut._mm_*` functions; six result
+    tables (entries, entry cards, pick shares, matches, match events, the
+    worker log) with RLS on and only `service_role` select; eight Part L #25
+    guard triggers; `voided_at` and `voided_by` on `kut.midweek_tournaments`;
+    the service-role worker `kut.run_midweek_due`; five gated views
+    (`midweek_matches_public`, `midweek_events_public`,
+    `midweek_entries_public`, `midweek_pick_shares_public`,
+    `midweek_admin_overview`); `champion_user_id` and `champion_name` appended
+    to `midweek_tournaments_public`; the admin RPCs
+    `admin_set_midweek_enabled`, `admin_void_midweek` and
+    `admin_midweek_rehearsal`.
+  - **No DML.** The worker writes only once a tournament exists, which needs
+    the switch, still off. It rode the latest scheduled backup
+    (`20260923-112450`, cold-verified). Pre-push `migration list --linked`
+    showed 75 entries with `20261005000000` the only local-only one and no
+    remote-only drift, the dry run named exactly that file, and the catalogue
+    check reported 75 approved source migrations. Afterwards it showed 75
+    entries, all present locally and remotely, no drift.
+  - **Smoke-tested on hosted.** In the SQL editor, one row,
+    `6/6 | 5/5 | champion_name | 8/8 | false:false:true | false | true | true | false | 0`,
+    identical to the local run, confirmed:
+    - the six tables and five views exist;
+    - the tournament list ends with `champion_name`;
+    - all eight guard triggers are in place;
+    - only `service_role` can run the worker, and members cannot run the engine;
+    - the hosted engine reproduces a golden draw and the golden lock time for
+      the week of 2026-10-26, so the time zone data agrees with the TypeScript
+      twin;
+    - the switch is off and no tournament exists.
+  - **Deploy ordering** was safe: KUT PR #125 has no UI.
+  - Rollback: as in the migration header, with the switch off and no
+    tournament simulated.
+
 ## 2026-09-25 — `20261004000000` archetype cooldown (ADR-089, ADR-094)
 
 Deployed 2026-09-25 from `VibeTrunk/supabase` (catalogue PR #50 there), on its

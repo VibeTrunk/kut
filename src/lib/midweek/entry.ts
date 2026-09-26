@@ -9,6 +9,7 @@
  * decide what the page says.
  */
 
+import { archetypeLabel } from "@/game/archetypes";
 import { MIDWEEK } from "@/game/midweek/config";
 
 const AMS = "Europe/Amsterdam";
@@ -190,6 +191,27 @@ export function stageName(round: number, rounds: number): string {
 // ---- the squad ----------------------------------------------------------------
 
 export type Segment = { text: string; strong?: boolean };
+
+/**
+ * The archetype a card plays this week, and how the picker names it (ADR-099):
+ * the week's snapshot from when it opened, or the live archetype for a Player
+ * without one (created since the open, or before the hosted push added
+ * snapshots). A change since the open is named, so the owner isn't surprised.
+ */
+export function weekArchetype(
+  frozen: ReadonlyMap<string, string>,
+  playerId: string,
+  live: string,
+): { archetype: string; label: string } {
+  const archetype = frozen.get(playerId) ?? live;
+  return {
+    archetype,
+    label:
+      archetype === live
+        ? archetypeLabel(archetype)
+        : `${archetypeLabel(archetype)} this week, ${archetypeLabel(live)} from next`,
+  };
+}
 
 /**
  * `MidweekKeeperCheck`, from archetypes alone: no factor is known before the

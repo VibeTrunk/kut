@@ -257,7 +257,8 @@ export function CardEditor({
           <p className="mt-1 text-sm text-ink-faint">
             This reshapes the six stats on your <strong>{displayName}</strong> card. It does not
             change your OVR. Saving recalculates every stat. You can change it once every{" "}
-            {ARCHETYPE_CHANGE_COOLDOWN_DAYS} days.
+            {ARCHETYPE_CHANGE_COOLDOWN_DAYS} days. In Midweek Madness a change counts from the next
+            week: the week already open plays the archetype you had when it opened.
           </p>
         </div>
         {nextArchetypeChange && (

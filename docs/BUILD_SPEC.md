@@ -1764,8 +1764,12 @@ engine must reproduce that file (ADR-090).
 - **Opting out.** A member can opt out in settings and is then never entered,
   picked or auto. An opt-out saved before the lock applies to that week. An
   opted-out member cannot save a squad.
-- **Archetypes are frozen at the lock,** and a member may change their own
-  Player's archetype (`set_own_player_archetype`) at most once every
+- **Archetypes are frozen when the tournament opens** (ADR-099). Opening a
+  week snapshots every Player's archetype; the picker shows the snapshot and
+  the lock plays it, so a change made while a week is open applies from the
+  next week, and nobody can reshape squads others have already picked. A
+  Player created after the open has no snapshot and plays their live
+  archetype. A member may change their own Player's archetype (`set_own_player_archetype`) at most once every
   `ARCHETYPE_CHANGE_COOLDOWN_DAYS` (14, measured as 336 elapsed hours). The
   first change is always allowed, re-saving the archetype the Player already
   has is not a change, and the admin path is not limited (ADR-094).
@@ -2044,10 +2048,10 @@ never fails the page.
 
 **When the lock snapshot is taken (ADR-095).** The lock step runs at the first
 worker call at or after `lock_at`, and reads the field then: who is active,
-which cards they own, and each card's OVR, archetype and injury flag. Opt-outs
-alone count as of `lock_at` itself (`opted_out_at <= lock_at`). A trade, a
-published session or an archetype change between `lock_at` and that first call
-is therefore seen. Page visits on a Wednesday evening make the gap minutes, and
+which cards they own, and each card's OVR and injury flag. The archetype is
+the week's snapshot from when it opened (§44.2, ADR-099). Opt-outs alone count
+as of `lock_at` itself (`opted_out_at <= lock_at`). A trade or a published
+session between `lock_at` and that first call is therefore seen. Page visits on a Wednesday evening make the gap minutes, and
 KUT keeps no history to read an earlier moment from.
 
 ### 44.12 Simulation targets
@@ -2154,6 +2158,15 @@ overview on `kut.is_admin()`), and a void week shows no result in any of them.
 | `kut._mm_pay_tournament(uuid)` | Internal. Pays every stored win of a tournament (byes as round-1 wins), skipping a member disabled since the lock: guard row, wallet, ledger row, balance, then one `midweek_result` message per member paid. Returns the wins paid. |
 | `kut._mm_complete_tournament(uuid)` | Re-created: pays before publishing the seed and setting `complete`, in one transaction under the tournament's row lock. Its contract is unchanged. |
 | `kut.my_midweek_rewards` | The caller's own rewards: `tournament_id`, `week_start`, `round_no`, `match_id`, `bye`, `amount`, `paid_at`. A definer view gated on `kut.is_active_member()`. |
+
+**Archetype snapshot (`20261008000000_midweek_archetype_snapshot.sql`, ADR-099).**
+
+| Object | What it holds or does |
+|---|---|
+| `kut.midweek_archetype_snapshots` | Each Player's archetype per tournament (`tournament_id`, `player_id`, `archetype`), written when the tournament is inserted. Service role reads it. |
+| Trigger `midweek_tournament_archetype_snapshot` | After insert on `kut.midweek_tournaments`: snapshots every row of `kut.players` for the new tournament, whatever inserted it. |
+| `kut._mm_field(uuid, timestamptz)` | Re-created: a card's archetype is the tournament's snapshot, or the live one for a Player without a row. Otherwise unchanged. |
+| `kut.midweek_archetypes` | The snapshots (`tournament_id`, `player_id`, `archetype`) for the picker. A definer view gated on `kut.is_active_member()`. |
 
 ---
 

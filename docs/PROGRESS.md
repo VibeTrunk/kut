@@ -3863,3 +3863,33 @@ Week-Complete, the bracket mid-reveal and complete, three reports (shoot-out
 with an injured Player, thrashing, shoot-out), Home, Collection, admin, void
 and Week-Void with the mockups; it found the shoot-out's screen-reader table
 widening a 320 px screen, now fixed.
+
+## Midweek Madness launch — 2026-09-26
+
+PR 9 of the Midweek Madness build: the launch. Operations and docs, plus one
+fix the launch found.
+
+- **Hosted rehearsal** with the owner, switch off, no week open: three runs,
+  each a field of 22 (matching an independent SQL count), all auto squads, a
+  32-slot, 5-round bracket (10 byes and 6 matches in round 1), pay per win
+  17 · 33 · 50 · 67 · 83, a different real champion each run, and only the
+  two expected info warnings. No club break: the 21 Sep session is published.
+- **Backup** `20260926-102414`, fresh and cold-verified, before the faucet
+  opened.
+- **KB-024: the switch failed on hosted.** `admin_set_midweek_enabled`
+  updated its single config row with no `WHERE`, which PostgREST's
+  `safeupdate` rejects; every database suite connects as `postgres` and never
+  loads it. Fixed in PR #131, migration `20261007000000` (`where id`), with a
+  schema-wide pgTAP guard (no `kut` function updates or deletes without a
+  `WHERE`) and an integration test that calls the switch as `authenticator`,
+  as the API does. Catalogued as supabase #56 and pushed the same day.
+- **Switched on** by the owner on `/admin/midweek`. The first week opened on
+  the next page visit: week 2026-09-28, locking **Wed 30 Sep 20:00**. Checked
+  on the admin page, on Home ("Pick your five") and as an ordinary member.
+- **Next:** the first live Wednesday checklist (the plan's manual item 5):
+  the owner saves a squad as an ordinary member before 20:00 and follows the
+  evening through to the payout and the seed check.
+
+Verified: `npm run verify:fast`, `npm run test:db` and
+`npm run test:integration` for #131 locally and in CI; the hosted smoke row
+matched the local run.

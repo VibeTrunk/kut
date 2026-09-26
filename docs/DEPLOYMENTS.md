@@ -18,6 +18,71 @@ dated "Hosted deployment…" entries in `PROGRESS.md`.
 then bump the "Latest hosted migration" line in `CLAUDE.md`. Record the tier,
 backup id, pre/post `migration list` counts, the smoke row, and the rollback.
 
+## 2026-09-26 — Midweek Madness switched on (operational, no migration)
+
+The launch of Midweek Madness (PR 9 of the build, BUILD_SPEC §44.8): no
+migration, an external mutation of production, performed by the owner.
+
+- **Rehearsal first.** The owner ran `admin_midweek_rehearsal` three times on
+  `/admin/midweek` with the switch off and no week open (it writes nothing).
+  Each run: a field of **22**, matching an independent SQL count of members
+  not disabled, not opted out (0 opted out) and owning an unburned card; 0
+  picked and 22 auto squads; a **32-slot, 5-round** bracket with **10 byes and
+  6 matches** in round 1, then 8 · 4 · 2 · 1; pay per win 17 · 33 · 50 · 67 ·
+  83; reveals 20:30 to 22:30. A different real champion each run (Jurie,
+  Melle, Cedric). Warnings, info only: no tournament open (everyone auto) and
+  the switch paused. No club-break warning: the session of 2026-09-21 is
+  published.
+- **Backup.** A fresh cold-verified backup, `20260926-102414`, before the
+  switch, because switching on starts the coin faucet (ADR-096; the first
+  final pays up to 953 coins).
+- **The switch failed on the first try:** KB-024, fixed by `20261007000000`
+  (entry below) before the launch went on.
+- **Switched on 2026-09-26 by the owner** in `/admin/midweek`. The next page
+  visit ran the lazy trigger, which opened the first week: **week_start
+  2026-09-28, locking Wed 30 Sep 20:00 Amsterdam**, status `open`, the seed
+  secret and a 64-character seal published. Checked: `/admin/midweek` shows
+  it open, Home shows "Pick your five · Wed 30 Sept", and an ordinary member
+  sees the picker on `/club/midweek`; in the SQL editor (tables, not the gated
+  views) the switch is on and one tournament exists, as expected.
+- **Rollback, in order of severity:** pause the switch (no new weeks; an open
+  week still runs, §44.8); void an open or simulated week before payout at
+  `/admin/midweek?void=1`, with a reason members read; after payout, correct a
+  member with the audited `admin_adjust_wallet`. Nothing re-runs a week. The
+  backup above is the last resort.
+
+## 2026-09-26 — `20261007000000` the Midweek switch names its row (KB-024)
+
+Deployed 2026-09-26 from `VibeTrunk/supabase` (catalogue PR #56 there), on its
+own additive `db push`:
+
+- `20261007000000_midweek_switch_where.sql` (BUILD_SPEC §44.8, ADR-095,
+  KB-024, KUT PR #131, tier additive) &mdash; the launch switch through the API.
+  - **What changed.** `kut.admin_set_midweek_enabled` re-created with `where
+    id`. Its `UPDATE` of the single-row `kut.midweek_config` had no `WHERE`,
+    and PostgREST's `authenticator` role preloads `safeupdate`, which rejects
+    that (21000), so the owner's first flip on `/admin/midweek` failed.
+    Otherwise identical: checks, errors, grants, return value.
+  - **No DML.** It rode the fresh backup taken for the launch,
+    `20260926-102414`, cold-verified. Pre-push `migration list --linked`
+    showed 77 entries with `20261007000000` the only local-only one and no
+    remote-only drift, the dry run named exactly that file, and the catalogue
+    check reported 77 approved source migrations. Afterwards it showed 77
+    entries, all present locally and remotely, no drift.
+  - **Smoke-tested on hosted.** In the SQL editor, one row,
+    `true | 0 | false | true | true | false | 0`, identical to the local run,
+    confirmed:
+    - the function names its row;
+    - no `kut` function updates or deletes without a `WHERE`;
+    - `anon` cannot execute it, `authenticated` can, and it is still
+      security definer;
+    - the switch was still off, with no tournament.
+
+    The owner's flip then succeeded (entry above).
+  - **Deploy ordering** was safe: KUT PR #131 changes no app code.
+  - Rollback: re-create the function from `20261005000000` section 6 (the
+    switch is then unusable through the API again).
+
 ## 2026-09-26 — `20261006000000` Midweek Madness payouts (ADR-096)
 
 Deployed 2026-09-26 from `VibeTrunk/supabase` (catalogue PR #54 there), on its

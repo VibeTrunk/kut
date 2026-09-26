@@ -191,7 +191,7 @@ Raw triage (who asked, de-duplication, disposition) lives in
 | Prestige + collections — hand in N cards for a reward | idea | Two related card-sink mechanics: a permanent cosmetic medal for turning in 30 distinct cards; themed sets (e.g. ≥80% of a session's attendees) handed in for a coin payout. New tables + a sink and/or faucet + UI. `BUILD_SPEC.md` Part XXXV already sketches collection challenges. |
 | "Store" instead of "Packs" | idea | Rename the section and add variety: multiple pack types, sub-250-coin items, cosmetics that pimp your personal card. Today there is one 250-coin basic pack. New product surface + a cosmetics model; ADR + migration. |
 | Player / Team of the Season ("TOTS" = Terrible of the Season) | idea | End-of-season award from most team-of-the-week appearances / most goals, plus a Team of the Season XI. Season-boundary aggregation over existing snapshot + goal data; no economy change if purely cosmetic. |
-| Coin-generating dimension — mini-game or PvP on card collections | specified | Large: a new subsystem with its own tables and a new coin faucet to balance against the Part L invariants. Recorded in the spec as "Future idea 1". Specified as "Midweek Madness" below (BUILD_SPEC §44, ADR-089). |
+| Coin-generating dimension — mini-game or PvP on card collections | shipped | Large: a new subsystem with its own tables and a new coin faucet to balance against the Part L invariants. Recorded in the spec as "Future idea 1". Specified as "Midweek Madness" below (BUILD_SPEC §44, ADR-089); live since 2026-09-26. |
 | Peer / performance scoring beyond goals — assists, defensive play, post-game survey, 1–5 player ratings, goalie saves, goal reward scaled by player count | partial | The **"Real-life play → ratings"** design for this round-3 cluster shipped 2026-09-06 (ADR-059/060/063): attendance backbone, diminishing-returns goals and a positive-only post-game kudos survey. **Open remainder:** assists, defensive play, 1–5 player ratings, goalie saves and scaling the goal reward by player count — none of these has a design, and each would need its own ADR. |
 | Distinct goalkeeper stat set (handling / reflexes / …) | idea | ADR-036 shipped a goalkeeper archetype that reuses the six outfield stats with an offset. A true GK stat set would rewrite the card component and every attribute projection — deferred as the "hard" variant in the round-1 triage. |
 | Market auctions | idea | ADR-042 added fixed-price listings + escrow trade offers; ADR-072 let the seller choose a 24- or 72-hour window. A timed ascending auction is still a separate mechanic. |
@@ -423,7 +423,7 @@ archetype influences the portrait are open design decisions.
 
 ## Midweek Madness — weekly 5-card squad knockout
 
-**Status: specified** (2026-09-25, ADR-089). The rules are canonical in
+**Status: shipped** (specified 2026-09-25, ADR-089; built in PRs #114–#131; switched on 2026-09-26, first week Wed 30 Sep). The rules are canonical in
 BUILD_SPEC §44; this section keeps the design rationale from the brainstorm it
 grew out of. Where the two differ, §44 wins. Numbers marked as starting values
 are tuned by the simulation harness and signed off by the owner in
@@ -816,8 +816,8 @@ Ten PRs, each on its own branch, one migration or invariant each (ADR-070):
 | 5 | Migration: SQL engine, `run_midweek_due`, reveal views, admin void and rehearsal; Part L #25. Per HANDOFF.md: bye positions, per-card per-match day rolls, goals per side, the champion on `midweek_tournaments_public`, owner counts withheld until `complete` (D3), admin counts and the rehearsal's return shape (migration `20261005000000`, ADR-095) | shipped (#125); on hosted 2026-09-26 |
 | 6 | Migration: payouts, ledger reason `midweek_win`, the faucet ADR; Part L #26. Per HANDOFF.md: a member view of their own midweek rewards (migration `20261006000000`, ADR-096) | shipped (#127); on hosted 2026-09-26 |
 | 7 | Entry UI, built to the approved mockups: the picker, opt-out, navigation (Home owns the route, D1; the Collection strip, D2), tolerant reads (ADR-097; no migration) | shipped (#129) |
-| 8 | Results UI, built to the approved mockups: bracket, match report (a renderer `ownersPublished` flag, D3), the result leading until Thursday 23:59 (D4), admin page, the lazy trigger (ADR-098; no migration) | built, in review |
-| 9 | Launch: hosted rehearsal with the owner, enable the config | planned |
+| 8 | Results UI, built to the approved mockups: bracket, match report (a renderer `ownersPublished` flag, D3), the result leading until Thursday 23:59 (D4), admin page, the lazy trigger (ADR-098; no migration) | shipped (#130) |
+| 9 | Launch: hosted rehearsal with the owner, enable the config | shipped 2026-09-26: rehearsal passed (22 entrants, 32 slots, 5 rounds); the switch failed through the API (KB-024), fixed by migration `20261007000000` (#131); switched on the same day (`docs/DEPLOYMENTS.md`) |
 
 It lives at `/club/midweek`, owned by Home in the navigation, next to the Chronicle (owner decision D1 in `design/midweek/HANDOFF.md`); the Club page card became a Collection strip (D2).
 

@@ -1,19 +1,27 @@
 import Link from "next/link";
 import { LogoutButton } from "@/components/logout-button";
+import { MidweekOptOutPanel } from "@/components/midweek/opt-out-panel";
 import { requireUser } from "@/lib/auth/user";
 import { isAdminRole } from "@/lib/auth/roles";
+import { isLockedTonight, isPickingOpen, nextEntryWeekLabel } from "@/lib/midweek/entry";
+import { loadMidweekEntryState } from "@/lib/midweek/load";
 import { createClient } from "@/lib/supabase/server";
 import { ClubNameForm } from "./club-name-form";
 
 export default async function SettingsPage() {
   const user = await requireUser();
   const supabase = await createClient();
-  const { data: profile } = await supabase
-    .schema("kut")
-    .from("profiles")
-    .select("username, club_name, display_name, role")
-    .eq("id", user.id)
-    .maybeSingle();
+  const [{ data: profile }, midweek] = await Promise.all([
+    supabase
+      .schema("kut")
+      .from("profiles")
+      .select("username, club_name, display_name, role")
+      .eq("id", user.id)
+      .maybeSingle(),
+    // The opt-out (ADR-091) shows whenever Midweek does (ADR-097).
+    loadMidweekEntryState(supabase),
+  ]);
+  const now = new Date();
 
   const displayName = profile?.display_name ?? user.displayName;
   const defaultClubName = `${displayName}'s Club`;
@@ -43,6 +51,17 @@ export default async function SettingsPage() {
         <div className="rounded-2xl border border-line/60 bg-panel/60 p-6">
           <ClubNameForm currentName={profile?.club_name ?? null} defaultName={defaultClubName} />
         </div>
+
+        {midweek && (
+          <MidweekOptOutPanel
+            hasSavedSquadThisWeek={
+              isPickingOpen(midweek.current, now) && (midweek.squad?.length ?? 0) > 0
+            }
+            locked={isLockedTonight(midweek.current, now)}
+            optedOut={midweek.current.opted_out}
+            weekLabel={nextEntryWeekLabel(midweek.current, now)}
+          />
+        )}
 
         <Link
           className="group flex items-center justify-between gap-4 rounded-2xl border border-line/60 bg-panel/60 p-6 hover:border-brass/60"

@@ -3782,3 +3782,38 @@ week once, a full bracket, one ledger row per win) and `npm run verify:fast`.
 Merged as #127 and pushed to hosted on 2026-09-26 after a fresh cold-verified
 backup (catalogue PR #54 in `VibeTrunk/supabase`); the record is in
 `docs/DEPLOYMENTS.md`.
+
+## Midweek Madness entry UI — 2026-09-26
+
+PR 7 of the Midweek Madness build: the pages members pick on, built to the
+approved mockups (`design/midweek/`, HANDOFF.md; ADR-097). No migration: every
+view it reads is already on hosted, where the switch is off.
+
+- **`/club/midweek`, the picker:** the lock time with a ticking countdown, the
+  fairness seal, the privacy line, "Your five" as slot rows on a phone and a
+  team sheet of cards from `lg`, the keeper check, a save bar pinned above the
+  tab bar on a phone, and the grid of your cards, one tile per Player (the save
+  sends the strongest copy). "Load last week's five" pre-fills and saves
+  nothing. Starter, opted-out and no-cards states; a last-week strip for the
+  previous week's result, skip or void.
+- **Outside an open week:** short holding states (locked tonight, next week
+  opening soon, opening soon), which the results UI (PR 8) replaces.
+- **Settings:** the Midweek Madness switch, two steps to opt out and one tap
+  back, with wording that depends on whether a saved five would be withdrawn.
+- **Entry points:** a card under Home's header and a strip under the
+  Collection header, before the lock. Home owns the route in the navigation
+  (D1).
+- **`/how-it-works` section 12:** the rules in members' words, the coin table
+  from `roundPayouts`, what other members see, and fair draws.
+- **Tolerant:** switched off with nothing running, the route is not found and
+  every entry point is absent; a missing view or failed read hides it.
+
+Verified locally: `npm run verify:fast` (unit tests for the countdown,
+visibility, keeper check, last-week pre-fill, save status, strongest copy per
+Player, refusal copy, last-week and skip wording, and the opt-out wording; the
+navigation test) and `npm run test:e2e:authenticated` (Pixel 7 and 320 px:
+`release_member` picks five, saves and sees them saved after a reload; the
+Settings opt-out and the picker's way back; `/club/midweek` in the core-route
+loop with no horizontal overflow). A local visual review at 320 px, Pixel 7
+and 1440 px compared the picker states, Settings, Home and Collection with the
+mockups.

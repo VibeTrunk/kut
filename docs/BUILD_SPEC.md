@@ -2223,6 +2223,15 @@ Chrome controls, right of the bar on both platforms:
 redirects to `/chronicle`. Its Club Value figure moved to the Collection
 header; its card and unique-player counts were already there.
 
+**Update (2026-09-26, ADR-097).** Home also owns **Midweek Madness**
+(`/club/midweek` and the pages beneath it, §44), next to the Chronicle: both
+answer "what's happening this week", and Home's card is the way in (owner
+decision D1). The route sits under `/club`, but the `/club` redirect is
+unchanged and Collection does not own it. Collection carries a one-line
+Midweek strip under its header instead of the Club-page card the build plan
+had (D2). Neither the Midweek pages nor their entry points show while Midweek
+Madness is switched off with no week running.
+
 Desktop may use side/top navigation. Because the navigation is a public
 surface, this list remains the canonical record of it.
 
@@ -2278,6 +2287,12 @@ Home should answer "what changed?" quickly.
 > summary view (`security_invoker = true` — published sessions and their
 > attendance are already member-readable by RLS). Home's "Session published"
 > rows link to it. This is the "latest-session widget" noted above.
+
+> **Amended (ADR-097):** a **Midweek Madness card** sits directly under Home's
+> header, the one thing on Home with a deadline: before the lock "Pick your
+> five" (with the countdown, and the auto-squad warning) or "Your five are in".
+> It shows only while picking is open for a member who hasn't opted out; its
+> evening and after-the-final states follow with the results pages (§44).
 
 MVP widgets:
 

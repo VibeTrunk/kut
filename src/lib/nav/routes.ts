@@ -95,7 +95,11 @@ export const PRIMARY_TABS: readonly RouteEntry[] = [
   // Home owns the Chronicle: both answer "what happened this week", Home is
   // where you enter it, and without this the Chronicle would be the one member
   // destination the chrome cannot place you in.
-  { key: "home", href: "/", label: "Home", owns: ["/", "/chronicle"] },
+  // Midweek Madness joins it for the same reason (owner decision D1, ADR-097):
+  // it is "what's happening this week", and Home's card is its entry. It lives
+  // under /club, but the /club redirect to Collection stays and Collection
+  // does not own it.
+  { key: "home", href: "/", label: "Home", owns: ["/", "/chronicle", "/club/midweek"] },
   // Club Value is "my club" and is now reached from the Collection header.
   {
     key: "collection",

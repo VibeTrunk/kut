@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { Client } from "pg";
 import { assertLocalTarget } from "../support/local-target";
+import { removeMidweekFixture, seedMidweekFixture } from "./midweek-fixture";
 
 const users = [
   {
@@ -47,6 +48,7 @@ export default async function globalSetup() {
   const database = new Client({ connectionString: databaseUrl });
   await database.connect();
   try {
+    await removeMidweekFixture(database);
     await removeFixtureUsers();
     for (const fixture of users) {
       const created = await admin.auth.admin.createUser({
@@ -62,8 +64,10 @@ export default async function globalSetup() {
         [userId, fixture.username, fixture.displayName, fixture.role, fixture.playerId],
       );
       await database.query("insert into kut.wallets(user_id, balance) values($1, 500)", [userId]);
+      if (fixture.username === "release_member") await seedMidweekFixture(database, userId);
     }
   } catch (error) {
+    await removeMidweekFixture(database);
     await removeFixtureUsers();
     throw error;
   } finally {

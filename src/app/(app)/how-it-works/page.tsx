@@ -1,7 +1,10 @@
 import Link from "next/link";
-import { ARCHETYPES, ARCHETYPE_LABELS } from "@/game/archetypes";
+import { ARCHETYPES, ARCHETYPE_CHANGE_COOLDOWN_DAYS, ARCHETYPE_LABELS } from "@/game/archetypes";
 import { GAME_CONFIG } from "@/game/config";
 import { ECONOMY } from "@/game/economy";
+import { bracketShape } from "@/game/midweek/bracket";
+import { MIDWEEK } from "@/game/midweek/config";
+import { roundPayouts } from "@/game/midweek/rewards";
 import {
   ARCHETYPE_OFFSETS,
   RARITY_BANDS,
@@ -9,6 +12,7 @@ import {
   calculateLiveDiscardValue,
 } from "@/game/rating-engine";
 import { requireUser } from "@/lib/auth/user";
+import { LOCK_CLOCK, ROUND_ONE_CLOCK } from "@/lib/midweek/entry";
 
 export const metadata = { title: "How KUT works" };
 
@@ -23,9 +27,20 @@ const RARITY_INTENT: Record<(typeof RARITY_BANDS)[number]["tier"], string> = {
 
 const ATTRS = ["pac", "sho", "pas", "dri", "def", "phy"] as const;
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({
+  title,
+  id,
+  children,
+}: {
+  title: string;
+  id?: string;
+  children: React.ReactNode;
+}) {
   return (
-    <section className="space-y-3 rounded-3xl border border-line/60 bg-panel/60 p-6">
+    <section
+      className="scroll-mt-6 space-y-3 rounded-3xl border border-line/60 bg-panel/60 p-6"
+      id={id}
+    >
       <h2 className="display text-2xl">{title}</h2>
       <div className="space-y-3 text-ink-dim">{children}</div>
     </section>
@@ -42,6 +57,11 @@ export default async function HowItWorksPage() {
   const discardRows = [30, 40, 50, 60, 70, 80].map((ovr) => ({
     ovr,
     value: calculateLiveDiscardValue(ovr),
+  }));
+  // Midweek Madness coins per win (§44.7), for a full bracket of each size.
+  const midweekPayRows = [4, 8, 16, 32].map((entrants) => ({
+    entrants,
+    pays: roundPayouts(bracketShape(entrants).rounds),
   }));
 
   return (
@@ -334,6 +354,110 @@ export default async function HowItWorksPage() {
             </Link>{" "}
             inbox keeps a private record of your club and market activity &mdash; sales, purchases,
             and coin rewards. Only you can read it.
+          </p>
+        </Section>
+
+        {/* Section 12 (HowItWorks-Midweek). It is the rules page, so it stays
+            up even while Midweek Madness is disabled (ADR-097). Every number
+            comes from the engine's config, never typed into the copy. */}
+        <Section id="midweek" title="12. Midweek Madness">
+          <p>
+            Every Wednesday, {MIDWEEK.squadSize} of your cards play a knockout against everyone
+            else&rsquo;s. You pick them during the week, the bracket is played the moment squads
+            lock, and the results come out round by round that evening.
+          </p>
+          <h3 className="pt-2 font-black text-ink">The week</h3>
+          <ul className="ml-5 list-disc space-y-1">
+            <li>
+              Pick up to {MIDWEEK.squadSize} cards from your collection,{" "}
+              <strong className="text-ink">one per Player</strong>, any time until{" "}
+              <strong className="text-ink">Wednesday {LOCK_CLOCK}</strong>. Change them as often as
+              you like.
+            </li>
+            <li>
+              Round 1 comes out at {ROUND_ONE_CLOCK}, then a round every{" "}
+              {MIDWEEK.schedule.revealIntervalMinutes} minutes until the final.
+            </li>
+            <li>
+              No TFH session the week before means a club break: no Midweek Madness that week.
+            </li>
+          </ul>
+          <h3 className="pt-2 font-black text-ink">If you don&rsquo;t pick</h3>
+          <p>
+            You still play. An <strong className="text-ink">auto squad</strong> of up to{" "}
+            {MIDWEEK.squadSize} random Players from your collection takes your place, heavily
+            handicapped. It rarely gets far; picking is always better. Empty slots are filled by{" "}
+            <strong className="text-ink">trialists</strong>: Common All-rounders at OVR{" "}
+            {MIDWEEK.trialist.ovr}, handicapped so a real card always beats one.
+          </p>
+          <h3 className="pt-2 font-black text-ink">What makes a card strong</h3>
+          <ul className="ml-5 list-disc space-y-1">
+            <li>
+              <strong className="text-ink">OVR</strong> counts, but only a little: the gap between a
+              Common and a Holo is small.
+            </li>
+            <li>
+              <strong className="text-ink">Form</strong>: each Player gets one roll for the week,
+              the same for every squad that fields them.
+            </li>
+            <li>
+              <strong className="text-ink">Pick</strong>: the fewer managers who pick a Player, the
+              bigger their boost. Popular picks get a small dent.
+            </li>
+            <li>
+              <strong className="text-ink">Fitness</strong>: an injured Player&rsquo;s Live card
+              plays on, at slightly less.
+            </li>
+            <li>
+              <strong className="text-ink">Day</strong>: a fresh roll every match, so upsets happen.
+            </li>
+          </ul>
+          <p>
+            Archetypes set your shape: attackers make chances, playmakers create them, defenders
+            stop them. <strong className="text-ink">Take a Goalkeeper</strong>: without one, your
+            best defender goes in goal and keeps goal much worse. You can change your own archetype
+            once every {ARCHETYPE_CHANGE_COOLDOWN_DAYS} days.
+          </p>
+          <h3 className="pt-2 font-black text-ink">Coins</h3>
+          <p>
+            Every match you win pays KUT Coins, more each round. A bye counts as a win. The champion
+            takes {MIDWEEK.championTotal} in all. Coins are paid after the final.
+          </p>
+          <table className="w-full max-w-md text-left text-sm">
+            <thead className="text-ink-faint">
+              <tr>
+                <th className="py-1 pr-4 font-bold uppercase tracking-wide">Entrants</th>
+                <th className="py-1 font-bold uppercase tracking-wide">
+                  Pay per win, round by round
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {midweekPayRows.map((row) => (
+                <tr key={row.entrants} className="border-t border-line/60">
+                  <td className="py-1 pr-4 tabular-nums">up to {row.entrants}</td>
+                  <td className="py-1 tabular-nums">{row.pays.join(" · ")}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <h3 className="pt-2 font-black text-ink">What other members see</h3>
+          <p className="rounded-xl bg-steel-bg/60 p-3 text-sm font-semibold text-steel">
+            From {ROUND_ONE_CLOCK} on the Wednesday, members see the five cards you entered (or your
+            auto squad) and their numbers for the week. Nobody ever sees the rest of your
+            collection. Owner counts are shown only when at least {MIDWEEK.ownerCountMin} members
+            own a Player. Don&rsquo;t want to take part?{" "}
+            <Link className="underline" href="/settings">
+              Opt out in Settings
+            </Link>{" "}
+            and you&rsquo;re never entered or shown.
+          </p>
+          <h3 className="pt-2 font-black text-ink">Fair draws</h3>
+          <p>
+            Every draw comes from a secret seed fixed before anyone picks. Its fingerprint, the{" "}
+            <strong className="text-ink">fairness seal</strong>, is on the page all week, and the
+            seed is published after the final so anyone can check it. Nobody, admins included, can
+            re-roll a week.
           </p>
         </Section>
       </section>

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ARCHETYPES } from "@/game/archetypes";
+import { ECONOMY } from "@/game/economy";
 import { MIDWEEK, PPM } from "@/game/midweek/config";
 import {
   cardPowerPpm,
@@ -172,5 +173,9 @@ describe("midweek rewards", () => {
     expect(roundPayouts(3)).toEqual([42, 83, 125]);
     expect(roundPayouts(4)).toEqual([25, 50, 75, 100]);
     expect(roundPayouts(5)).toEqual([17, 33, 50, 67, 83]);
+  });
+
+  it("pays the champion the economy's Midweek total (ADR-096)", () => {
+    expect(MIDWEEK.championTotal).toBe(ECONOMY.midweekChampionTotal);
   });
 });

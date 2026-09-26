@@ -3743,3 +3743,38 @@ and `npm run verify:fast`.
 
 Merged as #125 and pushed to hosted on 2026-09-26 (catalogue PR #52 in
 `VibeTrunk/supabase`); the record is in `docs/DEPLOYMENTS.md`.
+
+## Midweek Madness payouts — 2026-09-26
+
+PR 6 of the Midweek Madness build: migration
+`20261006000000_midweek_payouts.sql` (BUILD_SPEC §44.7, §44.14; Part L #26;
+ADR-096). Data-changing: it adds a coin faucet.
+
+- **Coins per win:** the worker's complete step now pays every win in the
+  stored bracket, byes as round-1 wins, at `kut._mm_round_payouts(rounds)`,
+  before it publishes the seed and marks the week complete, in one
+  transaction. A champion collects exactly 250 (`ECONOMY.midweekChampionTotal`).
+- **Part L #26 in the table:** `kut.midweek_rewards` pays a
+  (tournament, round, member) once; a guard accepts only a stored win at its
+  round's amount, while the week is being completed, within 250 per member per
+  tournament, and a paid reward never changes. Ledger reason `midweek_win`,
+  with an idempotency key per win.
+- **One inbox message per member paid** (`midweek_result`): how far they got,
+  their coins and the champion. The inbox labels it "Midweek Madness".
+- **`kut.my_midweek_rewards`:** a member's own wins paid, for the "Your coins"
+  line of the results pages (HANDOFF).
+- **The faucet ADR (ADR-096):** 953 coins a week at a roster of 22, about 43 per
+  member, and never more than one attendance reward to anyone.
+
+Void is unchanged: a week is complete exactly when it has been paid, and a
+complete week cannot be voided.
+
+Verified locally: `midweek_payouts.test.sql` (63 assertions: the access
+matrix, the widened constraints still refusing unknown values, every win paid
+once at its round's amount, the champion's 250 in brackets of 16, 8 and 4, byes
+paid, the ledger matching every wallet move (#4/#5), one message per member
+paid with its wording, a second call paying nothing, the guard, void before and
+after payout, a member disabled before the payout, and the member view), the
+whole pgTAP suite (28 files, 1,216 assertions), `npm run test:integration`
+with `midweek-race.test.ts` extended (three concurrent calls pay the completed
+week once, a full bracket, one ledger row per win) and `npm run verify:fast`.

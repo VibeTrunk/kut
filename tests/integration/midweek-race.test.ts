@@ -29,6 +29,27 @@ let jobBaseline = 0;
 let switchWas = false;
 
 async function cleanup() {
+  // The payout credits every winner, members already on the stack included, so
+  // take back exactly what this suite paid before its rewards and ledger rows go.
+  await admin.query(
+    `update kut.wallets wallet set balance = wallet.balance - paid.total, updated_at = now()
+     from (select user_id, sum(amount) as total from kut.midweek_rewards
+           where tournament_id = any($1::uuid[]) group by user_id) paid
+     where wallet.user_id = paid.user_id`,
+    [tournaments],
+  );
+  await admin.query(
+    "delete from kut.user_notifications where event_type = 'midweek_result' and reference_id = any($1::uuid[])",
+    [tournaments],
+  );
+  const paid = await admin.query(
+    "delete from kut.midweek_rewards where tournament_id = any($1::uuid[]) returning ledger_id",
+    [tournaments],
+  );
+  await admin.query("delete from kut.wallet_ledger where id = any($1::uuid[])", [
+    paid.rows.map((row) => row.ledger_id),
+  ]);
+  await admin.query("delete from kut.wallets where user_id = any($1::uuid[])", [fx.users]);
   // Cascades to secrets, squads, entries, cards, pick shares, matches and events.
   await admin.query("delete from kut.midweek_tournaments where id = any($1::uuid[])", [
     tournaments,
@@ -164,7 +185,7 @@ describe("local concurrent Midweek worker race", () => {
     await Promise.all([admin.end(), ...workers.map((client) => client.end())]);
   });
 
-  it("locks and completes each due week exactly once under three concurrent calls", async () => {
+  it("locks, completes and pays each due week exactly once under three concurrent calls", async () => {
     // Three separate connections run the worker at the same moment. Every
     // read below runs on the single `admin` client, awaited one at a time.
     const runs = await Promise.all(workers.map((client) => runWorker(client)));
@@ -193,6 +214,38 @@ describe("local concurrent Midweek worker race", () => {
       expect(cards).toBe(entries * 5);
       expect(pairings).toBe(2 ** row.rounds - 1);
     }
+
+    // One payout for the completed week: every pairing's winner once, a full
+    // bracket's worth, one ledger row per win and one message per member paid.
+    const [late] = states.rows;
+    const payout = await admin.query(
+      `select (select count(*)::int from kut.midweek_rewards where tournament_id = $1) as rewards,
+              (select coalesce(sum(amount), 0)::int from kut.midweek_rewards where tournament_id = $1) as coins,
+              (select count(*)::int from kut.wallet_ledger
+                where reason = 'midweek_win' and reference_id = $1) as ledger,
+              (select coalesce(sum(amount), 0)::int from kut.wallet_ledger
+                where reason = 'midweek_win' and reference_id = $1) as ledger_coins,
+              (select count(distinct user_id)::int from kut.midweek_rewards where tournament_id = $1) as members,
+              (select count(*)::int from kut.user_notifications
+                where event_type = 'midweek_result' and reference_id = $1) as messages,
+              kut._mm_round_payouts($2) as pays`,
+      [late.id, late.rounds],
+    );
+    const paid = payout.rows[0];
+    const fullBracket = (paid.pays as number[]).reduce(
+      (sum, pay, index) => sum + pay * 2 ** (late.rounds - index - 1),
+      0,
+    );
+    expect(paid.rewards).toBe(2 ** late.rounds - 1);
+    expect(paid.coins).toBe(fullBracket);
+    expect(paid.ledger).toBe(paid.rewards);
+    expect(paid.ledger_coins).toBe(paid.coins);
+    expect(paid.messages).toBe(paid.members);
+    const unpaid = await admin.query(
+      "select count(*)::int as n from kut.midweek_rewards where tournament_id = $1",
+      [fx.fresh],
+    );
+    expect(unpaid.rows[0].n).toBe(0);
 
     const errors = await admin.query(
       "select count(*)::int as n from kut.midweek_jobs where id > $1 and (error_text is not null or finished_at is null)",

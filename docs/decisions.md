@@ -5072,3 +5072,90 @@ finds each week locked once and completed once, with no error.
 Tier: additive (ADR-032). The migration writes no row, and the worker writes
 only once a tournament exists, which needs the switch, off on hosted. Rides the
 last scheduled backup.
+
+## ADR-096 — Midweek Madness payouts: a bounded weekly faucet, paid from the stored bracket
+
+Date: 2026-09-26
+
+Status: Accepted
+
+Context: PR 6 of the Midweek Madness build is migration
+`20261006000000_midweek_payouts.sql`, which pays the coins §44.7 specifies and
+adds Part L #26. ADR-089 left the faucet's own ADR to this migration, and
+§44's one inherited rule is that matchday rewards must not overpower the
+market economy. The plan fixed the mechanism (a guard table in the
+`grant_bibs_reward` shape, paid inside the worker's complete step); a few
+details were open.
+
+Decision:
+
+- **The faucet is accepted at the specified size.** Round `r` of `R` pays
+  `round_half_up(250 × r / T)`, the final absorbing the rounding, so a champion
+  collects exactly `MIDWEEK_CHAMPION_TOTAL` (250, now also
+  `ECONOMY.midweekChampionTotal`). Because the whole active roster is entered
+  and byes pay, every run issues a full bracket: 333, 459, 650 or 953 coins for
+  2–5 rounds. At today's roster of about 22 members that is 953 a week, about
+  43 coins per member. For comparison, one attended session pays that member
+  250 plus up to 50 for the report, and a session of a dozen attendees issues
+  3,000 in attendance alone; the most any member takes from a Midweek night is one
+  attendance reward. Showing up stays the dominant coin source, so the faucet
+  sits within §44's rule. Watch the admin economy dashboard's coin supply and
+  pack purchases after launch; the lever is `MIDWEEK_CHAMPION_TOTAL`, which
+  lives in `src/game/midweek/config.ts` and `kut._mm_config()` (a change is a
+  migration plus regenerated golden vectors, ADR-090).
+- **Paid from the stored bracket, not recomputed.** `kut._mm_pay_tournament`
+  pays each winner in `kut.midweek_matches`, byes as round-1 wins, at
+  `kut._mm_round_payouts(rounds)`, so a payment can never disagree with the
+  bracket members saw. It runs inside `kut._mm_complete_tournament`, re-created
+  to pay before the status flips to `complete`, in the same transaction and
+  under the tournament's row lock. A week is therefore complete exactly when it
+  has been paid, and `admin_void_midweek`'s existing refusal of a complete week
+  is the "no void after payout" rule, unchanged.
+- **Part L #26 is enforced in the table, not only by the worker.**
+  `kut.midweek_rewards` has the primary key `(tournament_id, round_no,
+  user_id)` and a deferred `ledger_id`; the ledger row carries the idempotency
+  key `midweek:<tournament>:<round>:<member>`. A guard trigger accepts a reward
+  only while its tournament is `simulated` with the final revealed (so only in
+  the complete step), only for a stored win (that pairing's winner, in that
+  round, bye flag matching), only at exactly that round's amount, and only
+  while the member's total for the tournament stays within 250. A paid reward
+  never changes. Deleting a reward row is not blocked, as with
+  `kut.bibs_rewards`, and cannot re-pay a win: a week is paid only while it is
+  completed, once. Foreign keys restrict deleting a paid tournament, match,
+  member or ledger row.
+- **One inbox message per member paid, per tournament.** Type
+  `midweek_result`, title "Midweek Madness", deduplicated by
+  `(user, type, 'midweek_tournament', tournament)`. The body says how far the
+  member got, the coins and the champion ("You reached the semi-finals on Wed 7
+  Oct: +100 KUT Coins. Lieke won it."; the champion's reads "You won Midweek
+  Madness on Wed 7 Oct: 250 KUT Coins over the night."), following the copy in
+  `design/midweek/HANDOFF.md`. The date is the week's scheduled Wednesday. A
+  member out in round 1 without a bye is paid nothing and gets no message: the
+  inbox reports things that happened to the member's wallet, and the Home card
+  and the bracket carry the result (§44.7's "one message per member" is read as
+  one per member paid).
+- **A member disabled between the lock and the payout is not paid,** as
+  `grant_bibs_reward` skips a disabled member. The field already excludes
+  members disabled at the lock, so this covers only the evening's window.
+- **Members read their own rewards** through `kut.my_midweek_rewards` (HANDOFF
+  "Your coins"): one row per win with the week, round, pairing (for the report
+  link), bye flag, amount and when it was paid. A definer view gated on
+  `kut.is_active_member()` (ADR-079), like `kut.my_midweek_squad`; the guard
+  table itself is service-role only. The "+17 so far" line before payout stays
+  display-only arithmetic in the page.
+- **Constraints** `wallet_ledger_reason_check` and
+  `user_notifications_event_type_check` are re-created with the full lists from
+  `20260930000000_injury_protection.sql`, the latest to change them, plus
+  `midweek_win` and `midweek_result`.
+
+Consequences: the concurrency test now also checks that three concurrent
+worker calls pay the completed week once, a full bracket's worth, with one
+ledger row per win and one message per member paid; its clean-up takes back
+what it paid members already on the local stack. The pages (PRs 7–8) read
+`my_midweek_rewards` tolerantly, and the inbox labels `midweek_result` before
+the hosted push.
+
+Tier: data-changing (docs/OPERATIONS.md): it widens what the ledger accepts and
+adds a coin faucet, so the hosted push needs a fresh cold-verified backup. The
+migration itself writes no row, and nothing pays until a tournament exists,
+which needs the switch, off on hosted.

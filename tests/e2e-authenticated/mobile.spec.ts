@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { Client } from "pg";
 import { assertLocalTarget } from "../support/local-target";
-import { resetMidweekMember } from "./midweek-fixture";
+import { COMPLETED_WEEK, resetMidweekMember } from "./midweek-fixture";
 
 async function signIn(page: Page, username: string) {
   await page.goto("/login");
@@ -12,9 +12,12 @@ async function signIn(page: Page, username: string) {
 }
 
 async function expectNoHorizontalOverflow(page: Page) {
-  expect(
-    await page.locator("body").evaluate((body) => body.scrollWidth <= window.innerWidth + 1),
-  ).toBeTruthy();
+  // Against the device's width, not `innerWidth`: a mobile browser widens its
+  // layout viewport to fit an element that is too wide, and `innerWidth` grows
+  // with it (a hidden table did that in PR 8).
+  const width = page.viewportSize()?.width ?? 0;
+  const scrollWidth = await page.evaluate(() => document.documentElement.scrollWidth);
+  expect(scrollWidth, page.url()).toBeLessThanOrEqual(width + 1);
 }
 
 async function resetMidweek(username: string) {
@@ -41,6 +44,7 @@ test("member can sign in and use core mobile routes", async ({ page }) => {
     "/club/collection",
     "/club/packs",
     "/club/midweek",
+    `/club/midweek/${COMPLETED_WEEK}`,
     "/market",
     "/leaderboard",
   ]) {
@@ -120,6 +124,69 @@ test.describe("Midweek Madness entry (PR 7)", () => {
       "true",
     );
   });
+});
+
+test.describe("Midweek Madness results (PR 8)", () => {
+  test("a completed week's bracket and a match report fit the screen", async ({ page }) => {
+    await signIn(page, "release_member");
+
+    // The picker carries last week's result with the way to its bracket.
+    await page.goto("/club/midweek");
+    await expect(page.getByRole("heading", { name: "Pick your five" })).toBeVisible();
+    await page.getByRole("link", { name: "Bracket →" }).click();
+    await expect(page).toHaveURL(new RegExp(`/club/midweek/${COMPLETED_WEEK}$`));
+
+    await expect(page.getByRole("heading", { level: 1, name: /won it$/ })).toBeVisible();
+    await expect(page.getByRole("list", { name: "Jump to a round" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Final", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Who picked whom" })).toBeVisible();
+    await expect(page.getByText("✓ Matches the seal.")).toBeAttached();
+    await expectNoHorizontalOverflow(page);
+
+    // release_member's own path is marked, and a played match opens its report.
+    await expect(page.getByText("You", { exact: true }).first()).toBeVisible();
+    await page
+      .getByRole("link", { name: /^Match report: / })
+      .first()
+      .click();
+    await expect(page).toHaveURL(
+      new RegExp(`/club/midweek/${COMPLETED_WEEK}/match/[0-9a-f-]{36}$`),
+    );
+    await expect(page.getByRole("heading", { name: "How it went" })).toBeVisible();
+    await expect(page.getByRole("list", { name: "Key moments" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Why" })).toBeVisible();
+    await expect(page.getByRole("img", { name: /^Before kick-off: / })).toBeVisible();
+    await expectNoHorizontalOverflow(page);
+  });
+
+  test("a bracket URL that isn't a week, or a match that isn't a uuid, is not found", async ({
+    page,
+  }) => {
+    await signIn(page, "release_member");
+    for (const url of [
+      "/club/midweek/2001-01-16",
+      "/club/midweek/not-a-week",
+      `/club/midweek/${COMPLETED_WEEK}/match/not-a-uuid`,
+    ]) {
+      // A streamed page answers before `notFound()` runs, so check the page, not the status.
+      await page.goto(url);
+      await expect(page.getByRole("heading", { name: "Page not found" }), url).toBeVisible();
+    }
+  });
+});
+
+test("admin can reach the Midweek controls", async ({ page }) => {
+  await signIn(page, "release_admin");
+  await page.goto("/admin/midweek");
+  await expect(page.getByRole("heading", { name: "Midweek Madness", level: 1 })).toBeVisible();
+  await expect(page.getByRole("switch", { name: /Running|Paused/ })).toBeVisible();
+  // The rehearsal writes nothing, so it is safe to run against the fixture.
+  await page.getByRole("button", { name: "Run a rehearsal" }).click();
+  await expect(page.getByText(/Last run /)).toBeVisible({ timeout: 15_000 });
+  await expectNoHorizontalOverflow(page);
+  await page.goto("/admin/midweek?void=1");
+  await expect(page.getByRole("heading", { name: /^Void / })).toBeVisible();
+  await expectNoHorizontalOverflow(page);
 });
 
 test("admin can reach the mobile attendance finalization surface", async ({ page }) => {

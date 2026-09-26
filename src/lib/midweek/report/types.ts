@@ -42,6 +42,13 @@ export type ReportInput = {
   pairing: number;
   sides: readonly [ReportSide, ReportSide];
   outcome: MatchOutcome;
+  /**
+   * Whether owner counts may be printed (owner decision D3: only once the week
+   * is complete). When false, no card carries an owner label and the
+   * contrarian-hero fact uses a count-free line, so nothing reads "a rare pick"
+   * merely because the counts are still withheld.
+   */
+  ownersPublished: boolean;
 };
 
 export type MomentKind = "goal" | "save" | "block" | "woodwork" | "wide";
@@ -84,7 +91,10 @@ export type WhyCard = {
   handicapPpm: number;
   powerPpm: number;
   dayRollPpm: number;
-  /** "3 of 7 owners", "a rare pick", "auto squad", or null for a trialist. */
+  /**
+   * "3 of 7 owners", "a rare pick", "auto squad", or null for a trialist and,
+   * until owner counts are published, for every picked card.
+   */
   pickLabel: string | null;
   goals: number;
   assists: number;

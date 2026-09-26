@@ -2,8 +2,8 @@ import { SectionTabs } from "@/components/app-shell/section-tabs";
 import type { RouteEntry } from "@/lib/nav/routes";
 
 /**
- * Six tabs, so the flat `row` variant rather than a segmented control — at
- * 390px a segmented control would leave each tab about 60px wide.
+ * Eight tabs, so the flat `row` variant rather than a segmented control — at
+ * 390px a segmented control would leave each tab about 45px wide.
  *
  * Targets grew from ~34px to the 44px `BUILD_SPEC.md` §52 asks for when this
  * moved onto `SectionTabs`, which makes the admin header slightly taller.
@@ -16,6 +16,7 @@ const tabs: RouteEntry[] = [
   { key: "economy", href: "/admin/economy", label: "Economy" },
   { key: "editions", href: "/admin/editions", label: "Editions" },
   { key: "invites", href: "/admin/invites", label: "Invites" },
+  { key: "midweek", href: "/admin/midweek", label: "Midweek" },
 ];
 
 export function AdminTabs() {

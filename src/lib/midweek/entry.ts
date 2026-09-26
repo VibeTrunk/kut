@@ -51,6 +51,10 @@ export type MidweekTournament = {
   status_reason: MidweekCurrent["status_reason"];
   void_note: string | null;
   rounds: number | null;
+  seed_hash?: string;
+  final_reveal_at?: string | null;
+  /** Published once the week is complete (§44.8). */
+  seed?: string | null;
   champion_user_id?: string | null;
   champion_name?: string | null;
 };
@@ -328,22 +332,47 @@ export function lastWeekSummary(input: {
   return input.entered ? `You went out in round 1.${champion}` : `You sat it out.${champion}`;
 }
 
-/** The skip and void notices (HANDOFF, Week-Skipped* and Week-Void). */
+/**
+ * The skip and void notices (HANDOFF, Week-Skipped* and Week-Void): a bold
+ * lead, the rest, and whether it warns (a void) or informs (a skip).
+ */
+export function skipOrVoidNotice(
+  tournament: Pick<MidweekTournament, "lock_at" | "status" | "status_reason" | "void_note">,
+  minEntrants: number,
+): { tone: "info" | "warn"; lead: string; rest: string } | null {
+  const day = formatDayDate(tournament.lock_at);
+  if (tournament.status === "void") {
+    return {
+      tone: "warn",
+      lead: `${day} was called off by an admin.`,
+      rest: `“${tournament.void_note ?? ""}” No results are shown and no coins were paid for that night.`,
+    };
+  }
+  if (tournament.status !== "skipped") return null;
+  const lead = `No Midweek Madness on ${day}.`;
+  if (tournament.status_reason === "club_break") {
+    return {
+      tone: "info",
+      lead,
+      rest: "There was no TFH session the week before, so the club was on a break. Nothing was played or paid, and your saved five didn't carry over.",
+    };
+  }
+  // The field size of a skipped week is not published (ADR-097), so the copy
+  // names the minimum rather than the count.
+  return {
+    tone: "info",
+    lead,
+    rest: `Fewer than ${minEntrants} clubs were in, and a bracket needs ${minEntrants}. Nothing was played or paid.`,
+  };
+}
+
+/** The same notice as one line of text. */
 export function skipOrVoidText(
   tournament: Pick<MidweekTournament, "lock_at" | "status" | "status_reason" | "void_note">,
   minEntrants: number,
 ): string | null {
-  const day = formatDayDate(tournament.lock_at);
-  if (tournament.status === "void") {
-    return `${day} was called off by an admin. “${tournament.void_note ?? ""}” No results are shown and no coins were paid for that night.`;
-  }
-  if (tournament.status !== "skipped") return null;
-  if (tournament.status_reason === "club_break") {
-    return `No Midweek Madness on ${day}. There was no TFH session the week before, so the club was on a break. Nothing was played or paid, and your saved five didn't carry over.`;
-  }
-  // The field size of a skipped week is not published (ADR-097), so the copy
-  // names the minimum rather than the count.
-  return `No Midweek Madness on ${day}. Fewer than ${minEntrants} clubs were in, and a bracket needs ${minEntrants}. Nothing was played or paid.`;
+  const notice = skipOrVoidNotice(tournament, minEntrants);
+  return notice ? `${notice.lead} ${notice.rest}` : null;
 }
 
 /**

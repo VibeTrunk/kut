@@ -3912,3 +3912,7 @@ just before the lock (ADR-099, migration `20261008000000`).
 Verified: pgTAP `midweek_archetype_snapshot` (19) plus the Midweek engine,
 parity, entry, payouts, switch and cooldown suites locally;
 `npm run verify:fast`.
+
+**On hosted 2026-09-26** (catalogue supabase #58, fresh backup
+`20260926-154520`, 78 migrations, no drift), before the first lock; the open
+week 2026-09-28 is backfilled. The record is in `DEPLOYMENTS.md`.

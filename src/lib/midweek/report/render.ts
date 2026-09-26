@@ -33,6 +33,7 @@ import type {
   MatchReport,
   MomentKind,
   PhraseUse,
+  ReportCard,
   ReportFact,
   ReportInput,
   ShootoutReport,
@@ -132,6 +133,22 @@ function sideNames(input: ReportInput): [string[], string[]] {
         : name,
     ),
   ) as [string[], string[]];
+}
+
+/**
+ * The "why" panel's pick label. Owner counts appear only once published (D3)
+ * and only at three owners or more (ADR-091); an auto squad's picks were never
+ * the member's choice (ADR-093).
+ */
+export function pickLabel(
+  card: ReportCard,
+  auto: boolean,
+  ownersPublished: boolean,
+): string | null {
+  if (card.trialist) return null;
+  if (auto) return "auto squad";
+  if (!ownersPublished) return null;
+  return card.owners === null ? "a rare pick" : `${card.picks ?? 0} of ${card.owners} owners`;
 }
 
 const percent = (ppm: number) => `${Math.round(ppm / (PPM / 100))}%`;
@@ -255,13 +272,7 @@ export function renderMatchReport(input: ReportInput): MatchReport {
       handicapPpm: card.handicapPpm,
       powerPpm: card.powerPpm,
       dayRollPpm: outcome.dayRollsPpm[s][slot],
-      pickLabel: card.trialist
-        ? null
-        : side.auto
-          ? "auto squad"
-          : card.owners === null
-            ? "a rare pick"
-            : `${card.picks ?? 0} of ${card.owners} owners`,
+      pickLabel: pickLabel(card, side.auto, input.ownersPublished),
       goals: stats[s][slot].goals,
       assists: stats[s][slot].assists,
     })),
@@ -437,7 +448,9 @@ function renderFacts(
     };
     switch (fact.kind) {
       case "contrarian_hero":
-        if (card!.owners !== null && card!.picks !== null) {
+        if (!input.ownersPublished) {
+          lineKind = "contrarian_unpublished";
+        } else if (card!.owners !== null && card!.picks !== null) {
           lineKind = "contrarian_known";
           values.picks = String(card!.picks);
           values.owners = String(card!.owners);

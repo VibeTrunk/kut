@@ -1,7 +1,11 @@
 import Link from "next/link";
 import { IconChronicle, IconPack } from "@/components/icons";
 import { LiveCard, type LiveCardPlayer } from "@/components/live-card";
-import { MidweekEntryCard } from "@/components/midweek/entry-points";
+import {
+  MidweekEntryCard,
+  MidweekFinalCard,
+  MidweekLiveCard,
+} from "@/components/midweek/entry-points";
 import {
   ACTIVITY_FLOOR_ISO,
   activityKindLabel,
@@ -12,6 +16,7 @@ import { formatDate } from "@/lib/format";
 import { fetchInjuredPlayerIds, type InjuryStatus } from "@/lib/injuries";
 import { toLiveCardPlayer } from "@/lib/live-card-player";
 import { loadMidweekEntryPoint } from "@/lib/midweek/load";
+import { runDueMidweek } from "@/lib/midweek/run-due";
 import { resolvePhotoUrls } from "@/lib/player-photos";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
@@ -42,6 +47,10 @@ export default async function Home() {
   if (claimsError || typeof userId !== "string") {
     redirect("/login");
   }
+
+  // Midweek Madness has no scheduler: a Home visit locks, completes or opens a
+  // week that is due, before this page reads it (ADR-098).
+  await runDueMidweek();
 
   const [
     { data: profile, error: profileError },
@@ -110,10 +119,11 @@ export default async function Home() {
     ),
     fetchInjuredPlayerIds(supabase),
   ]);
-  // Midweek Madness before the lock (PR 7, ADR-097). Tolerant: null whenever
-  // it is disabled, opted out, locked or not deployed, and then nothing shows.
+  // Midweek Madness: picking, the evening, or the champion until Thursday
+  // (ADR-097, ADR-098). Tolerant: null whenever it is disabled, opted out or not
+  // deployed, and then nothing shows.
   const now = new Date();
-  const midweek = await loadMidweekEntryPoint(supabase, injuredPlayerIds, now);
+  const midweek = await loadMidweekEntryPoint(supabase, injuredPlayerIds, now, userId);
   // A failed read is not a zero balance (KB-014): both stats degrade to "we
   // don't know" rather than asserting a figure the member never had. The
   // `?? balance` on Club Value stays — a member with no cards has no
@@ -178,8 +188,19 @@ export default async function Home() {
 
         {/* The one thing on Home with a deadline, so it sits directly under
             the header (HANDOFF, Home-BeforeLock). */}
-        {midweek && (
+        {midweek?.kind === "pick" && (
           <MidweekEntryCard lockAt={midweek.lockAt} now={now.toISOString()} saved={midweek.saved} />
+        )}
+        {midweek?.kind === "live" && (
+          <MidweekLiveCard line={midweek.line} stops={midweek.stops} title={midweek.title} />
+        )}
+        {midweek?.kind === "final" && (
+          <MidweekFinalCard
+            line={midweek.line}
+            lockAt={midweek.lockAt}
+            title={midweek.title}
+            weekStart={midweek.weekStart}
+          />
         )}
 
         {openReport && (

@@ -86,7 +86,10 @@ export type HeadlineKind = keyof typeof HEADLINES;
  * the fact is about, `{opponent}` the other manager, and `{value}`, `{picks}`,
  * `{owners}`, `{tier}` numbers or labels from the engine. Owner counts appear
  * only when at least three entrants own the Player (ADR-091); otherwise the
- * `contrarian_rare` wording is used.
+ * `contrarian_rare` wording is used. Until the week is complete no count is
+ * published at all (owner decision D3), and the pages render every report's
+ * text that way, so `contrarian_unpublished` is the wording members read
+ * (ADR-098).
  */
 export const FACT_LINES = {
   contrarian_known: [
@@ -100,6 +103,12 @@ export const FACT_LINES = {
     "Hardly anyone picked {name}. {manager} did, and it paid off.",
     "A rare pick, a big payoff: {name} for {manager}.",
     "{manager} dared to pick {name}, and got a bonus for it.",
+  ],
+  contrarian_unpublished: [
+    "{name} was in few squads this week. {manager} saw something the others didn't.",
+    "Against the crowd: {manager} picked {name}, and the pick bonus showed.",
+    "Not many managers made room for {name}. {manager} did, and reaped the bonus.",
+    "The road less picked: {name} for {manager}, and it worked.",
   ],
   form_hero: [
     "{name} is having a week: form {value}, the talk of the club.",

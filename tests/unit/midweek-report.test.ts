@@ -143,6 +143,31 @@ describe("midweek match reports", () => {
     }
   });
 
+  it("withholds owner counts until they are published (D3), with a count-free contrarian line", () => {
+    const layers = new Set<string>();
+    for (const { input, report } of rendered) {
+      const withheld = renderMatchReport({ ...input, ownersPublished: false });
+      for (const use of withheld.phrases) layers.add(use.layer);
+      withheld.why.forEach((side, s) => {
+        side.cards.forEach((card, slot) => {
+          expect(card.pickLabel).toBe(card.trialist ? null : side.auto ? "auto squad" : null);
+          // Only the label differs from the published report.
+          expect({ ...card, pickLabel: null }).toEqual({
+            ...report.why[s].cards[slot],
+            pickLabel: null,
+          });
+        });
+      });
+      // Nothing but the contrarian line may change.
+      expect(withheld.headline).toBe(report.headline);
+      expect(withheld.timeline).toEqual(report.timeline);
+      expect(withheld.facts.map((f) => f.kind)).toEqual(report.facts.map((f) => f.kind));
+    }
+    expect(layers.has("fact:contrarian_unpublished")).toBe(true);
+    expect(layers.has("fact:contrarian_known")).toBe(false);
+    expect(layers.has("fact:contrarian_rare")).toBe(false);
+  });
+
   it("can produce every kind of fact", () => {
     const kinds = new Set(rendered.flatMap(({ report }) => report.facts.map((f) => f.kind)));
     for (const kind of crafted().flatMap((r) => r.facts.map((f) => f.kind))) kinds.add(kind);

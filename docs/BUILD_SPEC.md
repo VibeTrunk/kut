@@ -2001,6 +2001,22 @@ Everything is gated by time in definer projections on
   under 35% before kick-off; a cheap standout is Common or Bronze (OVR under
   50); a thrashing is three goals or more. The standout scores goal 3, assist 2,
   save 1, block 1, penalty scored 1, penalty saved 2.
+- **Owner counts and a report's text (ADR-098).** The renderer takes
+  `ownersPublished`. While false, no picked card carries a pick label ("N of M
+  owners" or "a rare pick"; an auto squad still reads "auto squad") and the
+  contrarian-hero fact uses a count-free line. Reports appear from round 1 and
+  owner counts only at `complete` (§44.9, owner decision D3), so the pages
+  render every report's text with the flag false: a report reads the same all
+  night and afterwards, and only the "why" panel's pick labels appear once the
+  week is complete.
+- **The pages (PR 8, ADR-098):** the report at
+  `/club/midweek/[weekStart]/match/[matchId]`, the bracket at
+  `/club/midweek/[weekStart]` (rounds as they are revealed, byes, the
+  champion, and pick shares once complete), and the evening on
+  `/club/midweek`. From round 1 every card on them shows its lock-time
+  snapshot, injury cast included. Last Wednesday's champion leads
+  `/club/midweek` and the Home card until Thursday 23:59 Europe/Amsterdam
+  (owner decision D4); a void week's URLs show only its notice.
 
 ### 44.11 Running without admin
 
@@ -2018,6 +2034,13 @@ Claims use `for update skip locked`, so concurrent calls do the work once.
 Given the field, the result is identical whenever it is computed; only the
 moment coins land depends on when someone visits. Publishing sessions, which
 admins already do, is the only weekly input.
+
+**The trigger (ADR-098).** `runDueMidweek()` calls the worker from Home and
+every Midweek page, before the page reads anything, so a visit at 20:01 sees
+the locked week. It first counts due work through the service client (an open
+week whose lock has passed, a simulated week whose final is out, or the switch
+on with no week running), tries at most once a minute per server process, and
+never fails the page.
 
 **When the lock snapshot is taken (ADR-095).** The lock step runs at the first
 worker call at or after `lock_at`, and reads the field then: who is active,
@@ -2209,7 +2232,8 @@ Section tabs, inside a primary destination:
 - Market: **Buy** (`/market`) · **Offers** (`/market/offers`, badged)
 - Leaderboard: **Clubs** (`/leaderboard`) · **Players** (`/players`)
 - Collection: **Album** · **Manage** (`?view=manage`, unchanged from §41)
-- Admin: the existing six-tab row
+- Admin: the existing row of tabs, eight since Midweek (`/admin/midweek`,
+  ADR-098) joined it
 
 Chrome controls, right of the bar on both platforms:
 
@@ -2293,6 +2317,11 @@ Home should answer "what changed?" quickly.
 > five" (with the countdown, and the auto-squad warning) or "Your five are in".
 > It shows only while picking is open for a member who hasn't opted out; its
 > evening and after-the-final states follow with the results pages (§44).
+>
+> **Amended (ADR-098):** during Wednesday evening the card says which round is
+> out, the member's latest result and next match, with the evening's clock;
+> after the final it names the champion and how the member did until Thursday
+> 23:59 Amsterdam (owner decision D4), then asks for next week's pick again.
 
 MVP widgets:
 

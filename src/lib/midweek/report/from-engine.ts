@@ -45,6 +45,8 @@ export function reportInput(
   match: PlayedMatch,
   seedHash: string,
   directory: Directory,
+  // An engine run is a finished week, so its owner counts are known (D3).
+  ownersPublished = true,
 ): ReportInput {
   const entry = (userId: string) => tournament.entries.find((e) => e.userId === userId)!;
   return {
@@ -57,5 +59,6 @@ export function reportInput(
       toSide(entry(match.userIds[1]), tournament, directory),
     ],
     outcome: match.outcome,
+    ownersPublished,
   };
 }

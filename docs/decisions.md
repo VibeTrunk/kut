@@ -5267,3 +5267,115 @@ member's squad and opt-out before each Midweek test, so both device projects
 start from "not picked, taking part". PR 8 replaces the holding states with the
 evening, complete, skipped and void screens, adds the bracket link and the
 champion hero with D4's cutoff, and the lazy `runDueMidweek()` trigger.
+
+## ADR-098 — The Midweek results pages: reports that read the same all night, the champion until Thursday, and a trigger on every Midweek page
+
+Date: 2026-09-26
+
+Status: Accepted (the owner read the four new phrasebook lines and approved
+them, with the choice to render report text without owner counts, on
+2026-09-26)
+
+Context: PR 8 of the Midweek Madness build is the results UI: the evening and
+the champion on `/club/midweek`, the bracket at `/club/midweek/[weekStart]`,
+the match report at `.../match/[matchId]`, the Home card's and Collection
+strip's evening states, `/admin/midweek`, and the lazy trigger. It is built to
+the approved mockups (`design/midweek/`, HANDOFF.md) and carries no migration:
+every view it reads is on hosted. HANDOFF asks this PR to implement and record
+owner decisions D3 and D4, and leaves questions 7, 10, 11 and 12 open.
+
+Decision:
+
+- **D3: the renderer's `ownersPublished` flag, and a report whose text never
+  changes.** `ReportInput.ownersPublished` is new. When false, no picked card
+  carries a pick label (an auto squad still reads "auto squad", a trialist
+  nothing), and the contrarian-hero fact uses a new, count-free pool,
+  `contrarian_unpublished`, instead of `contrarian_known` or `contrarian_rare`.
+  Before this, a null owner count read as "a rare pick", which before
+  `complete` would have labelled every card rare. The plan's wording ("the
+  pages pass the flag; the text never changes after it first appears") cannot
+  hold both ways: every report first appears before its week completes, so a
+  page that passed `ownersPublished = complete` would swap the contrarian line
+  for its counted version at completion. So the pages render a report's text
+  (headline, facts, timeline, shoot-out) with the flag false, always, and only
+  the "why" panel's pick labels follow the week's status
+  (`renderStoredReport` in `src/lib/midweek/report/from-db.ts`). The counted
+  contrarian lines stay in the phrasebook for the design sample and the tests,
+  but members now read the count-free ones. The pool has four lines, not one,
+  because every fact pool keeps at least three (the phrasebook's variety rule).
+- **D4: the champion leads until Thursday 23:59 Amsterdam.**
+  `championLeadsUntil(lock_at)` is Friday 00:00 in club time, two days after
+  the lock's date in Amsterdam; clocks change on a Sunday at 01:00 UTC, so the
+  Friday's offset is the day's own. Unit-tested in summer and winter time and
+  across both changeover weeks. Until then `/club/midweek` shows Week-Complete,
+  with "Next Wednesday is open" linking to `/club/midweek?view=pick`, the way
+  through to next week's picker while the champion leads. Home follows the
+  same cutoff: after the final it says who won and how the member did, and
+  goes back to "Pick your five" on Friday. The Collection strip is about
+  picking, so it keeps asking for a pick throughout; D4 names only the page
+  and Home.
+- **`/club/midweek` now has every state.** PR 7's holding states are replaced:
+  Week-Locked (the lock has passed, round 1 isn't out: the clock and the
+  member's own five), Week-Revealing ("Round 2 is out": the clock, "Your night"
+  with coins "so far · paid after the final" from `roundPayouts`, and the round
+  just out), Week-Complete (above), and the skip and void notices above next
+  week's picker. The last-week strip gains its "Bracket →" link. Before round 1
+  nothing about the rest of the field is visible (§44.9), so "Your five" shows
+  the saved cards the member still owns now, with today's injury cast; from
+  round 1 on, every card on a results page is its lock-time snapshot (the
+  `injured` flag and OVR from `midweek_entries_public`), as HANDOFF asks.
+- **The report adapter has a database twin.** `reportInputFromRows` builds the
+  renderer's input from `midweek_matches_public`, `midweek_events_public` and
+  both sides' `midweek_entries_public` rows, as `from-engine.ts` does from an
+  engine run. A unit test stores every golden tournament's matches the way
+  `_mm_lock_tournament` stores them, reads them back and gets exactly the input
+  and the report its engine run gives. The scoreboard is always side 0 left,
+  from the per-side goals, never the renderer's winner-first `score`.
+- **The bracket** is assembled from the revealed rows: byes are their round-1
+  rows, a round not out yet shows who meets when the round before is out
+  ("Winner, QF 1" otherwise), and "Your path" is brass. HANDOFF drew the `lg`
+  tree `aria-hidden` beside a list that is `display: none` at that width, which
+  would leave a screen reader nothing on a desktop; the tree keeps round
+  headings and the same labelled match rows instead. The page validates
+  `weekStart` as an ISO Monday and the report `matchId` with `isUuid` (KB-007)
+  before any query. Past weeks stay readable with the switch off (ADR-097).
+- **Admin, `/admin/midweek`**, the eighth admin tab: the switch
+  (`admin_set_midweek_enabled`), this week from `midweek_admin_overview`
+  (status, lock, squads saved, opted out, the seal, and the worker's last run
+  and error), the rehearsal (`admin_midweek_rehearsal`; the result lives in the
+  page's state, since the rehearsal writes nothing, so "Last run" is that
+  result's `ran_at`), and void at `?void=1` with a 3–200-character reason and a
+  confirmation tick. The refusals are mapped: 42501, 22023, P0002, and P0001 by
+  message (paid, or did not run). After payout the void view points to Economy
+  instead; a voided week says it is void.
+- **The lazy trigger.** `runDueMidweek()` (`src/lib/midweek/run-due.ts`)
+  copies `finalizeDueSurveys`: a 60-second damper per server process, a
+  count-first check through the service client (an open week whose lock has
+  passed, a simulated week whose final is out, or the switch on with no week
+  running), then `run_midweek_due(5)`, errors logged and swallowed. Home and
+  all three Midweek pages call it before their own reads.
+- **HANDOFF questions settled.**
+  - 7, void mid-evening: as specified (ADR-095). The bracket and every report
+    URL of a void week show the void notice and nothing else.
+  - 10, handicap precision: three decimals (×0.575, and ×0.474 for a trialist
+    in an auto squad), so no factor is rounded into a different one.
+  - 11: the factor strip keeps "OVR"; the formula line explains it.
+  - 12, in part: under a manager's own side the "why" panel drops the
+    "(manager)" the renderer adds to a Player both sides fielded. The other
+    phrasebook items stay with the phrasebook's owner.
+- **Smaller choices.** "Locked in: all five still yours" counts the squad
+  actually saved ("all 3"). "Five each" appears only when both sides took
+  five kicks; a shoot-out decided early shows its kick count. The coins paid
+  across the club are the bracket's arithmetic, the same `roundPayouts` the
+  payout uses.
+
+Consequences: the authenticated E2E seeds a completed week in 2001 (a
+published session in the week before, release_member's five saved, three
+fixture members, the worker run to completion) and removes it after, taking
+back the coins it paid. The bracket and a report are in the no-overflow
+checks, and that check now compares with the device's width: a phone widens
+its layout viewport to fit an element that is too wide, and `innerWidth`
+grows with it, so the old check could not see the shoot-out's screen-reader
+table doing exactly that at 320 px (now clipped inside a block).
+
+Tier: no migration.

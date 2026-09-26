@@ -4,8 +4,8 @@ import type { LiveCardPlayer } from "@/components/live-card";
 import { MidweekNotice, MidweekPrivacyLine } from "@/components/midweek/bits";
 import { MidweekLockBar } from "@/components/midweek/lock-bar";
 import { MidweekOptInButton } from "@/components/midweek/opt-in-button";
+import { MIDWEEK_PAGE, MidweekPageHead } from "@/components/midweek/page-head";
 import { MidweekPicker, type PickCard } from "@/components/midweek/picker";
-import { MidweekSeed } from "@/components/midweek/seed";
 import { archetypeLabel } from "@/game/archetypes";
 import { MIDWEEK } from "@/game/midweek/config";
 import { revealAt } from "@/game/midweek/schedule";
@@ -16,22 +16,20 @@ import { strongestCopies } from "@/lib/midweek/copies";
 import {
   formatClock,
   formatDayDate,
-  formatDayMonth,
   isLockedTonight,
   isPickingOpen,
   joinNames,
-  lastWeekSummary,
   prefillSlots,
-  skipOrVoidText,
   starterNotice,
-  type MidweekCurrent,
   type MidweekTournament,
-  type MyRewardRow,
   type MySquadRow,
 } from "@/lib/midweek/entry";
+import { championLeads } from "@/lib/midweek/evening";
 import { loadMidweekEntryState } from "@/lib/midweek/load";
+import { runDueMidweek } from "@/lib/midweek/run-due";
 import { resolvePhotoUrls } from "@/lib/player-photos";
 import { createClient } from "@/lib/supabase/server";
+import { LastWeek, lastWeekView, WeekComplete, WeekEvening } from "./views";
 
 export const metadata = { title: "Midweek Madness" };
 
@@ -63,21 +61,6 @@ const TIER_LABEL: Record<LiveCardPlayer["rarityTier"], string> = {
   elite: "Elite",
 };
 
-const PAGE = "board-ground min-h-screen p-5 text-ink sm:p-10";
-const KICKER = "text-[0.7rem] font-extrabold uppercase tracking-[0.26em] text-brass";
-
-function PageHead({ kicker, title, lede }: { kicker: string; title: string; lede?: string }) {
-  return (
-    <header className="space-y-3">
-      <p className={KICKER}>{kicker}</p>
-      <h1 className="display text-3xl sm:text-6xl">{title}</h1>
-      {lede && (
-        <p className="hidden max-w-2xl text-[15px] leading-relaxed text-ink-dim sm:block">{lede}</p>
-      )}
-    </header>
-  );
-}
-
 /** Display names for Players the member no longer owns, for the notices. */
 async function playerNames(supabase: SupabaseServerClient, ids: string[]) {
   if (ids.length === 0) return new Map<string, string>();
@@ -94,68 +77,17 @@ async function playerNames(supabase: SupabaseServerClient, ids: string[]) {
   );
 }
 
-/**
- * The previous tournament's outcome for the strip above the picker (§44.1:
- * the next week opens as soon as one ends, so the page carries both). PR 8
- * adds the champion hero that leads until Thursday 23:59 (D4); until then the
- * strip is the whole of it, and it has no bracket link because that page is
- * PR 8's too (ADR-097).
- */
-async function lastWeekStrip(
-  supabase: SupabaseServerClient,
-  userId: string,
-  tournament: MidweekTournament,
-  consecutive: boolean,
-): Promise<{ kicker: string; text: string } | null> {
-  const kicker = consecutive
-    ? `Last Wednesday · ${formatDayMonth(tournament.lock_at)}`
-    : `Midweek Madness · ${formatDayDate(tournament.lock_at)}`;
-  const skipText = skipOrVoidText(tournament, MIDWEEK.minEntrants);
-  if (skipText) return { kicker, text: skipText };
-  if (tournament.status !== "complete" || !tournament.rounds) return null;
-
-  const [rewardsResponse, entryResponse] = await Promise.all([
-    supabase
-      .schema("kut")
-      .from("my_midweek_rewards")
-      .select("*")
-      .eq("tournament_id", tournament.tournament_id),
-    supabase
-      .schema("kut")
-      .from("midweek_entries_public")
-      .select("*")
-      .eq("tournament_id", tournament.tournament_id)
-      .eq("user_id", userId)
-      .limit(1),
-  ]);
-  if (rewardsResponse.error || entryResponse.error) return null;
-  return {
-    kicker,
-    text: lastWeekSummary({
-      rounds: tournament.rounds,
-      rewards: (rewardsResponse.data ?? []) as MyRewardRow[],
-      entered: (entryResponse.data ?? []).length > 0,
-      isChampion: tournament.champion_user_id === userId,
-      championName: tournament.champion_name ?? null,
-    }),
-  };
-}
-
-function LastWeek({ strip }: { strip: { kicker: string; text: string } }) {
-  return (
-    <section className="grid gap-1 rounded-[14px] border border-line/60 bg-board-deep/55 px-3.5 py-3">
-      <p className="text-[0.65rem] font-extrabold tracking-[0.15em] text-ink-faint uppercase">
-        {strip.kicker}
-      </p>
-      <p className="text-[13.5px] leading-snug text-ink-dim">{strip.text}</p>
-    </section>
-  );
-}
-
-export default async function MidweekPage() {
+export default async function MidweekPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ view?: string }>;
+}) {
   const user = await requireUser();
+  // No scheduler: a visit locks, completes or opens a week that is due before
+  // the page reads it, so a visit at 20:01 sees the locked week (ADR-098).
+  await runDueMidweek();
   const supabase = await createClient();
-  const state = await loadMidweekEntryState(supabase);
+  const [state, { view }] = await Promise.all([loadMidweekEntryState(supabase), searchParams]);
   // Disabled with nothing running, or not deployed yet: the route doesn't
   // exist for members (Week-Disabled).
   if (!state) notFound();
@@ -165,9 +97,9 @@ export default async function MidweekPage() {
 
   if (!current.tournament_id || !current.lock_at || !current.week_start || !current.seed_hash) {
     return (
-      <main className={PAGE}>
+      <main className={MIDWEEK_PAGE}>
         <section className="mx-auto max-w-2xl space-y-6 py-4 sm:py-8">
-          <PageHead kicker="Midweek Madness" title="Opening soon" />
+          <MidweekPageHead kicker="Midweek Madness" title="Opening soon" />
           <p className="text-ink-dim">
             The first week of Midweek Madness opens soon. Five of your cards, one knockout,
             Wednesday night. Read{" "}
@@ -195,28 +127,56 @@ export default async function MidweekPage() {
     previous !== null &&
     Date.parse(current.week_start) - Date.parse(previous.week_start) === 7 * 24 * 60 * 60 * 1000;
 
-  if (!isPickingOpen(current, now)) {
+  // Wednesday evening: tonight's week is locked and its rounds come out.
+  if (isLockedTonight(current, now)) {
     return (
-      <NotOpen
+      <WeekEvening
         current={current}
         now={now}
-        picked={state.squad === null ? null : state.squad.length > 0}
+        squad={state.squad}
         supabase={supabase}
         userId={user.id}
       />
     );
   }
 
-  const strip = previous ? await lastWeekStrip(supabase, user.id, previous, consecutive) : null;
+  if (!isPickingOpen(current, now)) {
+    // The latest week has ended and the next isn't open yet (the switch is
+    // paused, or the worker hasn't opened it).
+    return (
+      <NextWeekSoon
+        current={current.tournament_id}
+        now={now}
+        supabase={supabase}
+        userId={user.id}
+      />
+    );
+  }
+
+  // Owner decision D4: last Wednesday's champion leads until Thursday 23:59
+  // Amsterdam; `?view=pick` is the way through to next week's picker meanwhile.
+  if (previous && view !== "pick" && championLeads(previous, now)) {
+    return (
+      <WeekComplete
+        next={current}
+        now={now}
+        supabase={supabase}
+        tournament={previous}
+        userId={user.id}
+      />
+    );
+  }
+
+  const strip = previous ? await lastWeekView(supabase, user.id, previous, consecutive) : null;
   const lockAt = current.lock_at;
   const roundOne = formatClock(revealAt(new Date(lockAt), 1).toISOString());
 
   if (current.opted_out) {
     return (
-      <main className={PAGE}>
+      <main className={MIDWEEK_PAGE}>
         <section className="mx-auto max-w-2xl space-y-6 py-4 sm:py-8">
-          {strip && <LastWeek strip={strip} />}
-          <PageHead kicker="Midweek Madness" title="You’re sitting this out" />
+          {strip && <LastWeek view={strip} />}
+          <MidweekPageHead kicker="Midweek Madness" title="You’re sitting this out" />
           <section className="grid gap-3.5 rounded-2xl border border-line/60 bg-panel/60 p-6 text-ink-dim">
             <p>
               You opted out of Midweek Madness, so you aren&rsquo;t entered: no squad, no auto
@@ -315,10 +275,10 @@ export default async function MidweekPage() {
   }
 
   return (
-    <main className={PAGE}>
+    <main className={MIDWEEK_PAGE}>
       <section className="mx-auto max-w-6xl space-y-7 py-4 sm:py-8">
-        {strip && <LastWeek strip={strip} />}
-        <PageHead
+        {strip && <LastWeek view={strip} />}
+        <MidweekPageHead
           kicker={`Midweek Madness · ${formatDayDate(lockAt)}`}
           lede={`Five of your cards, one knockout, Wednesday night. Every match you win pays KUT Coins; the champion takes ${MIDWEEK.championTotal} in all.`}
           title="Pick your five"
@@ -360,67 +320,39 @@ export default async function MidweekPage() {
 }
 
 /**
- * Between the lock and the next open week (ADR-097). PR 8 owns the evening
- * (the clock, your path, the bracket) and the skip and void pages; until then
- * this holding state says what is happening and keeps the seal on the page.
+ * The latest week has ended and the next isn't open yet. A complete week's
+ * champion still leads until D4's cutoff; otherwise the outcome is the strip
+ * (or the skip or void notice), and the next week follows.
  */
-async function NotOpen({
+async function NextWeekSoon({
   current,
   now,
   userId,
-  picked,
   supabase,
 }: {
-  current: MidweekCurrent;
+  current: string | null;
   now: Date;
   userId: string;
-  /** Whether the caller saved a squad for this week; null when unknown. */
-  picked: boolean | null;
   supabase: SupabaseServerClient;
 }) {
-  const lockAt = current.lock_at as string;
-
-  if (isLockedTonight(current, now)) {
-    const roundOne = formatClock(revealAt(new Date(lockAt), 1).toISOString());
-    const lede = `Round 1 comes out at ${roundOne}, then a round every half hour until the final.`;
-    return (
-      <main className={PAGE}>
-        <section className="mx-auto max-w-2xl space-y-6 py-4 sm:py-8">
-          <PageHead
-            kicker={`Midweek Madness · ${formatDayDate(lockAt)}`}
-            lede={lede}
-            title="Squads are locked"
-          />
-          <p className="text-ink-dim sm:hidden">{lede}</p>
-          {picked !== null && (
-            <p className="rounded-2xl border border-line/60 bg-panel/60 p-5 text-sm text-ink-dim">
-              {current.opted_out
-                ? "You opted out, so you aren't in tonight."
-                : picked
-                  ? `Locked in: your saved five. Members see them from ${roundOne}, with their numbers for the week.`
-                  : `You didn't pick, so an auto squad plays for you. See it at ${roundOne}.`}
-            </p>
-          )}
-          <MidweekSeed seedHash={current.seed_hash as string} />
-        </section>
-      </main>
-    );
-  }
-
-  // The latest week has ended and the next isn't open yet.
   const latestResponse = await supabase
     .schema("kut")
     .from("midweek_tournaments_public")
     .select("*")
-    .eq("tournament_id", current.tournament_id as string)
+    .eq("tournament_id", current as string)
     .maybeSingle();
   const latest = latestResponse.error ? null : (latestResponse.data as MidweekTournament | null);
-  const strip = latest ? await lastWeekStrip(supabase, userId, latest, true) : null;
+  if (latest && championLeads(latest, now)) {
+    return (
+      <WeekComplete next={null} now={now} supabase={supabase} tournament={latest} userId={userId} />
+    );
+  }
+  const strip = latest ? await lastWeekView(supabase, userId, latest, true) : null;
   return (
-    <main className={PAGE}>
+    <main className={MIDWEEK_PAGE}>
       <section className="mx-auto max-w-2xl space-y-6 py-4 sm:py-8">
-        <PageHead kicker="Midweek Madness" title="Next week opens soon" />
-        {strip && <LastWeek strip={strip} />}
+        <MidweekPageHead kicker="Midweek Madness" title="Next week opens soon" />
+        {strip && <LastWeek view={strip} />}
         <p className="text-ink-dim">
           Next Wednesday&rsquo;s knockout opens for picking soon. Your five don&rsquo;t carry over,
           but you can load them again in one tap.

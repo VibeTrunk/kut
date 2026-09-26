@@ -3817,3 +3817,49 @@ Settings opt-out and the picker's way back; `/club/midweek` in the core-route
 loop with no horizontal overflow). A local visual review at 320 px, Pixel 7
 and 1440 px compared the picker states, Settings, Home and Collection with the
 mockups.
+
+## Midweek Madness results UI — 2026-09-26
+
+PR 8 of the Midweek Madness build: the evening, the bracket, the match
+reports and the admin page, built to the approved mockups (`design/midweek/`,
+HANDOFF.md; ADR-098). No migration: every view it reads is on hosted, where
+the switch is off.
+
+- **`/club/midweek`, the evening:** Week-Locked (the reveal clock and your
+  own five), Week-Revealing ("Round 2 is out", "Your night" with the coins won
+  so far, the round just out) and Week-Complete (the champion and their five,
+  your coins and finish, the field and the goals, next week one tap away, and
+  the seed checked against the seal). The champion leads until Thursday 23:59
+  Amsterdam (D4); skip and void notices sit above next week's picker, and the
+  last-week strip links its bracket.
+- **`/club/midweek/[weekStart]`, the bracket:** rounds as sections on a phone
+  and a tree from `lg`, byes, rounds not yet out with who meets or where they
+  come from, your path in brass, and "Who picked whom" once complete.
+- **`/club/midweek/[weekStart]/match/[matchId]`, the report:** headline,
+  scoreboard (side 0 always left), facts, timeline, shoot-out and the "why"
+  panel with the odds and every card's factors. Built on the server from the
+  stored rows by a database twin of the report adapter.
+- **D3 in the renderer:** a new `ownersPublished` flag and a count-free
+  contrarian line (four new phrasebook lines, read and approved by the owner), so
+  a report reads the same all night and owner counts appear only in the "why"
+  panel once the week is complete.
+- **Home and Collection:** the Home card's evening ("Round 2 is out", your
+  result, the next match, a compact clock) and after-the-final states; the
+  Collection strip's "Your five are playing tonight".
+- **`/admin/midweek`:** the switch, this week at a glance, the rehearsal and
+  void with a reason; the eighth admin tab.
+- **The lazy trigger:** `runDueMidweek()` from Home and every Midweek page.
+
+Verified locally: `npm run verify:fast` (new unit tests for the D4 cutoff
+across both clock changes, the reveal clock, bracket assembly with byes, your
+night, the stored-row report adapter against every golden tournament, the D3
+flag and text stability, the trigger's due-work check and the admin helpers)
+and `npm run test:e2e:authenticated` (Pixel 7 and 320 px: a seeded completed
+week's bracket and a match report with no horizontal overflow, bad URLs not
+found, the admin controls and a rehearsal; the bracket joins the core-route
+overflow loop, which now measures against the device width). A local visual
+review at 320 px, Pixel 7 and 1440 px compared Week-Locked, Week-Revealing,
+Week-Complete, the bracket mid-reveal and complete, three reports (shoot-out
+with an injured Player, thrashing, shoot-out), Home, Collection, admin, void
+and Week-Void with the mockups; it found the shoot-out's screen-reader table
+widening a 320 px screen, now fixed.

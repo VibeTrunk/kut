@@ -3893,3 +3893,22 @@ fix the launch found.
 Verified: `npm run verify:fast`, `npm run test:db` and
 `npm run test:integration` for #131 locally and in CI; the hosted smoke row
 matched the local run.
+
+## Midweek archetype snapshot — 2026-09-26
+
+Closes a way to sabotage other members' squads: changing your own archetype
+just before the lock (ADR-099, migration `20261008000000`).
+
+- **Frozen at the open.** Opening a week snapshots every Player's archetype
+  (`kut.midweek_archetype_snapshots`, filled by a trigger on tournament
+  insert); the lock plays the snapshot, and a change applies from the next
+  week. The week open at the push is backfilled.
+- **Picker:** reads `kut.midweek_archetypes`; a card changed since the open
+  says "X this week, Y from next". Falls back to the live archetype until the
+  hosted push.
+- **Copy:** `/settings/card` and how-it-works §12 say changes count from the
+  next week. BUILD_SPEC §44.2, §44.11 and the migration tables updated.
+
+Verified: pgTAP `midweek_archetype_snapshot` (19) plus the Midweek engine,
+parity, entry, payouts, switch and cooldown suites locally;
+`npm run verify:fast`.

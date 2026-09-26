@@ -24,6 +24,7 @@ import {
   squadSaveError,
   stageName,
   starterNotice,
+  weekArchetype,
   type MidweekCurrent,
 } from "@/lib/midweek/entry";
 
@@ -112,6 +113,29 @@ describe("visibility (ADR-097, HANDOFF open question 6)", () => {
     expect(isLockedTonight(current(), after)).toBe(true);
     expect(isLockedTonight(current({ status: "simulated" }), before)).toBe(true);
     expect(isLockedTonight(current({ status: "complete" }), after)).toBe(false);
+  });
+});
+
+describe("weekArchetype", () => {
+  const frozen = new Map([["p1", "goalkeeper"]]);
+
+  it("plays the snapshot from the open, and names a change since", () => {
+    expect(weekArchetype(frozen, "p1", "speedster")).toEqual({
+      archetype: "goalkeeper",
+      label: "Goalkeeper this week, Speedster from next",
+    });
+  });
+
+  it("names an unchanged archetype plainly", () => {
+    expect(weekArchetype(frozen, "p1", "goalkeeper")).toEqual({
+      archetype: "goalkeeper",
+      label: "Goalkeeper",
+    });
+  });
+
+  it("falls back to the live archetype for a Player without a snapshot", () => {
+    expect(weekArchetype(frozen, "p2", "tank")).toEqual({ archetype: "tank", label: "Tank" });
+    expect(weekArchetype(new Map(), "p1", "all_rounder").archetype).toBe("all_rounder");
   });
 });
 

@@ -6,7 +6,6 @@ import { MidweekLockBar } from "@/components/midweek/lock-bar";
 import { MidweekOptInButton } from "@/components/midweek/opt-in-button";
 import { MIDWEEK_PAGE, MidweekPageHead } from "@/components/midweek/page-head";
 import { MidweekPicker, type PickCard } from "@/components/midweek/picker";
-import { archetypeLabel } from "@/game/archetypes";
 import { MIDWEEK } from "@/game/midweek/config";
 import { revealAt } from "@/game/midweek/schedule";
 import { requireUser } from "@/lib/auth/user";
@@ -21,6 +20,7 @@ import {
   joinNames,
   prefillSlots,
   starterNotice,
+  weekArchetype,
   type MidweekTournament,
   type MySquadRow,
 } from "@/lib/midweek/entry";
@@ -205,26 +205,43 @@ export default async function MidweekPage({
   const squad = state.squad;
   if (squad === null) throw new Error("Could not load your saved five.");
 
-  const [collectionResponse, lastWeekResponse, injuredPlayerIds] = await Promise.all([
-    supabase
-      .schema("kut")
-      .from("my_collection_cards")
-      .select(
-        "card_id, player_id, is_live, display_name, archetype, ovr, pac, sho, pas, dri, def, phy, rarity_tier, photo_path",
-      )
-      .order("ovr", { ascending: false })
-      .order("display_name"),
-    supabase
-      .schema("kut")
-      .from("my_midweek_squad")
-      .select("*")
-      .lt("week_start", current.week_start)
-      .order("week_start", { ascending: false })
-      .order("slot")
-      .limit(MIDWEEK.squadSize * 2),
-    fetchInjuredPlayerIds(supabase),
-  ]);
+  const [collectionResponse, lastWeekResponse, injuredPlayerIds, frozenResponse] =
+    await Promise.all([
+      supabase
+        .schema("kut")
+        .from("my_collection_cards")
+        .select(
+          "card_id, player_id, is_live, display_name, archetype, ovr, pac, sho, pas, dri, def, phy, rarity_tier, photo_path",
+        )
+        .order("ovr", { ascending: false })
+        .order("display_name"),
+      supabase
+        .schema("kut")
+        .from("my_midweek_squad")
+        .select("*")
+        .lt("week_start", current.week_start)
+        .order("week_start", { ascending: false })
+        .order("slot")
+        .limit(MIDWEEK.squadSize * 2),
+      fetchInjuredPlayerIds(supabase),
+      supabase
+        .schema("kut")
+        .from("midweek_archetypes")
+        .select("player_id, archetype")
+        .eq("tournament_id", current.tournament_id),
+    ]);
   if (collectionResponse.error) throw new Error("Could not load your collection.");
+  // The archetypes this week plays, frozen when it opened (ADR-099). Vercel
+  // deploys before the hosted push, so until then the view is missing and every
+  // card falls back to its live archetype, as the lock then still reads it.
+  const frozen = new Map(
+    frozenResponse.error
+      ? []
+      : ((frozenResponse.data ?? []) as { player_id: string; archetype: string }[]).map((row) => [
+          row.player_id,
+          row.archetype,
+        ]),
+  );
 
   const owned = (collectionResponse.data ?? []) as CollectionRow[];
   const tiles = strongestCopies(owned, injuredPlayerIds);
@@ -233,16 +250,19 @@ export default async function MidweekPage({
     supabase,
     tiles.map(({ card }) => card.photo_path),
   );
-  const cards: PickCard[] = tiles.map(({ card, copies }) => ({
-    playerId: card.player_id,
-    cardId: card.card_id,
-    displayName: card.display_name,
-    archetype: card.archetype,
-    archetypeLabel: archetypeLabel(card.archetype),
-    tierLabel: TIER_LABEL[card.rarity_tier],
-    copies,
-    card: toLiveCardPlayer(card, injuredPlayerIds, photoUrls),
-  }));
+  const cards: PickCard[] = tiles.map(({ card, copies }) => {
+    const week = weekArchetype(frozen, card.player_id, card.archetype);
+    return {
+      playerId: card.player_id,
+      cardId: card.card_id,
+      displayName: card.display_name,
+      archetype: week.archetype,
+      archetypeLabel: week.label,
+      tierLabel: TIER_LABEL[card.rarity_tier],
+      copies,
+      card: toLiveCardPlayer({ ...card, archetype: week.archetype }, injuredPlayerIds, photoUrls),
+    };
+  });
 
   // The saved five, one Player per slot; a Player no longer owned leaves the
   // slot open and is named below.

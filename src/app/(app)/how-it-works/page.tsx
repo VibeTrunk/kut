@@ -415,8 +415,10 @@ export default async function HowItWorksPage() {
           <p>
             Archetypes set your shape: attackers make chances, playmakers create them, defenders
             stop them. <strong className="text-ink">Take a Goalkeeper</strong>: without one, your
-            best defender goes in goal and keeps goal much worse. You can change your own archetype
-            once every {ARCHETYPE_CHANGE_COOLDOWN_DAYS} days.
+            best defender goes in goal and keeps goal much worse. A week plays each card&rsquo;s
+            archetype as it was when that week opened, so the picker never changes under you. You
+            can change your own archetype once every {ARCHETYPE_CHANGE_COOLDOWN_DAYS} days; in
+            Midweek Madness it counts from the next week.
           </p>
           <h3 className="pt-2 font-black text-ink">Coins</h3>
           <p>

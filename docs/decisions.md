@@ -5379,3 +5379,54 @@ grows with it, so the old check could not see the shoot-out's screen-reader
 table doing exactly that at 320 px (now clipped inside a block).
 
 Tier: no migration.
+
+## ADR-099 — Midweek archetypes are frozen when the week opens, not at the lock
+
+Date: 2026-09-26
+
+Status: Accepted (supersedes the "frozen at the lock" part of ADR-089 and §44.2)
+
+Context: the lock read each card's archetype live from `kut.players`. The
+14-day cooldown (ADR-094) limits how often a member changes their own
+Player's archetype, not when. So every other week a member could change on
+Wednesday afternoon and reshape every squad that had already picked their
+Player: a Goalkeeper turning Speedster leaves those squads keeperless (×0.45
+in goal) with no time to react. The owner asked to close that.
+
+Decision (migration `20261008000000_midweek_archetype_snapshot.sql`):
+
+- **A snapshot per tournament.** `kut.midweek_archetype_snapshots` holds every
+  Player's archetype for each tournament, written by an `after insert` trigger
+  on `kut.midweek_tournaments`. A trigger rather than a change to
+  `_mm_open_next`, so every way a week is created (the worker's open step,
+  admin SQL, the database tests) snapshots in the same statement, and a week
+  can't exist without one.
+- **The lock plays the snapshot.** `kut._mm_field` reads
+  `coalesce(snapshot.archetype, player.archetype)`; nothing else it reads
+  changes. The rehearsal uses the same function, so it previews what the lock
+  will play.
+- **A Player created after the open plays their live archetype.** They have no
+  snapshot row. A member linked to a brand-new Player could still change once
+  before the lock (the first change is always allowed); accepted, because it
+  needs an admin to add a Player mid-week and the next week is frozen as usual.
+- **The picker shows the snapshot.** `kut.midweek_archetypes` (definer view
+  gated on `kut.is_active_member()`, ADR-079) feeds `/club/midweek`. The tile
+  and its card face carry the week's archetype, and a card changed since the
+  open reads "Goalkeeper this week, Speedster from next". The card's six stats
+  stay as they are today: the engine uses only the archetype and OVR, and
+  recomputing stats would show numbers no other screen shows. The page
+  tolerates the view's absence (Vercel deploys before the hosted push), falling
+  back to the live archetype, which is what the lock reads until then.
+- **The open week is backfilled at the push**, as the roster stands then. It
+  opened on 2026-09-26, the day of this change.
+- **The cooldown stays.** It no longer protects Midweek Madness, but it still
+  limits churn on a card others own. Relaxing it is a separate owner decision.
+- **Everything else is unchanged:** a change still applies at once to the card
+  face and the rating rebuild everywhere outside Midweek Madness. OVR is not a
+  lever: archetype offsets sum to zero.
+
+`/settings/card` and how-it-works §12 now say a change counts in Midweek
+Madness from the next week.
+
+Tier: data-changing (ADR-032): the backfill writes rows (into the new table
+only) and the lock reads a new source. Fresh backup before the push.

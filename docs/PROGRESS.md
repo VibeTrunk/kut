@@ -3778,3 +3778,7 @@ after payout, a member disabled before the payout, and the member view), the
 whole pgTAP suite (28 files, 1,216 assertions), `npm run test:integration`
 with `midweek-race.test.ts` extended (three concurrent calls pay the completed
 week once, a full bracket, one ledger row per win) and `npm run verify:fast`.
+
+Merged as #127 and pushed to hosted on 2026-09-26 after a fresh cold-verified
+backup (catalogue PR #54 in `VibeTrunk/supabase`); the record is in
+`docs/DEPLOYMENTS.md`.

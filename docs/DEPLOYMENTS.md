@@ -18,6 +18,43 @@ dated "Hosted deployment…" entries in `PROGRESS.md`.
 then bump the "Latest hosted migration" line in `CLAUDE.md`. Record the tier,
 backup id, pre/post `migration list` counts, the smoke row, and the rollback.
 
+## 2026-09-26 — `20261006000000` Midweek Madness payouts (ADR-096)
+
+Deployed 2026-09-26 from `VibeTrunk/supabase` (catalogue PR #54 there), on its
+own data-changing `db push`:
+
+- `20261006000000_midweek_payouts.sql` (BUILD_SPEC §44.7, §44.14, Part L #26,
+  ADR-096, KUT PR #127, tier data-changing) &mdash; Midweek Madness migration
+  D: the coins.
+  - **What changed.** `wallet_ledger_reason_check` re-created with
+    `midweek_win` and `user_notifications_event_type_check` with
+    `midweek_result`; the guard table `kut.midweek_rewards` (RLS on, only
+    `service_role` select) with its Part L #26 trigger; the internal payout
+    `kut._mm_pay_tournament`; `kut._mm_complete_tournament` re-created to pay
+    before a week completes; the member view `kut.my_midweek_rewards`.
+  - **No DML.** Nothing pays until a tournament exists, which needs the switch,
+    still off. Data-changing because it adds a coin faucet and widens the
+    ledger, so it took a fresh backup, `20260926-052453`, cold-verified in a
+    separate process. Pre-push `migration list --linked` showed 76 entries with
+    `20261006000000` the only local-only one and no remote-only drift, the dry
+    run named exactly that file, and the catalogue check reported 76 approved
+    source migrations. Afterwards it showed 76 entries, all present locally and
+    remotely, no drift.
+  - **Smoke-tested on hosted.** In the SQL editor, one row,
+    `true | tournament_id,week_start,round_no,match_id,bye,amount,paid_at | true | true | 1 | true | false | false | true | 17,33,50,67,83 | false | 0 | 0`,
+    identical to the local run, confirmed:
+    - RLS is on for the rewards table, and the member view has its columns in
+      order;
+    - both constraints carry the new value after every earlier one;
+    - the guard trigger is in place and the complete step calls the payout;
+    - members can neither pay nor read the table, but can read the view;
+    - the hosted payout for five rounds is `17 · 33 · 50 · 67 · 83`;
+    - the switch is off, no tournament exists, and no `midweek_win` row.
+  - **Deploy ordering** was safe: KUT PR #127 only labels `midweek_result` in
+    the inbox and adds a constant.
+  - Rollback: as in the migration header, with the switch off and nothing
+    simulated or completed since.
+
 ## 2026-09-26 — `20261005000000` Midweek Madness engine (ADR-090, ADR-091, ADR-095)
 
 Deployed 2026-09-26 from `VibeTrunk/supabase` (catalogue PR #52 there), on its

@@ -815,7 +815,7 @@ Ten PRs, each on its own branch, one migration or invariant each (ADR-070):
 | 4 | Migration `20261004000000`: the 14-day archetype cooldown (`players.archetype_changed_at`, the guard in `set_own_player_archetype`, the next allowed date on `/settings/card`; ADR-094) | shipped (#122); on hosted 2026-09-25 |
 | 5 | Migration: SQL engine, `run_midweek_due`, reveal views, admin void and rehearsal; Part L #25. Per HANDOFF.md: bye positions, per-card per-match day rolls, goals per side, the champion on `midweek_tournaments_public`, owner counts withheld until `complete` (D3), admin counts and the rehearsal's return shape (migration `20261005000000`, ADR-095) | shipped (#125); on hosted 2026-09-26 |
 | 6 | Migration: payouts, ledger reason `midweek_win`, the faucet ADR; Part L #26. Per HANDOFF.md: a member view of their own midweek rewards (migration `20261006000000`, ADR-096) | shipped (#127); on hosted 2026-09-26 |
-| 7 | Entry UI, built to the approved mockups: the picker, opt-out, navigation (Home owns the route, D1; the Collection strip, D2), tolerant reads | planned |
+| 7 | Entry UI, built to the approved mockups: the picker, opt-out, navigation (Home owns the route, D1; the Collection strip, D2), tolerant reads (ADR-097; no migration) | built, in review |
 | 8 | Results UI, built to the approved mockups: bracket, match report (a renderer `ownersPublished` flag, D3), the result leading until Thursday 23:59 (D4), admin page, the lazy trigger | planned |
 | 9 | Launch: hosted rehearsal with the owner, enable the config | planned |
 

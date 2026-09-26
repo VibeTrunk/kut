@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { IconChronicle, IconPack } from "@/components/icons";
 import { LiveCard, type LiveCardPlayer } from "@/components/live-card";
+import { MidweekEntryCard } from "@/components/midweek/entry-points";
 import {
   ACTIVITY_FLOOR_ISO,
   activityKindLabel,
@@ -10,6 +11,7 @@ import {
 import { formatDate } from "@/lib/format";
 import { fetchInjuredPlayerIds, type InjuryStatus } from "@/lib/injuries";
 import { toLiveCardPlayer } from "@/lib/live-card-player";
+import { loadMidweekEntryPoint } from "@/lib/midweek/load";
 import { resolvePhotoUrls } from "@/lib/player-photos";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
@@ -108,6 +110,10 @@ export default async function Home() {
     ),
     fetchInjuredPlayerIds(supabase),
   ]);
+  // Midweek Madness before the lock (PR 7, ADR-097). Tolerant: null whenever
+  // it is disabled, opted out, locked or not deployed, and then nothing shows.
+  const now = new Date();
+  const midweek = await loadMidweekEntryPoint(supabase, injuredPlayerIds, now);
   // A failed read is not a zero balance (KB-014): both stats degrade to "we
   // don't know" rather than asserting a figure the member never had. The
   // `?? balance` on Club Value stays — a member with no cards has no
@@ -169,6 +175,12 @@ export default async function Home() {
             Open a pack
           </Link>
         </header>
+
+        {/* The one thing on Home with a deadline, so it sits directly under
+            the header (HANDOFF, Home-BeforeLock). */}
+        {midweek && (
+          <MidweekEntryCard lockAt={midweek.lockAt} now={now.toISOString()} saved={midweek.saved} />
+        )}
 
         {openReport && (
           <Link

@@ -43,6 +43,11 @@ describe("activeEntryKey — primary tabs", () => {
     ["/chronicle", "home"],
     ["/chronicle/2026-08-31", "home"],
     ["/club/value", "collection"],
+    // Owner decision D1 (ADR-097): Midweek Madness is Home's, not Collection's,
+    // although it sits under /club; its PR 8 result pages follow it.
+    ["/club/midweek", "home"],
+    ["/club/midweek/2026-10-05", "home"],
+    ["/club/midweek/2026-10-05/match/8f14e45f", "home"],
   ])("%s activates %s", (pathname, expected) => {
     // The query string never reaches usePathname(), but pin the plain paths anyway.
     expect(activeEntryKey(PRIMARY_TABS, pathname.split("?")[0])).toBe(expected);
@@ -52,7 +57,13 @@ describe("activeEntryKey — primary tabs", () => {
     // The point of the restructure: nothing a member can reach should leave the
     // chrome blank. Routes owned by the messages button or the avatar are the
     // deliberate exceptions and are asserted separately below.
-    for (const pathname of ["/chronicle", "/club/value", "/players", "/market/offers"]) {
+    for (const pathname of [
+      "/chronicle",
+      "/club/midweek",
+      "/club/value",
+      "/players",
+      "/market/offers",
+    ]) {
       expect(activeEntryKey(PRIMARY_TABS, pathname)).not.toBeNull();
     }
   });

@@ -5159,3 +5159,111 @@ Tier: data-changing (docs/OPERATIONS.md): it widens what the ledger accepts and
 adds a coin faucet, so the hosted push needs a fresh cold-verified backup. The
 migration itself writes no row, and nothing pays until a tournament exists,
 which needs the switch, off on hosted.
+
+## ADR-097 — The Midweek entry pages: Home owns the route, a Collection strip, and what shows outside an open week
+
+Date: 2026-09-26
+
+Status: Accepted
+
+Context: PR 7 of the Midweek Madness build is the entry UI: the picker at
+`/club/midweek`, the opt-out in Settings, the Home card, the Collection strip
+and section 12 of `/how-it-works`, built to the approved mockups in
+`design/midweek/` and `design/midweek/HANDOFF.md`. It carries no migration;
+every view it reads is already on hosted, and the switch there is off. HANDOFF
+asks this PR to record owner decisions D1 and D2, and the build plan asks it to
+decide what the page shows while a week isn't open, since the evening is PR 8.
+
+Decision:
+
+- **D1: Home owns `/club/midweek` in the navigation,** next to `/chronicle`,
+  because both answer "what's happening this week" and Home's card is the
+  route's entry point. The plan's "add it to the Club entry" predates ADR-053,
+  which removed that entry. The route stays under `/club`; the `/club` redirect
+  to Collection is unchanged, and Collection does not own it. PR 8's
+  `/club/midweek/[weekStart]` pages inherit the ownership. BUILD_SPEC §46
+  records it.
+- **D2: the planned Club-page card is a strip under the Collection header,**
+  in the album and in Manage, linking to the picker. Home keeps its own card
+  under its header (BUILD_SPEC §47). Both show only while picking is open for a
+  member who hasn't opted out; PR 8 adds their evening and after-the-final
+  states.
+- **When Midweek shows at all (HANDOFF open question 6, settled).** The switch
+  on shows it; with the switch off, a tournament that is still `open` or
+  `simulated` keeps it visible until it completes or is voided, because §44.8
+  lets an open week run after a pause. Otherwise `/club/midweek` is the app's
+  not-found page (Week-Disabled), and the Home card, the Collection strip and
+  the Settings panel are absent. `/how-it-works` section 12 is the rules page
+  and always shows. The opt-out panel follows the same rule as the rest, so it
+  appears with the feature rather than before it.
+- **Tolerant reads.** One loader, `src/lib/midweek/load.ts`, reads
+  `midweek_current` and the caller's squad with `select("*")`. A missing
+  relation, a failed read or a denied read (zero rows, ADR-079) means "not
+  showing", logged, never a failed page. The picker is the exception once
+  Midweek is showing: a failed squad or collection read throws, because "not
+  picked" would be a false statement about the member's entry.
+- **The PR 7/8 boundary: small holding states.** Outside an open week the
+  picker page shows one of three short states, which PR 8 replaces with the
+  designed screens:
+  - locked tonight (the lock has passed, or the week is `simulated`):
+    "Squads are locked", when round 1 comes out, whether the member's saved
+    five, an auto squad or nothing (opted out) is in, and the fairness seal;
+  - the latest week has ended and the next isn't open yet: "Next week opens
+    soon" with that week's result line;
+  - switched on before the first tournament exists: "Opening soon".
+  Above the picker, last week's outcome is the one-line strip of
+  `Picker-Saved`: how far the member got and their coins (from
+  `my_midweek_rewards`), "went out in round 1" or "sat it out" (whether
+  `midweek_entries_public` holds an entry for them) and the champion, or the
+  club-break, too-few or void notice. It has no "Bracket →" link and there is
+  no champion hero yet: both are PR 8 pages (D4).
+- **The too-few notice names the minimum, not the count.** HANDOFF's "Only
+  {3} clubs were in" needs the field size of a skipped week, which no view
+  publishes; the strip says "Fewer than 4 clubs were in, and a bracket needs
+  4." Publishing the count would be a view change for a later migration PR.
+- **The picker works one Player per slot.** The grid shows one tile per
+  Player, and a save sends that Player's strongest owned copy, judged by what a
+  copy decides before the lock: the OVR factor times fitness (§44.3). So a
+  Special edition that kept a higher OVR beats the Live copy, and an injured
+  Player's Special edition beats a Live copy of the same OVR. Ties go to the
+  higher OVR, then the card id.
+  - **"Saved" means the cards a save would send now are exactly the saved
+    ones.** A saved copy sold since, or a stronger copy bought since, shows
+    "Unsaved changes" with a notice, because only a saved squad counts at the
+    lock (§44.2). A saved Player no longer owned at all leaves the slot open
+    (a trialist) and is named.
+  - **"Load last week's five"** reads the caller's latest earlier squad from
+    `my_midweek_squad`, keeps each slot's position, keeps a Player still owned
+    through any copy, opens the slot of one no longer owned and names it, and
+    saves nothing (§44.2).
+  - **A save compacts the squad.** `save_midweek_squad` numbers slots by array
+    order, so a five saved with slot 2 empty comes back as slots 1–4. Slot
+    position has no effect in the engine, which moves surviving picks up at
+    the lock anyway (ADR-095).
+  - **Refusals** map to HANDOFF's copy (22023, both P0001 cases by message).
+    HANDOFF gives no words for P0002 and 42501; the page says "There's no
+    Midweek Madness week open to pick for right now." and "Only active KUT
+    members can take part."
+- **Opting out.** The Settings switch takes two steps to opt out, one tap to
+  come back (`set_midweek_opt_out`), and the opted-out picker offers "Take part
+  again" too. The confirmation says a saved five for that week will be
+  removed, only when the RPC would remove one (an open, unlocked week with a
+  saved squad); after the lock it says the opt-out applies from next Wednesday,
+  because opt-outs count as of `lock_at` (ADR-095).
+- **Presentation.** The mockups' `mw-*` classes are ported to Tailwind
+  utilities, with the tier palette and the plaster band as arbitrary values;
+  nothing is added to `globals.css`. The lock countdown is the only ticking
+  client code: its first render uses the server's `now`, so server and client
+  print the same text. Times are Europe/Amsterdam, and the clocks in the copy
+  (20:00, 20:30) come from `MIDWEEK.schedule`. `/how-it-works` takes every
+  number from `MIDWEEK`, `roundPayouts`, `bracketShape` and
+  `ARCHETYPE_CHANGE_COOLDOWN_DAYS`.
+
+Consequences: `SectionTabs` and `app-nav.tsx` are unchanged. The
+authenticated E2E seeds five fixture Players (ids `00000097-…`), six cards for
+`release_member`, the switch on and next week's tournament open with a fixture
+seed, removes all of it in its teardown (switch back off), and resets the
+member's squad and opt-out before each Midweek test, so both device projects
+start from "not picked, taking part". PR 8 replaces the holding states with the
+evening, complete, skipped and void screens, adds the bracket link and the
+champion hero with D4's cutoff, and the lazy `runDueMidweek()` trigger.

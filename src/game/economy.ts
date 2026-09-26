@@ -24,6 +24,12 @@ export const ECONOMY = {
   // in kut.injury_check_in (20260930000000_injury_protection.sql) and
   // BUILD_SPEC Part 145.
   injuryStipend: 100,
+  // Midweek Madness (ADR-096): what one tournament pays its champion over every
+  // round, and the most it pays any member. Paid by kut._mm_pay_tournament in
+  // 20261006000000_midweek_payouts.sql from kut._mm_round_payouts, which reads
+  // MIDWEEK.championTotal in src/game/midweek/config.ts; BUILD_SPEC Part 145
+  // MIDWEEK_CHAMPION_TOTAL.
+  midweekChampionTotal: 250,
   starterCoinGrant: 250,
   basicPackPrice: 175,
   basicPackCardCount: 3,

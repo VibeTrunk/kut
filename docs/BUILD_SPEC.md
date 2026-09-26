@@ -1891,9 +1891,17 @@ pay_R = 250 − Σ pay_r (r < R)                the final absorbs the rounding
 - **Payment is lazy and happens once:** after `final_reveal_at`, never at
   simulation time, so wallet balances cannot spoil results early. At most one
   payment per (tournament, round, member), ledger reason `midweek_win`, through
-  a security-definer path shaped like `grant_bibs_reward`.
-- **One inbox message** (`midweek_result`) per member per tournament.
-- The faucet gets its own ADR with the payout migration.
+  a security-definer path shaped like `grant_bibs_reward`. It pays the winners
+  stored in the bracket, in the same transaction that completes the week, so a
+  week is complete exactly when it has been paid (ADR-096).
+- **A member disabled between the lock and the payout is not paid,** as the
+  bibs bonus skips a disabled member.
+- **One inbox message** (`midweek_result`) per member paid, per tournament: how
+  far they got, their coins and the champion. A member out in round 1 without
+  a bye is paid nothing and gets no message.
+- **The faucet** (ADR-096): about 43 coins per member a week at a roster of 22,
+  and never more than one attendance reward to any member, so showing up stays
+  the dominant coin source.
 
 ### 44.8 Determinism, fairness and controls
 
@@ -2050,7 +2058,8 @@ Added to Part L by the PR that makes each hold:
   `20261005000000_midweek_engine.sql` (ADR-095).**
 - **#26 (payout PR):** a midweek win pays at most once per (tournament, round,
   member), and one tournament pays any member at most
-  `MIDWEEK_CHAMPION_TOTAL`.
+  `MIDWEEK_CHAMPION_TOTAL`. **Added to Part L by
+  `20261006000000_midweek_payouts.sql` (ADR-096).**
 
 ### 44.14 Data and functions
 
@@ -2111,6 +2120,17 @@ slots stay 1–5, and the lock moves the surviving picks up into engine slots.
 
 All projections are definer views gated on `kut.is_active_member()` (the admin
 overview on `kut.is_admin()`), and a void week shows no result in any of them.
+
+**Payouts (`20261006000000_midweek_payouts.sql`, ADR-096).** Adds Part L #26.
+
+| Object | What it holds or does |
+|---|---|
+| `kut.wallet_ledger` reason `midweek_win`, `kut.user_notifications` type `midweek_result` | The two constraints re-created with one value each. A ledger row references `midweek_tournament` and carries the idempotency key `midweek:<tournament>:<round>:<member>`. |
+| `kut.midweek_rewards` | One row per win paid: tournament, round, member (the primary key), the pairing won (`match_id`, unique), `bye`, `amount` and the deferred `ledger_id`. Service role reads it; members read their own through the view below. |
+| Part L #26 guard | A reward is accepted only while its tournament is `simulated` with the final revealed, for a stored win (that pairing's winner, in that round), at exactly `kut._mm_round_payouts(rounds)[round]`, and while the member's total for the tournament stays within `MIDWEEK_CHAMPION_TOTAL`. A paid reward never changes. |
+| `kut._mm_pay_tournament(uuid)` | Internal. Pays every stored win of a tournament (byes as round-1 wins), skipping a member disabled since the lock: guard row, wallet, ledger row, balance, then one `midweek_result` message per member paid. Returns the wins paid. |
+| `kut._mm_complete_tournament(uuid)` | Re-created: pays before publishing the seed and setting `complete`, in one transaction under the tournament's row lock. Its contract is unchanged. |
+| `kut.my_midweek_rewards` | The caller's own rewards: `tournament_id`, `week_start`, `round_no`, `match_id`, `bye`, `amount`, `paid_at`. A definer view gated on `kut.is_active_member()`. |
 
 ---
 
@@ -4687,7 +4707,7 @@ STARTER_CARD_COUNT = 3
 
 # Midweek Madness, §44 (ADR-089). Tuned values, signed off 2026-09-25 (ADR-092);
 # the code is src/game/midweek/config.ts.
-MIDWEEK_CHAMPION_TOTAL = 250  # a champion's total over all rounds; its own constant
+MIDWEEK_CHAMPION_TOTAL = 250  # a champion's total over all rounds; its own constant (ECONOMY.midweekChampionTotal, ADR-096)
 MIDWEEK_SQUAD_SIZE = 5
 MIDWEEK_LOCK = Wednesday 20:00 Europe/Amsterdam
 MIDWEEK_REVEAL_INTERVAL_MINUTES = 30
@@ -5017,6 +5037,7 @@ Tasks:
 23. An accepted trade offer is never written to `market_sales`, so it never affects Reference Value (ADR-042).
 24. An injury check-in protects at most one (Player, football week), pays its stipend at most once, and protects only a week in which that Player made zero appearances (ADR-082).
 25. A Midweek Madness tournament is simulated at most once and its stored result never changes: a void hides it, never recomputes it. A tournament only moves forward (`open` → `skipped`, `simulated` or `void`; `simulated` → `complete` or `void`), and squads are immutable after the lock (§44.8, ADR-095).
+26. A Midweek Madness win pays at most once per (tournament, round, member), only for a win in the stored bracket at its round's amount, and one tournament pays any member at most `MIDWEEK_CHAMPION_TOTAL`. A week is paid exactly when it completes, so a paid week cannot be voided (§44.7, ADR-096).
 
 Every coding agent should treat this section as a regression checklist.
 

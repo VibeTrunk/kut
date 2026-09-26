@@ -18,6 +18,44 @@ dated "Hosted deployment…" entries in `PROGRESS.md`.
 then bump the "Latest hosted migration" line in `CLAUDE.md`. Record the tier,
 backup id, pre/post `migration list` counts, the smoke row, and the rollback.
 
+## 2026-09-26 — `20261008000000` Midweek archetypes frozen at the open (ADR-099)
+
+Deployed 2026-09-26 from `VibeTrunk/supabase` (catalogue PR #58 there), on its
+own data-changing `db push`, before the first lock (Wed 30 Sep 20:00):
+
+- `20261008000000_midweek_archetype_snapshot.sql` (BUILD_SPEC §44.2, §44.11,
+  ADR-099, KUT PR #133, tier data-changing) &mdash; a member can no longer
+  reshape others' squads by changing their archetype just before the lock.
+  - **What changed.** New `kut.midweek_archetype_snapshots`, filled by the
+    `after insert` trigger `midweek_tournament_archetype_snapshot` on
+    `kut.midweek_tournaments`; `kut._mm_field` plays the snapshot (live
+    archetype for a Player without a row); the picker reads the new gated view
+    `kut.midweek_archetypes`. OVR, injuries and ownership are still read live
+    at the lock.
+  - **DML:** backfilled the open week, 2026-09-28, with every Player's
+    archetype at the push (into the new table only). Fresh backup
+    `20260926-154520`, cold-verified. Pre-push `migration list --linked`
+    showed 78 entries with `20261008000000` the only local-only one and no
+    remote-only drift, the dry run named exactly that file, and the catalogue
+    check reported 78 approved source migrations. Afterwards it showed 78
+    entries, all present locally and remotely, no drift.
+  - **Smoke-tested on hosted.** In the SQL editor as `service_role`, one row,
+    `2026-09-28 | true | true | true | true | true | false | false | 1`,
+    identical to the local run, confirmed:
+    - the open week is 2026-09-28 and every Player has a snapshot row for it,
+      matching their live archetype;
+    - the trigger is enabled and `_mm_field` reads the snapshot;
+    - `authenticated` reads the view but not the table, and `anon` reads
+      neither;
+    - there is one tournament.
+  - **Deploy ordering** was safe: KUT PR #133 deployed first, and the picker
+    falls back to the live archetype while the view is missing, which is what
+    the lock read until the push.
+  - Rollback: re-create `kut._mm_field` from `20261005000000` section 4, then
+    drop `kut.midweek_archetypes`, the trigger, `kut._mm_snapshot_archetypes()`
+    and `kut.midweek_archetype_snapshots`. The lock then reads live
+    archetypes again.
+
 ## 2026-09-26 — Midweek Madness switched on (operational, no migration)
 
 The launch of Midweek Madness (PR 9 of the build, BUILD_SPEC §44.8): no

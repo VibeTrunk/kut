@@ -46,6 +46,16 @@ discussion below is retained as rationale, not a second conflicting instruction.
 - **declined** — considered and deliberately not doing; the reason is stated
 - **superseded** — replaced by a named successor, which carries on the idea
 
+## Priority — raised 2026-09-26
+
+The owner flagged these as the next things to pick up, ahead of the
+unprioritised idea lists further down. Each economy- or rule-changing item still
+needs its ADR and spec change at build time.
+
+| Item | Status | Notes / next step |
+|---|---|---|
+| Goals report becomes "goals + assists" | implemented | **Implemented locally 2026-09-27 (ADR-101); not deployed.** From the football week beginning **2026-09-28** the self-report, admin correction and accountless-attendee entry take one combined **G+A** integer (2 goals + 2 assists = 4); goals and assists are not stored apart. Earlier sessions keep meaning and saying goals; nothing is backfilled. Only labels change: columns and RPC parameters keep their `goals` names, and the ladder (0 / 1 / 1.25 / 1.5), kudos, the 3.5 / 8 caps and the 83 ceiling are unchanged. The recent-week SHO modifier reads the combined count, so a reported 4 gives the capped +8. One source for the cutover and wording, `src/game/reported-count.ts`, feeds every surface; migration `20261009000000` makes the SQL notices (report open, results, kudos, correction) date-aware. **Next:** catalogue PR in `VibeTrunk/supabase` and the hosted push (additive tier), ideally before the 28 Sep session is published. Midweek Madness unaffected. |
+
 ## Real-life play → ratings: attendance backbone + goals + kudos survey
 
 **Status: shipped** (ADR-059, ADR-060, ADR-063). Published attendance opens a
@@ -193,7 +203,7 @@ Raw triage (who asked, de-duplication, disposition) lives in
 | "Store" instead of "Packs" | idea | Rename the section and add variety: multiple pack types, sub-250-coin items, cosmetics that pimp your personal card. Today there is one 250-coin basic pack. New product surface + a cosmetics model; ADR + migration. |
 | Player / Team of the Season ("TOTS" = Terrible of the Season) | idea | End-of-season award from most team-of-the-week appearances / most goals, plus a Team of the Season XI. Season-boundary aggregation over existing snapshot + goal data; no economy change if purely cosmetic. |
 | Coin-generating dimension — mini-game or PvP on card collections | shipped | Large: a new subsystem with its own tables and a new coin faucet to balance against the Part L invariants. Recorded in the spec as "Future idea 1". Specified as "Midweek Madness" below (BUILD_SPEC §44, ADR-089); live since 2026-09-26. |
-| Peer / performance scoring beyond goals — assists, defensive play, post-game survey, 1–5 player ratings, goalie saves, goal reward scaled by player count | partial | The **"Real-life play → ratings"** design for this round-3 cluster shipped 2026-09-06 (ADR-059/060/063): attendance backbone, diminishing-returns goals and a positive-only post-game kudos survey. **Open remainder:** assists, defensive play, 1–5 player ratings, goalie saves and scaling the goal reward by player count — none of these has a design, and each would need its own ADR. |
+| Peer / performance scoring beyond goals — assists, defensive play, post-game survey, 1–5 player ratings, goalie saves, goal reward scaled by player count | partial | The **"Real-life play → ratings"** design for this round-3 cluster shipped 2026-09-06 (ADR-059/060/063): attendance backbone, diminishing-returns goals and a positive-only post-game kudos survey. **Open remainder:** assists as a separate stat (from 2026-09-28 assists count only inside the one combined G+A report, ADR-101; see "Goals report becomes 'goals + assists'" under Priority above), defensive play, 1–5 player ratings, goalie saves and scaling the goal reward by player count — none of these has a design, and each would need its own ADR. |
 | Distinct goalkeeper stat set (handling / reflexes / …) | idea | ADR-036 shipped a goalkeeper archetype that reuses the six outfield stats with an offset. A true GK stat set would rewrite the card component and every attribute projection — deferred as the "hard" variant in the round-1 triage. |
 | Market auctions | idea | ADR-042 added fixed-price listings + escrow trade offers; ADR-072 let the seller choose a 24- or 72-hour window. A timed ascending auction is still a separate mechanic. |
 | Weather bonus — extra coins for rain / snow / freeze / >25 °C | idea | No weather data source today. |

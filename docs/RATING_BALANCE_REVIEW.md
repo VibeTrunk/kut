@@ -14,6 +14,39 @@ rating balance is revisited, rebuild the harness against
 `kut._rebuild_season_core` on a local stack — measuring the engine that ships
 is what makes the exercise worth anything.
 
+## Update 2026-09-27 — the count becomes goals + assists (ADR-101)
+
+From the football week beginning 2026-09-28 the reported count is goals and
+assists **combined** ("G+A"), one integer, with goals and assists not stored
+separately. Read every "goals" below as that count for sessions from that week
+on; sessions before it keep their goals-only meaning. **No number in this
+review changes**: the same 0 / 1 / 1.25 / 1.5 ladder, the 1.5 per-session
+count cap, kudos 0 / 1 / 1.5 / 2, the 3.5 combined cap, the session-age decay,
+the Form cap of 8 and the 83 ceiling all apply to the combined value, so a
+combined 4 (for example 2 goals + 2 assists) scores exactly what 4 goals did.
+The engine (`kut._rebuild_season_core`) is untouched; the only migration
+(`20261009000000`) changes notice wording.
+
+What does change is the **distribution**, not the bounds:
+
+- A count that includes assists reaches 2 and 3 more often than goals alone,
+  so more members will sit at 1.25 to 1.5 count-Form per session, and the
+  "maximum goals every session" row in §2 (3.75 Form, +4 OVR) becomes a more
+  common pattern. It stays below the maximum kudos row and still needs kudos to
+  reach +8.
+- The **SHO modifier** in §1 (+2 per count, capped at +8 for the latest
+  football week) now reads the combined count too. Playmakers and other
+  creators get Shooting spikes they did not get before; a reported 4 gives the
+  capped +8. This was accepted in ADR-101 as the price of not splitting the
+  number. SHO is display and card flavour; it does not feed Live OVR.
+- Self-reporting a combined total is harder to check than goals alone. The
+  per-session cap of 1.5 still bounds what an inflated count can earn, and the
+  10+ confirmation and admin correction remain the controls.
+
+Not re-measured: the harness was retired in ADR-064 (see the note above). If
+the distribution shift proves material, measure the reported-count histogram
+before and after 2026-09-28 against `kut.session_report_results`.
+
 ## Conclusion
 
 **+1.5 goals / +2 kudos per-session caps, a +3.5 combined per-session cap and

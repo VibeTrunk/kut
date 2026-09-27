@@ -7,6 +7,7 @@ import {
   type PublishAttendanceState,
 } from "./actions";
 import { sessionUsesMemberReports } from "@/game/session-reporting";
+import { countAttributive, countLabel, countNoun } from "@/game/reported-count";
 
 type Player = { id: string; display_name: string };
 type CorrectionSession = {
@@ -69,6 +70,10 @@ export function AttendanceForm({
   const usesMemberReports = correctionSession
     ? correctionSession.ratingRulesVersion === 2
     : sessionUsesMemberReports(sessionDate, v2StartsWeek);
+  // Goals before the football week of 28 Sep 2026, goals + assists from it
+  // (ADR-101); the admin-entered field is `goals` either way.
+  const noun = countNoun(sessionDate);
+  const totalsNoun = countAttributive(sessionDate);
   const formattedCutover = v2StartsWeek
     ? new Intl.DateTimeFormat("en-GB", { dateStyle: "long", timeZone: "Europe/Amsterdam" }).format(
         new Date(`${v2StartsWeek}T12:00:00`),
@@ -170,8 +175,8 @@ export function AttendanceForm({
               className={`rounded-xl border p-3 text-sm ${usesMemberReports ? "border-moss-line bg-moss-bg text-moss" : "border-brass-line bg-brass-bg/30 text-brass"}`}
             >
               {usesMemberReports
-                ? "This date uses member reports. Publishing opens goals & kudos for linked attendees for 24 hours."
-                : `This is a legacy date. Member reports begin with the week of ${formattedCutover}; enter goals during review instead.`}
+                ? `This date uses member reports. Publishing opens ${noun} & kudos for linked attendees for 24 hours.`
+                : `This is a legacy date. Member reports begin with the week of ${formattedCutover}; enter ${noun} during review instead.`}
             </p>
           )}
           <legend className="pt-4 text-xl font-bold">Who played?</legend>
@@ -237,9 +242,11 @@ export function AttendanceForm({
           </label>
           {!usesMemberReports && (
             <fieldset className="space-y-3 rounded-xl border border-line bg-board/50 p-4">
-              <legend className="px-1 font-black">Goals for this legacy session</legend>
+              <legend className="px-1 font-black">
+                {countLabel(sessionDate)} for this legacy session
+              </legend>
               <p className="text-sm text-ink-dim">
-                Sessions before the reporting cutover keep the original admin-entered goal totals.
+                Sessions before the reporting cutover keep admin-entered {totalsNoun} totals.
               </p>
               <div className="grid gap-3 sm:grid-cols-2">
                 {selectedPlayers.map((player) => (
@@ -251,7 +258,7 @@ export function AttendanceForm({
                       {player.display_name}
                     </span>
                     <input
-                      aria-label={`${player.display_name} goals`}
+                      aria-label={`${player.display_name} ${noun === "G+A" ? "goals and assists" : "goals"}`}
                       className="h-10 w-20 rounded-lg border border-line bg-board px-3 text-right font-black tabular-nums"
                       max="99"
                       min="0"
@@ -290,7 +297,7 @@ export function AttendanceForm({
             <p className="text-sm text-brass">
               {usesMemberReports
                 ? "Check the date, session type and attendees carefully. Publishing opens member reports for 24 hours."
-                : "Check the legacy goal totals carefully. This date does not open member reports."}
+                : `Check the legacy ${totalsNoun} totals carefully. This date does not open member reports.`}
             </p>
           )}
           {state.error && (

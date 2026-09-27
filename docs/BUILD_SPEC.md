@@ -323,9 +323,21 @@ MVP attendance record:
 - goals: integer, default 0;
 - optional note.
 
+**Goals + assists (ADR-101).** From the football week beginning Monday
+2026-09-28 the one reported integer (`attendance.goals` for an admin-entered
+session, `session_reports.goals` / `session_report_results.effective_goals` for
+a member-reported one) is the player's goals and assists **combined**, "G+A":
+2 goals + 2 assists is stored as `4`. The two parts are never stored separately
+and cannot be recovered. A session dated before 2026-09-28 keeps its
+goals-only meaning and label; nothing is backfilled or relabelled. Column and
+RPC names (`goals`, `p_goals`, `effective_goals`, `goal_form`) are unchanged
+compatibility names, and every formula that reads the count reads it
+unchanged. See the 2026-09-27 amendment at the end of this document.
+
 Later versions may add:
 
-- assists;
+- assists as their own field (since ADR-101 assists count only inside the one
+  combined G+A value);
 - clean sheet;
 - keeper saves;
 - player-of-the-match;
@@ -740,6 +752,11 @@ SHO =
 ```
 
 This means a player who scores several goals visibly receives a Shooting spike without permanently changing their identity.
+
+From the football week beginning 2026-09-28 `goals_in_most_recent_football_week`
+is the week's combined **G+A** count (ADR-101), exactly as stored: the modifier
+is unchanged, so assists now lift SHO too, and a reported `4` (for example
+2 goals + 2 assists) gives the same capped +8 as 4 goals.
 
 Future award systems can apply temporary stat-specific modifiers.
 
@@ -4763,6 +4780,7 @@ INJURY_COMEBACK_MIN_WEEKS = 3  # protected weeks before a return earns comeback 
 INJURY_COMEBACK_FORM_PER_WEEK = 0.25  # ADR-083
 INJURY_COMEBACK_FORM_CAP = 2  # one comeback input never exceeds this; the Form cap of 8 still applies, ADR-083
 ARCHETYPE_CHANGE_COOLDOWN_DAYS = 14  # self-service changes only, as 336 elapsed hours, ADR-089, ADR-094
+GOALS_ASSISTS_CUTOVER = 2026-09-28  # first football week whose reported count is goals + assists combined; wording only, ADR-101 (src/game/reported-count.ts, kut._uses_combined_count)
 STARTER_COIN_GRANT = 250
 STARTER_CARD_COUNT = 3
 
@@ -5363,3 +5381,42 @@ deployment authority. Deployment, hosted migration application, branch
 protection, and secret changes always require their own explicit instruction.
 
 Detailed contracts and commands are in `docs/PRODUCTION_SAFETY.md` (ADR-071).
+
+---
+
+# IMPLEMENTED FEATURE AMENDMENT — 2026-09-27: goals + assists (ADR-101)
+
+This amends the 2026-09-06 "Reports, kudos and ratings" amendment above. It is
+implemented locally; its migration (`20261009000000`) is not yet applied to
+hosted.
+
+- **One combined count.** From the football week beginning Monday
+  **2026-09-28**, the post-session report, the admin correction and the
+  accountless-attendee entry ask for one integer: goals and assists added
+  together, **Goals + Assists** ("G+A"). 2 goals + 2 assists is entered and
+  stored as `4`. Goals and assists count equally, are not stored separately and
+  cannot be recovered; the product always states such a value as one total
+  ("4 G+A").
+- **History keeps its meaning.** A session dated before 2026-09-28 keeps the
+  goals-only meaning and the "goals" label on every surface (report, Chronicle,
+  player graph, rating story, admin). A football week is never split, because
+  the cutover is a Monday. No historical value is backfilled, relabelled or
+  re-scored, and notices already sent keep their wording.
+- **Scoring is unchanged.** The count feeds the existing ladder unchanged:
+  0 / 1 / 1.25 / 1.5 Form for 0 / 1 / 2 / 3+ (at most 1.5 per session); kudos
+  0 / 1 / 1.5 / 2; the 3.5 per-session cap; session-age decay
+  1 / .75 / .5 / .25 / 0; the Form cap of 8; the Live OVR ceiling of 83. A
+  combined 4 earns exactly the 1.5 Form that 4 goals earns.
+- **SHO.** The recent-week Shooting modifier (§15.2, `least(8, 2 * count)`)
+  consumes the same combined count, so assists lift SHO and a reported 4 gives
+  the capped +8.
+- **Names.** Database columns and RPC parameters (`goals`, `p_goals`,
+  `reported_goals`, `effective_goals`, `goal_form`, `goal_total`, `goal_count`)
+  keep their names as compatibility names.
+- **Where the rule lives.** `GOALS_ASSISTS_CUTOVER` in
+  `src/game/reported-count.ts` for every screen, and
+  `kut._uses_combined_count(date)` for the notices SQL writes (report open,
+  session results, kudos awarded, admin correction). Both are pinned to the
+  same date by tests.
+- **Midweek Madness is out of scope.** Its goals and assists are simulated
+  match events (§44.10) and keep their own wording.

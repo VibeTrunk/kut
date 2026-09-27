@@ -91,6 +91,32 @@ describe("describeContribution", () => {
     ).toBeNull();
   });
 
+  // ADR-101: from the football week of 28 Sep 2026 the count is goals + assists.
+  it("states a post-cutover session's count as one combined G+A total", () => {
+    expect(
+      describeContribution({
+        ...contribution,
+        session_date: "2026-09-28",
+        effective_goals: 4,
+        weighted_contribution: 3.5,
+      }),
+    ).toBe("3.5 Form — 4 G+A and Team Player, Engine");
+    expect(
+      describeContribution({
+        ...contribution,
+        session_date: "2026-10-02",
+        effective_goals: 1,
+        recognized_categories: null,
+      }),
+    ).toBe("3 Form — 1 G+A");
+  });
+
+  it("keeps goals for a session on the last day before the cutover", () => {
+    expect(
+      describeContribution({ ...contribution, session_date: "2026-09-27", effective_goals: 2 }),
+    ).toBe("3 Form — 2 goals and Team Player, Engine");
+  });
+
   it("falls back gracefully when neither goals nor categories are present", () => {
     expect(
       describeContribution({

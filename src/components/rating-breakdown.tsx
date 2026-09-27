@@ -113,15 +113,15 @@ export function RatingBreakdownStory({
           </p>
           {live.length === 0 && (
             <p className="mt-2 text-xs text-ink-faint">
-              No recent session is adding Form yet. Goals and kudos from the next session will show
-              up here.
+              No recent session is adding Form yet. G+A (goals + assists) and kudos from the next
+              session will show up here.
             </p>
           )}
         </div>
       ) : (
         <p className="mt-4 text-sm text-ink-faint">
-          No recent session is adding Form right now, so this rating is all attendance. Goals and
-          kudos from the next session will show up here.
+          No recent session is adding Form right now, so this rating is all attendance. G+A (goals +
+          assists) and kudos from the next session will show up here.
         </p>
       )}
     </section>

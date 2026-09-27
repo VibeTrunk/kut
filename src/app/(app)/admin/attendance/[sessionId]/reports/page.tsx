@@ -1,5 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import {
+  countAttributive,
+  countLabel,
+  countNoun,
+  reportsGoalsAndAssists,
+} from "@/game/reported-count";
 import { requireAdmin } from "@/lib/auth/admin";
 import { createClient } from "@/lib/supabase/server";
 import { correctGoals, finalizeReports } from "./actions";
@@ -34,7 +40,7 @@ export default async function AdminReportsPage({ params }: Props) {
   await requireAdmin();
   const { sessionId } = await params;
   const supabase = await createClient();
-  const [surveyResponse, rosterResponse] = await Promise.all([
+  const [surveyResponse, rosterResponse, sessionResponse] = await Promise.all([
     supabase
       .schema("kut")
       .from("session_surveys")
@@ -49,10 +55,23 @@ export default async function AdminReportsPage({ params }: Props) {
       )
       .eq("session_id", sessionId)
       .order("display_name"),
+    supabase
+      .schema("kut")
+      .from("match_sessions")
+      .select("session_date")
+      .eq("id", sessionId)
+      .maybeSingle(),
   ]);
-  if (surveyResponse.error || rosterResponse.error)
+  if (surveyResponse.error || rosterResponse.error || sessionResponse.error)
     throw new Error("Could not load session reports.");
-  if (!surveyResponse.data) notFound();
+  if (!surveyResponse.data || !sessionResponse.data) notFound();
+  // Goals before the football week of 28 Sep 2026, goals + assists from it
+  // (ADR-101). The stored field is `goals` either way.
+  const sessionDate = (sessionResponse.data as { session_date: string }).session_date;
+  const label = countLabel(sessionDate);
+  const noun = countNoun(sessionDate);
+  const attributive = countAttributive(sessionDate);
+  const coverage = attributive === "goal" ? "Goal" : attributive;
   const rows = (rosterResponse.data ?? []) as Row[];
   const survey = surveyResponse.data as Survey;
   const eligible = rows.filter((r) => r.user_id);
@@ -72,7 +91,7 @@ export default async function AdminReportsPage({ params }: Props) {
           <h1 className="display mt-3 text-4xl sm:text-6xl">Session reports</h1>
           <p className="mt-3 text-sm text-ink-dim">
             {completed} of {eligible.length} forms completed · {guests} attendees without accounts.
-            Goal coverage and rewards are shown separately.
+            {coverage} coverage and rewards are shown separately.
           </p>
         </header>
         {survey.status === "open" ? (
@@ -145,7 +164,7 @@ export default async function AdminReportsPage({ params }: Props) {
                     {row.reward_paid ? "Reward paid" : row.user_id ? "Not earned" : "Not eligible"}
                   </p>
                   <p className="mt-2 text-sm text-ink-dim">
-                    Goals:{" "}
+                    {label}:{" "}
                     {row.has_override
                       ? `${row.override_goals} (admin correction)`
                       : (row.reported_goals ?? "Not reported")}
@@ -154,7 +173,9 @@ export default async function AdminReportsPage({ params }: Props) {
               </div>
               <details className="mt-4">
                 <summary className="cursor-pointer text-sm font-black text-brass">
-                  {row.reported_goals === null && !row.has_override ? "Add goals" : "Edit goals"}
+                  {row.reported_goals === null && !row.has_override
+                    ? `Add ${noun}`
+                    : `Edit ${noun}`}
                 </summary>
                 <form
                   action={correctGoals}
@@ -163,7 +184,7 @@ export default async function AdminReportsPage({ params }: Props) {
                   <input name="sessionId" type="hidden" value={sessionId} />
                   <input name="playerId" type="hidden" value={row.player_id} />
                   <label className="text-xs font-bold">
-                    Goals
+                    {label}
                     <input
                       className="mt-1 min-h-11 w-full rounded-lg border border-line bg-panel px-3 text-base"
                       defaultValue={
@@ -188,6 +209,11 @@ export default async function AdminReportsPage({ params }: Props) {
                   <button className="min-h-11 self-end rounded-lg bg-brass px-4 font-black text-ink-on-accent">
                     Save
                   </button>
+                  {reportsGoalsAndAssists(sessionDate) && (
+                    <p className="text-xs text-ink-faint sm:col-span-3">
+                      One combined total: goals and assists added together.
+                    </p>
+                  )}
                 </form>
                 {row.has_override && (
                   <form action={correctGoals} className="mt-2">

@@ -3934,3 +3934,46 @@ two-column phone grid.
 Verified locally: the focused ownership unit file (6 assertions) and
 `npm run verify:fast`. No migration, database view, RPC, RLS policy or Part L
 invariant changed. No hosted deployment was performed.
+
+## Goals + assists — 2026-09-27
+
+Implemented ADR-101 locally. From the football week beginning **2026-09-28** a
+member reports one combined **G+A** count (goals and assists added together;
+2 + 2 is stored as 4). Goals and assists are not stored apart. Earlier sessions
+keep their goals-only meaning and label, and nothing is backfilled.
+
+- **One source.** `src/game/reported-count.ts` holds the cutover and every
+  label and formatter. The report page, Home prompt, Chronicle list and issue,
+  admin report roster and corrections, admin attendance form, player rating
+  graph, rating story and "How KUT works" §3 all ask it, by session date or by
+  week Monday.
+- **Scoring unchanged.** Same count ladder (0 / 1 / 1.25 / 1.5), kudos ladder,
+  3.5 session cap, Form cap 8 and Live OVR ceiling 83. The recent-week SHO
+  modifier reads the combined count, so a reported 4 gives the capped +8; this
+  is documented, not avoided. Column and RPC names keep `goals`. Midweek
+  Madness is untouched.
+- **Migration `20261009000000_goals_assists_notice_copy.sql`** (additive tier):
+  `kut._uses_combined_count(date)`, plus date-aware wording in
+  `kut._open_session_survey`, `kut._finalize_one_session` and
+  `kut.admin_correct_session_goals`. Each body is its latest definition
+  verbatim apart from a date lookup and a wording branch; privileges were
+  compared before and after on the local catalog.
+- **Precondition.** No session dated on or after 28 Sep was published on hosted
+  (the last documented one is 21 Sep). `next_features_contracts.test.sql` dates
+  its fixture at `current_date`, so its ADR-069 body assertion now takes its
+  expected wording from that session's date.
+- **Docs.** ADR-101; BUILD_SPEC §8, §15.2, §145 and a 2026-09-27 amendment;
+  `RATING_BALANCE_REVIEW.md` update; ROADMAP Priority row → implemented.
+
+Verified locally: the focused unit files (57), pgTAP
+`goals_assists_cutover` (48) and `next_features_contracts` (52) against the
+local stack with the migration applied, `npm run verify:fast` (361 unit
+tests), then `npm run verify:full`: 31 pgTAP files / 1,291 assertions,
+6 integration files / 14 tests, 26 Playwright tests and a production build,
+exit 0.
+
+**Not deployed.** The migration needs its catalogue PR in `VibeTrunk/supabase`
+and a hosted push. Vercel deploys on merge first; the pages need nothing new
+from the database, but notices written before the push keep the goals wording.
+Push before the 28 Sep session is published, or at the latest before its
+report window closes.

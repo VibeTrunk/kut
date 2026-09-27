@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { countNoun } from "@/game/reported-count";
 import { requireUser } from "@/lib/auth/user";
 import { formatChronicleDate, issueStandfirst } from "@/lib/chronicle";
 import { createClient } from "@/lib/supabase/server";
@@ -65,7 +66,12 @@ export default async function ChronicleIndexPage() {
               })}
             </p>
             <p className="display text-2xl text-ink-dim">
-              {issueStandfirst(latest.session_count, latest.appearance_count, latest.goal_count)}
+              {issueStandfirst(
+                latest.session_count,
+                latest.appearance_count,
+                latest.goal_count,
+                latest.week_start,
+              )}
             </p>
           </div>
           <Link
@@ -93,7 +99,7 @@ export default async function ChronicleIndexPage() {
                     </span>
                     <span className="block text-xs font-bold text-ink-faint">
                       {week.session_count} sessions · {week.appearance_count} in · {week.goal_count}{" "}
-                      goals
+                      {countNoun(week.week_start)}
                     </span>
                   </span>
                   <span>›</span>

@@ -18,6 +18,49 @@ dated "Hosted deployment…" entries in `PROGRESS.md`.
 then bump the "Latest hosted migration" line in `CLAUDE.md`. Record the tier,
 backup id, pre/post `migration list` counts, the smoke row, and the rollback.
 
+## 2026-09-27 — `20261009000000` goals + assists notice wording (ADR-101)
+
+Deployed 2026-09-27 from `VibeTrunk/supabase` (catalogue PR #60 there), on its
+own additive `db push`, the day before the first G+A session (Mon 28 Sep):
+
+- `20261009000000_goals_assists_notice_copy.sql` (BUILD_SPEC §8, §15.2 and the
+  2026-09-27 amendment, ADR-101, KUT PR #137, tier additive) &mdash; from the
+  football week beginning 2026-09-28 the notices SQL writes say G+A (goals +
+  assists) for a session dated on or after the cutover and keep "goals"
+  before it.
+  - **What changed.** New immutable `kut._uses_combined_count(date)`
+    (`service_role` only). `create or replace` of `kut._open_session_survey`
+    (report-open title), `kut._finalize_one_session` (results and kudos
+    bodies) and `kut.admin_correct_session_goals` (correction title and
+    body), each its latest body plus a date lookup and a wording branch.
+    Scoring, locking, idempotency, security definer, `search_path` and grants
+    unchanged.
+  - **DML:** none. Additive tier, so it could ride on the previous backup; a
+    fresh one was taken anyway, `20260927-180300`, cold-verified (one card
+    escrowed in an open offer, recorded in the backup log). Pre-push
+    `migration list --linked` showed 79 entries with `20261009000000` the only
+    local-only one and no remote-only drift, the dry run named exactly that
+    file, and the catalogue check reported 79 approved source migrations.
+    Afterwards it showed 79 entries, all present locally and remotely, no
+    drift.
+  - **Smoke-tested on hosted.** In the SQL editor as `service_role`, one row,
+    `false | true | true | true | true | true | true | true | false | false | false`, identical to the local run, confirmed:
+    - 27 Sep is not G+A and 28 Sep is;
+    - the report-open, finalization and correction functions carry the new
+      wording and are still security definer;
+    - the `match_sessions_open_survey` trigger is enabled;
+    - `authenticated` can run the admin correction but neither
+      `_finalize_one_session` nor the helper, and `anon` cannot run the
+      correction.
+  - **Deploy ordering** was safe: KUT PR #137 deployed first and needs nothing
+    new from the database. The push landed on 27 Sep, the day before the Mon
+    28 Sep session, the first whose report-open notice uses the new wording.
+  - Rollback: re-run the `kut._finalize_one_session` block from
+    `20260925000000` and the `kut._open_session_survey` and
+    `kut.admin_correct_session_goals` blocks from `20260920000000` as
+    `create or replace`, then drop `kut._uses_combined_count(date)`. Notices
+    written in the meantime keep their wording.
+
 ## 2026-09-26 — `20261008000000` Midweek archetypes frozen at the open (ADR-099)
 
 Deployed 2026-09-26 from `VibeTrunk/supabase` (catalogue PR #58 there), on its

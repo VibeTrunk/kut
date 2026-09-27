@@ -3977,3 +3977,8 @@ and a hosted push. Vercel deploys on merge first; the pages need nothing new
 from the database, but notices written before the push keep the goals wording.
 Push before the 28 Sep session is published, or at the latest before its
 report window closes.
+
+**On hosted 2026-09-27** (catalogue supabase #60, fresh backup
+`20260927-180300`, 79 migrations, no drift), before the first G+A session on
+Mon 28 Sep; the hosted smoke row matched the local run. The record is in
+`DEPLOYMENTS.md`.

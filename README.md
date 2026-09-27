@@ -40,6 +40,10 @@ npx supabase migration up --local
 npm run dev
 ```
 
+`supabase/config.toml` leaves Realtime, the Edge runtime and Analytics
+(Logflare + Vector) switched off: KUT uses none of them, and together they are
+the bulk of the local stack's memory. Re-enable one there if a feature needs it.
+
 The local Supabase stack is independent from the shared hosted project. Use
 the local stack for migrations and tests; do not point automated tests at the
 production database.

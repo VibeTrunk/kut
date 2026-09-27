@@ -5430,3 +5430,41 @@ Madness from the next week.
 
 Tier: data-changing (ADR-032): the backfill writes rows (into the new table
 only) and the lock reads a new source. Fresh backup before the push.
+
+## ADR-100 — Transfer-market ownership counts use every private collection copy
+
+Date: 2026-09-27
+
+Status: Accepted (owner decision, 2026-09-27)
+
+Context: A member deciding whether to buy a market listing could not see if
+they already owned that Player or the exact edition. The market grid did not
+read the collection; the listing detail page did, but immediately removed
+listed and trade-offer-held cards before constructing its offer picker.
+
+Decision:
+
+- Every listing on `/market` and `/market/[listingId]`, including the viewer's
+  own listing, shows two viewer-private totals: all copies of the same Player
+  and copies of the exact edition. When both are one, the label contracts to
+  "You own 1 of this edition"; otherwise it reads "You own P · E of this
+  edition". Nothing renders when both totals are zero.
+- The spoken label expands the shorthand to name both concepts explicitly,
+  for example "You own 3 copies of this Player, including 1 copy of this
+  edition."
+- Every row returned by `kut.my_collection_cards` counts. A copy remains
+  owned while it is listed or held by a trade offer, so neither
+  `active_listing_id` nor `held_by_offer_id` excludes it from these totals.
+- `/market` makes one parallel collection query selecting only `player_id`
+  and `edition_id`, then builds Player and edition count maps once for all
+  listings. The detail page extends its existing collection select with those
+  two ids, calculates ownership from the complete result, and only then
+  filters the rows used by the offer form.
+- The count and wording live in a pure helper. The UI is a shared component,
+  compact enough to wrap cleanly in the two-column phone grid.
+
+Consequences: the feature reads only the already owner-scoped private
+collection view and does not reveal another member's holdings. Buying,
+listing, market filtering, injury casts and trade-offer eligibility keep their
+existing paths. This is frontend-only: no migration, view, RPC, RLS policy or
+Part L invariant changes. It is implemented and verified, but not deployed.

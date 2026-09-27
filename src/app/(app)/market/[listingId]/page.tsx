@@ -3,10 +3,16 @@ import { notFound } from "next/navigation";
 import { AttributeBars } from "@/components/card-stats";
 import { IconCoin } from "@/components/icons";
 import { LiveCard } from "@/components/live-card";
+import { MarketOwnership } from "@/components/market-ownership";
 import { archetypeLabel } from "@/game/archetypes";
 import { requireUser } from "@/lib/auth/user";
 import { fetchInjuredPlayerIds } from "@/lib/injuries";
 import { toListedCardPlayer, type ListedCardRow } from "@/lib/live-card-player";
+import {
+  countOwnedCopies,
+  ownershipDisplayData,
+  type OwnedCardIdentity,
+} from "@/lib/market-ownership";
 import { resolvePhotoUrls } from "@/lib/player-photos";
 import { createClient } from "@/lib/supabase/server";
 import { isUuid } from "@/lib/uuid";
@@ -19,6 +25,7 @@ type ListingPageProps = { params: Promise<{ listingId: string }> };
 
 type Listing = ListedCardRow & {
   listing_id: string;
+  edition_id: string;
   price: number;
   seller_id: string;
   seller_display_name: string;
@@ -41,27 +48,31 @@ export default async function ListingPage({ params }: ListingPageProps) {
   // Mirrors the market index: retire offers past their 12h window before reading.
   await supabase.schema("kut").rpc("expire_trade_offers");
 
-  const [{ data, error }, { data: wallet }, { data: ownCards }] = await Promise.all([
-    supabase
-      .schema("kut")
-      // "*" rather than a column list: ADR-086 appended player_id and is_live,
-      // and the page ships before the hosted schema does.
-      .from("active_market_listings")
-      .select("*")
-      .eq("listing_id", listingId)
-      .maybeSingle(),
-    supabase.schema("kut").from("wallets").select("balance").eq("user_id", user.id).maybeSingle(),
-    supabase
-      .schema("kut")
-      .from("my_collection_cards")
-      .select("card_id, display_name, ovr, rarity_tier, active_listing_id, held_by_offer_id")
-      .order("ovr", { ascending: false }),
-  ]);
+  const [{ data, error }, { data: wallet }, { data: ownCards, error: ownCardsError }] =
+    await Promise.all([
+      supabase
+        .schema("kut")
+        // "*" rather than a column list: ADR-086 appended player_id and is_live,
+        // and the page ships before the hosted schema does.
+        .from("active_market_listings")
+        .select("*")
+        .eq("listing_id", listingId)
+        .maybeSingle(),
+      supabase.schema("kut").from("wallets").select("balance").eq("user_id", user.id).maybeSingle(),
+      supabase
+        .schema("kut")
+        .from("my_collection_cards")
+        .select(
+          "card_id, player_id, edition_id, display_name, ovr, rarity_tier, active_listing_id, held_by_offer_id",
+        )
+        .order("ovr", { ascending: false }),
+    ]);
 
   if (error) throw new Error("Could not load this listing.");
   // Sold, cancelled and expired listings all drop out of the view, so this 404s them
   // rather than rendering a dead Buy button.
   if (!data) notFound();
+  if (ownCardsError) throw new Error("Could not load your cards.");
 
   const listing = data as Listing;
   const balance = wallet?.balance ?? 0;
@@ -71,12 +82,16 @@ export default async function ListingPage({ params }: ListingPageProps) {
     fetchInjuredPlayerIds(supabase),
   ]);
 
-  const offerableCards: OfferableCard[] = (
-    (ownCards ?? []) as (OfferableCard & {
+  type OwnCard = OfferableCard &
+    OwnedCardIdentity & {
       active_listing_id: string | null;
       held_by_offer_id: string | null;
-    })[]
-  )
+    };
+  const collectionCards = (ownCards ?? []) as OwnCard[];
+  // Ownership deliberately uses the complete private view result. Only after
+  // counting do listing and offer holds make a copy ineligible for this offer.
+  const ownership = ownershipDisplayData(countOwnedCopies(collectionCards), listing);
+  const offerableCards: OfferableCard[] = collectionCards
     .filter((card) => !card.active_listing_id && !card.held_by_offer_id)
     .map((card) => ({
       card_id: card.card_id,
@@ -116,6 +131,7 @@ export default async function ListingPage({ params }: ListingPageProps) {
               <p className="text-sm font-bold text-ink-faint">
                 Sold by {listing.seller_display_name}
               </p>
+              {ownership && <MarketOwnership ownership={ownership} />}
             </div>
 
             <AttributeBars player={listing} />

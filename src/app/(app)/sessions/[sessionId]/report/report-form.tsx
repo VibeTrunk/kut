@@ -9,6 +9,7 @@ import {
   undecidedCategories,
   type Ballot,
 } from "@/lib/session-reports/kudos-ballot";
+import { countQuestion, formatReportedCount, reportsGoalsAndAssists } from "@/game/reported-count";
 import { saveSessionReport, type ReportState } from "./actions";
 
 type Category = { id: string; title: string; description: string };
@@ -17,6 +18,7 @@ const initial: ReportState = { error: null };
 
 export function ReportForm({
   sessionId,
+  sessionDate,
   playerId,
   categories,
   attendees,
@@ -28,6 +30,7 @@ export function ReportForm({
   explicitSkips,
 }: {
   sessionId: string;
+  sessionDate: string;
   playerId: string;
   categories: Category[];
   attendees: Attendee[];
@@ -43,6 +46,9 @@ export function ReportForm({
   // not perform (KB-020). rewardReceived is checked too, so a row that already
   // regressed loses the button before the migration that repairs it lands.
   const submitted = reportStatus === "submitted" || rewardReceived;
+  // From the week of 28 Sep 2026 the one number is goals and assists combined;
+  // an older session keeps asking for goals (ADR-101).
+  const combined = reportsGoalsAndAssists(sessionDate);
   const categoryIds = categories.map((category) => category.id);
   const [goals, setGoals] = useState(initialGoals === null ? "" : String(initialGoals));
   // Every field is React-controlled on purpose. A <form action={fn}> is reset by
@@ -89,6 +95,7 @@ export function ReportForm({
   return (
     <form className="space-y-7" onSubmit={submit}>
       <input name="sessionId" type="hidden" value={sessionId} />
+      <input name="sessionDate" type="hidden" value={sessionDate} />
       <input name="revision" type="hidden" value={effectiveRevision} />
       <input name="categoryIds" type="hidden" value={categoryIds.join(",")} />
       {state.saved && (
@@ -110,7 +117,12 @@ export function ReportForm({
         </div>
       )}
       <fieldset className="space-y-3">
-        <legend className="display text-3xl">How many goals did you score?</legend>
+        <legend className="display text-3xl">{countQuestion(sessionDate)}</legend>
+        {combined && (
+          <p className="text-sm text-ink-dim">
+            One number: your goals and assists added together. 2 goals and 2 assists is 4.
+          </p>
+        )}
         <div className="flex flex-wrap gap-2">
           {[0, 1, 2, 3, 4, 5].map((value) => (
             <button
@@ -138,7 +150,7 @@ export function ReportForm({
         {highGoals && (
           <label className="flex min-h-11 items-center gap-3 text-sm font-bold">
             <input name="confirmGoals" type="checkbox" value="yes" />
-            Confirm {goals} goals
+            Confirm {formatReportedCount(Number(goals), sessionDate)}
           </label>
         )}
       </fieldset>
@@ -187,8 +199,9 @@ export function ReportForm({
         })}
       </fieldset>
       <p className="text-sm text-ink-dim">
-        Enter your goals and choose or skip each category. A complete first submission earns 50 KUT
-        Coins; edits never pay twice.
+        {combined ? "Enter your combined goals and assists total" : "Enter your goals"} and choose
+        or skip each category. A complete first submission earns 50 KUT Coins; edits never pay
+        twice.
       </p>
       {blocker && (
         <p className="text-sm font-bold text-ink-dim" role="status">

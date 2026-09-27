@@ -1,5 +1,7 @@
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { buildGoalsByWeek, ratingDomain } from "@/components/rating-history";
+import { RatingHistory, buildGoalsByWeek, ratingDomain } from "@/components/rating-history";
 
 describe("rating chart tier domain", () => {
   it("adds one rarity band around a Gold series", () => {
@@ -51,5 +53,50 @@ describe("goals per football week", () => {
   it("leaves a goalless week out of the map entirely", () => {
     const none = [{ session_date: "2026-09-14", effective_goals: null }];
     expect(buildGoalsByWeek([], none).has("2026-09-14")).toBe(false);
+  });
+});
+
+// ADR-101: a week from 28 Sep 2026 counts goals + assists; earlier weeks keep goals.
+describe("rating history labels", () => {
+  const snapshots = [
+    { week_start: "2026-09-21", live_ovr: 48 },
+    { week_start: "2026-09-28", live_ovr: 51 },
+  ];
+  const goalsByWeek = new Map([
+    ["2026-09-21", 2],
+    ["2026-09-28", 4],
+  ]);
+  const html = renderToStaticMarkup(
+    createElement(RatingHistory, { snapshots, goalsByWeek, playerName: "GA A" }),
+  );
+
+  it("tooltips each week in its own terms", () => {
+    // en-GB short months are "Sep" or "Sept" depending on the ICU build.
+    expect(html).toMatch(/<title>21 Sept?: 48 OVR, 2 goals<\/title>/);
+    expect(html).toMatch(/<title>28 Sept?: 51 OVR, 4 G\+A<\/title>/);
+  });
+
+  it("spells G+A out in the football's accessible label", () => {
+    expect(html).toContain('aria-label="2 goals in this week"');
+    expect(html).toContain('aria-label="4 goals and assists in this week"');
+  });
+
+  it("heads a mixed table for both and labels every row", () => {
+    expect(html).toContain("<th>Goals / G+A</th>");
+    expect(html).toContain("<td>2 goals</td>");
+    expect(html).toContain("<td>4 G+A</td>");
+  });
+
+  it("keeps a wholly historical table in goals", () => {
+    const historical = renderToStaticMarkup(
+      createElement(RatingHistory, {
+        snapshots: [{ week_start: "2026-09-14", live_ovr: 46 }],
+        goalsByWeek: new Map([["2026-09-14", 1]]),
+        playerName: "GA A",
+      }),
+    );
+    expect(historical).toContain("<th>Goals</th>");
+    expect(historical).toContain("<td>1 goal</td>");
+    expect(historical).not.toContain("G+A");
   });
 });

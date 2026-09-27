@@ -1,5 +1,6 @@
 import { RARITY_BANDS, getRarityTier, type RarityTier } from "@/game/rating-engine";
 import { weekStart } from "@/game/football-week";
+import { countColumnLabel, formatReportedCount, speakReportedCount } from "@/game/reported-count";
 
 export type RatingSnapshot = { week_start: string; live_ovr: number; rarity_tier?: RarityTier };
 
@@ -15,6 +16,11 @@ export type ReportedGoalRow = { session_date: string; effective_goals: number | 
 
 /**
  * Goals per football week, from the same two sources the rating engine reads.
+ *
+ * From the football week of 28 Sep 2026 the same count is goals and assists
+ * combined (ADR-101). The map stays one number per week either way, keyed by the
+ * week's Monday, which is enough to label it: the cutover is a Monday, so no
+ * week holds both kinds.
  *
  * `kut._rebuild_season_core` switches goal source at the rating-v2 cutover: a
  * week before it sums `kut.attendance.goals`, a week at or after it sums
@@ -82,17 +88,19 @@ function shortDate(value: string) {
 
 function GoalFootball({
   goals,
+  week,
   x,
   y,
   labelOnLeft,
 }: {
   goals: number;
+  week: string;
   x: number;
   y: number;
   labelOnLeft: boolean;
 }) {
   return (
-    <g aria-label={`${goals} goal${goals === 1 ? "" : "s"} in this week`}>
+    <g aria-label={`${speakReportedCount(goals, week)} in this week`}>
       <circle cx={x} cy={y} fill="#e0ac4a" r="7" stroke="#15130f" strokeWidth="2" />
       <path d={`M ${x} ${y - 3.6} l 3 2.1 -1.15 3.5 h -3.7 l -1.15 -3.5 Z`} fill="#15130f" />
       <path
@@ -231,10 +239,11 @@ export function RatingHistory({ snapshots, goalsByWeek, playerName }: RatingHist
           const goals = goalsByWeek.get(snapshot.week_start) ?? 0;
           return (
             <g key={snapshot.week_start}>
-              <title>{`${shortDate(snapshot.week_start)}: ${snapshot.live_ovr} OVR${goals ? `, ${goals} goal${goals === 1 ? "" : "s"}` : ""}`}</title>
+              <title>{`${shortDate(snapshot.week_start)}: ${snapshot.live_ovr} OVR${goals ? `, ${formatReportedCount(goals, snapshot.week_start)}` : ""}`}</title>
               {goals > 0 ? (
                 <GoalFootball
                   goals={goals}
+                  week={snapshot.week_start}
                   // 9px offset plus a measured 25px glyph box for "×10".
                   labelOnLeft={x(index) + 34 > width}
                   x={x(index)}
@@ -289,7 +298,7 @@ export function RatingHistory({ snapshots, goalsByWeek, playerName }: RatingHist
           <tr>
             <th>Week</th>
             <th>OVR</th>
-            <th>Goals</th>
+            <th>{countColumnLabel(snapshots.map((snapshot) => snapshot.week_start))}</th>
           </tr>
         </thead>
         <tbody>
@@ -297,7 +306,12 @@ export function RatingHistory({ snapshots, goalsByWeek, playerName }: RatingHist
             <tr key={snapshot.week_start}>
               <td>{shortDate(snapshot.week_start)}</td>
               <td>{snapshot.live_ovr}</td>
-              <td>{goalsByWeek.get(snapshot.week_start) ?? 0}</td>
+              <td>
+                {formatReportedCount(
+                  goalsByWeek.get(snapshot.week_start) ?? 0,
+                  snapshot.week_start,
+                )}
+              </td>
             </tr>
           ))}
         </tbody>

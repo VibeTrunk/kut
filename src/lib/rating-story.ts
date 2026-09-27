@@ -1,3 +1,4 @@
+import { formatReportedCount } from "@/game/reported-count";
 import { formatDate } from "@/lib/format";
 
 /**
@@ -77,7 +78,9 @@ export function describeRatingBase(name: string, breakdown: RatingBreakdown): st
 
 /**
  * One line per contributing session, e.g.
- * "1.5 Form — 3 goals and Team Player, Engine · Mon 1 Sep".
+ * "1.5 Form — 3 goals and Team Player, Engine · Mon 1 Sep", or from the football
+ * week of 28 Sep 2026 "3.5 Form — 4 G+A and Engine" (ADR-101): the session's own
+ * date decides, so an older row keeps saying goals.
  * Returns null for a session that has faded to nothing, so the caller can drop
  * it rather than render a row of zeros.
  */
@@ -95,12 +98,12 @@ export function describeContribution(contribution: FormContribution): string | n
 
   const parts: string[] = [];
   const goals = contribution.effective_goals;
-  if (goals && goals > 0) parts.push(`${goals} ${goals === 1 ? "goal" : "goals"}`);
+  if (goals && goals > 0) parts.push(formatReportedCount(goals, contribution.session_date));
 
   const categories = contribution.recognized_categories ?? [];
   if (categories.length > 0) parts.push(categories.join(", "));
 
-  // A session can contribute Form through goals or kudos; if neither is
+  // A session can contribute Form through its count or kudos; if neither is
   // present there is nothing meaningful to name, so fall back to the session.
   const what = parts.length > 0 ? parts.join(" and ") : "this session";
   return `${formatForm(contribution.weighted_contribution)} Form — ${what}`;

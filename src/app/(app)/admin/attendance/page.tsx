@@ -130,8 +130,9 @@ export default async function AttendancePage({ searchParams }: AttendancePagePro
         <section className="space-y-3 border-t border-panel-2 pt-8">
           <h2 className="display text-2xl">Review published and cancelled sessions</h2>
           <p className="text-sm leading-6 text-ink-dim">
-            Open a session to amend attendance, date, or type. New-rule goals are managed under
-            Session reports. Cancelled sessions stay available for review and reactivation.
+            Open a session to amend attendance, date, or type. Member-reported goals (G+A from 28
+            September 2026) are managed under Session reports. Cancelled sessions stay available for
+            review and reactivation.
           </p>
           {sessions.length === 0 ? (
             <p className="rounded-xl bg-panel p-4 text-ink-dim">

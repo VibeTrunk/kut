@@ -5,6 +5,7 @@ import { ECONOMY } from "@/game/economy";
 import { bracketShape } from "@/game/midweek/bracket";
 import { MIDWEEK } from "@/game/midweek/config";
 import { roundPayouts } from "@/game/midweek/rewards";
+import { GOALS_ASSISTS_CUTOVER } from "@/game/reported-count";
 import {
   ARCHETYPE_OFFSETS,
   RARITY_BANDS,
@@ -58,6 +59,11 @@ export default async function HowItWorksPage() {
     ovr,
     value: calculateLiveDiscardValue(ovr),
   }));
+  // "28 September 2026": the first football week whose count is G+A (ADR-101).
+  const cutoverLabel = new Intl.DateTimeFormat("en-GB", {
+    dateStyle: "long",
+    timeZone: "UTC",
+  }).format(new Date(`${GOALS_ASSISTS_CUTOVER}T00:00:00Z`));
   // Midweek Madness coins per win (§44.7), for a full bracket of each size.
   const midweekPayRows = [4, 8, 16, 32].map((entrants) => ({
     entrants,
@@ -73,8 +79,8 @@ export default async function HowItWorksPage() {
           </p>
           <h1 className="display text-5xl sm:text-6xl">How KUT works</h1>
           <p className="text-lg leading-8 text-ink-dim">
-            Real Terrible Football Haarlem attendance and goals drive every card&rsquo;s rating and
-            rarity. Show up, collect your teammates, open packs, and trade.
+            Real Terrible Football Haarlem attendance, goals and assists drive every card&rsquo;s
+            rating and rarity. Show up, collect your teammates, open packs, and trade.
           </p>
         </header>
 
@@ -142,16 +148,27 @@ export default async function HowItWorksPage() {
           </table>
         </Section>
 
-        <Section title="3. Goals and kudos give temporary Form">
+        <Section title="3. Goals + assists and kudos give temporary Form">
           <p>
-            For new-rule sessions, attendees privately report goals and may recognize teammates in
-            three positive categories. Goals add up to 1.5 Form. One recognized kudos category gives
-            1 Form; two give 1.5 and three give 2. A single session contributes at most 3.5 Form
-            combined. Each session contribution fades across the next four published sessions at
-            100%, 75%, 50%, 25%, then zero; total Form is capped at {GAME_CONFIG.formCap}.
-            Completing every field, including an explicit zero and Skip choices, pays{" "}
-            {ECONOMY.sessionReportReward} KUT Coins once. Earlier sessions retain their original
-            weekly goal formula, so historical ratings do not silently change.
+            After each session, attendees privately report one number: their goals and assists added
+            together, <abbr title="goals + assists">G+A</abbr> for short. Two goals and two assists
+            is 4 G+A. Only the total is kept, so KUT never knows how it split. Attendees may also
+            recognize teammates in three positive categories.
+          </p>
+          <p>
+            G+A adds up to 1.5 Form: 1 G+A gives 1 Form, 2 give 1.25, and 3 or more give 1.5. One
+            recognized kudos category gives 1 Form; two give 1.5 and three give 2. A single session
+            contributes at most 3.5 Form combined. Each session contribution fades across the next
+            four published sessions at 100%, 75%, 50%, 25%, then zero; total Form is capped at{" "}
+            {GAME_CONFIG.formCap}. Your G+A in the latest published football week also lifts
+            Shooting (SHO) by 2 each, up to +8, until the next week is published. Completing every
+            field, including an explicit zero and Skip choices, pays {ECONOMY.sessionReportReward}{" "}
+            KUT Coins once.
+          </p>
+          <p>
+            Sessions before {cutoverLabel} counted goals only, and keep that meaning: their numbers
+            are never relabelled or re-scored. Sessions before self-reporting began retain their
+            original weekly goal formula, so historical ratings do not silently change.
           </p>
         </Section>
 

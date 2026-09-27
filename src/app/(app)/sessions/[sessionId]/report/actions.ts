@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { formatReportedCount } from "@/game/reported-count";
 import { requireUser } from "@/lib/auth/user";
 import { ballotPayload, type Ballot } from "@/lib/session-reports/kudos-ballot";
 import { createClient } from "@/lib/supabase/server";
@@ -38,7 +39,11 @@ export async function saveSessionReport(
     goals >= 10 &&
     formData.get("confirmGoals") !== "yes"
   )
-    return { error: `Confirm ${goals} goals before submitting.` };
+    // The date only chooses the wording ("goals" or "G+A", ADR-101); nothing is
+    // scored from it, so a client-supplied value cannot change the outcome.
+    return {
+      error: `Confirm ${formatReportedCount(goals, String(formData.get("sessionDate") ?? ""))} before submitting.`,
+    };
   const categoryIds = String(formData.get("categoryIds") ?? "")
     .split(",")
     .filter(Boolean);

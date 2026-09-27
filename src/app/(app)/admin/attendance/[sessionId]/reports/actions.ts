@@ -19,7 +19,7 @@ export async function correctGoals(formData: FormData) {
     reason.length > 500 ||
     (!remove && (!Number.isInteger(goals) || goals! < 0 || goals! > 99))
   )
-    throw new Error("Valid goals and a reason are required.");
+    throw new Error("A whole number from 0 to 99 and a reason are required.");
   const supabase = await createClient();
   const { error } = await supabase.schema("kut").rpc("admin_correct_session_goals", {
     p_session_id: sessionId,
@@ -28,7 +28,7 @@ export async function correctGoals(formData: FormData) {
     p_remove_override: remove,
     p_reason: reason,
   });
-  if (error) throw new Error("The goal correction could not be saved.");
+  if (error) throw new Error("The correction could not be saved.");
   revalidatePath(`/admin/attendance/${sessionId}/reports`);
   revalidatePath("/chronicle", "layout");
 }

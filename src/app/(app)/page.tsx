@@ -12,6 +12,7 @@ import {
   describeActivity,
   type ActivityRow,
 } from "@/lib/activity";
+import { countNoun } from "@/game/reported-count";
 import { formatDate } from "@/lib/format";
 import { fetchInjuredPlayerIds, type InjuryStatus } from "@/lib/injuries";
 import { toLiveCardPlayer } from "@/lib/live-card-player";
@@ -215,7 +216,7 @@ export default async function Home() {
               <span className="display mt-1 block text-2xl">
                 {openReport.report_status === "submitted"
                   ? "View your report"
-                  : "Add goals & kudos"}
+                  : `Add ${countNoun(openReport.session_date)} & kudos`}
               </span>
             </span>
             <span aria-hidden="true" className="text-2xl text-brass">

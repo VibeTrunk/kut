@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { countLabelLong } from "@/game/reported-count";
 import { requireUser } from "@/lib/auth/user";
 import { finalizeDueSurveys } from "@/lib/session-reports/finalize-due-surveys";
 import { createClient } from "@/lib/supabase/server";
@@ -88,7 +89,9 @@ export default async function SessionReportPage({ params }: Props) {
           <p className="text-[0.7rem] font-extrabold uppercase tracking-[0.26em] text-brass">
             {report.session_type} · {report.session_date}
           </p>
-          <h1 className="display mt-3 text-4xl sm:text-6xl">Goals & kudos</h1>
+          <h1 className="display mt-3 text-4xl sm:text-6xl">
+            {countLabelLong(report.session_date)} & kudos
+          </h1>
           <p className="mt-3 text-sm text-ink-dim">
             Reports close{" "}
             {new Intl.DateTimeFormat("en-GB", {
@@ -127,6 +130,7 @@ export default async function SessionReportPage({ params }: Props) {
             revision={report.revision}
             rewardReceived={report.reward_received}
             savedNominations={nominations}
+            sessionDate={report.session_date}
             sessionId={sessionId}
           />
         )}

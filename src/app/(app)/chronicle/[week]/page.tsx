@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { RARITY_BANDS, type RarityTier } from "@/game/rating-engine";
+import { countAttributive, countNoun, formatReportedCount } from "@/game/reported-count";
 import { requireUser } from "@/lib/auth/user";
 import { formatChronicleDate, isMonday, issueStandfirst } from "@/lib/chronicle";
 import { finalizeDueSurveys } from "@/lib/session-reports/finalize-due-surveys";
@@ -210,11 +211,17 @@ export default async function ChronicleIssuePage({
             })}
           </p>
           <p className="display mt-7 text-3xl text-ink-dim">
-            {issueStandfirst(current.session_count, current.appearance_count, current.goal_count)}
+            {issueStandfirst(
+              current.session_count,
+              current.appearance_count,
+              current.goal_count,
+              current.week_start,
+            )}
           </p>
           {hasUnfinalizedReports && (
             <p className="mt-3 text-sm font-bold text-brass">
-              The goal total is provisional until reporting is finalized.
+              The {countAttributive(current.week_start)} total is provisional until reporting is
+              finalized.
             </p>
           )}
         </header>
@@ -242,12 +249,14 @@ export default async function ChronicleIssuePage({
             ? attendance.find((row) => row.player_id === session.bibs_washed_by)?.players
                 ?.display_name
             : null;
+          // Goals before the week of 28 Sep 2026, goals + assists from it (ADR-101).
+          const noun = countNoun(session.session_date);
           const goalLabel =
             session.rating_rules_version === 2 && reportsOpen
-              ? "goals reported so far"
+              ? `${noun} reported so far`
               : session.rating_rules_version === 2
-                ? "reported goals"
-                : "goals";
+                ? `reported ${noun}`
+                : noun;
 
           return (
             <article
@@ -297,7 +306,7 @@ export default async function ChronicleIssuePage({
                               <span className="font-bold tabular-nums text-brass">
                                 {row.effective_goals === null
                                   ? "Not reported"
-                                  : `${row.effective_goals} ${row.effective_goals === 1 ? "goal" : "goals"}`}
+                                  : formatReportedCount(row.effective_goals, session.session_date)}
                               </span>
                             </div>
                             {row.recognized_categories.length > 0 && (
@@ -328,12 +337,12 @@ export default async function ChronicleIssuePage({
                         >
                           {myReport.report_status === "submitted"
                             ? "View your report"
-                            : "Add goals & kudos"}
+                            : `Add ${noun} & kudos`}
                         </Link>
                       )}
                     </div>
                     <p className="mt-3 text-sm text-ink-faint">
-                      {goals} goals reported so far. Final player results and recognized kudos
+                      {goals} {noun} reported so far. Final player results and recognized kudos
                       appear after reporting closes.
                     </p>
                   </section>
@@ -364,7 +373,7 @@ export default async function ChronicleIssuePage({
                         <span>{row.players?.display_name ?? "A player"}</span>
                       )}
                       <span className="font-bold tabular-nums text-brass">
-                        {row.goals ? `${row.goals} ${row.goals === 1 ? "goal" : "goals"}` : "—"}
+                        {row.goals ? formatReportedCount(row.goals, session.session_date) : "—"}
                       </span>
                     </li>
                   ))}

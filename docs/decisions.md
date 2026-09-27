@@ -5468,3 +5468,129 @@ collection view and does not reveal another member's holdings. Buying,
 listing, market filtering, injury casts and trade-offer eligibility keep their
 existing paths. This is frontend-only: no migration, view, RPC, RLS policy or
 Part L invariant changes. It is implemented and verified, but not deployed.
+
+## ADR-101 — Members report one combined goals + assists count from the week of 28 Sep 2026
+
+Date: 2026-09-27
+
+Status: Accepted (owner decision, 2026-09-26). Implemented locally; not deployed.
+
+Context: the post-session self-report (ADR-059) asks for goals only, so a
+player who sets up the goals earns nothing for it. The owner raised "goals +
+assists" as the next priority on 2026-09-26 (`ROADMAP.md`, Priority), framed as
+renaming the input, not the formula.
+
+Decision:
+
+- **One combined integer.** A member reports a single number, their goals and
+  assists added together: **Goals + Assists**, short **G+A**. 2 goals + 2
+  assists is entered and stored as `4`. Goals and assists count equally and are
+  **not stored separately**, so the split is not recoverable. Every surface
+  states a post-cutover count as one total ("4 G+A"), never as goals and
+  assists.
+- **Cutover: the football week beginning Monday 2026-09-28.** A session dated
+  on or after it reports G+A; an earlier session keeps its goals-only meaning
+  and its "goals" label everywhere. Because the cutover is a Monday, a football
+  week is wholly on one side, so a week's Monday decides a weekly total
+  (Chronicle issues, the rating graph) exactly as a session date decides a
+  session. No historical value is backfilled, relabelled or re-scored.
+- **Precondition checked.** The latest documented hosted session is 21 Sep
+  (`PROGRESS.md`, Midweek Madness launch), and nothing dated on or after 28 Sep
+  had been published when this was built (2026-09-27). Local and CI fixtures
+  that date sessions at `current_date` are fictional and take whatever meaning
+  their date gives them; the one pgTAP assertion that depended on it
+  (`next_features_contracts.test.sql`, the ADR-069 notice body) now derives the
+  expected wording from its fixture session's date.
+- **Compatibility names stay.** `attendance.goals`, `session_reports.goals`,
+  `session_goal_overrides.goals`, `session_report_results.effective_goals` and
+  `goal_form`, the views' `reported_goals`, `goal_total` and `goal_count`, and
+  RPC parameters such as `p_goals` keep their names. Renaming them would be a
+  breaking schema change with no behavioural gain.
+- **Scoring is unchanged.** The count feeds the same ladders: 0 / 1 / 1.25 /
+  1.5 Form for 0 / 1 / 2 / 3+ (at most 1.5 per session), kudos 0 / 1 / 1.5 / 2,
+  the 3.5 per-session cap, the session-age decay 1 / .75 / .5 / .25 / 0, the
+  Form cap of 8 and the Live OVR ceiling of 83. A combined 4 earns exactly the
+  1.5 Form that 4 goals earned. `kut._rebuild_season_core` is not touched.
+- **The SHO modifier reads the combined count.** The rebuild adds
+  `least(8, 2 * count)` to SHO for the latest football week, and that count is
+  now G+A. This is a deliberate consequence of not splitting the number: a
+  playmaker's assists now lift Shooting too, and a reported 4 (say 2 goals + 2
+  assists) produces the existing capped +8 SHO. Accepted rather than engineered
+  away, because separating it would need separate goal and assist fields, which
+  this decision rejects. "How KUT works" says so.
+- **Midweek Madness is unaffected.** Its goals are simulated match events with
+  their own wording; no Midweek file, table or function changes.
+
+Implementation:
+
+- **TypeScript: one source.** `src/game/reported-count.ts` holds
+  `GOALS_ASSISTS_CUTOVER = "2026-09-28"` and the pure helpers every screen uses:
+  `reportsGoalsAndAssists`, `countLabel` (Goals / G+A), `countLabelLong` (Goals
+  / Goals + Assists), `countNoun`, `countQuestion`, `formatGoals` ("1 goal",
+  "2 goals"), `formatGoalsAssists` ("4 G+A"), `formatReportedCount` (by date),
+  `speakReportedCount` ("4 goals and assists", for accessible labels) and
+  `countColumnLabel` (a mixed column reads "Goals / G+A"). No component compares
+  against the date itself. A non-ISO value reads as historical, the reading
+  that never relabels anything.
+- **Surfaces.** The report page heading ("Goals + Assists & kudos"), question
+  ("How many goals and assists did you get in total?"), a one-line example, the
+  10+ confirmation ("Confirm 10 G+A"), the server-side confirmation error and
+  the explanatory copy; the Home prompt; the Chronicle list, standfirst,
+  provisional-total note, per-session totals, open-report prompt and finalized
+  per-player results; the admin report roster, add/edit controls and correction
+  form (with a "one combined total" hint after the cutover), the admin
+  attendance form's report notice and legacy-entry fieldset, and the attendance
+  index; the player rating graph's tooltips, the football's accessible label
+  and the screen-reader table; the rating story's session lines and empty-state
+  copy; "How KUT works" §3. Admin correction errors are now date-neutral ("A
+  whole number from 0 to 99 and a reason are required.").
+- **SQL: notices only.** Migration
+  `20261009000000_goals_assists_notice_copy.sql` adds
+  `kut._uses_combined_count(date)` (immutable, executable by `service_role`
+  only, like `kut._join_names`) and re-creates, from their latest bodies
+  verbatim, the three functions that write notice copy: `kut._open_session_survey`
+  (report-open title "Goals + Assists & kudos"), `kut._finalize_one_session`
+  (results body "Reported G+A and recognized kudos are now in the Chronicle.";
+  kudos body "Your 4 G+A and these kudos lifted your card rating +N OVR this
+  week.") and `kut.admin_correct_session_goals` ("Reported G+A corrected"; "the
+  effective G+A total"). Each reads the session date (`_finalize_one_session`
+  in the `match_sessions` read it already made, `admin_correct_session_goals`
+  in its existing locking join, the trigger from `new`) and branches only the
+  wording. Locking, qualification, scoring, the rebuild call,
+  `on conflict ... do nothing`, security definer, `search_path` and privileges
+  are unchanged; the local catalog's ACLs were compared before and after. SQL
+  error messages such as `valid goals and reason are required` are internal and
+  unchanged. Notices already written keep their wording.
+
+Tests: `supabase/tests/database/goals_assists_cutover.test.sql` (48
+assertions) drives the real publish, report, finalize and correct path on a
+2026-09-27 and a 2026-09-28 session: every notice's wording on both sides; the
+ladder for 0 / 1 / 2 / 3 / 4 / 10; kudos 2 and a 3.5 session input for a
+combined 4 with three categories; hand-computed Form (5.1875), OVR (51) and
+kudos-notice deltas (+2, +3); SHO +6 for 3 and +8 for 4, 5 and 10; a guest's
+admin-entered count; no pre-cutover notice mentioning G+A after corrections and
+re-finalization; and, on a 17-week fixture season, Activity 100, Form capped at
+8, Live OVR at 83 and SHO 91. `tests/unit/reported-count.test.ts` covers the
+boundary, singular and plural, the combined format, the column label, parity of
+the SQL and TypeScript cutover dates, and that no Midweek file reads the new
+terminology; the rating-story, rating-history (rendered markup) and Chronicle
+unit tests gained both sides of the cutover.
+
+Consequences:
+
+- Tier: additive (ADR-032). Three `create or replace` function bodies and one
+  new immutable helper, no DML. It still needs its own catalogue PR in
+  `VibeTrunk/supabase` and a hosted push; nothing is applied from here.
+- **Deploy ordering.** Vercel deploys on merge, before the hosted push. The
+  pages need nothing new from the database, so they work either way. Until the
+  push, notices for sessions from 28 Sep are written in the goals wording and
+  keep it, because notices are never rewritten, while the pages already say
+  G+A. Pushing before the first post-cutover session is published (Mon 28 Sep)
+  avoids the mix entirely; pushing before its window closes 24 hours later
+  still gets the results and kudos notices right.
+- **Balance.** The ladder is unchanged, but a count that includes assists
+  reaches 2 and 3 more often, so more members will sit at 1.25 to 1.5 Form per
+  session and more SHO spikes will appear. `RATING_BALANCE_REVIEW.md` records
+  this; it stays bounded by the unchanged 1.5 / 3.5 / 8 / 83 caps.
+- Part L is unchanged. BUILD_SPEC §8, §15.2, §145 and a new implemented
+  amendment record the rule.

@@ -1389,6 +1389,10 @@ Listing surfaces (ADR-051):
 - each card links to a **listing detail page** at `/market/<listing_id>`, which
   carries the full attribute breakdown, Buy, and the coin-and-card offer form.
   Offers are made here and nowhere else;
+- both surfaces show the current viewer's ownership of the listed Player and
+  exact edition (ADR-100). Every unburned copy in `kut.my_collection_cards`
+  counts, including copies currently listed or held for a trade offer. The
+  compact label is omitted only when both totals are zero;
 - a sold, cancelled or expired listing 404s, since it leaves
   `kut.active_market_listings`.
 

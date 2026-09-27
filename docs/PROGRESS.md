@@ -3916,3 +3916,21 @@ parity, entry, payouts, switch and cooldown suites locally;
 **On hosted 2026-09-26** (catalogue supabase #58, fresh backup
 `20260926-154520`, 78 migrations, no drift), before the first lock; the open
 week 2026-09-28 is backfilled. The record is in `DEPLOYMENTS.md`.
+
+## Transfer-market ownership counts — 2026-09-27
+
+Implemented ADR-100 locally on both market surfaces. Every listing now shows
+the current viewer's number of copies of the Player and of the exact edition,
+including the viewer's own listings. Listed copies and copies held in trade
+offers still count because they remain owned; the detail page calculates the
+totals before applying the unchanged offer-eligibility filter.
+
+The market grid makes one parallel `my_collection_cards` request for only
+`player_id, edition_id`, so the feature adds no per-listing queries. A pure
+helper builds both count maps and supplies the concise visible label plus an
+expanded screen-reader label. The shared presentation wraps in the existing
+two-column phone grid.
+
+Verified locally: the focused ownership unit file (6 assertions) and
+`npm run verify:fast`. No migration, database view, RPC, RLS policy or Part L
+invariant changed. No hosted deployment was performed.

@@ -3,9 +3,15 @@ import { IconCoin } from "@/components/icons";
 import { FilterBar } from "@/components/filter-bar";
 import { SectionTabs } from "@/components/app-shell/section-tabs";
 import { LiveCard } from "@/components/live-card";
+import { MarketOwnership } from "@/components/market-ownership";
 import { requireUser } from "@/lib/auth/user";
 import { fetchInjuredPlayerIds } from "@/lib/injuries";
 import { toListedCardPlayer, type ListedCardRow } from "@/lib/live-card-player";
+import {
+  countOwnedCopies,
+  ownershipDisplayData,
+  type OwnedCardIdentity,
+} from "@/lib/market-ownership";
 import { getNavContext } from "@/lib/nav/context";
 import { buildMarketTabs } from "@/lib/nav/routes";
 import { resolvePhotoUrls } from "@/lib/player-photos";
@@ -18,6 +24,7 @@ type MarketPageProps = {
 
 type Listing = ListedCardRow & {
   listing_id: string;
+  edition_id: string;
   price: number;
   seller_id: string;
   seller_display_name: string;
@@ -62,14 +69,18 @@ export default async function MarketPage({ searchParams }: MarketPageProps) {
 
   // The offerable-cards query used to live here for the per-tile offer form. Offers
   // moved to the listing detail page (ADR-051), so the index no longer pays for it.
-  const [{ data, error }, { data: wallet }] = await Promise.all([
-    request,
-    supabase.schema("kut").from("wallets").select("balance").eq("user_id", user.id).maybeSingle(),
-  ]);
+  const [{ data, error }, { data: wallet }, { data: ownedCards, error: ownedCardsError }] =
+    await Promise.all([
+      request,
+      supabase.schema("kut").from("wallets").select("balance").eq("user_id", user.id).maybeSingle(),
+      supabase.schema("kut").from("my_collection_cards").select("player_id, edition_id"),
+    ]);
 
   if (error) throw new Error("Could not load the market.");
+  if (ownedCardsError) throw new Error("Could not load your collection ownership.");
 
   const listings = (data ?? []) as Listing[];
+  const ownershipCounts = countOwnedCopies((ownedCards ?? []) as OwnedCardIdentity[]);
   const balance = wallet?.balance ?? 0;
   const [photoUrls, injuredPlayerIds] = await Promise.all([
     resolvePhotoUrls(
@@ -136,6 +147,7 @@ export default async function MarketPage({ searchParams }: MarketPageProps) {
             {listings.map((listing) => {
               const isOwnListing = listing.seller_id === user.id;
               const cardPlayer = toListedCardPlayer(listing, injuredPlayerIds, photoUrls);
+              const ownership = ownershipDisplayData(ownershipCounts, listing);
               return (
                 <article className="flex flex-col gap-2.5" key={listing.listing_id}>
                   <div className="relative">
@@ -158,6 +170,8 @@ export default async function MarketPage({ searchParams }: MarketPageProps) {
                   <p className="truncate text-[0.7rem] font-bold text-ink-faint">
                     Sold by {listing.seller_display_name}
                   </p>
+
+                  {ownership && <MarketOwnership compact ownership={ownership} />}
 
                   {isOwnListing ? (
                     <p className="grid min-h-11 place-items-center rounded-xl border border-dashed border-line text-[0.65rem] font-black uppercase tracking-[0.12em] text-ink-faint">

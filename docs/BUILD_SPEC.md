@@ -1409,7 +1409,9 @@ Listing surfaces (ADR-051):
 - both surfaces show the current viewer's ownership of the listed Player and
   exact edition (ADR-100). Every unburned copy in `kut.my_collection_cards`
   counts, including copies currently listed or held for a trade offer. The
-  compact label is omitted only when both totals are zero;
+  count is a chip on the card itself, at the foot of the art (ADR-102), so a
+  grid row's tiles are all the same height; it is omitted only when both
+  totals are zero;
 - the listing detail page shows the card's **discard value** under the asking
   price, as the floor to judge it against (ADR-103). It is the view's trailing
   `discard_value` column, read from `kut.card_discard_value` (the function

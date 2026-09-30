@@ -1,4 +1,4 @@
-import { useId } from "react";
+import { useId, type ReactNode } from "react";
 import { archetypeLabel } from "@/game/archetypes";
 import { CardTilt } from "@/components/card-tilt";
 import { injuryCast } from "@/lib/injury-cast";
@@ -32,6 +32,8 @@ type LiveCardProps = {
   size?: "grid" | "detail";
   /** Optional week-over-week OVR change. A positive value renders a small "▲ +N" pill. */
   trend?: number | null;
+  /** Optional chip at the foot of the art, on the name's left edge (the market's ownership chip, KB-026). */
+  badge?: ReactNode;
 };
 
 const TIER_LABEL: Record<LiveCardPlayer["rarityTier"], string> = {
@@ -200,7 +202,7 @@ function BandageClip() {
   );
 }
 
-export function LiveCard({ player, size = "grid", trend }: LiveCardProps) {
+export function LiveCard({ player, size = "grid", trend, badge }: LiveCardProps) {
   const tier = player.rarityTier;
   const injured = player.injured;
 
@@ -253,6 +255,10 @@ export function LiveCard({ player, size = "grid", trend }: LiveCardProps) {
         <span aria-hidden="true" className="live-card__pennant">
           <span className={`live-card__tier-icon live-card__tier-icon--${tier}`} />
         </span>
+
+        {/* Inside the art, so it sits exactly on the art's lower edge at every
+            card width, clear of the OVR, the pennant and the shirt's surname. */}
+        {badge && <div className="live-card__badge">{badge}</div>}
       </div>
 
       <div className="live-card__plate">

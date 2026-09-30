@@ -3983,6 +3983,30 @@ report window closes.
 Mon 28 Sep; the hosted smoke row matched the local run. The record is in
 `DEPLOYMENTS.md`.
 
+## Market ownership chip (KB-026) — 2026-09-30
+
+Implemented ADR-102 (KUT PR #139), the owner-approved Claude Design mockups.
+The ADR-100 ownership count left its bordered block under the card and became
+a chip on the card itself, on both `/market` and `/market/[listingId]`:
+
+- `LiveCard` takes an optional `badge`, drawn inside the art at its lower edge
+  (`.live-card__badge`); `MarketOwnership` is now that chip.
+- `ownershipDisplayData` gained `shortText` for the grid ("You own 2",
+  "You own 3 · 1"). Equal totals on the listing page now read "You own 2 of
+  this edition". The spoken sentence is unchanged; on the grid it moved to an
+  `sr-only` line outside the listing link, whose `aria-label` hid it.
+
+Verified locally at 390×844 and 1280 wide with Playwright against the local
+stack, on a grid of nine listings (created through `kut.create_listing` on the
+local database only) that mixes owned, unowned, an injured owned Player and the
+viewer's own listing: every Buy button in a row sits at the same height at both
+widths, nothing scrolls sideways, and the chip clears the OVR, pennant, price
+and surname, photo cards included. The focused unit file (7 assertions) and
+`npm run verify:fast`.
+
+No migration, view, RPC, RLS policy or Part L invariant changed. Frontend only:
+Vercel deploys it on merge with nothing to push to the database.
+
 ## Market discard value (KB-027) — 2026-09-30
 
 Implemented ADR-103 (KUT PR #140), the owner-approved Claude Design mockups:

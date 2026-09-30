@@ -23,6 +23,7 @@ describe("market ownership display", () => {
       playerCopies: 1,
       editionCopies: 1,
       text: "You own 1 of this edition",
+      shortText: "You own 1",
       accessibleText: "You own 1 copy of this edition.",
     });
   });
@@ -36,7 +37,9 @@ describe("market ownership display", () => {
     expect(ownershipDisplayData(countOwnedCopies(cards), listing)).toMatchObject({
       playerCopies: 3,
       editionCopies: 3,
-      text: "You own 3 · 3 of this edition",
+      text: "You own 3 of this edition",
+      shortText: "You own 3",
+      accessibleText: "You own 3 copies of this Player, including 3 copies of this edition.",
     });
   });
 
@@ -51,6 +54,7 @@ describe("market ownership display", () => {
       playerCopies: 3,
       editionCopies: 1,
       text: "You own 3 · 1 of this edition",
+      shortText: "You own 3 · 1",
       accessibleText: "You own 3 copies of this Player, including 1 copy of this edition.",
     });
   });
@@ -74,6 +78,21 @@ describe("market ownership display", () => {
     expect(ownershipDisplayData(countOwnedCopies(cards), listing)).toMatchObject({
       playerCopies: 2,
       editionCopies: 2,
+    });
+  });
+
+  it("keeps both totals when the viewer owns the Player but not this edition", () => {
+    const cards = [
+      { player_id: PLAYER, edition_id: SPECIAL_EDITION },
+      { player_id: PLAYER, edition_id: SPECIAL_EDITION },
+    ];
+
+    expect(ownershipDisplayData(countOwnedCopies(cards), listing)).toEqual({
+      playerCopies: 2,
+      editionCopies: 0,
+      text: "You own 2 · 0 of this edition",
+      shortText: "You own 2 · 0",
+      accessibleText: "You own 2 copies of this Player, including 0 copies of this edition.",
     });
   });
 

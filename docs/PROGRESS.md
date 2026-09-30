@@ -4051,3 +4051,8 @@ exit 0.
 **Not deployed.** The migration needs its catalogue PR in `VibeTrunk/supabase`
 and a hosted push. Vercel deploys on merge first; until the push the listing
 page simply has no discard line.
+
+**On hosted 2026-09-30** (catalogue supabase #62, fresh backup
+`20260930-163158`, 80 migrations, no drift); the hosted smoke row matched the
+local run, with all 15 live listings carrying a value that agrees with
+`kut.card_discard_value`. The record is in `DEPLOYMENTS.md`.

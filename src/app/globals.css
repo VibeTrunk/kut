@@ -339,6 +339,20 @@ body {
   opacity: 0.75;
 }
 
+/* A caller's chip at the foot of the art (the market's ownership chip,
+   KB-026): on the name's left edge, just above the nameplate, clear of the
+   OVR, the pennant and the surname on the shirt. It sets its own type size;
+   the offsets scale with the card. Later in the DOM than the plaster cast, so
+   on an injured card it sits over the lower signature, never under it. */
+.live-card__badge {
+  position: absolute;
+  bottom: 0.9em;
+  left: 1.15em;
+  z-index: 3;
+  display: flex;
+  max-width: calc(100% - 2.3em);
+}
+
 /* ---- nameplate ----------------------------------------------------------- */
 .live-card__plate {
   position: relative;

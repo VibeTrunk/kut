@@ -5594,3 +5594,43 @@ Consequences:
   this; it stays bounded by the unchanged 1.5 / 3.5 / 8 / 83 caps.
 - Part L is unchanged. BUILD_SPEC §8, §15.2, §145 and a new implemented
   amendment record the rule.
+
+## ADR-102 — The market's ownership count rides the card as a chip
+
+Date: 2026-09-30
+
+Status: Accepted (owner decision, 2026-09-30, on the Claude Design mockups).
+Resolves KB-026. Amends ADR-100's presentation; its counting rules stand.
+
+Context: ADR-100 put "You own P · E of this edition" in a bordered block under
+each market card. Only listings the viewer owns copies of had the block, so in
+the two-column phone grid (and every other width) owned tiles grew taller and
+the Buy buttons in a row no longer lined up. The owner found it ugly and asked
+for a small chip on the card itself, the way the price already rides it.
+
+Decision:
+
+- **A chip on the card, in both places.** On `/market` and
+  `/market/[listingId]` the ownership count is a dark pill with the Collection
+  glyph at the foot of the card art, on the name's left edge, just above the
+  nameplate. It clears the OVR, the pennant, the price pill and the surname on
+  the shirt at every width. The bordered block is gone from both pages, so
+  every tile in a grid row is the same height.
+- **`LiveCard` gains an optional `badge` slot**, drawn inside the art
+  (`.live-card__badge`), so it sits exactly on the art's lower edge at every
+  card size instead of guessing a percentage from outside. No other screen
+  passes one. On an injured Player's card it covers the lower cast signature;
+  the chip is information, the signature decoration.
+- **Visible text.** The grid chip shows the counts alone: "You own 2", or
+  "You own 3 · 1" when the Player and edition totals differ. The listing page
+  shows ADR-100's sentence, with equal totals contracted the way 1 · 1 already
+  was: "You own 2 of this edition" instead of "You own 2 · 2 of this edition".
+- **Spoken text is ADR-100's, unchanged.** On the grid the card sits inside the
+  listing link, whose `aria-label` replaces everything in it, so the chip there
+  is visual only and the tile speaks the full sentence in an `sr-only` line
+  after "Sold by". On the listing page the chip carries it itself.
+
+Consequences: frontend only. No migration, view, RPC, RLS policy or Part L
+invariant changes, and ownership is still counted from the same owner-scoped
+`kut.my_collection_cards` read. BUILD_SPEC §36 "Listing surfaces" records the
+chip.

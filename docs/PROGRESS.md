@@ -4073,3 +4073,35 @@ are unchanged; BUILD_SPEC §44.9 and §44.10 now quote the new wording. The
 unpublished contrarian headlines ("was a rare pick this week") are about few
 pickers and stay as they are. The design mockups in `design/midweek/` keep the
 old label as the record of what was approved.
+
+## Midweek Madness: the first live week — 2026-09-30
+
+The first tournament (`week_start` 2026-09-28) locked Wed 30 Sep 20:00 and
+ran without intervention. The payout check from the launch plan returned
+exactly what it expected for 17–32 entrants: `complete | 31 | 953 | 953 | 31 |
+250 | 1 | true`. That means 31 wins paid for 953 coins, the ledger agrees row for
+row, one champion reached 250, and the published seed matches the seal. The
+first page visit after the final came at 22:30, so the coins landed the minute
+the final was revealed.
+
+What the week looked like (read-only query in the Midweek handover, run on
+hosted 2026-09-30 at about 23:10, 40 minutes after the payout):
+
+| | |
+|---|---|
+| Entrants | 21 (1 member opted out): 32 slots, 11 byes, 20 matches over 5 rounds |
+| Picked / auto squads | 17 / 4; only 2 of the 17 were saved in the last two hours |
+| Picked squads with a trialist | 0: all 17 picked five cards |
+| Keeperless | 1 of 17 picked squads; all 4 auto squads |
+| All-rounders among picked cards | 33 of 85 (39%), against about 80% of the roster |
+| Picked squad against auto squad | picked won 4 of 4 |
+| Goals per match | 2.75 (simulation target ≈ 2.85 across a bracket) |
+| Shoot-outs | 3 of 20 matches |
+| Upsets (winner under 35% before kick-off) | 0 |
+| Result messages read by 23:10 | 5 of 16 |
+
+Nothing needed correcting, so there is no `DEPLOYMENTS.md` entry. What it
+suggests for "MM 2.0" in `ROADMAP.md` is recorded there. One week is a small
+sample: 0 upsets in 20 matches doesn't yet say the favourites are too strong,
+because the query doesn't count how many matches had an underdog under 35% at
+all.

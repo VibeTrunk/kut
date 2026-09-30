@@ -55,6 +55,7 @@ needs its ADR and spec change at build time.
 | Item | Status | Notes / next step |
 |---|---|---|
 | Goals report becomes "goals + assists" | shipped | **Live since 2026-09-27 (ADR-101, KUT PR #137, migration `20261009000000`, catalogue supabase #60).** From the football week beginning **2026-09-28** the self-report, admin correction and accountless-attendee entry take one combined **G+A** integer (2 goals + 2 assists = 4); goals and assists are not stored apart. Earlier sessions keep meaning and saying goals; nothing is backfilled. Only labels change: columns and RPC parameters keep their `goals` names, and the ladder (0 / 1 / 1.25 / 1.5), kudos, the 3.5 / 8 caps and the 83 ceiling are unchanged. The recent-week SHO modifier reads the combined count, so a reported 4 gives the capped +8. `src/game/reported-count.ts` is the one source for the cutover and wording; the SQL notices are date-aware. Midweek Madness unaffected. The owner confirmed it working on hosted 2026-09-30. **Watch:** the reported-count distribution after 28 Sep (`RATING_BALANCE_REVIEW.md`). |
+| Groundmasters — the first Special edition | favored | **Raised 2026-09-30.** A one-off Special edition for the Players who helped renew the pitch agreement: its own card design and a frozen rating. Integration proposal, five card designs, groundwork fixes and open decisions are in the "Groundmasters" section below. **Next step:** the owner picks the Players, a design direction and the economy numbers; then the ADR. |
 | MM 2.0 | idea | **Moved 2026-09-30.** "Rotate unclaimed Players' archetypes weekly" and "Midweek Madness: own-card bonus and a captain" are now part of the "MM 2.0" section below, with their notes and the owner's decisions carried over in full. |
 | Show owned copies on the transfer market | shipped | **Live since 2026-09-27 (ADR-100, KUT PR #135); Vercel deployed it on merge, and the owner confirmed it on hosted 2026-09-30.** Frontend-only; no migration, no Part L change. `/market` and `/market/[listingId]` show both the viewer's total copies of the Player and copies of the exact edition. Every row returned by owner-scoped `my_collection_cards` counts, including the viewer's own listed and offer-held copies. `/market` makes one parallel `player_id, edition_id` read for all listings; detail counts the full existing collection result before filtering offer-eligible cards. **Follow-up:** the grid presentation became a chip on the card (KB-026, ADR-102, PR #139). |
 | SBCs or another card / coin sink | idea | **Half-baked.** Today's sinks are only the pack price and the burned 5% market tax (BUILD_SPEC §25); discard is a card sink but a coin faucet, and Midweek Madness added a coin faucet on 2026-09-26. Candidate shapes: (1) **SBCs** — squad-building challenges, as sketched in BUILD_SPEC §122 ("Friday Night Challenge": hand in 5 different Players, combined OVR ≥ 270, two Friday attendees → one premium pack; the cards are burned), which gives low/mid duplicates a use; (2) the "Prestige + collections" row below (medal for 30 distinct cards, themed sets for coins); (3) pure coin sinks from §25's "later sinks" — event entry, cosmetic frames, profile cosmetics — overlapping the "Store" row. Constraints: a reward must be worth less than what it burns (by discard value), or the sink is secretly a faucet — check against the Part L invariants and the pack-EV targets; burning must be an atomic, server-authoritative RPC that excludes listed and offer-held copies like discard does, and the ADR must say whether a card in an unsettled Midweek squad can be handed in. §122 says not to build challenges before observing the real duplicate economy, so the first step is a read-only look at duplicate counts and wallet balances (and how fast Midweek coins accumulate). Needs an ADR, a migration and a database test — one migration per PR. |
@@ -434,6 +435,99 @@ to resemble the real person, cover enough visual variety to avoid making the
 roster look repetitive, carry suitable usage rights, and work across all
 rarity treatments and card sizes. Art direction, assignment inputs and whether
 archetype influences the portrait are open design decisions.
+
+## Groundmasters — the first Special edition
+
+**Status: favored** (raised 2026-09-30). A one-off Special edition honouring the
+Players who helped renew the agreement for the pitch the club plays on. It is
+the first issuance on top of the ADR-055 scaffolding
+(`20260916000000_special_edition_scaffolding.sql`), which stores a complete,
+immutable snapshot per edition but has issued nothing: packs and starter
+grants are still Live-only. ADR-055 requires "a separately reviewed issuance
+migration and product decision", so this needs an ADR and a spec change
+(BUILD_SPEC §19, §30, §42–43, §119) before any build.
+
+**Decided by the owner (2026-09-30):**
+
+- a **one-off event**, not a recurring achievement type: one edition per
+  honoured Player, issued once;
+- a **special card design** of its own;
+- a **fixed rating**: a frozen snapshot that never follows the Live card
+  (Part L #14). The Player's Live card is untouched and keeps its normal tier.
+
+**Proposed integration (Claude's recommendation, not yet decided):**
+
+| Topic | Proposal | Why |
+|---|---|---|
+| Rating | `min(95, Live OVR at issue + boost)`, stats frozen and capped at 99 (§19). Boost **+6 to +8** (the mockups use +8). | Grounded in how the Player actually plays, rather than a hand-set number. Kept modest because of Midweek Madness (below). |
+| How members get them | (1) The honoured Player gets **one copy of their own edition** (§43). (2) A **Special roll in the existing basic pack during a release window** (§30: 1% per slot, about 1 in 34 packs). (3) An optional **supply cap per edition** (e.g. 10), which makes the "No. 04 / 10" serial meaningful. No separate pack product. | A window gives the release an "event" feel without a new pack SKU (that belongs with the "Store" idea). A cap is optional in §43, but in a club of about 20 members a numbered copy is the point; its cost is the concurrency acceptance test (§119). |
+| Discard multiplier | **1.0–1.25**, not the ×1.5 §27 suggests. | Discard mints coins. At ×1.5 an OVR 80 Groundmaster discards for about 704 coins (4 packs at 175) and an OVR 90 one for about 1,520 (almost 9 packs). At a 3% hit rate that adds tens of coins of expected value to every pack. Let scarcity carry the market price, and re-run `scripts/measure-pack-ev.mjs` as ADR-057 did. |
+| Club Value | No change. | A Special is its own edition, so it counts at 100% beside the Player's Live copy (ADR-056). |
+| Midweek Madness | Allowed, and deliberately strong. | `src/lib/midweek/copies.ts` already picks a member's strongest copy per Player, so a Groundmaster outranks its Live card, and a Special never goes into the injury cast (ADR-085). That is the reason to chase one. A +12 boost would tilt the weekly bracket; +6 to +8 keeps the edge bounded (the payout cap, Part L #26, bounds the coins). |
+| Admin grants | Settle in the same ADR. | "Admin grant of specific cards" (Admin tooling, below) already asks whether grants respect `max_supply` and increment `minted_count`; today `open_pack` is its only writer. |
+
+**Groundwork found while scoping (fix in the issuance migration):**
+
+- `card_editions.edition_type` only allows `live`, `totw`, `hat_trick`,
+  `milestone`, `iron_man`, `comeback`, `tots` and `other`. Add a proper
+  `groundmaster` value rather than hiding it under `other`, because the card
+  frame keys off the edition type.
+- **Latent tier bug.** Every card projection derives a Special's
+  `rarity_tier` from a shifted ladder on `snapshot_ovr` (70+ Elite, 60+ Holo,
+  50+ Gold, 40+ Silver, 30+ Bronze), which neither matches the Live ladder
+  (§16) nor reads the stored `snapshot_rarity_tier`. Current definition:
+  `20261010000000_market_listing_discard_value.sql` line 78, and the same
+  expression in the other card views. Invisible today because no Special
+  exists; the first Groundmaster would show the wrong tier.
+
+**Card designs (2026-09-30).** Five directions, built on the real `LiveCard`
+and `globals.css`, in [`design/groundmasters/`](../design/groundmasters/README.md)
+(regenerate with `node design/groundmasters/build/build.mjs`; also on the
+owner's private Claude Design canvas). Each shows the Special at detail and
+collection size, beside the Player's unchanged Live card for comparison:
+
+1. **Mown stripes.** The card is the pitch: mown grass stripes, a chalk
+   touchline border, a centre circle meeting the halfway line at the
+   nameplate, a corner flag in place of the tier pennant, and a slow "mower"
+   pass across the stripes.
+2. **The agreement.** The signed renewal: laid paper, a line-drawn shirt, the
+   name in italics on a signature line, a red "RENEWED" rubber stamp, a wax
+   "GM" seal and typewriter stats. Tells the real story most directly; no
+   animation.
+3. **Keys to the ground.** Midnight-blue enamel and brass: an engraved key in
+   the background, a brass key tag instead of the pennant, a double brass
+   border.
+4. **Honours board.** Dark mahogany with gilt signwriting and
+   "GROUNDMASTERS" across the top, like a clubhouse honours board.
+5. **Site plan.** A cyanotype drawing: grid paper, the pitch outline, a
+   dimension line labelled "Groundmaster", a north arrow, and the nameplate as
+   a drawing's title block.
+
+1, 2 and 5 are furthest from the existing tier ladder. 3 and 4 share Elite's
+dark-and-gold family, so they are easier to mistake for it at grid size. The
+design reads from the edition type plus `artwork_key`; `snapshot_rarity_tier`
+stays for sorting and filters only. "Animated Special-edition card artwork"
+(New candidate additions) could later extend whichever direction wins.
+
+**Open decisions for the ADR:** which Players are honoured (the owner's list);
+the design direction (or a combination, e.g. stripes with the wax seal); the
+boost; a supply cap and its size; the discard multiplier; the release window's
+dates; whether the pack roll lives in the basic pack; and whether a member's
+album gets a Groundmasters section. Not yet mocked: the pack reveal, a card
+with an uploaded photo instead of the shirt back, and the Midweek mini card.
+
+**Delivery order** (one migration per PR; hosted pushes go through
+`VibeTrunk/supabase`):
+
+1. ADR + spec update for the rules above. Docs only.
+2. The card design and the album section, in the UI. Safe to deploy first:
+   nothing renders it until a Special exists.
+3. Migration: the `groundmaster` edition type, the Special tier fix, and an
+   admin issuance RPC that also grants the honoured Player's own copy, with
+   pgTAP coverage.
+4. Migration: the Special roll in `open_pack` with window, cap and concurrency
+   tests. Its own PR, because it touches pack-integrity invariants
+   (Part L #6, #7, #10).
 
 ## Midweek Madness — weekly 5-card squad knockout
 
@@ -848,6 +942,17 @@ were under Priority: "Rotate unclaimed Players' archetypes weekly" (at the
 owner's request) and "Midweek Madness: own-card bonus and a captain" (because it
 needs the same engine retune; see the row).
 
+**First-week evidence (30 Sep, one week; `PROGRESS.md`).** 17 of 21 members
+picked, and early: only 2 saved in the last two hours, so a pick reminder is
+less urgent than feared. Members already think about archetypes: only 39% of
+picked cards were All-rounders against about 80% of the roster, and only one
+picked squad had no keeper. That supports the plusses table, and makes the
+archetype rotation the bigger lever. Someone was watching at 22:30 when the
+final came out, but only 5 of 16 result messages had been read 40
+minutes later. That's too early to judge the inbox, but it argues for the shareable result over the inbox. The engine
+matched the simulation (2.75 goals per match, 3 shoot-outs in 20); 0 upsets is
+worth watching over more weeks.
+
 | Idea | Owner's intent | Notes against today's §44 |
 |---|---|---|
 | Player ratings after the tournament | Once the tournament is complete, each card in a member's squad gets a published rating from 1 to 10, reflecting how much it contributed to winning, with a short description. | Today the report has a "standout" score per match (goal 3, assist 2, save 1, block 1, penalty scored 1, penalty saved 2; §44.10), which could be the base. Open: a rating per match or one over the member's whole night; whether "contribution to winning" is counted from events or measured by re-running a match without the card (possible, because every match is a deterministic function of the seed); and who writes the descriptions: new phrasebook lines, read by the owner as in PR 2. If it's a pure function of the stored events, it can be TypeScript-only like the renderer (ADR-093) and needs no migration. |
@@ -861,6 +966,7 @@ needs the same engine retune; see the row).
 | Something to follow after being knocked out | Members who are out early still have a reason to follow the evening (owner agreed 2026-09-30). | **The problem gets worse with the faster evening.** With 22 entrants there are 32 slots: 10 byes and only 6 real matches in round 1, and after round 2, **14 of 22 members are out**. At 15-minute rounds that happens by about 20:20, so most of the club has nothing of their own left to watch before the evening is half over. Options: a consolation bracket for round-1 losers (no coins or a small amount, checked against the ADR-096 faucet); predicting the winners of matches you're not in; or a stake that lasts all evening, e.g. your cards' ratings (first row) counting toward a season table (the parked "season leaderboard or badge"). Open: which one, and whether it pays. Anything that pays coins changes the faucet and needs its own ADR. |
 | A shareable result | A result members can post in the club's group chat: a champion poster, or "my night" as an image (owner agreed 2026-09-30). | The group chat is where the club actually lives, so this is likely the best way to get members watching next week. It overlaps with "Shareable cards and matchweek posters" (New candidate additions) and should reuse whatever that builds. Only shows what is already public to members after the final (§44.9); a manager's name on a shared image leaves the members-only projections (ADR-079), so the ADR says what an image may show. |
 | The bracket is public from the lock | Once squads lock, members see the draw (who meets whom, and the path to the final) before round 1 comes out. Raised by the owner 2026-09-30, while waiting for the first week's round 1. | Today nothing about the rest of the field is visible until round 1 (§44.9; ADR-098: the bracket is "assembled from the revealed rows"), so the 30 minutes after the lock show only your own five. The draw is fixed at the lock and never changes (Part L #25), so showing it early gives nothing away about results. It needs a **pairings-only** projection: `midweek_matches_public` rows carry goals and winners, so they can't simply be revealed earlier. **Decided (owner, 2026-09-30): the five cards are shown too**, not only manager names, so members can size up an opponent. That moves the entries' reveal from round 1 to the lock; the ADR says whether their week-long factors (form, day) come with them, since those hint at results. A §44.9 change and one migration. With the 19:55 lock above, the bracket has only 5 minutes before round 1; the draw can't come earlier, because the field is settled only at the lock. |
+| A UX pass: give Midweek Madness its own place | Midweek Madness is a big feature, but it lives entirely under Home. MM 2.0 includes a UX pass, and the owner wants Claude Design's view on KUT's UX as a whole (2026-09-30). | Today there are five primary tabs (Home, Collection, Packs, Market, Leaderboard; ADR-053), and Home owns `/`, `/chronicle` and `/club/midweek` (`src/lib/nav/routes.ts`; owner decision D1 in `design/midweek/HANDOFF.md`). The pages are reached through the Home card and the Collection strip, with no tab or section tab of their own. Options for the review to weigh include a section tab under Home, a sixth tab (ADR-053 settled on five for the phone bar), or a tab that groups the competitive surfaces (Midweek and Leaderboard). **One design pass for all of MM 2.0's screens:** whose chance it is, live unfolding, the bracket from the lock, ratings, something to follow after being knocked out, and the shareable result all change the same pages, as do KB-028–KB-031. Designing them together avoids three rounds of mockups. A ready-to-paste prompt for a separate Claude Design session is at `~/.claude/plans/kut-ux-pass-prompt.md`. It asks for a written review first, and mockups only for the direction the owner picks. |
 
 **Build notes.** A simulated week keeps the times and results it was drawn with
 (Part L #25). An open week's lock may still move, so the ADR names the first

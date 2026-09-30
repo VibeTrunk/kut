@@ -92,7 +92,7 @@ export type WhyCard = {
   powerPpm: number;
   dayRollPpm: number;
   /**
-   * "3 of 7 owners", "a rare pick", "auto squad", or null for a trialist and,
+   * "3 of 7 owners", "fewer than 3 owners", "auto squad", or null for a trialist and,
    * until owner counts are published, for every picked card.
    */
   pickLabel: string | null;

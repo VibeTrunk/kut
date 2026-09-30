@@ -1,4 +1,4 @@
-import { PPM } from "@/game/midweek/config";
+import { MIDWEEK, PPM } from "@/game/midweek/config";
 import type { ChanceEvent, PenaltyEvent, Side } from "@/game/midweek/match";
 import { shaRng, uniform, type Rng } from "@/game/midweek/rng";
 import { cardStats, detectFacts, type Fact } from "./facts";
@@ -136,6 +136,12 @@ function sideNames(input: ReportInput): [string[], string[]] {
 }
 
 /**
+ * The label for a Player too few entrants own to print a count (ADR-091). It
+ * names the card's scarcity, not the pick: every owner may have picked it.
+ */
+export const FEW_OWNERS_LABEL = `fewer than ${MIDWEEK.ownerCountMin} owners`;
+
+/**
  * The "why" panel's pick label. Owner counts appear only once published (D3)
  * and only at three owners or more (ADR-091); an auto squad's picks were never
  * the member's choice (ADR-093).
@@ -148,7 +154,7 @@ export function pickLabel(
   if (card.trialist) return null;
   if (auto) return "auto squad";
   if (!ownersPublished) return null;
-  return card.owners === null ? "a rare pick" : `${card.picks ?? 0} of ${card.owners} owners`;
+  return card.owners === null ? FEW_OWNERS_LABEL : `${card.picks ?? 0} of ${card.owners} owners`;
 }
 
 const percent = (ppm: number) => `${Math.round(ppm / (PPM / 100))}%`;

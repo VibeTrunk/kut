@@ -136,7 +136,7 @@ describe("midweek match reports", () => {
           if (card.trialist) expect(card.pickLabel).toBeNull();
           else
             expect(card.pickLabel).toMatch(
-              /^(a rare pick|auto squad|\d+ of ([3-9]|\d{2,}) owners)$/,
+              /^(fewer than 3 owners|auto squad|\d+ of ([3-9]|\d{2,}) owners)$/,
             );
         }
       }

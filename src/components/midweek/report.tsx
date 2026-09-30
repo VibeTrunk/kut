@@ -2,6 +2,7 @@ import { archetypeLabel } from "@/game/archetypes";
 import { MIDWEEK } from "@/game/midweek/config";
 import { getRarityTier } from "@/game/rating-engine";
 import { factorText, handicapText } from "@/lib/midweek/evening";
+import { FEW_OWNERS_LABEL } from "@/lib/midweek/report/render";
 import type {
   MomentKind,
   ShootoutReport,
@@ -304,7 +305,7 @@ function WhyCardRow({ card, manager }: { card: WhyCard; manager: string }) {
       </Chip>
     ),
     card.pickLabel && card.pickLabel !== "auto squad" && (
-      <Chip key="pick" tone={card.pickLabel === "a rare pick" ? "auto" : "neutral"}>
+      <Chip key="pick" tone={card.pickLabel === FEW_OWNERS_LABEL ? "auto" : "neutral"}>
         {card.pickLabel}
       </Chip>
     ),

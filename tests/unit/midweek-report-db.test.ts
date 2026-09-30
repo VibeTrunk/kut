@@ -212,7 +212,9 @@ describe("midweek report from stored rows", () => {
             else if (side.auto) expect(earlier.pickLabel).toBe("auto squad");
             else {
               expect(earlier.pickLabel).toBeNull();
-              expect(card.pickLabel).toMatch(/^(a rare pick|\d+ of ([3-9]|\d{2,}) owners)$/);
+              expect(card.pickLabel).toMatch(
+                /^(fewer than 3 owners|\d+ of ([3-9]|\d{2,}) owners)$/,
+              );
               labelled += 1;
             }
           });

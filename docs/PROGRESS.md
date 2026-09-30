@@ -3935,6 +3935,10 @@ Verified locally: the focused ownership unit file (6 assertions) and
 `npm run verify:fast`. No migration, database view, RPC, RLS policy or Part L
 invariant changed. No hosted deployment was performed.
 
+**Live since 2026-09-27** (KUT PR #135): frontend-only, so Vercel deployed it
+on merge with nothing to push to the database. The owner confirmed it on hosted
+2026-09-30; the grid presentation is followed up as KB-026.
+
 ## Goals + assists — 2026-09-27
 
 Implemented ADR-101 locally. From the football week beginning **2026-09-28** a
@@ -4056,3 +4060,16 @@ page simply has no discard line.
 `20260930-163158`, 80 migrations, no drift); the hosted smoke row matched the
 local run, with all 15 live listings carrying a value that agrees with
 `kut.card_discard_value`. The record is in `DEPLOYMENTS.md`.
+## Midweek pick label: "fewer than 3 owners" — 2026-09-30
+
+On the first live week's pick shares the owner saw Freek labelled "a rare pick"
+although both entrants who own a Freek card picked it (pick factor 0.96, below
+neutral). The label stands in for an owner count below
+`MIDWEEK_OWNER_COUNT_MIN` (ADR-091), so it describes a scarce *card*, not a
+rare *pick*. It now reads **"fewer than 3 owners"**, from one constant,
+`FEW_OWNERS_LABEL` in `src/lib/midweek/report/render.ts`, used by the "why"
+panel and the pick-shares table. The privacy rule, the SQL and the pick factors
+are unchanged; BUILD_SPEC §44.9 and §44.10 now quote the new wording. The
+unpublished contrarian headlines ("was a rare pick this week") are about few
+pickers and stay as they are. The design mockups in `design/midweek/` keep the
+old label as the record of what was approved.

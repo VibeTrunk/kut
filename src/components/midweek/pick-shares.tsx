@@ -1,5 +1,6 @@
 import type { RarityTier } from "@/game/rating-engine";
 import { factorText } from "@/lib/midweek/evening";
+import { FEW_OWNERS_LABEL } from "@/lib/midweek/report/render";
 
 export type PickShareView = {
   playerId: string;
@@ -58,7 +59,7 @@ function Table({ rows }: { rows: readonly PickShareView[] }) {
                 <td className="px-1.5 py-[9px] text-right tabular-nums">{row.picks}</td>
                 <td className="px-1.5 py-[9px] text-[13px] text-ink-dim">
                   {row.owners === null ? (
-                    <span className="text-steel italic">a rare pick</span>
+                    <span className="text-steel italic">{FEW_OWNERS_LABEL}</span>
                   ) : (
                     `of ${row.owners} owners`
                   )}

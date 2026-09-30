@@ -1973,7 +1973,8 @@ Everything is gated by time in definer projections on
 - **Each round's matches and events** appear at that round's reveal time.
 - **Pick shares** appear once the tournament is `complete`. An owner count is
   shown only when at least `MIDWEEK_OWNER_COUNT_MIN` (3) entrants own the
-  Player; below that it is null and the report says "a rare pick". This rule
+  Player; below that it is null and the report says "fewer than 3 owners" (until
+  2026-09-30 "a rare pick", which read as few pickers rather than few owners). This rule
   lives in SQL. Until the week is complete the entries carry no pick or owner
   count at all (owner decision D3), and a Player nobody picked is listed only
   when at least three own it, so no row hints that one or two members hold it
@@ -2036,7 +2037,7 @@ Everything is gated by time in definer projections on
   save 1, block 1, penalty scored 1, penalty saved 2.
 - **Owner counts and a report's text (ADR-098).** The renderer takes
   `ownersPublished`. While false, no picked card carries a pick label ("N of M
-  owners" or "a rare pick"; an auto squad still reads "auto squad") and the
+  owners" or "fewer than 3 owners"; an auto squad still reads "auto squad") and the
   contrarian-hero fact uses a count-free line. Reports appear from round 1 and
   owner counts only at `complete` (§44.9, owner decision D3), so the pages
   render every report's text with the flag false: a report reads the same all

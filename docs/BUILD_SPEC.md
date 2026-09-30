@@ -1412,6 +1412,12 @@ Listing surfaces (ADR-051):
   count is a chip on the card itself, at the foot of the art (ADR-102), so a
   grid row's tiles are all the same height; it is omitted only when both
   totals are zero;
+- the listing detail page shows the card's **discard value** under the asking
+  price, as the floor to judge it against (ADR-103). It is the view's trailing
+  `discard_value` column, read from `kut.card_discard_value` (the function
+  `get_listing_bounds` and `discard_card` use), never a second copy of the
+  formula. A card with no rating has a null value, and a null or absent value
+  renders nothing (KB-014). The grid tile does not show it;
 - a sold, cancelled or expired listing 404s, since it leaves
   `kut.active_market_listings`.
 

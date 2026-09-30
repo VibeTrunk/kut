@@ -1,5 +1,10 @@
 # Design reference — album, Chronicle, rating history
 
+**Groundmasters Special edition (2026-09-30):** five proposed card directions
+in [`../../design/groundmasters/README.md`](../../design/groundmasters/README.md).
+Not built and no direction chosen; the rules and open decisions are in
+`ROADMAP.md`, "Groundmasters — the first Special edition".
+
 **Injury mode card (2026-09-23):** see
 [`injury-cast/README.md`](injury-cast/README.md) for the "plaster cast" that
 replaces the injured chip on `LiveCard`. It includes the full handoff code and

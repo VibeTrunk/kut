@@ -1,0 +1,74 @@
+{
+  "v": 3,
+  "createdOnFiles": {
+    "v": 1,
+    "at": "2026-09-30T21:59:52.792Z"
+  },
+  "title": "Groundmaster card designs",
+  "launch": {
+    "view": "canvas"
+  },
+  "pages": [],
+  "boards": {
+    "Reference.dc.html": {
+      "x": 0,
+      "y": 0,
+      "w": 1100,
+      "h": 600,
+      "title": "0 · Live tiers today"
+    },
+    "Main.dc.html": {
+      "x": 0,
+      "y": 720,
+      "w": 1100,
+      "h": 600,
+      "title": "1 · Mown stripes"
+    },
+    "Deed.dc.html": {
+      "x": 1180,
+      "y": 720,
+      "w": 1100,
+      "h": 600,
+      "title": "2 · The agreement"
+    },
+    "Keys.dc.html": {
+      "x": 0,
+      "y": 1440,
+      "w": 1100,
+      "h": 600,
+      "title": "3 · Keys to the ground"
+    },
+    "Honours.dc.html": {
+      "x": 1180,
+      "y": 1440,
+      "w": 1100,
+      "h": 600,
+      "title": "4 · Honours board"
+    },
+    "Plan.dc.html": {
+      "x": 0,
+      "y": 2160,
+      "w": 1100,
+      "h": 600,
+      "title": "5 · Site plan"
+    }
+  },
+  "order": [
+    "Reference.dc.html",
+    "Main.dc.html",
+    "Deed.dc.html",
+    "Keys.dc.html",
+    "Honours.dc.html",
+    "Plan.dc.html"
+  ],
+  "notes": {
+    "title": {
+      "x": 0,
+      "y": -300,
+      "text": "Groundmasters — five card directions",
+      "kind": "title1",
+      "maxW": 2280
+    }
+  },
+  "designSystems": []
+}

@@ -18,6 +18,43 @@ dated "Hosted deployment…" entries in `PROGRESS.md`.
 then bump the "Latest hosted migration" line in `CLAUDE.md`. Record the tier,
 backup id, pre/post `migration list` counts, the smoke row, and the rollback.
 
+## 2026-09-30 — `20261010000000` market discard value (ADR-103)
+
+Deployed 2026-09-30 from `VibeTrunk/supabase` (catalogue PR #62 there), on its
+own additive `db push`:
+
+- `20261010000000_market_listing_discard_value.sql` (BUILD_SPEC §36, ADR-103,
+  KB-027, KUT PR #140, tier additive) &mdash; the listing detail page shows a
+  listed card's discard value under the asking price, as its floor.
+  - **What changed.** `create or replace view kut.active_market_listings`,
+    its `20261002000000` body verbatim plus a trailing `discard_value` that
+    calls `kut.card_discard_value(card.id)` when the card has a rating and is
+    null otherwise. The view stays a security-barrier definer view gated on
+    `kut.is_active_member()`, grants unchanged. `grant execute on function
+    kut.card_discard_value(uuid) to authenticated, service_role`: function
+    privileges are checked against the caller even inside a definer view.
+  - **DML:** none. Additive tier, so it could ride on the previous backup; a
+    fresh one was taken anyway, `20260930-163158`, cold-verified, no cards in
+    escrow. Pre-push `migration list --linked` showed 80 entries with
+    `20261010000000` the only local-only one and no remote-only drift, the dry
+    run named exactly that file, and the catalogue check reported 80 approved
+    source migrations. Afterwards it showed 80 entries, all present locally and
+    remotely, no drift.
+  - **Smoke-tested on hosted.** In the SQL editor as `service_role`, one row,
+    `discard_value | {security_invoker=false,security_barrier=true} | true | false | 15 | 0 | 0`,
+    matched the local run apart from the live listing count, and confirmed:
+    - `discard_value` is the view's last column;
+    - the view is still `security_invoker=false`, `security_barrier=true`;
+    - `authenticated` can execute `card_discard_value` and `anon` cannot;
+    - all 15 live listings have a value, and none disagrees with the function.
+  - **Deploy ordering** was safe: KUT PR #140 deployed first and renders no
+    discard line while the column is absent.
+  - Rollback (optional; the column is harmless to every reader): drop
+    `kut.my_wanted_cards` and `kut.active_market_listings`, re-run the
+    `kut.active_market_listings` block of `20261002000000` (with its
+    revoke/grant) and the whole of `20260920060000`, then revoke execute on
+    `kut.card_discard_value(uuid)` from `authenticated, service_role`.
+
 ## 2026-09-27 — `20261009000000` goals + assists notice wording (ADR-101)
 
 Deployed 2026-09-27 from `VibeTrunk/supabase` (catalogue PR #60 there), on its

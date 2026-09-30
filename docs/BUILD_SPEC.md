@@ -1410,6 +1410,12 @@ Listing surfaces (ADR-051):
   exact edition (ADR-100). Every unburned copy in `kut.my_collection_cards`
   counts, including copies currently listed or held for a trade offer. The
   compact label is omitted only when both totals are zero;
+- the listing detail page shows the card's **discard value** under the asking
+  price, as the floor to judge it against (ADR-103). It is the view's trailing
+  `discard_value` column, read from `kut.card_discard_value` (the function
+  `get_listing_bounds` and `discard_card` use), never a second copy of the
+  formula. A card with no rating has a null value, and a null or absent value
+  renders nothing (KB-014). The grid tile does not show it;
 - a sold, cancelled or expired listing 404s, since it leaves
   `kut.active_market_listings`.
 

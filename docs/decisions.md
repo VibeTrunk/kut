@@ -5594,3 +5594,57 @@ Consequences:
   this; it stays bounded by the unchanged 1.5 / 3.5 / 8 / 83 caps.
 - Part L is unchanged. BUILD_SPEC §8, §15.2, §145 and a new implemented
   amendment record the rule.
+
+## ADR-103 — The listing page shows the card's discard value as the price floor
+
+Date: 2026-09-30
+
+Status: Accepted (owner decision, 2026-09-30, on the Claude Design mockups).
+Resolves KB-027.
+
+Context: a buyer could not see what a listed card would discard for, so there
+was no floor to judge the asking price against. `kut.active_market_listings`
+carried no discard value, and `kut.card_discard_value` has been revoked from
+`authenticated` since `20260816070600`. KB-025 already has the card detail page
+(`my_collection_cards`, an inlined formula) and the listing bounds
+(`get_listing_bounds` → `card_discard_value`) reading the value from two places.
+
+Decision:
+
+- **Listing detail page only.** `/market/[listingId]` shows "Discard value"
+  with the coin figure under the asking price, and the line "What this card pays
+  out if you discard it." The grid tile already carries the price, the ADR-102
+  ownership chip, the seller and Buy; a second coin figure there would blur
+  which number you pay. The detail page is one tap away.
+- **One source.** Migration `20261010000000` appends `discard_value` last to
+  `kut.active_market_listings`, inside the ADR-079 `is_active_member()` gate,
+  computed by calling `kut.card_discard_value(card.id)`. The formula is not
+  inlined a third time. The view stays `security_invoker = false`,
+  `security_barrier = true`, with its grants unchanged.
+- **Grant `authenticated` and `service_role` EXECUTE on
+  `kut.card_discard_value(uuid)`**, the same two roles the view grants SELECT
+  to. A function called inside a view is checked against the caller, not the
+  view owner, even in a definer view: without the grant every member's market
+  read failed locally with "permission denied for function card_discard_value",
+  and so did every service-role read of the view and of `kut.my_wanted_cards`,
+  even with zero rows. This is a small access change: any `authenticated` JWT
+  can call the function directly and learn a card's discard value, given its
+  id. The value is derivable from public ratings, card ids are only readable
+  through member-gated views, `service_role` already bypasses RLS, and anon
+  stays revoked.
+- **Guard the call.** `card_discard_value` raises P0002 for a card with no
+  rating (no snapshot, no live state in the active season), where the view
+  falls back to OVR 30. The view only calls it when
+  `coalesce(snapshot_ovr, live_ovr)` is not null, so such a row stays listed with
+  a null `discard_value` instead of breaking the whole market read. The guard
+  repeats the function's rating lookup, not its formula.
+- **Nothing is made up.** Vercel deploys on merge, before the hosted push; the
+  page reads the view with `select("*")` and renders the line only when
+  `discard_value` is a number (KB-014).
+
+Consequences: read-only. `kut.discard_card` still works out the payout on the
+server at discard time; no Part L invariant changes (§11 "client cannot choose
+discard payout" is untouched: the page only displays). A listing may be priced
+as low as 80% of the discard value (`get_listing_bounds`), so a visible floor
+makes buying such a listing and discarding it an obvious small profit. The
+owner accepted that; the page states the facts and adds no "bargain" label.

@@ -3982,3 +3982,48 @@ report window closes.
 `20260927-180300`, 79 migrations, no drift), before the first G+A session on
 Mon 28 Sep; the hosted smoke row matched the local run. The record is in
 `DEPLOYMENTS.md`.
+
+## Market discard value (KB-027) — 2026-09-30
+
+Implemented ADR-103 (KUT PR #140), the owner-approved Claude Design mockups:
+the listing detail page shows the card's discard value under the asking price.
+
+- **Migration `20261010000000_market_listing_discard_value.sql`** (additive
+  tier): `kut.active_market_listings` re-created with its `20261002000000` body
+  verbatim and `discard_value` appended last, calling
+  `kut.card_discard_value(card.id)` only when the card has a rating; plus
+  `grant execute on function kut.card_discard_value(uuid) to authenticated,
+  service_role`, which the view needs because function privileges are checked
+  against the caller: without it every member and service-role read failed. Definer view, security barrier, ADR-079 gate and grants unchanged.
+- **Frontend.** `/market/[listingId]` renders "Discard value" only when the
+  column is a number, so nothing shows before the hosted push or for an unrated
+  card. The grid is unchanged.
+- **Docs.** ADR-103, BUILD_SPEC §36, KNOWN_BUGS (KB-027 fixed). No Part L
+  invariant changes.
+
+Verified locally: the migration applied to the local stack, where every
+listing's `discard_value` read as a member matched `get_listing_bounds`.
+`market_listing_card_art.test.sql` grew from 5 to 21 assertions:
+
+- the column exists and comes last;
+- the view keeps its reloptions;
+- the function grants (authenticated and service_role yes, anon no);
+- a Live listing (160) and a Special listing (120) equal
+  `kut.card_discard_value`;
+- an unrated card stays listed with a null value;
+- a profileless JWT and a disabled member read zero rows;
+- anon is refused at the grant;
+- the service role still reads the view and `kut.my_wanted_cards`.
+
+`cast_on_market_and_packs.test.sql` pinned ADR-086's `player_id` and `is_live`
+as the view's last two columns; it now checks that they keep their place,
+directly before `discard_value`.
+
+Playwright screenshots of the listing page at 390×844 and 1280 wide, then
+`npm run verify:full`: 361 unit tests, 31 pgTAP files / 1,307 assertions,
+6 integration files / 14 tests, 26 Playwright tests and a production build,
+exit 0.
+
+**Not deployed.** The migration needs its catalogue PR in `VibeTrunk/supabase`
+and a hosted push. Vercel deploys on merge first; until the push the listing
+page simply has no discard line.

@@ -22,13 +22,15 @@ select has_column('kut','active_market_listings','is_live','the market listings 
 select has_column('kut','my_pack_opening_results','player_id','the pack results view exposes the Player id');
 select has_column('kut','my_pack_opening_results','is_live','the pack results view exposes whether the card is Live');
 
+-- ADR-103 (20261010000000) appended discard_value after them; they keep their
+-- place, which is what `create or replace view` needs.
 select is(
   (select array_agg(column_name::text order by ordinal_position desc) from (
      select column_name, ordinal_position from information_schema.columns
      where table_schema='kut' and table_name='active_market_listings'
-     order by ordinal_position desc limit 2) last_two),
-  array['is_live','player_id'],
-  'player_id and is_live are the last two market columns');
+     order by ordinal_position desc limit 3) last_three),
+  array['discard_value','is_live','player_id'],
+  'player_id and is_live stay in place, directly before ADR-103''s discard_value');
 select is(
   (select array_agg(column_name::text order by ordinal_position desc) from (
      select column_name, ordinal_position from information_schema.columns

@@ -29,6 +29,9 @@ type Listing = ListedCardRow & {
   price: number;
   seller_id: string;
   seller_display_name: string;
+  /** Appended by `20261010000000` (ADR-103). Absent until the hosted push, and
+   *  null for a card with no rating: either way nothing renders (KB-014). */
+  discard_value?: number | null;
 };
 
 /**
@@ -128,6 +131,24 @@ export default async function ListingPage({ params }: ListingPageProps) {
                   KUT Coins
                 </span>
               </p>
+              {/* The price's floor (KB-027): what the card pays out if discarded,
+                  from kut.card_discard_value via the view. Only a real number
+                  shows; never a stand-in (KB-014). */}
+              {typeof listing.discard_value === "number" && (
+                <div className="-mt-1 space-y-0.5">
+                  <p className="flex items-center gap-2 text-sm font-extrabold">
+                    <span className="text-ink-dim">Discard value</span>
+                    <span className="flex items-center gap-1 font-black tabular-nums text-ink">
+                      <IconCoin aria-hidden="true" className="h-3.5 w-3.5 text-brass" />
+                      {listing.discard_value.toLocaleString()}
+                      <span className="sr-only">KUT Coins</span>
+                    </span>
+                  </p>
+                  <p className="text-xs text-ink-faint">
+                    What this card pays out if you discard it.
+                  </p>
+                </div>
+              )}
               <p className="text-sm font-bold text-ink-faint">
                 Sold by {listing.seller_display_name}
               </p>

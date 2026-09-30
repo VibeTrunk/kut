@@ -111,7 +111,11 @@ export default async function ListingPage({ params }: ListingPageProps) {
 
         <div className="grid gap-10 pb-24 md:grid-cols-[minmax(240px,330px)_minmax(0,1fr)] md:items-start sm:pb-0 lg:gap-16">
           <div>
-            <LiveCard size="detail" player={cardPlayer} />
+            <LiveCard
+              badge={ownership && <MarketOwnership ownership={ownership} />}
+              player={cardPlayer}
+              size="detail"
+            />
           </div>
 
           <div className="space-y-8">
@@ -131,7 +135,6 @@ export default async function ListingPage({ params }: ListingPageProps) {
               <p className="text-sm font-bold text-ink-faint">
                 Sold by {listing.seller_display_name}
               </p>
-              {ownership && <MarketOwnership ownership={ownership} />}
             </div>
 
             <AttributeBars player={listing} />

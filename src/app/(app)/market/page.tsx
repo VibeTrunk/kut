@@ -158,7 +158,12 @@ export default async function MarketPage({ searchParams }: MarketPageProps) {
                       className="block rounded-[0.9rem] outline-offset-4 outline-brass focus-visible:outline-2"
                       href={`/market/${listing.listing_id}`}
                     >
-                      <LiveCard player={cardPlayer} />
+                      {/* Ownership rides the card too, so every tile in a row is
+                          the same height and the Buy buttons line up (KB-026). */}
+                      <LiveCard
+                        badge={ownership && <MarketOwnership compact ownership={ownership} />}
+                        player={cardPlayer}
+                      />
                     </Link>
                     {/* Price rides the card: a market grid is scanned by price. */}
                     <p className="absolute left-1/2 top-2.5 z-10 flex -translate-x-1/2 items-center gap-1 rounded-full border border-brass/55 bg-board-deep/90 px-3 py-1 text-xs font-black tabular-nums text-brass backdrop-blur-sm">
@@ -171,7 +176,8 @@ export default async function MarketPage({ searchParams }: MarketPageProps) {
                     Sold by {listing.seller_display_name}
                   </p>
 
-                  {ownership && <MarketOwnership compact ownership={ownership} />}
+                  {/* The link's aria-label hides the chip, so it is spoken here. */}
+                  {ownership && <p className="sr-only">{ownership.accessibleText}</p>}
 
                   {isOwnListing ? (
                     <p className="grid min-h-11 place-items-center rounded-xl border border-dashed border-line text-[0.65rem] font-black uppercase tracking-[0.12em] text-ink-faint">

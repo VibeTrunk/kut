@@ -65,6 +65,17 @@ describe("Claude SessionStart attestation", () => {
     });
   });
 
+  // The launcher runs under Windows PowerShell 5.1, whose `-Encoding UTF8`
+  // writes a byte-order mark; a receipt like that once read as "missing or
+  // unreadable".
+  it("reads a receipt that starts with a byte-order mark", () => {
+    const file = receipt();
+    writeFileSync(file, `﻿${readFileSync(file, "utf8")}`);
+    const result = run("require-production-session.cjs", { model: "claude-opus-5" }, file);
+    expect(result.stdout).not.toContain("missing or unreadable");
+    expect(readReceipt(file)).toMatchObject({ model_attestation: "hook" });
+  });
+
   // The documented behaviour is that Claude Code "doesn't always include"
   // model on SessionStart. The hook must stay usable, and must say so honestly
   // in the receipt rather than claiming an attestation it never made.

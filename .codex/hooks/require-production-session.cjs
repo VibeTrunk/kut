@@ -21,7 +21,8 @@ if (!receiptPath) stop("Production session has no launcher receipt path.");
 
 let receipt;
 try {
-  receipt = JSON.parse(fs.readFileSync(receiptPath, "utf8"));
+  // A launcher run under Windows PowerShell 5.1 may have written a byte-order mark.
+  receipt = JSON.parse(fs.readFileSync(receiptPath, "utf8").replace(/^﻿/, ""));
 } catch {
   stop("Production session receipt is missing or unreadable.");
 }

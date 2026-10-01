@@ -440,7 +440,9 @@ export default async function HowItWorksPage() {
           <h3 className="pt-2 font-black text-ink">Coins</h3>
           <p>
             Every match you win pays KUT Coins, more each round. A bye counts as a win. The champion
-            takes {MIDWEEK.championTotal} in all. Coins are paid after the final.
+            takes {MIDWEEK.championTotal} in all. Coins are paid after the final.{" "}
+            <strong className="text-ink">Your cards are never at stake</strong>: entering
+            doesn&rsquo;t move, lock or risk a card, and a result only ever pays coins.
           </p>
           <table className="w-full max-w-md text-left text-sm">
             <thead className="text-ink-faint">

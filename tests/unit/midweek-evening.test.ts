@@ -22,6 +22,7 @@ import {
   revealStops,
   roundName,
   roundShort,
+  treeGroupRows,
   wonRounds,
 } from "@/lib/midweek/evening";
 import type { MatchRow } from "@/lib/midweek/rows";
@@ -103,6 +104,35 @@ describe("midweek round and match names", () => {
     expect([1, 2].map((r) => roundShort(r, 2))).toEqual(["Semis", "Final"]);
     expect(matchName(3, 1, 5)).toBe("quarter-final 2");
     expect(matchName(1, 2, 5)).toBe("round 1, match 3");
+  });
+});
+
+describe("the lg bracket tree shares one row grid (KB-031)", () => {
+  it("centres every pairing on the two that feed it", () => {
+    for (const rounds of [2, 3, 4, 5, 6]) {
+      for (let round = 2; round <= rounds; round += 1) {
+        const pairs = 2 ** (rounds - round);
+        for (let pairing = 0; pairing < pairs; pairing += 1) {
+          // A pairing's own rows, as the half of its group it sits in.
+          const own = (r: number, p: number) => {
+            const { rowStart, rowSpan } = treeGroupRows(r, Math.floor(p / 2), r === rounds ? 1 : 2);
+            const half = r === rounds ? rowSpan : rowSpan / 2;
+            const start = rowStart + (p % 2) * half;
+            return [start, start + half];
+          };
+          const [start, end] = own(round, pairing);
+          const [feedStart] = own(round - 1, 2 * pairing);
+          const [, feedEnd] = own(round - 1, 2 * pairing + 1);
+          expect([start, end]).toEqual([feedStart, feedEnd]);
+        }
+      }
+    }
+  });
+
+  it("gives round 1 one row per pairing below the header, whatever it holds", () => {
+    expect(treeGroupRows(1, 0, 2)).toEqual({ rowStart: 2, rowSpan: 2 });
+    expect(treeGroupRows(1, 7, 2)).toEqual({ rowStart: 16, rowSpan: 2 });
+    expect(treeGroupRows(5, 0, 1)).toEqual({ rowStart: 2, rowSpan: 16 });
   });
 });
 

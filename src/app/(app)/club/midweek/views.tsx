@@ -14,6 +14,7 @@ import { revealAt } from "@/game/midweek/schedule";
 import { fetchInjuredPlayerIds } from "@/lib/injuries";
 import { toLiveCardPlayer, type OwnedCardRow } from "@/lib/live-card-player";
 import {
+  allStillOwned,
   formatClock,
   formatDayDate,
   formatDayMonth,
@@ -329,14 +330,15 @@ async function WeekLocked({
                 kind={five.lost.length > 0 ? "dirty" : "saved"}
                 text={
                   five.lost.length > 0
-                    ? `Locked in. ${joinNames(five.lost)} ${five.lost.length === 1 ? "was" : "were"} no longer yours at the lock, so a trialist took ${five.lost.length === 1 ? "that slot" : "those slots"}.`
-                    : `Locked in: all ${squad && squad.length === MIDWEEK.squadSize ? "five" : (squad?.length ?? 0)} still yours`
+                    ? `${joinNames(five.lost)} ${five.lost.length === 1 ? "was" : "were"} no longer in your collection at the lock, so a trialist took ${five.lost.length === 1 ? "that slot" : "those slots"}.`
+                    : allStillOwned(squad?.length ?? 0)
                 }
               />
             </MidweekSectionHead>
             <FiveCards cards={five.cards} label="Your five" />
             <p className="flex items-start gap-2.5 text-[13px] leading-normal text-ink-dim">
-              Members see these five from {roundOne}, with their numbers for the week.
+              Members see these five from {roundOne}, with their numbers for the week. Your cards
+              are never at stake: a result only ever pays coins.
             </p>
           </section>
         ) : squad !== null ? (

@@ -4105,3 +4105,28 @@ suggests for "MM 2.0" in `ROADMAP.md` is recorded there. One week is a small
 sample: 0 upsets in 20 matches doesn't yet say the favourites are too strong,
 because the query doesn't count how many matches had an underdog under 35% at
 all.
+
+## Midweek fixes KB-030 and KB-031 — 2026-10-01
+
+The first two items of the MM 2.0 plan, both frontend only and not waiting for
+the design review.
+
+- **KB-030, "Locked in: all five still yours".** Members read it as if their
+  cards were at stake. The locked screen now says what the lock checked: "All
+  five were still in your collection at the lock, so all five play." (or the
+  count saved; a lost card "was no longer in your collection at the lock").
+  The locked screen and how-it-works §12 now say once that your cards are
+  never at stake and a result only ever pays coins.
+- **KB-031, bracket lines from round 1 to round 2 on desktop.** The `lg` tree
+  stacked each round's boxes on their own, so a bye (one line) and a match
+  (two) gave round 1 uneven heights and its lines missed round 2. The tree is
+  now one grid for every round: a header row, then one equal row per round-1
+  pairing, each round a subgrid column. A round-`r` pairing spans `2^(r−1)`
+  rows, so it is centred on its two feeders by construction. The phone list
+  is unchanged.
+
+Verification: `npm run verify:fast` (unit tests for the row placement over 2–6
+rounds and for the new line); the authenticated E2E's completed week gains a
+fifth entrant, so round 1 mixes byes and matches, and a new test checks at
+1280 px that every group's bracket line ends on the middles of its two
+pairings and that its middle is the next-round match's.

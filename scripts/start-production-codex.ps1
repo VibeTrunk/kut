@@ -11,7 +11,7 @@ $evidenceDir = Join-Path $repoRoot '.release-evidence\sessions'
 [IO.Directory]::CreateDirectory($evidenceDir) | Out-Null
 $receiptPath = Join-Path $evidenceDir "codex-$([guid]::NewGuid().ToString('N')).json"
 $sha = (& git -C $repoRoot rev-parse HEAD).Trim()
-[pscustomobject]@{
+$receipt = [pscustomobject]@{
   version = 1
   provider = 'codex'
   requested_model = $Model
@@ -20,7 +20,10 @@ $sha = (& git -C $repoRoot rev-parse HEAD).Trim()
   launcher = 'scripts/start-production-codex.ps1'
   started_at = (Get-Date).ToUniversalTime().ToString('o')
   nonce = [guid]::NewGuid().ToString('N')
-} | ConvertTo-Json | Set-Content -LiteralPath $receiptPath -Encoding UTF8
+}
+# Windows PowerShell 5.1 writes a byte-order mark with -Encoding UTF8, which the
+# SessionStart hook's JSON.parse cannot read. Write UTF-8 without one.
+[IO.File]::WriteAllText($receiptPath, ($receipt | ConvertTo-Json), (New-Object System.Text.UTF8Encoding $false))
 
 $previousFlag = $env:KUT_PRODUCTION_SESSION
 $previousReceipt = $env:KUT_PRODUCTION_SESSION_RECEIPT

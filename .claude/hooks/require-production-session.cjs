@@ -51,7 +51,8 @@ if (!receiptPath) {
 
 let receipt;
 try {
-  receipt = JSON.parse(fs.readFileSync(receiptPath, "utf8"));
+  // A launcher run under Windows PowerShell 5.1 may have written a byte-order mark.
+  receipt = JSON.parse(fs.readFileSync(receiptPath, "utf8").replace(/^﻿/, ""));
 } catch {
   warn(
     `KUT production-session receipt at ${receiptPath} is missing or unreadable. The release gate ` +

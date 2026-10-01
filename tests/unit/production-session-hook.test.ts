@@ -44,6 +44,14 @@ describe("production session hook", () => {
     });
   });
 
+  it("reads a receipt that starts with a byte-order mark (Windows PowerShell 5.1)", () => {
+    const file = receipt("gpt-6-astra");
+    writeFileSync(file, `﻿${readFileSync(file, "utf8")}`);
+    const result = run("gpt-6-astra", file);
+    expect(JSON.parse(result.stdout).continue).not.toBe(false);
+    expect(JSON.parse(readFileSync(file, "utf8"))).toMatchObject({ observed_model: "gpt-6-astra" });
+  });
+
   it("stops a model mismatch", () => {
     const result = run("gpt-5.5", receipt("gpt-6-astra"));
     expect(JSON.parse(result.stdout)).toMatchObject({ continue: false });

@@ -9,8 +9,10 @@ import { seedHash } from "@/game/midweek/rng";
  * on with next week's tournament open, its lock ahead (PR 7).
  *
  * PR 8 adds a completed week, `COMPLETED_WEEK`, played by release_member and
- * three fixture members (and any member already on the stack who owns a card,
- * since the worker enters everyone). It is seeded as
+ * four fixture members (and any member already on the stack who owns a card,
+ * since the worker enters everyone). Five entrants make 8 slots, so round 1
+ * mixes byes with matches, which the bracket tree check needs (KB-031). It is
+ * seeded as
  * `tests/integration/midweek-race.test.ts` seeds one: a published session in
  * the football week before it for the club-break gate, the tournament
  * inserted open with its lock ahead, release_member's five saved, the lock
@@ -43,11 +45,12 @@ type Kind = "1" | "2" | "3" | "4" | "5" | "6";
 /** 1 Players, 2 editions, 3 release_member's cards, 4 fixture members, 5 their cards, 6 season and session. */
 const id = (kind: Kind, n: string) => `${PREFIX}0000000${kind}00${n}`;
 
-/** Three more members for the completed week, each owning one fixture Player. */
+/** Four more members for the completed week, each owning one fixture Player. */
 const MEMBERS = [
   ["01", "Fixture Manager A", "01"],
   ["02", "Fixture Manager B", "02"],
   ["03", "Fixture Manager C", "03"],
+  ["04", "Fixture Manager D", "04"],
 ] as const;
 
 export async function removeMidweekFixture(database: Client) {

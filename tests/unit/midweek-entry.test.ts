@@ -5,6 +5,7 @@ import { copyStrengthPpm, strongestCopies } from "@/lib/midweek/copies";
 import {
   LOCK_CLOCK,
   ROUND_ONE_CLOCK,
+  allStillOwned,
   countdownText,
   formatDayDate,
   formatSavedAt,
@@ -48,6 +49,21 @@ function current(overrides: Partial<MidweekCurrent> = {}): MidweekCurrent {
     ...overrides,
   };
 }
+
+describe("the locked squad line (KB-030)", () => {
+  it("says the cards were still in the collection, never that they could stop being yours", () => {
+    expect(allStillOwned(5)).toBe(
+      "All five were still in your collection at the lock, so all five play.",
+    );
+    expect(allStillOwned(3)).toBe(
+      "All 3 were still in your collection at the lock, so all 3 play.",
+    );
+    expect(allStillOwned(1)).toBe(
+      "Your card was still in your collection at the lock, so it plays.",
+    );
+    for (const n of [1, 3, 5]) expect(allStillOwned(n)).not.toMatch(/still yours|locked in/i);
+  });
+});
 
 describe("club time", () => {
   it("formats the lock in Europe/Amsterdam on either side of the October change", () => {

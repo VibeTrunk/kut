@@ -179,6 +179,17 @@ export function joinNames(names: readonly string[]): string {
   return `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
 }
 
+/**
+ * After the lock, a squad whose saved cards were all still owned (KB-030).
+ * It says what the lock checked in plain words, because "Locked in: all five
+ * still yours" read as if the cards could stop being yours.
+ */
+export function allStillOwned(saved: number): string {
+  const count = saved === MIDWEEK.squadSize ? "five" : String(saved);
+  if (saved === 1) return "Your card was still in your collection at the lock, so it plays.";
+  return `All ${count} were still in your collection at the lock, so all ${count} play.`;
+}
+
 /** A round named from the end, so it holds for every bracket size. */
 export function stageName(round: number, rounds: number): string {
   const fromEnd = rounds - round;

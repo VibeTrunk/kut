@@ -159,6 +159,45 @@ test.describe("Midweek Madness results (PR 8)", () => {
     await expectNoHorizontalOverflow(page);
   });
 
+  test("from lg, every bracket line meets the match it leads to (KB-031)", async ({ page }) => {
+    await signIn(page, "release_member");
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto(`/club/midweek/${COMPLETED_WEEK}`);
+    const tree = page.getByTestId("bracket-tree");
+    await expect(tree).toBeVisible();
+    // The fixture's five entrants leave byes beside matches in round 1, the
+    // case the mockups never showed.
+    await expect(tree.locator('[data-tree-pair^="1/"]').getByText("Bye")).not.toHaveCount(0);
+
+    const box = async (selector: string) => {
+      const found = await tree.locator(selector).boundingBox();
+      if (!found) throw new Error(`${selector} has no box`);
+      return found;
+    };
+    const middle = (b: { y: number; height: number }) => b.y + b.height / 2;
+    const rounds = await tree.locator("section").count();
+    for (let round = 1; round < rounds; round += 1) {
+      const groups = await tree.locator(`[data-tree-group^="${round}/"]`).count();
+      for (let group = 0; group < groups; group += 1) {
+        // The group's bracket line runs from a quarter to three quarters of its
+        // height: those ends must be the middles of its two pairings, and its
+        // middle the middle of the next round's pairing.
+        const outer = await box(`[data-tree-group="${round}/${group}"]`);
+        const top = await box(`[data-tree-pair="${round}/${2 * group}"]`);
+        const bottom = await box(`[data-tree-pair="${round}/${2 * group + 1}"]`);
+        const next = await box(`[data-tree-pair="${round + 1}/${group}"]`);
+        const label = `round ${round}, group ${group}`;
+        expect(Math.abs(middle(top) - (outer.y + outer.height / 4)), label).toBeLessThanOrEqual(1);
+        expect(
+          Math.abs(middle(bottom) - (outer.y + (3 * outer.height) / 4)),
+          label,
+        ).toBeLessThanOrEqual(1);
+        expect(Math.abs(middle(next) - middle(outer)), label).toBeLessThanOrEqual(1);
+      }
+    }
+    await expectNoHorizontalOverflow(page);
+  });
+
   test("a bracket URL that isn't a week, or a match that isn't a uuid, is not found", async ({
     page,
   }) => {

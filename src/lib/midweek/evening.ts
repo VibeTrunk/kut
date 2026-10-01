@@ -275,6 +275,23 @@ export function assembleBracket(input: {
   return result;
 }
 
+/**
+ * Where a group of pairings sits in the `lg` bracket tree (KB-031). The tree is
+ * one grid shared by every round: a header row, then `2^(rounds − 1)` rows of
+ * equal height, one per round-1 pairing. A round-`r` pairing spans `2^(r − 1)`
+ * rows, so it is centred exactly between the two pairings that feed it, whatever
+ * each of them holds (a bye is one line, a match two). Rows are 1-based and
+ * include the header row.
+ */
+export function treeGroupRows(
+  round: number,
+  group: number,
+  size: number,
+): { rowStart: number; rowSpan: number } {
+  const span = 2 ** (round - 1);
+  return { rowStart: 2 + group * 2 * span, rowSpan: size * span };
+}
+
 /** A played match's score for one side, "2" or "2 (7)" with penalties. */
 export function sideScore(
   match: MatchRow,

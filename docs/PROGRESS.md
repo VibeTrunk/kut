@@ -4165,3 +4165,22 @@ during KB-030/031. It isn't this change: the Collection page's Album · Manage �
 Trading switcher needs about 303 px at min-content, more than the 280 px
 content box, and whether it overflows depends on which font is loaded when the
 check measures. To be registered on its own.
+
+## MM 2.0 B1 on hosted — 2026-10-02
+
+`20261011000000_midweek_evening_timing.sql` (ADR-104) is live: catalogue PR
+supabase #64, backup `20261002-091630`, 81 migrations, no drift, smoke row as
+expected (`docs/DEPLOYMENTS.md`). The open week of 5 Oct moved to the new
+clock, so **Wed 7 Oct is the first evening at 19:55**, a week earlier than
+ADR-104's target.
+
+The production gate did its job on the way: for `199b126` it failed closed on
+both runs because `/club/collection` was 323 px wide at 320 px. That was the
+"flake" seen while building KB-030/031 and B1. It is KB-032: the
+Album · Manage · Trading tabs needed ~303 px in a 280 px box, and whether the
+page overflowed depended on font timing. KUT #148 narrows the segmented tabs'
+phone padding (`px-3` below `sm`), the authenticated E2E then passed three runs
+in a row, and the gate passed for `5da5dd8`.
+
+Next for MM 2.0: PR 3 (B2, the draw and the five cards public from the lock,
+ADR-105), not in this push week.

@@ -18,6 +18,59 @@ dated "Hosted deployment…" entries in `PROGRESS.md`.
 then bump the "Latest hosted migration" line in `CLAUDE.md`. Record the tier,
 backup id, pre/post `migration list` counts, the smoke row, and the rollback.
 
+## 2026-10-02 — `20261011000000` Midweek evening timing (ADR-104)
+
+Deployed 2026-10-02 from `VibeTrunk/supabase` (catalogue PR #64 there), on its
+own data-changing `db push`:
+
+- `20261011000000_midweek_evening_timing.sql` (BUILD_SPEC §44.1, §44.7, §44.11,
+  §44.14, §145, Part L #25, ADR-104, KUT PR #147, tier data-changing) &mdash;
+  MM 2.0 B1: squads lock Wednesday 19:55, a round every 15 minutes from 20:00,
+  and the payout waits for the end of the final.
+  - **What changed.** `kut._mm_config()` holds a versioned schedule (`current`
+    2, versions 1 and 2); new internal clock functions (`_mm_schedule`,
+    `_mm_lock_at(date, int)`, `_mm_round_start_at`, `_mm_match_timing`),
+    `_mm_reveal_at` dropped. `kut.midweek_tournaments.schedule_version`
+    (existing rows 1, default 2, fixed once a week locks),
+    `kut.midweek_matches.ends_at`, `kut.midweek_match_events.reveal_at`. The
+    lock step stores every start, end and event time and sets
+    `final_reveal_at` to the end of the final; the open step names the current
+    version; the rehearsal uses the week's clock. `kut.midweek_current` and
+    `kut.midweek_tournaments_public` append `schedule_version`.
+  - **DML:** the open week of 5 Oct moved to version 2: its lock from Wed
+    7 Oct 20:00 to **19:55**. Nothing simulated was touched.
+  - **Before the push.** Fresh backup `20261002-091630`, cold-verified, no
+    cards in escrow. `migration list --linked` showed 81 entries with
+    `20261011000000` the only local-only one and no remote-only drift; the dry
+    run named exactly that file; the catalogue check reported 81 approved
+    source migrations. The production gate for `199b126` (#147) failed closed
+    twice on the authenticated E2E: `/club/collection` was 323 px wide at
+    320 px (KB-032). KUT #148 fixed that, and the gate **passed** for
+    `5da5dd8` (2026-10-02 09:46 Amsterdam: CI checks, catalogue parity, the
+    backup re-verified, authenticated E2E, a hook-attested Opus session).
+    Afterwards `migration list --linked` showed 81 entries, all present
+    locally and remotely, no drift.
+  - **Smoke-tested on hosted.** In the SQL editor, one row,
+    `2 | 3 | true | 2 | 2026-10-05 v2 Wed 19:55 | 1 | 0 | 0 | schedule_version`,
+    matched the local run apart from the one past week, and confirmed:
+    - new weeks open on version 2, which is also the column default;
+    - the three new columns exist and the old reveal function is gone;
+    - the open week of 5 Oct is on version 2 and locks Wednesday 19:55;
+    - the one past week (28 Sep) stays on version 1, none on another version;
+    - no match has a stored end yet (none locked since);
+    - `schedule_version` is the tournament list's last column.
+  - **Deploy ordering** was safe: KUT PR #147 deployed first and reads a row
+    without `schedule_version` as version 1, which every hosted week was until
+    this push.
+  - **First week on the new clock:** the week of 5 Oct, lock **Wed 7 Oct
+    19:55**, final of a 17–32 field at 21:00. ADR-104 had named the 14 Oct week
+    as the target; the push came earlier, between the 30 Sep payout and the
+    7 Oct lock.
+  - Rollback: in the migration's header. Move an open version-2 week back
+    first (`lock_at = kut._mm_lock_at(week_start, 1), schedule_version = 1`),
+    then re-create the two views and the functions from `20261003000000` /
+    `20261005000000`, drop the four new functions and the three columns.
+
 ## 2026-09-30 — `20261010000000` market discard value (ADR-103)
 
 Deployed 2026-09-30 from `VibeTrunk/supabase` (catalogue PR #62 there), on its

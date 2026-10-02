@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { Client } from "pg";
 import { assertLocalTarget } from "../support/local-target";
-import { COMPLETED_WEEK, resetMidweekMember } from "./midweek-fixture";
+import { COMPLETED_WEEK, resetMidweekMember, setWeekArchetype } from "./midweek-fixture";
 
 async function signIn(page: Page, username: string) {
   await page.goto("/login");
@@ -49,6 +49,9 @@ async function expectMatchPageWhy(page: Page) {
   await expect(tip).toBeHidden();
 }
 
+/** A picker card's button, whether it adds to the five or fills the slot being chosen. */
+const PICK_BUTTON = /^(Put in slot \d|Add to your five): /;
+
 /** Compete's tab while it asks for a pick: the word, then what it means (ADR-107). */
 const PICK_NAME = /^Compete Pick\. Midweek Madness: you haven't picked your five$/;
 
@@ -57,17 +60,21 @@ function competeTab(page: Page) {
   return page.getByRole("navigation", { name: "Primary" }).getByRole("link", { name: /^Compete/ });
 }
 
-async function resetMidweek(username: string) {
+async function withDatabase(work: (database: Client) => Promise<void>) {
   const databaseUrl = process.env.DB_URL;
   if (!databaseUrl) throw new Error("Authenticated E2E requires DB_URL.");
   assertLocalTarget(databaseUrl, "DB_URL");
   const database = new Client({ connectionString: databaseUrl });
   await database.connect();
   try {
-    await resetMidweekMember(database, username);
+    await work(database);
   } finally {
     await database.end();
   }
+}
+
+async function resetMidweek(username: string) {
+  await withDatabase((database) => resetMidweekMember(database, username));
 }
 
 test("member can sign in and use core mobile routes", async ({ page }) => {
@@ -113,8 +120,8 @@ test.describe("Midweek Madness entry (PR 7)", () => {
     await page.goto("/midweek");
     await expect(page.getByRole("heading", { name: "Pick your five" })).toBeVisible();
     await expect(page.getByRole("status").filter({ hasText: "Not picked yet" })).toBeVisible();
-    // One tile per Player: the second copy is a badge, not a sixth tile.
-    await expect(page.getByText("×2 copies")).toBeVisible();
+    // One row per Player: the second copy is a note, not a sixth row.
+    await expect(page.getByText(/×2 copies/).filter({ visible: true })).toHaveCount(1);
     await expectNoHorizontalOverflow(page);
 
     for (const name of five) {
@@ -130,13 +137,59 @@ test.describe("Midweek Madness entry (PR 7)", () => {
 
     await page.reload();
     await expect(page.getByRole("status").filter({ hasText: /^Saved / })).toBeVisible();
-    await expect(page.getByRole("button", { name: "✓ Saved" })).toBeDisabled();
-    await expect(page.getByText("✓ In your five")).toHaveCount(five.length);
+    await expect(page.getByRole("button", { name: "Change your five" })).toBeVisible();
+    await expect(page.getByText(/^✓ In/).filter({ visible: true })).toHaveCount(five.length);
     await expectNoHorizontalOverflow(page);
 
     await page.goto("/");
     await expect(page.getByRole("link", { name: /Your five are in/ })).toBeVisible();
     await expect(competeTab(page)).toHaveAccessibleName("Compete");
+  });
+
+  test("the picker filters by archetype, keeps Save in reach, and names a coming archetype (KB-028/029)", async ({
+    page,
+  }) => {
+    await withDatabase((database) => setWeekArchetype(database, "Winger Fixture", "goalkeeper"));
+    await signIn(page, "release_member");
+    await page.goto("/midweek");
+    await expect(page.getByText(/^Squads lock /)).toBeVisible();
+    // KB-028 in the phone list: the week's archetype, and the change in words.
+    await expect(
+      page.getByText("Goalkeeper this week, Speedster from next").filter({ visible: true }),
+    ).toHaveCount(1);
+
+    // The archetype filter is instant; Goalkeepers counts the week's archetype.
+    const filter = page.getByRole("group", { name: "Filter your cards by archetype" });
+    await filter.getByRole("button", { name: "Goalkeepers 2" }).click();
+    await expect(filter.getByRole("button", { name: "Goalkeepers 2" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    await expect(page.getByRole("button", { name: PICK_BUTTON })).toHaveCount(2);
+    await filter.getByRole("button", { name: /^All / }).click();
+    await expect(page.getByRole("button", { name: PICK_BUTTON })).toHaveCount(5);
+
+    // Unsaved changes on a phone: one compact row stays above the tab bar.
+    await page.getByRole("button", { name: /: Striker Fixture$/ }).click();
+    await expect(page.getByRole("status").filter({ hasText: "Unsaved changes" })).toBeVisible();
+    await page.getByRole("button", { name: /: Engine Fixture$/ }).scrollIntoViewIfNeeded();
+    await expect(page.getByRole("button", { name: "Save your five" })).toBeInViewport();
+    await expectNoHorizontalOverflow(page);
+
+    // From lg: the card face says what the Player plays from next week, and
+    // the team sheet says it under the card.
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await expect(page.getByText("Speedster from next week").filter({ visible: true })).toHaveCount(
+      1,
+    );
+    await page.getByRole("button", { name: /: Winger Fixture$/ }).click();
+    await expect(
+      page.getByText("Goalkeeper this week, Speedster from next").filter({ visible: true }),
+    ).toHaveCount(1);
+    await expect(page.getByText("Speedster from next week").filter({ visible: true })).toHaveCount(
+      2,
+    );
+    await expectNoHorizontalOverflow(page);
   });
 
   test("the settings opt-out toggles, and the picker offers the way back", async ({ page }) => {

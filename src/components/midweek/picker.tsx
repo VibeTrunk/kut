@@ -4,6 +4,7 @@ import Link from "next/link";
 import { startTransition, useActionState, useMemo, useState } from "react";
 import { LiveCard, type LiveCardPlayer } from "@/components/live-card";
 import {
+  archetypeFilters,
   formatClock,
   formatDayDate,
   formatSavedAt,
@@ -15,6 +16,7 @@ import { saveMidweekSquad, type MidweekActionState } from "@/app/(app)/midweek/a
 import {
   MidweekKeeperCheck,
   MidweekNotice,
+  MidweekPrivacyLine,
   MidweekSaveStatus,
   MidweekTrialistCard,
   Segments,
@@ -26,8 +28,13 @@ export type PickCard = {
   playerId: string;
   cardId: string;
   displayName: string;
+  /** The archetype the card plays this week (ADR-099), and its name. */
   archetype: string;
   archetypeLabel: string;
+  /** "Goalkeeper this week, Speedster from next" when it changed since the open (KB-028). */
+  change: string | null;
+  /** The coming archetype's name, for the card badge "Speedster from next week". */
+  next: string | null;
   tierLabel: string;
   copies: number;
   card: LiveCardPlayer;
@@ -62,6 +69,29 @@ const GHOST =
   "inline-flex min-h-11 items-center justify-center rounded-[10px] px-3 text-sm font-extrabold text-brass hover:underline";
 const ICON_BUTTON =
   "grid h-11 w-11 flex-none place-items-center rounded-[10px] text-ink-faint hover:text-brick";
+const ROW_BUTTON =
+  "inline-flex min-h-10 items-center justify-center rounded-[10px] border border-line bg-panel/70 px-3 text-[13px] font-black whitespace-nowrap text-ink disabled:opacity-45";
+
+/** KB-028: a Player whose archetype changed since the week opened, in words. */
+function ChangeNote({ text, center = false }: { text: string; center?: boolean }) {
+  return (
+    <span
+      className={`mt-[3px] flex items-center gap-1.5 text-[11.5px] font-extrabold text-warning ${center ? "justify-center text-center" : ""}`}
+    >
+      <span aria-hidden="true">&#8635;</span>
+      {text}
+    </span>
+  );
+}
+
+/** KB-028 on the card face: the `LiveCard` badge "Speedster from next week". */
+function nextBadge(card: PickCard) {
+  return card.next ? (
+    <span className="inline-block rounded-full border border-[#5c3c1f] bg-[#2b190d] px-2 py-0.5 text-[10px] font-black whitespace-nowrap text-[#f0b072]">
+      {card.next} from next week
+    </span>
+  ) : undefined;
+}
 
 function InjuredChip() {
   return (
@@ -93,7 +123,7 @@ export function MidweekPicker({
     savedCardIds.length === 0 && cards.length > 0 ? firstEmpty(initialSlots) : null,
   );
   const [prefillText, setPrefillText] = useState<ReturnType<typeof prefillNotice> | null>(null);
-  const [filter, setFilter] = useState<"all" | "keepers">("all");
+  const [filter, setFilter] = useState("all");
   const [state, formAction, pending] = useActionState<MidweekActionState, FormData>(
     saveMidweekSquad,
     null,
@@ -117,9 +147,17 @@ export function MidweekPicker({
   );
   const inSquad = new Set(slots.filter((id): id is string => id !== null));
   const full = firstEmpty(slots) === null;
-  const keepers = cards.filter((card) => card.archetype === "goalkeeper");
-  const shown = filter === "keepers" ? keepers : cards;
+  const filters = archetypeFilters(cards);
+  const shown = filter === "all" ? cards : cards.filter((card) => card.archetype === filter);
   const lockLabel = `${formatDayDate(lockAt)}, ${formatClock(lockAt)}`;
+  const target = activeSlot ?? firstEmpty(slots);
+  // The save bar's note (KB-029): what the status means, or the save's outcome.
+  const note =
+    status === "none"
+      ? `No pick by ${formatClock(lockAt)} on Wednesday? An auto squad plays for you, heavily handicapped.`
+      : status === "dirty"
+        ? "Nothing counts until you save."
+        : `Change it as often as you like until ${lockLabel}.`;
 
   function place(playerId: string) {
     const target = activeSlot ?? firstEmpty(slots);
@@ -141,6 +179,12 @@ export function MidweekPicker({
     setPrefillText(prefillNotice(lastWeek.lostNames, lastWeek.lostSlots));
   }
 
+  /** Saved, then "Change your five": choose for slot 1, with Cancel beside it. */
+  function change() {
+    setActiveSlot(0);
+    document.getElementById("mw-squad-h")?.scrollIntoView({ block: "start" });
+  }
+
   function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
@@ -160,26 +204,17 @@ export function MidweekPicker({
         Open a pack &rarr;
       </Link>
     </MidweekNotice>
-  ) : status === "none" ? (
-    <MidweekNotice tone="info">
-      <b>No pick, no problem, just a worse one.</b> If you haven&rsquo;t saved a five by{" "}
-      {formatClock(lockAt)} on Wednesday, an <b>auto squad</b> plays for you: up to five random
-      Players from your collection, all heavily handicapped. Picking takes a minute.
-    </MidweekNotice>
   ) : null;
 
   return (
     <div className="grid gap-7">
       {notice}
 
-      <div className="flex flex-col gap-7">
-        <section aria-labelledby="mw-squad-h" className="order-1 grid gap-3.5">
-          <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
-            <h2 className="display text-3xl" id="mw-squad-h">
-              Your five
-            </h2>
-            <MidweekSaveStatus kind={status} text={statusText} />
-          </div>
+      <div className="flex flex-col gap-5">
+        <section aria-labelledby="mw-squad-h" className="grid scroll-mt-24 gap-3.5">
+          <h2 className="display text-3xl" id="mw-squad-h">
+            Your five
+          </h2>
 
           {/* Below lg: one row per slot. */}
           <ol className="grid gap-2 lg:hidden">
@@ -278,6 +313,7 @@ export function MidweekPicker({
                             card.card.injured ? " · plays at reduced fitness" : ""
                           }`}
                     </span>
+                    {card.change && !active && <ChangeNote text={card.change} />}
                     {card.card.injured && !active && (
                       <span className="mt-1.5 flex flex-wrap gap-1">
                         <InjuredChip />
@@ -334,11 +370,14 @@ export function MidweekPicker({
                     )}
                   </p>
                   {card && playerId ? (
-                    <div
-                      className={`rounded-[0.9rem] ${active ? "outline-3 outline-offset-4 outline-brass" : ""}`}
-                    >
-                      <LiveCard player={card.card} />
-                    </div>
+                    <>
+                      <div
+                        className={`rounded-[0.9rem] ${active ? "outline-3 outline-offset-4 outline-brass" : ""}`}
+                      >
+                        <LiveCard badge={nextBadge(card)} player={card.card} />
+                      </div>
+                      {card.change && <ChangeNote center text={card.change} />}
+                    </>
                   ) : (
                     <button
                       aria-label={
@@ -364,93 +403,159 @@ export function MidweekPicker({
           {inSquad.size > 0 && <MidweekKeeperCheck segments={keeper.segments} tone={keeper.tone} />}
         </section>
 
-        {/* The save bar. Below sm it is last in the flow and sticky, so it
-            stays pinned above the tab bar while the member scrolls the grid;
-            from sm it sits inline under the squad. */}
+        {/* `MidweekSaveBar` (KB-029): the status and one note on the left, the
+            actions on the right, never an empty column. With unsaved changes
+            below sm it is one compact opaque row, last in the flow and sticky
+            above the tab bar, so Save stays in reach while the member picks
+            from the list; otherwise it sits inline under the five. */}
         <form
-          className="sticky bottom-[calc(4.5rem_+_env(safe-area-inset-bottom,0px))] z-20 order-3 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-2xl border border-line/70 bg-board-deep/92 p-2 shadow-[0_-10px_24px_-12px_rgb(0_0_0/70%)] sm:static sm:order-2"
+          className={`flex flex-wrap items-center justify-between gap-x-4 gap-y-2.5 rounded-[14px] border bg-panel/80 px-3.5 py-3 ${
+            status === "dirty"
+              ? "border-brass/50 max-sm:sticky max-sm:bottom-[calc(4.5rem_+_env(safe-area-inset-bottom,0px))] max-sm:z-20 max-sm:order-last max-sm:flex-nowrap max-sm:bg-panel max-sm:py-2 max-sm:pr-2 max-sm:shadow-[0_-12px_24px_-10px_rgb(0_0_0/70%)]"
+              : "border-line/60"
+          }`}
           onSubmit={submit}
         >
           {sendCardIds.map((id) => (
             <input key={id} name="card_id" type="hidden" value={id} />
           ))}
-          {lastWeek ? (
-            <button
-              className={`${SECONDARY} sm:justify-self-start`}
-              onClick={loadLastWeek}
-              type="button"
+          <div className="grid min-w-0 gap-0.5">
+            <MidweekSaveStatus kind={status} text={statusText} />
+            <p
+              className={`text-xs text-ink-faint ${status === "dirty" && state?.ok !== false ? "max-sm:hidden" : ""}`}
+              role="status"
             >
-              Load last week&rsquo;s five
-            </button>
-          ) : (
-            <span />
-          )}
-          {status === "saved" ? (
-            <button className={SECONDARY} disabled type="button">
-              &#10003; Saved
-            </button>
-          ) : (
-            <button
-              className={PRIMARY}
-              disabled={sendCardIds.length === 0 || pending}
-              type="submit"
-            >
-              {pending ? "Saving…" : "Save your five"}
-            </button>
-          )}
-          <p className="col-span-2 px-1.5 pt-0.5 text-[11.5px] text-ink-faint" role="status">
-            {state?.ok === false ? (
-              <span className="font-bold text-brick">{state.error}</span>
-            ) : state?.ok && status === "saved" ? (
-              <span className="font-bold text-moss">{state.message}</span>
+              {state?.ok === false ? (
+                <span className="font-bold text-brick">{state.error}</span>
+              ) : state?.ok && status === "saved" ? (
+                <span className="font-bold text-moss">{state.message}</span>
+              ) : (
+                note
+              )}
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {status === "saved" ? (
+              <button className={SECONDARY} onClick={change} type="button">
+                Change your five
+              </button>
             ) : (
-              `Change it as often as you like until ${lockLabel}.`
+              <>
+                {lastWeek && (
+                  <button
+                    className={`${SECONDARY} ${status === "dirty" ? "max-sm:hidden" : ""}`}
+                    onClick={loadLastWeek}
+                    type="button"
+                  >
+                    Load last week&rsquo;s five
+                  </button>
+                )}
+                <button
+                  className={PRIMARY}
+                  disabled={sendCardIds.length === 0 || pending}
+                  type="submit"
+                >
+                  {pending ? "Saving…" : "Save your five"}
+                </button>
+              </>
             )}
-          </p>
+          </div>
         </form>
 
-        <section aria-labelledby="mw-cards-h" className="order-2 grid gap-3 sm:order-3">
-          <div className="flex flex-wrap items-center justify-between gap-2">
+        <MidweekPrivacyLine lock={formatClock(lockAt)} />
+
+        <section aria-labelledby="mw-cards-h" className="mt-2 grid gap-3">
+          <div className="grid gap-1">
             <h2 className="display text-3xl" id="mw-cards-h">
               Your cards
             </h2>
-            {keepers.length > 0 && keepers.length < cards.length && (
-              <div
-                aria-label="Show"
-                className="inline-flex gap-0.5 rounded-xl border border-line p-[3px]"
-                role="group"
-              >
-                {(
-                  [
-                    ["all", `All ${cards.length}`],
-                    ["keepers", `Goalkeepers ${keepers.length}`],
-                  ] as const
-                ).map(([key, label]) => (
-                  <button
-                    aria-pressed={filter === key}
-                    className={`grid min-h-[38px] place-items-center rounded-[9px] px-3 text-[13px] font-extrabold ${
-                      filter === key ? "bg-brass/14 text-brass" : "text-ink-dim"
-                    }`}
-                    key={key}
-                    onClick={() => setFilter(key)}
-                    type="button"
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            )}
+            <p className="text-sm text-ink-faint">
+              One slot per Player. Where you own two copies, the stronger one plays.
+              {full &&
+                activeSlot === null &&
+                " Your five is full: remove a card, or tap one to swap it."}
+            </p>
           </div>
-          <p className="text-sm text-ink-faint">
-            One slot per Player. Where you own two copies, the stronger one plays.
-            {full &&
-              activeSlot === null &&
-              " Your five is full: remove a card, or tap one to swap it."}
-          </p>
-          <ul className="grid grid-cols-2 gap-x-3 gap-y-4 sm:grid-cols-3 sm:gap-x-5 sm:gap-y-6 lg:grid-cols-5">
+          {/* `MidweekArchetypeFilter`: instant, client-side. */}
+          <div
+            aria-label="Filter your cards by archetype"
+            className="flex flex-wrap gap-1.5"
+            role="group"
+          >
+            {filters.map((chip) => (
+              <button
+                aria-pressed={filter === chip.key}
+                className={`inline-flex min-h-9 items-center gap-1.5 rounded-full border px-3 text-[13px] font-extrabold ${
+                  filter === chip.key
+                    ? "border-brass bg-brass/12 text-brass"
+                    : "border-line text-ink-dim hover:text-ink"
+                }`}
+                key={chip.key}
+                onClick={() => setFilter(chip.key)}
+                type="button"
+              >
+                {chip.label} <small className="text-[11px] text-ink-faint">{chip.count}</small>
+              </button>
+            ))}
+          </div>
+          {shown.length === 0 && (
+            <p className="text-sm text-ink-dim">
+              No Goalkeeper among your cards. Your best defender goes in goal, and keeps goal much
+              worse than a real one.
+            </p>
+          )}
+
+          {/* Below lg: `MidweekPickRow`, a compact list. From lg the card grid.
+              Each size has exactly one list, the other is `hidden`. */}
+          <ul className="grid gap-1.5 lg:hidden">
             {shown.map((card) => {
               const isIn = inSquad.has(card.playerId);
-              const target = activeSlot ?? firstEmpty(slots);
+              return (
+                <li
+                  className={`grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-xl border px-2.5 py-2 ${
+                    isIn ? "border-moss-line bg-moss-bg/50" : "border-line/50 bg-panel/45"
+                  }`}
+                  key={card.playerId}
+                >
+                  <MidweekMiniCard
+                    injured={card.card.injured}
+                    ovr={card.card.liveOvr}
+                    rarityTier={card.card.rarityTier}
+                  />
+                  <div className="min-w-0">
+                    <p className="leading-tight font-extrabold [overflow-wrap:anywhere]">
+                      {card.displayName}
+                    </p>
+                    <p className="text-[12.5px] text-ink-dim">
+                      {card.archetypeLabel} &middot; {card.tierLabel} &middot; OVR{" "}
+                      {card.card.liveOvr}
+                      {card.card.injured && " · injured"}
+                      {card.copies > 1 && <> &middot; &times;{card.copies} copies</>}
+                    </p>
+                    {card.change && <ChangeNote text={card.change} />}
+                  </div>
+                  {isIn ? (
+                    <span className="inline-flex items-center rounded-full border border-moss-line bg-moss-bg px-2 py-0.5 text-[10.5px] font-extrabold tracking-[0.08em] whitespace-nowrap text-moss uppercase">
+                      &#10003; In<span className="sr-only"> your five: {card.displayName}</span>
+                    </span>
+                  ) : (
+                    <button
+                      aria-label={`${activeSlot !== null ? `Put in slot ${activeSlot + 1}` : "Add to your five"}: ${card.displayName}${card.card.injured ? ", injured" : ""}`}
+                      className={ROW_BUTTON}
+                      disabled={target === null}
+                      onClick={() => place(card.playerId)}
+                      type="button"
+                    >
+                      {activeSlot !== null ? `Slot ${activeSlot + 1}` : "Add"}
+                    </button>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+          <ul className="hidden grid-cols-5 gap-x-5 gap-y-6 lg:grid">
+            {shown.map((card) => {
+              const isIn = inSquad.has(card.playerId);
               return (
                 <li className="grid content-start gap-2" key={card.playerId}>
                   <div
@@ -460,7 +565,7 @@ export function MidweekPicker({
                         : ""
                     }`}
                   >
-                    <LiveCard player={card.card} />
+                    <LiveCard badge={nextBadge(card)} player={card.card} />
                     {card.copies > 1 && (
                       <span className="absolute -top-1.5 -right-1 z-10 rounded-full border border-line bg-panel-2 px-2 py-0.5 text-[11px] font-black text-ink-dim">
                         &times;{card.copies} copies

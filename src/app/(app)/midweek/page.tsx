@@ -2,8 +2,8 @@ import Link from "next/link";
 import { CompeteTabs } from "@/components/app-shell/compete-tabs";
 import { redirect } from "next/navigation";
 import type { LiveCardPlayer } from "@/components/live-card";
-import { MidweekNotice, MidweekPrivacyLine } from "@/components/midweek/bits";
-import { MidweekLockBar } from "@/components/midweek/lock-bar";
+import { MidweekNotice } from "@/components/midweek/bits";
+import { MidweekLockLine } from "@/components/midweek/lock-line";
 import { MidweekOptInButton } from "@/components/midweek/opt-in-button";
 import { MIDWEEK_PAGE, MidweekPageHead } from "@/components/midweek/page-head";
 import { MidweekPicker, type PickCard } from "@/components/midweek/picker";
@@ -200,7 +200,7 @@ export default async function MidweekPage({
               </Link>
             </div>
           </section>
-          <MidweekLockBar lockAt={lockAt} now={nowIso} seedHash={current.seed_hash} />
+          <MidweekLockLine lockAt={lockAt} now={nowIso} />
           <p className="text-sm text-ink-faint">
             You can still follow Wednesday&rsquo;s bracket from {roundOne} like everyone else.
           </p>
@@ -265,6 +265,8 @@ export default async function MidweekPage({
       displayName: card.display_name,
       archetype: week.archetype,
       archetypeLabel: week.label,
+      change: week.change,
+      next: week.next,
       tierLabel: TIER_LABEL[card.rarity_tier],
       copies,
       card: toLiveCardPlayer({ ...card, archetype: week.archetype }, injuredPlayerIds, photoUrls),
@@ -311,8 +313,7 @@ export default async function MidweekPage({
           lede={`Five of your cards, one knockout, Wednesday night. Every match you win pays KUT Coins; the champion takes ${MIDWEEK.championTotal} in all.`}
           title="Pick your five"
         />
-        <MidweekLockBar lockAt={lockAt} now={nowIso} seedHash={current.seed_hash} />
-        <MidweekPrivacyLine roundOne={roundOne} />
+        <MidweekLockLine lockAt={lockAt} now={nowIso} />
         {cards.length === 0 ? (
           <MidweekNotice tone="info">
             <b>You need at least one card to take part.</b> Every Player you add from a pack can

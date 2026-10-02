@@ -1810,7 +1810,10 @@ engine must reproduce that file (ADR-090).
   the lock plays it, so a change made while a week is open applies from the
   next week, and nobody can reshape squads others have already picked. A
   Player created after the open has no snapshot and plays their live
-  archetype. A member may change their own Player's archetype (`set_own_player_archetype`) at most once every
+  archetype. The picker names such a change wherever the card appears
+  ("Goalkeeper this week, Speedster from next", and on the card face
+  "Speedster from next week") and filters cards by the archetype they play
+  this week (ADR-112). A member may change their own Player's archetype (`set_own_player_archetype`) at most once every
   `ARCHETYPE_CHANGE_COOLDOWN_DAYS` (14, measured as 336 elapsed hours). The
   first change is always allowed, re-saving the archetype the Player already
   has is not a change, and the admin path is not limited (ADR-094).

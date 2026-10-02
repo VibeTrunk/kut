@@ -23,7 +23,12 @@ const RARITY_LABEL: Record<LiveCardPlayer["rarityTier"], string> = {
  * One revealed copy. The copy's own id lives beside the card face, never in
  * it: `player.id` is the Player id the plaster cast hashes (ADR-085).
  */
-export type RevealCard = { cardId: string; player: LiveCardPlayer };
+export type RevealCard = {
+  cardId: string;
+  player: LiveCardPlayer;
+  /** The summary's chip on the card face (ADR-114): "New · fills slot 14" or "×3 · discards for 63". */
+  chip?: string | null;
+};
 
 type PackRevealProps = {
   cards: RevealCard[];
@@ -34,6 +39,8 @@ type PackRevealProps = {
   doneLabel: string;
   secondaryHref?: string;
   secondaryLabel?: string;
+  /** One line under the summary's heading: "2 new Players. Album 19 / 29." */
+  summaryLine?: string;
 };
 
 export function PackReveal({
@@ -44,6 +51,7 @@ export function PackReveal({
   doneLabel,
   secondaryHref,
   secondaryLabel,
+  summaryLine,
 }: PackRevealProps) {
   // Server + first client paint start mid-reveal; a reduced-motion client jumps
   // straight to the summary once mounted.
@@ -72,10 +80,18 @@ export function PackReveal({
         <h1 className="mt-2 text-center text-3xl font-black tracking-tight sm:text-4xl">
           Your new Live Cards
         </h1>
+        {summaryLine && (
+          <p className="mt-2 text-center text-sm font-bold text-ink-dim">{summaryLine}</p>
+        )}
         <div className="mt-6 grid grid-cols-[repeat(auto-fit,minmax(190px,1fr))] gap-5">
           {cards.map((card, i) => {
             const href = cardHrefBase ? `${cardHrefBase}${card.cardId}` : null;
-            const cardEl = <LiveCard player={card.player} />;
+            const cardEl = (
+              <LiveCard
+                badge={card.chip ? <PackChip text={card.chip} /> : undefined}
+                player={card.player}
+              />
+            );
             return (
               <div className="pack-reveal__summary-card" key={`${card.cardId}-${i}`}>
                 {href ? (
@@ -166,5 +182,14 @@ export function PackReveal({
         )}
       </button>
     </div>
+  );
+}
+
+/** A summary card's chip, riding the card face like the market's ownership chip (ADR-102). */
+function PackChip({ text }: { text: string }) {
+  return (
+    <p className="max-w-full truncate rounded-full border border-ink/20 bg-board-deep/85 px-2.5 py-0.5 text-[0.7rem] font-black whitespace-nowrap text-ink tabular-nums shadow-[0_2px_6px_rgb(0_0_0/35%)] backdrop-blur-sm">
+      {text}
+    </p>
   );
 }

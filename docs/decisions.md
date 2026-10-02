@@ -6149,3 +6149,88 @@ E2E turns the open fixture week into tonight's evening
 and puts the open week back after each test (`endFixtureEvening`).
 
 Tier: no migration.
+
+## ADR-114 — Home leads with what's due, and every message opens its subject
+
+Date: 2026-10-02
+
+Status: Accepted (amends ADR-031, ADR-038 and ADR-039's Home layout, ADR-097
+and ADR-098's Home card, and ADR-019's inbox; MM 2.0 frontend F4, built to the
+DR2-approved `Home-Now-Picking`, `Home-Now-Live` and `Messages` mockups and
+the UX review's unmocked items)
+
+Context: the UX review of 1 Oct found that Home opened with a 390 px masthead
+on a phone and put a live Midweek round third, and that the inbox was a dead
+end: no message linked to what it was about, and each carried its own "Mark
+read" button. `design/ux-review/HANDOFF.md` ("Home", "Messages") settles both;
+Q11 (2 Oct) keeps Home's live card static at page load. The review also asked
+for chips on the pack summary and for the Settings placeholder to go, neither
+of them mocked.
+
+Decision (no migration):
+
+- **A short header:** `Terrible Football Haarlem` / `This week in KUT`, 30 px
+  on a phone. The masthead's paragraph is now the risers' subtitle; its
+  Chronicle link sits in Club activity's heading and "How KUT works" under the
+  activity.
+- **The "now" stack** (`HomeNowStack`): the cards with a deadline, in one
+  list. The Midweek evening leads while it runs; otherwise the soonest
+  deadline first: picking (the lock), the session report (`closes_at`), the
+  rehab check-in (the end of the week after the one it is for, ADR-082's
+  window) and the champion card (Thursday 23:59, D4). `orderNowCards` is
+  unit-tested. Each card is one link, except the check-in, which stays the form
+  that does the check-in in place.
+- **The evening card** (`Home-Now-Live`) shows from the lock to the end of the
+  final, with the `Live` marker and the round as its kicker. At page load it
+  shows: the draw (who you meet, `See the draw`); your match this round at
+  full time as a compact `MidweekScoreboard` in team colours (a single-match
+  block, DR2-1) with the report's headline and `See the report`; from the
+  final's kick-off, the final for everyone; once you are out, `Follow the
+  final` (HANDOFF); after a bye or between rounds, the evening's title and
+  your night in a line. Home does not poll (Q11). The HANDOFF puts the latest
+  chance under a live scoreboard; at full time the headline says more, and a
+  match in play exists only once ADR-106's views hide results until full
+  time. Until F6 such a match shows no score, only that it kicked off and
+  `Watch your match`: its live scoreboard and latest chance need the report of
+  the events revealed so far, which F6 builds with ADR-106. `See the draw`,
+  `See the report` and the kicked-off line are derived from the approved copy.
+- **`MidweekRevealClock` is retired** with Home's old card, and with it
+  `revealStops` and `revealedRounds`; its test of both clock versions now runs
+  on `eveningStops`.
+- **Stats:** Club Value and Rank as tiles that read as links (`See the maths →`,
+  `Standings →`); the KUT Coins tile goes, as the coin pill shows the balance;
+  `Open a pack` is full width below `sm` and shares the row from `sm`.
+- **Club activity:** six rows, a member's consecutive pack openings folded into
+  one (`Member B opened 5 packs.`, `foldActivity`). Unnamed rows never fold.
+  Home reads 30 rows to fill six.
+- **Messages:** `MessageRow`, one compact link per message, through
+  `/messages/{id}/open`, a route handler that marks the caller's own message
+  read and redirects to a path it builds itself. It is a plain `<a>`, never a
+  prefetched `<Link>`, so nothing marks a message read unseen. Unread rows
+  carry a filled dot and the word `New`; the per-message button goes and
+  `Mark all read` stays. Groups: `Today`, `Earlier this week` (since Monday,
+  club time), then each older day. Targets by `event_type` (`messageTarget`):
+  Midweek result → that week's bracket; sale → `Wallet`, which is Club Value,
+  because KUT has no wallet page and Club Value opens with the balance;
+  purchase → the card, while the member still owns it; trade offer and trade
+  answer → Offers (HANDOFF sends an answer to the listing, but by then the
+  listing has usually sold or closed, and the offer row says what happened);
+  kudos → My card; a session's results, reward, bibs bonus or correction → its
+  Chronicle issue; the report form's own message → the form; the rehab
+  check-in → Home. A club notice links nowhere and has no arrow: unread,
+  opening it only marks it read; read, it is no link at all.
+- **The pack summary** (`packSummary`): each card carries a chip on its face
+  (the `LiveCard` badge slot, ADR-102): `New · fills slot 14` when every copy
+  the member holds of that Player came out of this pack, the album slot in
+  `buildSlots` order, or `×3 · discards for 63` for a Player held more than
+  once. One line sums it up: `2 new Players. Album 19 / 29.` A failed read
+  shows the cards without chips.
+- **Settings** loses "Notification preferences are planned for a later polish
+  pass." The idea moved to `ROADMAP.md`.
+
+Consequences: Home on a phone opens with what is due, and every message is one
+tap from its subject. The authenticated E2E checks the now stack, the tiles and
+the evening card at the draw and mid-evening, opens a Midweek result and a club
+notice from the inbox, and opens a pack (last in the file, as it spends coins).
+
+Tier: no migration.

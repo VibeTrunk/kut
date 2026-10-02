@@ -2,6 +2,7 @@ import { roundStartAt } from "@/game/midweek/schedule";
 import type { createClient } from "@/lib/supabase/server";
 import {
   formatClock,
+  formatDayDate,
   isLockedTonight,
   isMidweekVisible,
   isPickingOpen,
@@ -13,16 +14,11 @@ import {
   type MyRewardRow,
   type MySquadRow,
 } from "./entry";
-import {
-  championLeads,
-  liveLine,
-  myNight,
-  revealedRounds,
-  revealStops,
-  wonRounds,
-  type ClockStop,
-} from "./evening";
-import type { MatchRow } from "./rows";
+import { championLeads, homeEvening, sideScore, type HomeEvening } from "./evening";
+import { reportInputFromRows, renderStoredReport } from "./report/from-db";
+import type { Segment } from "./report/types";
+import { loadWeekResults } from "./results";
+import type { EntryCardRow, EventRow, MatchRow } from "./rows";
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
 
@@ -75,6 +71,17 @@ export async function loadMidweekEntryState(
   return { current, squad: (squadResponse.data ?? []) as MySquadRow[] };
 }
 
+/** A match on Home's evening card (Home-Now-Live): a mini scoreboard and its headline. */
+export type HomeMatch = {
+  managers: readonly [string, string];
+  goals: readonly [number, number];
+  penalties: readonly [number, number] | null;
+  winnerSide: 0 | 1;
+  youSide: 0 | 1 | null;
+  auto: readonly [boolean, boolean];
+  headline: Segment[];
+};
+
 /** A saved card as the entry points draw it: a `MidweekMiniCard`. */
 export type EntryMini = {
   rarityTier: "common" | "bronze" | "silver" | "gold" | "holo" | "elite";
@@ -87,18 +94,13 @@ export type EntryMini = {
  * out, or a read failed):
  *
  * - `pick`: picking is open (PR 7, ADR-097);
- * - `live`: tonight's week is locked and its rounds are coming out (Home-Live);
+ * - `live`: from the lock to the end of the final (Home-Now-Live, ADR-114);
  * - `final`: after the final, until Thursday 23:59 Amsterdam (owner decision
  *   D4), when Home goes back to the picking prompt.
  */
 export type MidweekEntryPoint =
   | { kind: "pick"; lockAt: string; saved: EntryMini[] }
-  | {
-      kind: "live";
-      title: string;
-      line: string;
-      stops: ClockStop[] | null;
-    }
+  | ({ kind: "live"; match: HomeMatch | null } & Omit<HomeEvening, "match">)
   | { kind: "final"; weekStart: string; lockAt: string; title: string; line: string };
 
 export async function loadMidweekEntryPoint(
@@ -148,7 +150,7 @@ async function latestTournaments(
   };
 }
 
-/** Home during the evening (Home-Live). */
+/** Home during the evening (Home-Now-Live, ADR-114), as it stood at page load. */
 async function liveEntryPoint(
   supabase: SupabaseServerClient,
   current: MidweekCurrent,
@@ -156,44 +158,84 @@ async function liveEntryPoint(
   userId: string,
 ): Promise<MidweekEntryPoint | null> {
   const lockAt = current.lock_at as string;
+  const weekStart = current.week_start as string;
   const scheduleVersion = scheduleVersionOf(current);
   const roundOne = formatClock(roundStartAt(new Date(lockAt), 1, scheduleVersion).toISOString());
-  const beforeRoundOne: MidweekEntryPoint = {
-    kind: "live",
-    title: "Squads are locked",
-    line: `Round 1 at ${roundOne}, then a round ${roundIntervalText(scheduleVersion)}.`,
-    stops: null,
-  };
-  const rounds = current.rounds;
-  if (current.status !== "simulated" || !rounds) return beforeRoundOne;
-
-  const { data, error } = await supabase
-    .schema("kut")
-    .from("midweek_matches_public")
-    .select("*")
-    .eq("tournament_id", current.tournament_id as string);
-  if (error) return null;
-  const matches = (data ?? []) as MatchRow[];
-  const out = revealedRounds(matches);
-  if (out === 0) {
+  const rounds = current.status === "simulated" ? current.rounds : null;
+  if (!rounds) {
+    // The lock has passed and the worker hasn't drawn the week yet: a moment at most.
     return {
-      ...beforeRoundOne,
-      stops: revealStops({ lockAt, scheduleVersion, rounds, now, wonRounds: new Set() }).slice(1),
+      kind: "live",
+      kicker: `Midweek Madness · ${formatDayDate(lockAt)}`,
+      title: "Squads are locked",
+      line: `Round 1 at ${roundOne}, then a round ${roundIntervalText(scheduleVersion)}.`,
+      match: null,
+      button: { label: "Follow the bracket", href: "/midweek" },
     };
   }
 
-  const night = myNight({ userId, rounds, lockAt, scheduleVersion, matches });
+  let results: Awaited<ReturnType<typeof loadWeekResults>>;
+  try {
+    results = await loadWeekResults(supabase, current.tournament_id as string);
+  } catch (error) {
+    console.error("home midweek evening read failed", error);
+    return null;
+  }
+  const evening = homeEvening({
+    userId,
+    weekStart,
+    rounds,
+    lockAt,
+    scheduleVersion,
+    now,
+    draw: results.draw,
+    matches: results.matches,
+  });
+  const { match: focus, ...rest } = evening;
   return {
     kind: "live",
-    title: out === rounds ? "The final is out" : `Round ${out} is out`,
-    line: liveLine(night, rounds, lockAt, scheduleVersion),
-    stops: revealStops({
-      lockAt,
-      scheduleVersion,
-      rounds,
-      now,
-      wonRounds: wonRounds(night),
-    }).slice(1),
+    ...rest,
+    match: focus
+      ? await homeMatch(supabase, current, rounds, focus, results.entries, userId)
+      : null,
+  };
+}
+
+/** A full-time match as Home's card draws it: the scoreboard and the report's headline. */
+async function homeMatch(
+  supabase: SupabaseServerClient,
+  current: MidweekCurrent,
+  rounds: number,
+  match: MatchRow,
+  entries: EntryCardRow[],
+  userId: string,
+): Promise<HomeMatch | null> {
+  const { data, error } = await supabase
+    .schema("kut")
+    .from("midweek_events_public")
+    .select("*")
+    .eq("match_id", match.match_id)
+    .order("seq");
+  if (error) return null;
+  const input = reportInputFromRows({
+    seedHash: current.seed_hash ?? "",
+    rounds,
+    match,
+    events: (data ?? []) as EventRow[],
+    entries,
+    ownersPublished: false,
+  });
+  if (!input) return null;
+  const a = sideScore(match, 0);
+  const b = sideScore(match, 1);
+  return {
+    managers: [input.sides[0].manager, input.sides[1].manager],
+    goals: [a.goals, b.goals],
+    penalties: a.penalties !== null && b.penalties !== null ? [a.penalties, b.penalties] : null,
+    winnerSide: match.winner_side,
+    youSide: match.side_0_user_id === userId ? 0 : match.side_1_user_id === userId ? 1 : null,
+    auto: [input.sides[0].auto, input.sides[1].auto],
+    headline: renderStoredReport(input).headlineParts,
   };
 }
 

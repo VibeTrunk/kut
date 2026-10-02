@@ -3,6 +3,7 @@ import { PackReveal, type RevealCard } from "@/components/pack-reveal";
 import { requireUser } from "@/lib/auth/user";
 import { fetchInjuredPlayerIds } from "@/lib/injuries";
 import { toListedCardPlayer, type ListedCardRow } from "@/lib/live-card-player";
+import { packSummary } from "@/lib/pack-summary";
 import { resolvePhotoUrls } from "@/lib/player-photos";
 import { createClient } from "@/lib/supabase/server";
 
@@ -34,17 +35,41 @@ export default async function PackResultPage({ params }: PackResultPageProps) {
   if (!data || data.length === 0) notFound();
 
   const cards = data as PackResultCard[];
-  const [photoUrls, injuredPlayerIds] = await Promise.all([
+  const [photoUrls, injuredPlayerIds, ownedResponse, rosterResponse] = await Promise.all([
     resolvePhotoUrls(
       supabase,
       cards.map((card) => card.photo_path),
     ),
     fetchInjuredPlayerIds(supabase),
+    supabase.schema("kut").from("my_collection_cards").select("card_id, player_id, discard_value"),
+    // The album's slot order (`buildSlots`): by name, then id.
+    supabase.schema("kut").from("player_directory").select("id, display_name"),
   ]);
+  // The chips are a nicety: a failed read shows the cards without them.
+  const summary =
+    ownedResponse.error || rosterResponse.error
+      ? null
+      : packSummary({
+          opened: cards.map((card) => ({
+            card_id: card.card_id,
+            player_id: card.player_id ?? null,
+          })),
+          owned: (ownedResponse.data ?? []) as {
+            card_id: string;
+            player_id: string;
+            discard_value: number;
+          }[],
+          roster: ((rosterResponse.data ?? []) as { id: string; display_name: string }[])
+            .sort(
+              (a, b) => a.display_name.localeCompare(b.display_name) || a.id.localeCompare(b.id),
+            )
+            .map((player) => player.id),
+        });
 
-  const revealCards: RevealCard[] = cards.map((card) => ({
+  const revealCards: RevealCard[] = cards.map((card, index) => ({
     cardId: card.card_id,
     player: toListedCardPlayer(card, injuredPlayerIds, photoUrls),
+    chip: summary?.chips[index]?.text ?? null,
   }));
 
   return (
@@ -60,6 +85,7 @@ export default async function PackResultPage({ params }: PackResultPageProps) {
           doneLabel="View Collection"
           secondaryHref="/club/packs"
           secondaryLabel="Open another"
+          summaryLine={summary?.line}
           title={cards[0].pack_title}
         />
       </section>

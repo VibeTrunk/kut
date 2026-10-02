@@ -74,3 +74,38 @@ export function describeActivity(row: ActivityRow): string {
       return "A member did something in the club.";
   }
 }
+
+/** A feed row as Home shows it: a run of one member's pack openings folds into one (ADR-114). */
+export type FoldedActivityRow = ActivityRow & { packs: number };
+
+/**
+ * Club activity on Home (HANDOFF "Home"): consecutive pack openings by the same
+ * member fold into one row ("Member B opened 5 packs."), then the first
+ * `limit` rows. Rows arrive newest first, so a folded row keeps the newest time.
+ */
+export function foldActivity(rows: readonly ActivityRow[], limit: number): FoldedActivityRow[] {
+  const folded: FoldedActivityRow[] = [];
+  for (const row of rows) {
+    const last = folded.at(-1);
+    if (
+      row.kind === "pack" &&
+      last?.kind === "pack" &&
+      row.actor_name !== null &&
+      last.actor_name === row.actor_name
+    ) {
+      last.packs += 1;
+      continue;
+    }
+    if (folded.length === limit) break;
+    folded.push({ ...row, packs: 1 });
+  }
+  return folded;
+}
+
+/** `describeActivity`, plus the folded "Member B opened 5 packs." */
+export function describeFoldedActivity(row: FoldedActivityRow): string {
+  if (row.kind === "pack" && row.packs > 1) {
+    return `${row.actor_name ?? "A member"} opened ${row.packs} packs.`;
+  }
+  return describeActivity(row);
+}

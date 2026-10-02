@@ -112,10 +112,6 @@ export default async function SettingsPage() {
           </Link>
         )}
 
-        <p className="rounded-2xl border border-dashed border-line bg-panel/40 p-5 text-center text-sm text-ink-faint">
-          Notification preferences are planned for a later polish pass.
-        </p>
-
         <LogoutButton />
       </section>
     </main>

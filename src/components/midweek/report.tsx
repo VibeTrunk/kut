@@ -25,6 +25,7 @@ export function MidweekScoreboard({
   winnerSide,
   youSide,
   auto,
+  compact = false,
 }: {
   managers: Managers;
   goals: readonly [number, number];
@@ -32,6 +33,8 @@ export function MidweekScoreboard({
   winnerSide: Side;
   youSide: Side | null;
   auto: readonly [boolean, boolean];
+  /** Home's card (Home-Now-Live): smaller type, no panel of its own. */
+  compact?: boolean;
 }) {
   const label =
     `Final score: ${managers[0]} ${goals[0]}, ${managers[1]} ${goals[1]}` +
@@ -40,7 +43,9 @@ export function MidweekScoreboard({
       : ".");
   const side = (s: Side) => (
     <div className={`grid min-w-0 gap-1.5 ${s === 1 ? "justify-items-end text-right" : ""}`}>
-      <p className="text-[17px] leading-[1.2] font-black [overflow-wrap:anywhere] sm:text-[22px]">
+      <p
+        className={`leading-[1.2] font-black [overflow-wrap:anywhere] ${compact ? "text-[15px] sm:text-[17px]" : "text-[17px] sm:text-[22px]"}`}
+      >
         <PlayerName side={s}>{managers[s]}</PlayerName>
       </p>
       <p className={`flex flex-wrap gap-1 ${s === 1 ? "justify-end" : ""}`}>
@@ -53,12 +58,18 @@ export function MidweekScoreboard({
   return (
     <div
       aria-label={label}
-      className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2.5 rounded-2xl border border-line/60 bg-panel/60 p-3.5 sm:px-6 sm:py-5"
+      className={`grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2.5 border border-line/60 ${
+        compact
+          ? "rounded-xl bg-board/50 px-3 py-2.5 sm:px-4"
+          : "rounded-2xl bg-panel/60 p-3.5 sm:px-6 sm:py-5"
+      }`}
       role="group"
     >
       {side(0)}
       <div aria-hidden="true" className="grid justify-items-center gap-1.5">
-        <p className="text-[38px] leading-none font-black tracking-[0.02em] whitespace-nowrap tabular-nums sm:text-[54px]">
+        <p
+          className={`leading-none font-black tracking-[0.02em] whitespace-nowrap tabular-nums ${compact ? "text-[28px] sm:text-[32px]" : "text-[38px] sm:text-[54px]"}`}
+        >
           <span className="text-team-blue">{goals[0]}</span>–
           <span className="text-team-red">{goals[1]}</span>
         </p>

@@ -6354,3 +6354,66 @@ minute in, at 320 and 412 px and the final page at 1440 px. It passed against
 both the current views and ADR-106's.
 
 Tier: no migration.
+
+## ADR-106 — The evening unfolds event by event: views gate each event and each result, and F6 ships first
+
+Date: 2026-10-02
+
+Status: Accepted (amends ADR-095's reveal gates and ADR-105's "events appear
+at their round's start, whole"; MM 2.0 backend PR 4, the data half of live
+matches; F6 is the page half. The number was reserved since ADR-104, whose
+migration names it)
+
+Context: since ADR-104 every event's moment and every match's end are stored
+at the lock, but the member views still showed a match whole from its
+kick-off: an API reader knew the result at 20:00, and the pages could not show
+a match unfolding. HANDOFF ("Data the screens need", "No full-time estimates")
+asks that a result, and any time that implies a match's length, be readable
+only from its full time; Q7 chose the same pacing for every match. Vercel
+deploys on merge before a hosted push, so the plan asked this ADR to settle,
+before F6 is built, whether F6 works against the views as they are or the
+merge and the push must land back to back.
+
+Decision (migration `20261014000000_midweek_live_reveal.sql`, views only):
+
+- **`midweek_matches_public`:** the pairing, kick-off, win chance and day rolls
+  from kick-off, as before; goals, penalties, winner and `ends_at` only once
+  the match has ended (a late end gives a shoot-out away); appends `ends_at`
+  and `in_play`. A bye ends as it starts.
+- **`midweek_events_public`:** each event from its own moment; appends
+  `reveal_at`.
+- **`midweek_tournaments_public`:** the champion from the end of the final.
+- **Weeks simulated before ADR-104** have no stored times and keep showing
+  whole matches at kick-off.
+- **No per-round `played` flag.** `MidweekClock` already derives `Played` from
+  every pairing showing a result (ADR-113), which these views now give exactly.
+
+**F6 works against both the old views and these, and ships first.** The
+report renderer picks a match's timeline moments and phrases from the whole
+match (the biggest chances, no phrase twice), so text rendered from the events
+seen so far would change as the match goes on. The live match page therefore
+renders on the server from the stored match, read through the service role,
+and sends the browser only what is due: the moments, kicks and score up to
+now, and the headline, facts and goals and assists from full time. Rows of
+matches take "in play" from each match's stored end the same way. The server
+was always allowed to read the stored result; what changes is that a member's
+own reads stop running ahead of the clock. So F6 needs nothing from this
+migration, and this migration needs F6: pushed before F6, today's pages would
+read a match in play (no winner yet) as lost. The order is: F6 merged and
+deployed, then this PR rebased on it, merged and pushed, outside a running
+Wednesday evening; no back-to-back merge and push.
+
+**F6 shipped first, as ADR-115 (KUT #165).** It masks in-play rows itself, from
+each match's stored end (`loadMatchEnds`, `maskInPlay`), and renders a live
+match from the stored match on the server (`loadLiveMatch`); see ADR-115 for
+the page half. A row this migration already withholds stays in play there, so
+nothing on the pages changes at this push: what changes is what a member's own
+API reads can see.
+
+Consequences: from the push a member reading the API learns no result before
+its full time, and the pages show the same thing. The new pgTAP suite pins
+six moments of an evening (before kick-off, a minute in, mid shoot-out, the
+final in play, complete, and a pre-ADR-104 week); the evening-timing suite now
+expects no champion while the final plays.
+
+Tier: additive (docs/OPERATIONS.md): views only, columns appended.

@@ -4414,3 +4414,20 @@ applied. New tests cover a match one minute in and the final one minute in.
 The live evening, a live and an in-play match page, the final, the bracket and
 Home were checked visually at 320, 412 and 1440 px against the mockups. Found
 and fixed on the way: Home's card overlapped at 320 px with long names.
+
+## MM 2.0 PR 4 (B3): the evening unfolds event by event (ADR-106) — 2026-10-02
+
+`feat/midweek-live-reveal`, migration `20261014000000_midweek_live_reveal.sql`
+(views only, additive tier).
+
+- A member's reads now follow the evening's clock: a match shows from its
+  kick-off, each event from its own moment, and the score, winner and end only
+  once the match has ended; the champion once the final has.
+- Weeks from before the new clock still show whole matches.
+- F6 (#165, ADR-115) shipped first and already masks matches in play on the
+  pages, so the pages look the same before and after this push; what changes
+  is that a member's own API reads no longer run ahead of the clock.
+
+Verification: the new `midweek_live_reveal` pgTAP suite (before kick-off, a
+minute in, mid shoot-out, the final in play, complete, a pre-ADR-104 week) and
+every other suite through `docker exec`.

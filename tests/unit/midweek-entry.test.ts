@@ -30,6 +30,7 @@ import {
   stageName,
   starterNotice,
   weekArchetype,
+  archetypeFilters,
   type MidweekCurrent,
 } from "@/lib/midweek/entry";
 
@@ -208,7 +209,9 @@ describe("weekArchetype", () => {
   it("plays the snapshot from the open, and names a change since", () => {
     expect(weekArchetype(frozen, "p1", "speedster")).toEqual({
       archetype: "goalkeeper",
-      label: "Goalkeeper this week, Speedster from next",
+      label: "Goalkeeper",
+      change: "Goalkeeper this week, Speedster from next",
+      next: "Speedster",
     });
   });
 
@@ -216,12 +219,43 @@ describe("weekArchetype", () => {
     expect(weekArchetype(frozen, "p1", "goalkeeper")).toEqual({
       archetype: "goalkeeper",
       label: "Goalkeeper",
+      change: null,
+      next: null,
     });
   });
 
   it("falls back to the live archetype for a Player without a snapshot", () => {
-    expect(weekArchetype(frozen, "p2", "tank")).toEqual({ archetype: "tank", label: "Tank" });
+    expect(weekArchetype(frozen, "p2", "tank")).toEqual({
+      archetype: "tank",
+      label: "Tank",
+      change: null,
+      next: null,
+    });
     expect(weekArchetype(new Map(), "p1", "all_rounder").archetype).toBe("all_rounder");
+  });
+});
+
+describe("archetypeFilters", () => {
+  const cards = (...archetypes: string[]) => archetypes.map((archetype) => ({ archetype }));
+
+  it("counts every archetype owned, in the filter's order", () => {
+    expect(
+      archetypeFilters(cards("all_rounder", "speedster", "goalkeeper", "speedster", "tank")),
+    ).toEqual([
+      { key: "all", label: "All", count: 5 },
+      { key: "goalkeeper", label: "Goalkeepers", count: 1 },
+      { key: "tank", label: "Tanks", count: 1 },
+      { key: "speedster", label: "Speedsters", count: 2 },
+      { key: "all_rounder", label: "All-rounders", count: 1 },
+    ]);
+  });
+
+  it("always shows Goalkeepers, so a missing keeper reads as 0", () => {
+    expect(archetypeFilters(cards("finisher"))).toEqual([
+      { key: "all", label: "All", count: 1 },
+      { key: "goalkeeper", label: "Goalkeepers", count: 0 },
+      { key: "finisher", label: "Finishers", count: 1 },
+    ]);
   });
 });
 

@@ -238,4 +238,27 @@ export async function resetMidweekMember(database: Client, username: string) {
      where midweek_opt_outs.user_id = profile.id and profile.username = $1`,
     [username],
   );
+  // Every fixture Player plays the open week as their live archetype again.
+  await database.query(
+    `update kut.midweek_archetype_snapshots snapshot set archetype = player.archetype
+     from kut.players player, kut.midweek_tournaments tournament
+     where player.id = snapshot.player_id and tournament.id = snapshot.tournament_id
+       and tournament.seed_hash = $1`,
+    [seedHash(FIXTURE_SEED)],
+  );
+}
+
+/**
+ * KB-028: the open week plays `displayName` as `archetype`, as if the Player's
+ * archetype changed after the week opened. `resetMidweekMember` undoes it.
+ */
+export async function setWeekArchetype(database: Client, displayName: string, archetype: string) {
+  const result = await database.query(
+    `update kut.midweek_archetype_snapshots snapshot set archetype = $3
+     from kut.players player, kut.midweek_tournaments tournament
+     where player.id = snapshot.player_id and tournament.id = snapshot.tournament_id
+       and tournament.seed_hash = $1 and player.display_name = $2`,
+    [seedHash(FIXTURE_SEED), displayName, archetype],
+  );
+  if (result.rowCount !== 1) throw new Error(`No open-week snapshot for ${displayName}.`);
 }

@@ -4293,3 +4293,27 @@ every link's name is unchanged. Found while checking the F2 match page at
 Verification: `npm run verify:fast`; authenticated E2E with a new test at 640,
 768 and 1023 px on Home, Midweek and Market (no horizontal overflow, every tab
 named, the avatar on screen).
+
+## MM 2.0 F3: the picker (ADR-112, KB-028, KB-029) — 2026-10-02
+
+`feat/midweek-picker` (no migration). The picker follows the DR2-approved
+mockups.
+
+- One lock line, with the countdown right after the time it counts to. The
+  fairness seal leaves the picker.
+- The save bar says what its status means: the status and a note on the left,
+  the actions on the right. Saved, it offers `Change your five`. With unsaved
+  changes on a phone it becomes one compact row that stays above the tab bar.
+- The privacy line now says members see your five from the lock, and that
+  cards are never at stake.
+- On phones and tablets, `Your cards` is a compact list. From `lg` the card
+  grid stays. Archetype chips with counts filter it instantly.
+- A Player whose archetype changed since the week opened says so in every
+  place the card appears, including the card face from `lg` (KB-028).
+
+Verification: `npm run verify:fast`; authenticated E2E at 320 px and 412 px
+(Pixel 7). A new test switches a fixture Player's archetype for the open week
+and checks the KB-028 wording, the filter, that Save stays in view with
+unsaved changes, and the badges at 1440 px. Every page was checked for no
+horizontal overflow. The empty, unsaved and saved states were checked
+visually at 320 px, 412 px and 1440 px.

@@ -6001,3 +6001,63 @@ predates ADR-104's clock and #142's "fewer than 3 owners" label. It was left
 as it is because its text is unchanged.
 
 Tier: no migration.
+
+## ADR-112 — The picker: a lock line, a save bar that says what its status means, a list on phones, and an archetype filter
+
+Date: 2026-10-02
+
+Status: Accepted (amends ADR-097's picker and ADR-099's archetype label; MM 2.0
+frontend F3, built to the DR2-approved `Picker-Empty`, `Picker-Editing` and
+`Picker-Saved` mockups; fixes KB-028 and KB-029)
+
+Context: two picker bugs were open. KB-028: from `lg` nothing said that a
+card's archetype would change next week, and on phones the card grid didn't
+say it either. KB-029: the lock bar's countdown floated beside the fairness
+seal, and with no earlier week to load the save bar was a wide empty box. The
+UX review also found the phone grid of full cards slow to scan and the
+Goalkeeper-only filter too narrow. `design/ux-review/HANDOFF.md` "Midweek: the
+picker" settles all four.
+
+Decision (no migration):
+
+- **`MidweekLockLine` replaces `MidweekLockBar`:** one line, `Squads lock
+  Wed 7 Oct, 19:55 in 1 day, 4 h`, with the countdown right after the time it
+  counts to. The fairness seal leaves the picker, as HANDOFF asks; it stays on
+  the evening, the bracket and the champion view. Commit-and-reveal (§44.8) is
+  unchanged: `seed_hash` is in the member views from the moment the week
+  exists. The opted-out page uses the same line.
+- **`MidweekSaveBar`:** the status (dot and words) with one note on the left,
+  and the actions on the right, never an empty column:
+  - `Not picked yet`: the auto-squad warning. This replaces the separate "no
+    pick, no problem" notice.
+  - `Unsaved changes`: "Nothing counts until you save."
+  - `Saved {when}`: "Change it as often as you like until {lock}". The only
+    action is `Change your five`, which starts choosing for slot 1 beside
+    Cancel.
+  - With unsaved changes below `sm`, the bar becomes one compact opaque row,
+    last in the flow and sticky above the tab bar, with the secondary action
+    and the note hidden. Otherwise it is inline under the five.
+  - Order: the five, the keeper check, the save bar, the privacy line, then
+    `Your cards`.
+- **The privacy line** now reads from the lock (`From 19:55 on Wednesday …`),
+  because ADR-105 shows every entered five from then, and it adds that cards
+  are never at stake (the KB-030 question).
+- **`MidweekPickRow` below `lg`:** a compact list with the mini card, name,
+  `archetype · tier · OVR`, the KB-028 line, and `Add`, `Slot 4` or `✓ In`.
+  From `lg` the approved `LiveCard` grid stays. Each size has exactly one list.
+- **`MidweekArchetypeFilter`:** chips with counts by the archetype each card
+  plays this week. `All` and `Goalkeepers` always show (`Goalkeepers 0` makes
+  a missing keeper visible), then every other archetype the member owns. It is
+  instant and client-side. `archetypeFilters` in `entry.ts` is unit-tested.
+- **KB-028:** `weekArchetype` now returns the week's label, the change in
+  words (`Goalkeeper this week, Speedster from next`) and the coming
+  archetype. The change shows in the phone slot row, the pick row and under
+  the desktop team-sheet card. The card face carries a `LiveCard` badge
+  `Speedster from next week` in the grid and on the team sheet.
+
+Consequences: the authenticated E2E gains a test that sets a fixture Player's
+open-week snapshot to another archetype (`setWeekArchetype`; the member reset
+puts it back). It checks the KB-028 line, the filter, that Save stays in view
+with unsaved changes on a phone, and the badges at 1440 px.
+
+Tier: no migration.

@@ -110,14 +110,17 @@ export function MidweekNotice({
   );
 }
 
-/** The privacy line (ADR-091): what other members will see, said up front. */
-export function MidweekPrivacyLine({ roundOne }: { roundOne: string }) {
+/**
+ * The privacy line (ADR-091): what other members will see, said up front.
+ * Since ADR-105 they see every entered five from the lock.
+ */
+export function MidweekPrivacyLine({ lock }: { lock: string }) {
   return (
     <p className="flex items-start gap-2.5 text-[13px] leading-normal text-ink-dim">
       <IconInfo aria-hidden="true" className="mt-px h-4 w-4 flex-none text-steel" />
       <span>
-        From {roundOne} on Wednesday, members see the five cards you enter. Never the rest of your
-        collection.
+        From {lock} on Wednesday, members see the five cards you enter, never the rest of your
+        collection. Your cards are never at stake: a result only pays coins.
       </span>
     </p>
   );

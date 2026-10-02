@@ -278,21 +278,48 @@ export type Segment = { text: string; strong?: boolean };
  * The archetype a card plays this week, and how the picker names it (ADR-099):
  * the week's snapshot from when it opened, or the live archetype for a Player
  * without one (created since the open, or before the hosted push added
- * snapshots). A change since the open is named, so the owner isn't surprised.
+ * snapshots). A change since the open is named, so the owner isn't surprised:
+ * `change` is "Goalkeeper this week, Speedster from next" and `next` the
+ * coming archetype's name for the card badge (KB-028); both null otherwise.
  */
 export function weekArchetype(
   frozen: ReadonlyMap<string, string>,
   playerId: string,
   live: string,
-): { archetype: string; label: string } {
+): { archetype: string; label: string; change: string | null; next: string | null } {
   const archetype = frozen.get(playerId) ?? live;
-  return {
-    archetype,
-    label:
-      archetype === live
-        ? archetypeLabel(archetype)
-        : `${archetypeLabel(archetype)} this week, ${archetypeLabel(live)} from next`,
-  };
+  const label = archetypeLabel(archetype);
+  if (archetype === live) return { archetype, label, change: null, next: null };
+  const next = archetypeLabel(live);
+  return { archetype, label, change: `${label} this week, ${next} from next`, next };
+}
+
+/** The archetype filter's chips in order, plural (HANDOFF "Archetype filter"). */
+const FILTER_ORDER: readonly (readonly [string, string])[] = [
+  ["goalkeeper", "Goalkeepers"],
+  ["defender", "Defenders"],
+  ["tank", "Tanks"],
+  ["speedster", "Speedsters"],
+  ["finisher", "Finishers"],
+  ["playmaker", "Playmakers"],
+  ["all_rounder", "All-rounders"],
+];
+
+export type ArchetypeFilter = { key: string; label: string; count: number };
+
+/**
+ * `MidweekArchetypeFilter`'s chips with counts, by the archetype each card
+ * plays this week: `All` and `Goalkeepers` always, so `Goalkeepers 0` makes a
+ * missing keeper visible, then every other archetype the member owns.
+ */
+export function archetypeFilters(cards: readonly { archetype: string }[]): ArchetypeFilter[] {
+  const count = (key: string) => cards.filter((card) => card.archetype === key).length;
+  return [
+    { key: "all", label: "All", count: cards.length },
+    ...FILTER_ORDER.map(([key, label]) => ({ key, label, count: count(key) })).filter(
+      (chip) => chip.key === "goalkeeper" || chip.count > 0,
+    ),
+  ];
 }
 
 /**

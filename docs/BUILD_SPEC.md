@@ -2416,6 +2416,15 @@ Madness is switched off with no week running.
   Each label stays in its link for screen readers and as its hover title, and
   the labels return from `lg`.
 
+**Update (2026-10-02, ADR-114).** **Messages** (`/messages`): each message
+is one row and one link to its subject, through `/messages/{id}/open`, which
+marks it read on the way: a Midweek result to its week's bracket, a sale to
+Club Value (the wallet), a purchase to the card, trade messages to Offers,
+kudos to My card, session messages to the Chronicle issue or the report form,
+the rehab check-in to Home. A club notice links nowhere. Unread rows show a dot
+and `New`; rows are grouped `Today`, `Earlier this week` and by day; `Mark
+all read` stays.
+
 Desktop may use side/top navigation. Because the navigation is a public
 surface, this list remains the canonical record of it.
 
@@ -2483,6 +2492,17 @@ Home should answer "what changed?" quickly.
 > after the final it names the champion and how the member did until Thursday
 > 23:59 Amsterdam (owner decision D4), then asks for next week's pick again.
 
+> **Amended (ADR-114, MM 2.0 F4):** a short header (`This week in KUT`), then
+> the **"now" stack**: the cards with a deadline, the Midweek evening first
+> while it runs, otherwise the soonest deadline first among the Midweek pick
+> card, the session report, the rehab check-in and the champion card. From the
+> lock to the end of the final the Midweek card is live: the draw, the
+> member's match at full time with its headline, or the final, as they stood at
+> page load (Home does not poll). Then Club Value and Rank as linked tiles (the
+> KUT Coins tile is gone; the coin pill shows the balance) and `Open a pack`;
+> `Top risers`; and Club activity in six rows, a member's consecutive pack
+> openings folded into one.
+
 MVP widgets:
 
 - wallet balance;
@@ -2548,6 +2568,11 @@ Requirements:
 > transaction is untouched — the component only animates the already-persisted
 > `kut.my_pack_opening_results`. Used by the bought-pack reveal at
 > `/club/packs/[openingId]` and by the one-time starter reveal at `/welcome`.
+
+> **Amended (ADR-114):** each card in the summary carries a chip: `New ·
+> fills slot 14` for a Player new to the member's album, or `×3 · discards
+> for 63` for one already held, and a line sums the pack up (`2 new Players.
+> Album 19 / 29.`).
 
 Sequence:
 

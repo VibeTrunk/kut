@@ -19,6 +19,7 @@ import {
   firstMatch,
   fiveOf,
   handicapText,
+  homeEvening,
   isWeekStart,
   liveLine,
   matchName,
@@ -27,7 +28,6 @@ import {
   nightTotals,
   pairSentence,
   pastWeeks,
-  revealStops,
   roundName,
   roundsYouAreIn,
   roundShort,
@@ -176,81 +176,37 @@ describe("owner decision D4: the champion leads until Thursday 23:59 Amsterdam",
   });
 });
 
-describe("the reveal clock", () => {
-  const stops = (now: string) =>
-    revealStops({
-      lockAt: LOCK,
-      scheduleVersion: V1,
+describe("the clock keeps each week's version (ADR-104)", () => {
+  const times = (lockAt: string, scheduleVersion: number) =>
+    eveningStops({
+      lockAt,
+      scheduleVersion,
       rounds: 5,
-      now: new Date(now),
-      wonRounds: new Set([1, 2]),
-    });
+      now: new Date(lockAt),
+      matches: [],
+      youThrough: null,
+    }).map((stop) => `${stop.name} ${stop.time}`);
 
-  it("marks rounds out, the next one, and the rest hidden", () => {
-    const evening = stops("2026-10-07T19:05:00.000Z");
-    expect(evening.map((s) => s.state)).toEqual([
-      "lock",
-      "done",
-      "done",
-      "next",
-      "hidden",
-      "hidden",
+  it("runs a version-1 evening: lock 20:00, a round every 30 minutes", () => {
+    expect(times(LOCK, V1)).toEqual([
+      "Lock 20:00",
+      "Round 1 20:30",
+      "Round 2 21:00",
+      "Quarters 21:30",
+      "Semis 22:00",
+      "Final 22:30",
     ]);
-    expect(evening.map((s) => s.time)).toEqual([
-      "20:00",
-      "20:30",
-      "21:00",
-      "21:30",
-      "22:00",
-      "22:30",
-    ]);
-    expect(evening.map((s) => s.name)).toEqual([
-      "Lock",
-      "Round 1",
-      "Round 2",
-      "Quarters",
-      "Semis",
-      "Final",
-    ]);
-    expect(evening.map((s) => s.you)).toEqual([false, true, true, false, false, false]);
   });
 
   it("runs a version-2 evening: lock 19:55, round 1 at 20:00, a round every 15 minutes", () => {
-    const evening = revealStops({
-      lockAt: "2026-10-14T17:55:00.000Z",
-      scheduleVersion: 2,
-      rounds: 5,
-      now: new Date("2026-10-14T18:20:00.000Z"),
-      wonRounds: new Set(),
-    });
-    expect(evening.map((s) => s.time)).toEqual([
-      "19:55",
-      "20:00",
-      "20:15",
-      "20:30",
-      "20:45",
-      "21:00",
+    expect(times("2026-10-14T17:55:00.000Z", 2)).toEqual([
+      "Lock 19:55",
+      "Round 1 20:00",
+      "Round 2 20:15",
+      "Quarters 20:30",
+      "Semis 20:45",
+      "Final 21:00",
     ]);
-    expect(evening.map((s) => s.state)).toEqual([
-      "lock",
-      "done",
-      "done",
-      "next",
-      "hidden",
-      "hidden",
-    ]);
-  });
-
-  it("stops at the lock before round 1 and at the final after it", () => {
-    expect(stops("2026-10-07T18:12:00.000Z").map((s) => s.state)).toEqual([
-      "lock",
-      "next",
-      "hidden",
-      "hidden",
-      "hidden",
-      "hidden",
-    ]);
-    expect(stops("2026-10-07T20:41:00.000Z").every((s) => s.state !== "next")).toBe(true);
   });
 });
 
@@ -794,5 +750,93 @@ describe("the why panel's numbers and the route segment", () => {
     expect(isWeekStart("2026-02-30")).toBe(false);
     expect(isWeekStart("2026-10-5")).toBe(false);
     expect(isWeekStart("../../admin")).toBe(false);
+  });
+});
+
+describe("Home's evening card (ADR-114)", () => {
+  const LOCK2 = "2026-10-14T17:55:00.000Z";
+  const at = (hhmm: string) => new Date(`2026-10-14T${hhmm}:00+02:00`);
+  const card = (now: string, userId: string, matches: readonly MatchRow[]) =>
+    homeEvening({
+      userId,
+      weekStart: "2026-10-12",
+      rounds: 4,
+      lockAt: LOCK2,
+      scheduleVersion: 2,
+      now: at(now),
+      draw,
+      matches,
+    });
+  const final = rows.find((row) => row.round === 4)!;
+  const finalist = final.side_0_user_id;
+  const report = (match: MatchRow) => `/midweek/2026-10-12/match/${match.match_id}`;
+
+  it("from the lock: who you meet, and the way to the draw", () => {
+    expect(card("19:57", roundOneMatch.side_0_user_id, [])).toEqual({
+      kicker: "Midweek Madness · The draw",
+      title: "The draw is out",
+      line: `You meet ${roundOneMatch.side_1_name} at 20:00.`,
+      match: null,
+      button: { label: "See the draw", href: "/midweek" },
+    });
+    expect(card("19:57", "nobody", []).line).toBe("Round 1 kicks off at 20:00.");
+  });
+
+  it("your match this round at full time: the scoreboard and its report", () => {
+    const played = rows.find((row) => row.round === 1 && !row.bye)!;
+    const winner = played.winner_user_id;
+    const loser = played.winner_side === 0 ? played.side_1_user_id! : played.side_0_user_id;
+    expect(card("20:05", winner, upTo(1))).toMatchObject({
+      kicker: "Midweek Madness · Round 1",
+      match: played,
+      button: { label: "See the report", href: report(played) },
+    });
+    // Out is out: the card points at the final from the moment you lose (HANDOFF).
+    expect(card("20:05", loser, upTo(1))).toMatchObject({
+      match: played,
+      button: { label: "Follow the final", href: "/midweek" },
+    });
+  });
+
+  it("a bye, or not entered: the evening's title and your night in a line", () => {
+    const bye = rows.find((row) => row.round === 1 && row.bye)!;
+    expect(card("20:05", bye.side_0_user_id, upTo(1))).toMatchObject({
+      title: "Round 1 is live",
+      match: null,
+      button: { label: "Follow the bracket", href: "/midweek" },
+    });
+    expect(card("20:05", bye.side_0_user_id, upTo(1)).line).toMatch(/^You had a bye\./);
+    expect(card("20:05", "nobody", upTo(1))).toMatchObject({
+      match: null,
+      title: "Round 1 is live",
+    });
+  });
+
+  it("from the final's kick-off: the final for everyone", () => {
+    expect(card("20:50", finalist, rows)).toMatchObject({
+      kicker: "Midweek Madness · The final",
+      match: final,
+      button: { label: "See the report", href: report(final) },
+    });
+    expect(card("20:50", "nobody", rows)).toMatchObject({
+      match: final,
+      button: { label: "Follow the final", href: "/midweek" },
+    });
+  });
+
+  it("a match in play (ADR-106) shows no result, only that it kicked off", () => {
+    const inPlay = rows.map((row) =>
+      row === final ? ({ ...row, winner_side: null } as unknown as MatchRow) : row,
+    );
+    expect(card("20:47", finalist, inPlay)).toMatchObject({
+      match: null,
+      line: "Your match kicked off at 20:45.",
+      button: { label: "Watch your match", href: report(final) },
+    });
+    expect(card("20:47", "nobody", inPlay)).toMatchObject({
+      match: null,
+      line: "The final kicked off at 20:45.",
+      button: { label: "Follow the final", href: "/midweek" },
+    });
   });
 });

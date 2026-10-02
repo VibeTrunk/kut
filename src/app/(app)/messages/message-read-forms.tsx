@@ -21,20 +21,3 @@ export function MarkAllMessagesReadForm() {
     </form>
   );
 }
-
-export function MarkMessageReadForm({ notificationId }: { notificationId: string }) {
-  const [state, formAction, pending] = useActionState(markMessagesRead, initialState);
-  return (
-    <form action={formAction}>
-      <input name="notificationId" type="hidden" value={notificationId} />
-      {state.error && <p className="text-xs text-brick">{state.error}</p>}
-      <button
-        className="min-h-9 text-sm font-bold text-brass hover:text-brass disabled:text-ink-faint"
-        disabled={pending}
-        type="submit"
-      >
-        {pending ? "Updating..." : "Mark read"}
-      </button>
-    </form>
-  );
-}

@@ -1,17 +1,25 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { IconChronicle, IconPack } from "@/components/icons";
 import { LiveCard, type LiveCardPlayer } from "@/components/live-card";
 import {
   MidweekEntryCard,
   MidweekFinalCard,
   MidweekLiveCard,
+  NOW_BRASS,
+  NOW_CARD,
+  NOW_KICKER,
 } from "@/components/midweek/entry-points";
 import {
   ACTIVITY_FLOOR_ISO,
   activityKindLabel,
-  describeActivity,
+  describeFoldedActivity,
+  foldActivity,
   type ActivityRow,
 } from "@/lib/activity";
+import { checkInClosesAt, orderNowCards, type NowCard } from "@/lib/home/now";
+import { formatShortLock, formatWeekday } from "@/lib/midweek/entry";
+import { championLeadsUntil } from "@/lib/midweek/evening";
 import { countNoun } from "@/game/reported-count";
 import { formatDate } from "@/lib/format";
 import { fetchInjuredPlayerIds, type InjuryStatus } from "@/lib/injuries";
@@ -87,7 +95,8 @@ export default async function Home() {
       )
       .gte("ts", ACTIVITY_FLOOR_ISO)
       .order("ts", { ascending: false })
-      .limit(12),
+      // Enough to fill six rows once a member's run of pack openings folds into one.
+      .limit(30),
     supabase
       .schema("kut")
       .from("my_session_reports")
@@ -138,154 +147,180 @@ export default async function Home() {
     : (clubValueResponse.data?.club_value ?? balance);
   const rank = rankResponse.data?.rank ?? null;
   // The activity feed is a non-critical widget — never fail the Home page over it.
-  const activity = (activityResponse.data ?? []) as ActivityRow[];
+  // Six rows, with a member's consecutive pack openings folded into one (ADR-114).
+  const activity = foldActivity((activityResponse.data ?? []) as ActivityRow[], 6);
   const openReport = reportResponse.data;
   // Injury mode (ADR-082) is non-critical here too: a failed read hides the
   // check-in card rather than failing Home.
   if (injuryResponse.error) console.error("home injury status read failed", injuryResponse.error);
   const injury = (injuryResponse.error ? null : injuryResponse.data) as InjuryStatus | null;
 
+  // The "now" stack (HANDOFF "Home", ADR-114): the cards with a deadline, the
+  // Midweek evening first while it runs, then the soonest deadline first.
+  const nowCards: NowCard<ReactNode>[] = [];
+  if (midweek?.kind === "live") {
+    nowCards.push({
+      key: "midweek",
+      leads: true,
+      deadline: null,
+      value: (
+        <MidweekLiveCard
+          button={midweek.button}
+          kicker={midweek.kicker}
+          line={midweek.line}
+          match={midweek.match}
+          title={midweek.title}
+        />
+      ),
+    });
+  }
+  if (midweek?.kind === "pick") {
+    nowCards.push({
+      key: "midweek",
+      deadline: Date.parse(midweek.lockAt),
+      value: (
+        <MidweekEntryCard lockAt={midweek.lockAt} now={now.toISOString()} saved={midweek.saved} />
+      ),
+    });
+  }
+  if (midweek?.kind === "final") {
+    nowCards.push({
+      key: "midweek",
+      deadline: championLeadsUntil(midweek.lockAt).getTime(),
+      value: (
+        <MidweekFinalCard
+          line={midweek.line}
+          lockAt={midweek.lockAt}
+          title={midweek.title}
+          weekStart={midweek.weekStart}
+        />
+      ),
+    });
+  }
+  if (openReport) {
+    nowCards.push({
+      key: "report",
+      deadline: openReport.closes_at ? Date.parse(openReport.closes_at) : null,
+      value: (
+        <Link
+          className={`group ${NOW_CARD} ${NOW_BRASS}`}
+          href={`/sessions/${openReport.session_id}/report`}
+        >
+          <span className={NOW_KICKER}>Your report &middot; +50 KUT Coins</span>
+          <span className="flex items-center justify-between gap-2.5">
+            <span className="display text-2xl sm:text-3xl">
+              {openReport.report_status === "submitted"
+                ? "View your report"
+                : `Add ${countNoun(openReport.session_date)} & kudos`}
+            </span>
+            <span aria-hidden="true" className="text-xl text-brass">
+              &rarr;
+            </span>
+          </span>
+          <span className="text-sm text-ink-faint">
+            For {formatWeekday(openReport.session_date)}&rsquo;s session.
+            {openReport.closes_at && ` Closes ${formatShortLock(openReport.closes_at)}.`}
+          </span>
+        </Link>
+      ),
+    });
+  }
+  if (injury?.injured && injury.checkable_week_start) {
+    nowCards.push({
+      key: "check-in",
+      deadline: checkInClosesAt(injury.checkable_week_start),
+      value: (
+        <InjuryCheckInCard
+          stipend={injury.stipend}
+          weekLabel={formatDate(injury.checkable_week_start)}
+          weekStart={injury.checkable_week_start}
+        />
+      ),
+    });
+  }
+
   return (
     <main className="board-ground min-h-screen p-5 text-ink sm:p-10">
-      <section className="mx-auto max-w-6xl space-y-12 py-4 sm:py-8">
-        <header className="grid gap-8 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
-          <div className="space-y-4">
-            <p className="text-[0.7rem] font-extrabold uppercase tracking-[0.26em] text-brass">
-              Terrible Football Haarlem
-            </p>
-            <h1 className="display text-5xl sm:text-6xl lg:text-7xl">This week in KUT</h1>
-            <p className="text-sm font-bold text-ink-faint">Kelderklasse Ultimate Team</p>
-            <p className="max-w-2xl text-base leading-relaxed text-ink-dim">
-              The five cards that rose most since the last published football week. Published
-              attendance updates Live Ratings automatically.
-            </p>
-            {/* The Chronicle lost its More-menu slot when that menu went (ADR-053).
-                Home is its entry point: this page and the Chronicle both answer
-                "what happened this week", and Home never linked to it before
-                except through a session row in the activity feed. */}
-            <p className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
-              <Link
-                className="inline-flex items-center gap-2 font-bold text-brass hover:underline"
-                href="/chronicle"
-              >
-                <IconChronicle aria-hidden="true" className="h-4 w-4" />
-                Read this week&rsquo;s Chronicle issue &rarr;
-              </Link>
-              <Link className="font-bold text-brass hover:underline" href="/how-it-works">
-                New here? How KUT works &rarr;
-              </Link>
-            </p>
-          </div>
-          {/* Opening a pack is the primary action on this page, so it reads as a
-              button rather than sitting inside the stats list as a fake figure. */}
+      <section className="mx-auto max-w-6xl space-y-8 py-4 sm:space-y-12 sm:py-8">
+        {/* One short header (UX review): the masthead's paragraph became the
+            risers' subtitle, and its two links sit with Club activity. */}
+        <header className="grid gap-1.5">
+          <p className="text-[0.7rem] font-extrabold uppercase tracking-[0.26em] text-brass">
+            Terrible Football Haarlem
+          </p>
+          <h1 className="display text-[30px] sm:text-5xl lg:text-6xl">This week in KUT</h1>
+        </header>
+
+        {nowCards.length > 0 && (
+          <section aria-label="Now" className="grid gap-3">
+            {orderNowCards(nowCards).map((card) => (
+              <div className="grid" key={card.key}>
+                {card.value}
+              </div>
+            ))}
+          </section>
+        )}
+
+        {injury?.injured && !injury.checkable_week_start && (
+          <p className="rounded-2xl border border-line/60 bg-panel/60 p-5 text-sm text-ink-dim">
+            <span className="font-bold text-ink">Injury mode.</span>{" "}
+            {injury.checked_in_this_week
+              ? "Your card is protected this week. ✓"
+              : "Your next rehab check-in opens once this week's session is published."}{" "}
+            {injury.protected_weeks > 0 &&
+              `${injury.protected_weeks} ${injury.protected_weeks === 1 ? "week" : "weeks"} protected so far.`}
+          </p>
+        )}
+
+        {/* The KUT Coins tile went: the coin pill in the bar shows the balance
+            (UX review). Club Value and Rank read as links, and opening a pack
+            is the page's own action, full width on a phone. */}
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
           <Link
-            className="inline-flex min-h-13 items-center justify-center gap-2.5 rounded-xl bg-gradient-to-b from-[#eebd63] to-[#d29a34] px-6 text-[0.95rem] font-black text-ink-on-accent shadow-lg shadow-brass/25 hover:brightness-105"
+            className="grid gap-0.5 rounded-[14px] border border-line/60 bg-panel/50 px-3.5 py-3 hover:border-brass/60 sm:px-5 sm:py-4"
+            href="/club/value"
+          >
+            <span className="text-[0.65rem] font-extrabold uppercase tracking-[0.15em] text-ink-faint">
+              Club Value
+            </span>
+            <span className="text-[22px] font-black tabular-nums tracking-tight sm:text-3xl">
+              {clubValue === null ? "—" : Number(clubValue).toLocaleString()}
+            </span>
+            <span className="text-xs font-bold text-brass">See the maths &rarr;</span>
+          </Link>
+          <Link
+            className="grid gap-0.5 rounded-[14px] border border-line/60 bg-panel/50 px-3.5 py-3 hover:border-brass/60 sm:px-5 sm:py-4"
+            href="/leaderboard"
+          >
+            <span className="text-[0.65rem] font-extrabold uppercase tracking-[0.15em] text-ink-faint">
+              Rank
+            </span>
+            <span className="text-[22px] font-black tabular-nums tracking-tight text-steel sm:text-3xl">
+              {rank === null ? "—" : `#${rank}`}
+            </span>
+            <span className="text-xs font-bold text-brass">Standings &rarr;</span>
+          </Link>
+          <Link
+            className="col-span-2 inline-flex min-h-13 items-center justify-center gap-2.5 rounded-xl bg-gradient-to-b from-[#eebd63] to-[#d29a34] px-6 text-[0.95rem] font-black text-ink-on-accent shadow-lg shadow-brass/25 hover:brightness-105 sm:col-span-1"
             href="/club/packs"
           >
             <IconPack className="h-5 w-5" />
             Open a pack
           </Link>
-        </header>
-
-        {/* The one thing on Home with a deadline, so it sits directly under
-            the header (HANDOFF, Home-BeforeLock). */}
-        {midweek?.kind === "pick" && (
-          <MidweekEntryCard lockAt={midweek.lockAt} now={now.toISOString()} saved={midweek.saved} />
-        )}
-        {midweek?.kind === "live" && (
-          <MidweekLiveCard line={midweek.line} stops={midweek.stops} title={midweek.title} />
-        )}
-        {midweek?.kind === "final" && (
-          <MidweekFinalCard
-            line={midweek.line}
-            lockAt={midweek.lockAt}
-            title={midweek.title}
-            weekStart={midweek.weekStart}
-          />
-        )}
-
-        {openReport && (
-          <Link
-            className="flex min-h-20 items-center justify-between gap-4 rounded-2xl border border-brass/50 bg-brass-bg/25 p-5 hover:bg-brass-bg/40"
-            href={`/sessions/${openReport.session_id}/report`}
-          >
-            <span>
-              <span className="text-xs font-black uppercase tracking-wider text-brass">
-                Your report → +50 KUT Coins
-              </span>
-              <span className="display mt-1 block text-2xl">
-                {openReport.report_status === "submitted"
-                  ? "View your report"
-                  : `Add ${countNoun(openReport.session_date)} & kudos`}
-              </span>
-            </span>
-            <span aria-hidden="true" className="text-2xl text-brass">
-              &rarr;
-            </span>
-          </Link>
-        )}
-
-        {injury?.injured &&
-          (injury.checkable_week_start ? (
-            <InjuryCheckInCard
-              stipend={injury.stipend}
-              weekLabel={formatDate(injury.checkable_week_start)}
-              weekStart={injury.checkable_week_start}
-            />
-          ) : (
-            <p className="rounded-2xl border border-line/60 bg-panel/60 p-5 text-sm text-ink-dim">
-              <span className="font-bold text-ink">Injury mode.</span>{" "}
-              {injury.checked_in_this_week
-                ? "Your card is protected this week. ✓"
-                : "Your next rehab check-in opens once this week's session is published."}{" "}
-              {injury.protected_weeks > 0 &&
-                `${injury.protected_weeks} ${injury.protected_weeks === 1 ? "week" : "weeks"} protected so far.`}
-            </p>
-          ))}
-
-        <dl className="grid grid-cols-1 overflow-hidden rounded-2xl border border-line/60 bg-gradient-to-b from-panel-2/70 to-panel/70 sm:grid-cols-3">
-          <div className="border-b border-line/50 px-6 py-5 sm:border-b-0 sm:border-l sm:first:border-l-0">
-            <dt className="text-[0.65rem] font-extrabold uppercase tracking-[0.15em] text-ink-faint">
-              KUT Coins
-            </dt>
-            <dd className="mt-1.5 text-3xl font-black tabular-nums tracking-tight text-brass">
-              {balance === null ? "—" : balance.toLocaleString()}
-            </dd>
-            <dd className="mt-1 text-xs font-bold text-ink-faint">Wallet balance</dd>
-          </div>
-          <Link
-            className="group border-b border-line/50 px-6 py-5 sm:border-b-0 sm:border-l sm:border-line/50"
-            href="/club/value"
-          >
-            <dt className="text-[0.65rem] font-extrabold uppercase tracking-[0.15em] text-ink-faint">
-              Club Value
-            </dt>
-            <dd className="mt-1.5 text-3xl font-black tabular-nums tracking-tight group-hover:text-brass">
-              {clubValue === null ? "—" : Number(clubValue).toLocaleString()}
-            </dd>
-            <dd className="mt-1 text-xs font-bold text-ink-faint group-hover:text-brass">
-              See the maths &rarr;
-            </dd>
-          </Link>
-          <Link className="group px-6 py-5 sm:border-l sm:border-line/50" href="/leaderboard">
-            <dt className="text-[0.65rem] font-extrabold uppercase tracking-[0.15em] text-ink-faint">
-              Rank
-            </dt>
-            <dd className="mt-1.5 text-3xl font-black tabular-nums tracking-tight text-steel">
-              {rank === null ? "—" : `#${rank}`}
-            </dd>
-            <dd className="mt-1 text-xs font-bold text-ink-faint group-hover:text-steel">
-              Standings &rarr;
-            </dd>
-          </Link>
-        </dl>
+        </div>
 
         <section className="space-y-6">
-          <div className="flex flex-wrap items-baseline justify-between gap-3">
-            <h2 className="display text-3xl">Top 5 risers this week</h2>
-            <Link className="text-sm font-bold text-brass hover:underline" href="/players">
-              See the full player directory &rarr;
-            </Link>
+          <div className="grid gap-1.5">
+            <div className="flex flex-wrap items-baseline justify-between gap-3">
+              <h2 className="display text-3xl">Top risers</h2>
+              <Link className="text-sm font-bold text-brass hover:underline" href="/players">
+                Players &rarr;
+              </Link>
+            </div>
+            <p className="text-sm text-ink-dim">
+              The five cards that rose most since the last published football week. Published
+              attendance updates Live Ratings automatically.
+            </p>
           </div>
 
           {risers.length === 0 ? (
@@ -317,7 +352,18 @@ export default async function Home() {
         </section>
 
         <section className="space-y-5">
-          <h2 className="display text-3xl">Club activity</h2>
+          <div className="flex flex-wrap items-baseline justify-between gap-3">
+            <h2 className="display text-3xl">Club activity</h2>
+            {/* The Chronicle lost its More-menu slot when that menu went (ADR-053);
+                Home is its way in, beside the activity it reports on. */}
+            <Link
+              className="inline-flex items-center gap-2 text-sm font-bold text-brass hover:underline"
+              href="/chronicle"
+            >
+              <IconChronicle aria-hidden="true" className="h-4 w-4" />
+              This week&rsquo;s Chronicle &rarr;
+            </Link>
+          </div>
           {activity.length === 0 ? (
             <p className="rounded-2xl border border-line/60 bg-panel/60 p-6 text-ink-dim">
               Recent sales, listings, pack openings, and published sessions will show up here.
@@ -336,15 +382,15 @@ export default async function Home() {
                   key={`${row.kind}-${row.ts}-${index}`}
                 >
                   <p className="order-1 text-[0.65rem] font-extrabold uppercase tracking-[0.14em] text-brass sm:order-none">
-                    {activityKindLabel(row.kind)}
+                    {row.packs > 1 ? "Packs opened" : activityKindLabel(row.kind)}
                   </p>
                   <p className="order-3 col-span-2 text-sm leading-relaxed text-ink-dim sm:order-none sm:col-span-1">
                     {row.kind === "session" ? (
                       <Link className="hover:text-brass hover:underline" href="/chronicle">
-                        {describeActivity(row)}
+                        {describeFoldedActivity(row)}
                       </Link>
                     ) : (
-                      describeActivity(row)
+                      describeFoldedActivity(row)
                     )}
                   </p>
                   <time
@@ -357,6 +403,11 @@ export default async function Home() {
               ))}
             </ol>
           )}
+          <p className="text-sm">
+            <Link className="font-bold text-brass hover:underline" href="/how-it-works">
+              New here? How KUT works &rarr;
+            </Link>
+          </p>
         </section>
       </section>
     </main>

@@ -4348,3 +4348,30 @@ mid-evening, the champion view after the final and past weeks, each with the
 no-overflow check and the clock pinned on scroll. The draw, out, final,
 champion and past-weeks states were checked visually at 320, 412 and 1440 px
 against the mockups.
+
+## MM 2.0 F4: Home and Messages (ADR-114) — 2026-10-02
+
+`feat/home-messages` (no migration). Home and the inbox follow the
+DR2-approved mockups, with the review's unmocked items.
+
+- Home opens with a short header, then a "now" stack ordered by deadline:
+  picking, the session report, the rehab check-in, or the champion. During
+  the evening the live Midweek card leads it: the draw, your match at full
+  time with its headline, or the final, as they stood when the page loaded.
+- Club Value and Rank are tiles that read as links; the KUT Coins tile is
+  gone. Club activity shows six rows and folds a member's run of pack openings
+  into one.
+- Every message is one link to what it is about, and opening it marks it
+  read. Rows are grouped Today, Earlier this week and by day; unread rows say
+  New.
+- The pack summary says which album slot a new Player fills, or how many
+  copies you now hold and what this one discards for, with one summary line.
+- Settings no longer promises notification preferences; the idea is in the
+  roadmap.
+
+Verification: `npm run verify:fast`; authenticated E2E at 320 px and 412 px
+(Pixel 7) with new tests for the now stack, the evening card at the draw and
+mid-evening, the inbox (open a Midweek result, open a club notice) and a pack
+summary, plus Home at 1440 px, each with the no-overflow check. Home, the
+evening card and Messages were checked visually at 320, 412 and 1440 px
+against the mockups.

@@ -18,6 +18,65 @@ dated "Hosted deployment…" entries in `PROGRESS.md`.
 then bump the "Latest hosted migration" line in `CLAUDE.md`. Record the tier,
 backup id, pre/post `migration list` counts, the smoke row, and the rollback.
 
+## 2026-10-03 — `20261014000000` the Midweek evening unfolds event by event (ADR-106)
+
+Deployed 2026-10-03 from `VibeTrunk/supabase` (catalogue PR #70 there), on its
+own additive `db push`:
+
+- `20261014000000_midweek_live_reveal.sql` (BUILD_SPEC §44.9, §44.14, ADR-106
+  amending ADR-095 and ADR-105, owner decision Q7, KUT PR #166, tier additive)
+  &mdash; MM 2.0 PR 4 (B3): a member's own reads follow the evening's clock.
+  Views only.
+  - **What changed.** `kut.midweek_matches_public` keeps the pairing, kick-off,
+    win chance and day rolls from kick-off, but shows goals, penalties,
+    `winner_side` and `winner_user_id` only once the match has ended; it
+    appends `ends_at` (null until passed, since a late end gives a shoot-out
+    away) and `in_play`. `kut.midweek_events_public` shows each event from its
+    own `reveal_at` and appends it. `kut.midweek_tournaments_public` names the
+    champion from the end of the final. Weeks simulated before ADR-104 still
+    show whole matches at kick-off.
+  - **No DML.**
+  - **Before the push.** Fresh backup `20261003-001237`, cold-verified, no
+    cards in escrow. `migration list --linked` showed 83 remote entries with
+    `20261014000000` the only local-only one and no remote-only drift; the dry
+    run named exactly that file, and again from the catalogue's merged main
+    (`aa734d0`) just before the push; the catalogue check reported 84 approved
+    source migrations. The production gate **passed** for `bf21601`
+    (2026-10-03 00:21 Amsterdam: CI checks, catalogue parity, the backup
+    re-verified, authenticated E2E 47 passed). No evening was running
+    (Saturday). After the push `migration list --linked` showed 84 local and
+    84 remote, no drift.
+  - **Smoke test on hosted.** The one-row query below was handed to the owner
+    for the SQL editor; the local run returned
+    `t | in_play,ends_at | 22 | reveal_at | 18 | t | t | security_invoker=false,security_barrier=true | t | f`
+    (recorded; `in_play` and `ends_at` the matches view's last columns, 22 of
+    them; `reveal_at` the events view's last, 18; the event and champion gates
+    in place; still a definer view with a barrier; members read it, anon
+    doesn't):
+
+    ```sql
+    select
+      exists (select 1 from supabase_migrations.schema_migrations where version = '20261014000000') as recorded,
+      (select string_agg(column_name::text, ',' order by ordinal_position desc) from (select column_name, ordinal_position from information_schema.columns where table_schema = 'kut' and table_name = 'midweek_matches_public' order by ordinal_position desc limit 2) c) as matches_last,
+      (select count(*) from information_schema.columns where table_schema = 'kut' and table_name = 'midweek_matches_public') as matches_cols,
+      (select column_name::text from information_schema.columns where table_schema = 'kut' and table_name = 'midweek_events_public' order by ordinal_position desc limit 1) as events_last,
+      (select count(*) from information_schema.columns where table_schema = 'kut' and table_name = 'midweek_events_public') as events_cols,
+      pg_get_viewdef('kut.midweek_events_public'::regclass) ilike '%coalesce(event.reveal_at, played.reveal_at) <= now()%' as events_gated,
+      pg_get_viewdef('kut.midweek_tournaments_public'::regclass) ilike '%coalesce(final.ends_at, final.reveal_at) <= now()%' as champion_gated,
+      (select array_to_string(reloptions, ',') from pg_class where oid = 'kut.midweek_matches_public'::regclass) as matches_options,
+      has_table_privilege('authenticated', 'kut.midweek_matches_public', 'select') as members_read,
+      has_table_privilege('anon', 'kut.midweek_matches_public', 'select') as anon_reads;
+    ```
+  - **Deploy ordering** was safe: KUT PR #165 (F6, ADR-115) deployed first and
+    already masks matches in play on the pages from each match's stored end,
+    so the pages read the same before and after the push; #166 added no page
+    code. The first evening under it is Wed 7 Oct.
+  - Rollback: in the migration's header. Drop and re-create
+    `kut.midweek_matches_public` and `kut.midweek_events_public` from
+    `20261005000000_midweek_engine.sql` section 5 with their grants and
+    comments; re-create `kut.midweek_tournaments_public` from
+    `20261012000000_midweek_draw_from_lock.sql` section 3.
+
 ## 2026-10-02 — `20261013000000` a Midweek result message for every entrant (ADR-109)
 
 Deployed 2026-10-02 from `VibeTrunk/supabase` (catalogue PR #68 there), on its
@@ -46,8 +105,8 @@ own `db push`:
     migrations. The production gate **passed** for `b468a48` (2026-10-02 23:34
     Amsterdam: CI checks, catalogue parity, the backup re-verified,
     authenticated E2E). No evening was running (Friday).
-  - **Smoke test on hosted.** The one-row query below was handed to the owner
-    for the SQL editor; the local run returned `t | t | t | t | f | f`
+  - **Smoke-tested on hosted.** The owner ran the one-row query below in the
+    SQL editor and confirmed it matched the local run, `t | t | t | t | f | f`
     (recorded, every entrant's line in the function, titled by finish, definer,
     no execute for members, none for the service role):
 

@@ -46,8 +46,8 @@ own additive `db push`:
     re-verified, authenticated E2E 47 passed). No evening was running
     (Saturday). After the push `migration list --linked` showed 84 local and
     84 remote, no drift.
-  - **Smoke test on hosted.** The one-row query below was handed to the owner
-    for the SQL editor; the local run returned
+  - **Smoke-tested on hosted.** The owner ran the one-row query below in the
+    SQL editor and confirmed it matched the local run,
     `t | in_play,ends_at | 22 | reveal_at | 18 | t | t | security_invoker=false,security_barrier=true | t | f`
     (recorded; `in_play` and `ends_at` the matches view's last columns, 22 of
     them; `reveal_at` the events view's last, 18; the event and champion gates

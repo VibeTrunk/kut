@@ -1979,9 +1979,15 @@ Everything is gated by time in definer projections on
 `kut.is_active_member()` (ADR-079); no reveal is a job.
 
 - **Before the lock** a member sees only their own saved squad, plus the
-  tournament's times and `seed_hash`.
-- **Entries** (the five cards of every squad, with their week-long factors)
-  appear with round 1.
+  tournament's lock, clock version and `seed_hash`. `final_reveal_at` shows
+  only once the final has ended (ADR-105): earlier, its distance from the
+  final's kick-off would say whether the final goes to penalties.
+- **From the lock** (ADR-105): round 1's draw (pairings, byes, both managers
+  and the kick-off, no result) and every squad's five cards with their OVR,
+  archetype, injury, trialist and auto flags, the keeper, and the factors that
+  follow from those (OVR factor, fitness, handicap, lines).
+- **From round 1's kick-off,** the week's dice: each card's form roll, pick
+  factor and power, null until then.
 - **Each round's matches and events** appear at that round's start, whole.
   Each event's own time is stored (§44.1) but not yet used to gate it; that is
   ADR-106's change, pushed with the live viewer.
@@ -2232,6 +2238,15 @@ final.
 | `kut.admin_midweek_rehearsal()` | Re-created: each round's `reveal_at` on the open week's clock (or the current one), plus each round's `ends_at` (when its last match ends) and `schedule_version` at the top level. |
 | `kut.midweek_current`, `kut.midweek_tournaments_public` | Append `schedule_version` (null on `midweek_current` before any week exists). |
 | The open week | Moved to version 2 at the push (lock 20:00 → 19:55), unless 19:55 had already passed. |
+
+**Draw from the lock (`20261012000000_midweek_draw_from_lock.sql`, ADR-105).**
+Views only.
+
+| Object | What it holds or does |
+|---|---|
+| `kut.midweek_draw_public` | Round 1 of a drawn week (`simulated` or `complete`) from the lock: `match_id`, `tournament_id`, `week_start`, `pairing`, `bye`, both managers' ids and names, and `kickoff_at` (round 1's start on the week's clock). No result column. |
+| `kut.midweek_entries_public` | Re-created: every entered card from the lock instead of round 1's reveal; `form_roll_ppm`, `pick_factor_ppm` and `power_ppm` null until round 1 kicks off. Columns, and the D3 rule for `picks` and `owners`, unchanged. |
+| `kut.midweek_current`, `kut.midweek_tournaments_public` | `final_reveal_at` null until it has passed. `midweek_current` appends `evening_live`: the latest week is `simulated` and now is between its lock and the end of its final. |
 
 ---
 

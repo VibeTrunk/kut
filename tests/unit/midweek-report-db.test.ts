@@ -183,6 +183,28 @@ describe("midweek report from stored rows", () => {
     ).toBeNull();
   });
 
+  it("has no report while the entries still withhold the week's dice (before round 1, ADR-105)", () => {
+    const { seedHash, result } = simulated[0];
+    const match = result.matches[0];
+    const entries = entryRows(result, false);
+    for (const column of ["form_roll_ppm", "pick_factor_ppm", "power_ppm"] as const) {
+      const withheld = entries.map((row) =>
+        row.user_id === match.userIds[1] ? { ...row, [column]: null } : row,
+      );
+      expect(
+        reportInputFromRows({
+          seedHash,
+          rounds: result.rounds,
+          match: matchRow(match),
+          events: eventRows(match),
+          entries: withheld,
+          ownersPublished: false,
+        }),
+        column,
+      ).toBeNull();
+    }
+  });
+
   it("keeps a report's text the same once the week completes, and only then labels owner counts", () => {
     let labelled = 0;
     for (const { seedHash, result } of simulated) {

@@ -4430,4 +4430,8 @@ and fixed on the way: Home's card overlapped at 320 px with long names.
 
 Verification: the new `midweek_live_reveal` pgTAP suite (before kick-off, a
 minute in, mid shoot-out, the final in play, complete, a pre-ADR-104 week) and
-every other suite through `docker exec`.
+every other suite through `docker exec`; `npm run verify:fast`; authenticated
+E2E at 320 px and 412 px (Pixel 7) plus 1440 px against these views. The live
+evening was checked visually at 320, 412 and 1440 px with the migration
+applied (the draw, a minute into round 1, between rounds, the final live, the
+champion), along with what a member's own reads return at each moment.

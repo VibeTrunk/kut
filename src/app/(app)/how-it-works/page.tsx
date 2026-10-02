@@ -355,7 +355,7 @@ export default async function HowItWorksPage() {
           </Link>
         </Section>
 
-        <Section title="10. Club Value & the leaderboard">
+        <Section title="10. Club Value & the standings">
           <p>Your Club Value is a plain sum of three numbers:</p>
           <ul className="ml-5 list-disc space-y-1">
             <li>your wallet balance in KUT Coins;</li>
@@ -372,9 +372,9 @@ export default async function HowItWorksPage() {
           <p>
             The{" "}
             <Link className="font-semibold text-brass underline" href="/leaderboard">
-              leaderboard
-            </Link>{" "}
-            ranks every club by that total, and{" "}
+              standings
+            </Link>
+            , under Compete, rank every club by that total, and{" "}
             <Link className="font-semibold text-brass underline" href="/club/value">
               your Club Value page
             </Link>{" "}

@@ -31,8 +31,6 @@ type Props = {
   /** Players in injury mode (ADR-082), for the plaster cast (ADR-084). */
   injuredPlayerIds: Set<string>;
   clubValue: number | null;
-  /** The Midweek Madness strip under the header (D2), when it shows. */
-  midweek?: ReactNode;
 };
 function href(lens: string, page: string | number) {
   const p = new URLSearchParams();
@@ -192,7 +190,6 @@ export function CollectionAlbum({
   photoUrls,
   injuredPlayerIds,
   clubValue,
-  midweek,
 }: Props) {
   const allSlots = buildSlots(roster, cards);
   const lens = parseLens(lensValue);
@@ -237,7 +234,6 @@ export function CollectionAlbum({
         totalPlayers={allSlots.length}
         uniquePlayers={unique}
       />
-      {midweek}
       <nav
         aria-label="Album lens"
         className="flex flex-wrap items-center gap-2 border-y border-line/40 py-4"

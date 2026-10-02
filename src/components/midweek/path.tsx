@@ -36,7 +36,7 @@ export function MidweekPath({
           row.kind === "won" || row.kind === "out" ? (
             <Link
               className="font-extrabold text-brass hover:underline"
-              href={`/club/midweek/${weekStart}/match/${row.matchId}`}
+              href={`/midweek/${weekStart}/match/${row.matchId}`}
             >
               Report
             </Link>

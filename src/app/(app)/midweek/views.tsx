@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CompeteTabs } from "@/components/app-shell/compete-tabs";
 import { LiveCard, type LiveCardPlayer } from "@/components/live-card";
 import { MidweekNotice, MidweekSaveStatus, MidweekTrialistCard } from "@/components/midweek/bits";
 import { MidweekRevealClock } from "@/components/midweek/clock";
@@ -118,7 +119,7 @@ export async function lastWeekView(
       isChampion: tournament.champion_user_id === userId,
       championName: tournament.champion_name ?? null,
     }),
-    href: `/club/midweek/${tournament.week_start}`,
+    href: `/midweek/${tournament.week_start}`,
   };
 }
 
@@ -196,6 +197,7 @@ export async function WeekEvening({
   return (
     <main className={MIDWEEK_PAGE}>
       <section className="mx-auto grid max-w-6xl gap-8 py-4 sm:gap-11 sm:py-8">
+        <CompeteTabs />
         <MidweekPageHead
           kicker={`Midweek Madness · ${formatDayDate(lockAt)}`}
           title={out === rounds ? "The final is out" : `Round ${out} is out`}
@@ -218,7 +220,7 @@ export async function WeekEvening({
           <MidweekSectionHead id="latest-h" title={latest.name}>
             <Link
               className="text-sm font-bold text-brass hover:underline"
-              href={`/club/midweek/${weekStart}`}
+              href={`/midweek/${weekStart}`}
             >
               Full bracket &rarr;
             </Link>
@@ -313,6 +315,7 @@ async function WeekLocked({
   return (
     <main className={MIDWEEK_PAGE}>
       <section className="mx-auto grid max-w-6xl gap-8 py-4 sm:gap-11 sm:py-8">
+        <CompeteTabs />
         <MidweekPageHead
           kicker={`Midweek Madness · ${formatDayDate(lockAt)}`}
           lede={lede}
@@ -418,6 +421,7 @@ export async function WeekComplete({
   return (
     <main className={MIDWEEK_PAGE}>
       <section className="mx-auto grid max-w-6xl gap-8 py-4 sm:gap-11 sm:py-8">
+        <CompeteTabs />
         <section
           aria-labelledby="champion-h"
           className="relative grid gap-3.5 overflow-hidden rounded-[20px] border border-brass-line bg-[radial-gradient(90%_120%_at_100%_0%,rgb(224_172_74/22%),transparent_60%),linear-gradient(to_bottom,#2b2112,#1a150e)] px-5 py-[22px] sm:px-9 sm:py-8"
@@ -443,7 +447,7 @@ export async function WeekComplete({
             {final && (
               <Link
                 className="font-bold text-brass hover:underline"
-                href={`/club/midweek/${tournament.week_start}/match/${final.match_id}`}
+                href={`/midweek/${tournament.week_start}/match/${final.match_id}`}
               >
                 Report &rarr;
               </Link>
@@ -474,7 +478,7 @@ export async function WeekComplete({
           <MidweekSectionHead id="night-h" title="Your night">
             <Link
               className="text-sm font-bold text-brass hover:underline"
-              href={`/club/midweek/${tournament.week_start}`}
+              href={`/midweek/${tournament.week_start}`}
             >
               Bracket and picks &rarr;
             </Link>
@@ -494,7 +498,7 @@ export async function WeekComplete({
         {next && next.lock_at && next.status === "open" && (
           <Link
             className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-[14px] border border-brass/40 bg-brass-bg/28 px-3 py-2.5 hover:border-brass"
-            href="/club/midweek?view=pick"
+            href="/midweek?view=pick"
           >
             <MidweekMiniCard variant="unknown" />
             <span className="text-[13.5px] leading-snug text-ink-dim">

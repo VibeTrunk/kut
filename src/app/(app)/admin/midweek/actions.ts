@@ -24,11 +24,9 @@ export type RehearsalState =
   { ok: true; rehearsal: MidweekRehearsal } | { ok: false; error: string } | null;
 
 function revalidateMidweek() {
-  revalidatePath("/admin/midweek");
-  revalidatePath("/club/midweek");
-  revalidatePath("/");
-  revalidatePath("/club/collection");
-  revalidatePath("/settings");
+  // Every page: Compete's badge rides the nav (ADR-107), and the Midweek pages,
+  // Home's card and the Settings panel read the same state.
+  revalidatePath("/", "layout");
 }
 
 export async function setMidweekEnabled(

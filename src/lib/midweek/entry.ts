@@ -1,6 +1,6 @@
 /**
  * Pure helpers for the Midweek Madness entry pages (PR 7, ADR-097): the
- * picker, the Home card, the Collection strip and the settings panel.
+ * picker, the Home card, Compete's badge and the settings panel.
  *
  * Client-safe on purpose: nothing here imports the engine, whose `rng.ts`
  * pulls in `node:crypto`. The one helper that needs an engine factor (the
@@ -12,6 +12,7 @@
 import { archetypeLabel } from "@/game/archetypes";
 import { MIDWEEK } from "@/game/midweek/config";
 import { scheduleFor } from "@/game/midweek/schedule";
+import type { CompeteStatus } from "@/lib/nav/routes";
 
 const AMS = "Europe/Amsterdam";
 
@@ -70,6 +71,8 @@ export type MidweekCurrent = {
   opted_out: boolean;
   /** ADR-104; absent before its migration. Read it through `scheduleVersionOf`. */
   schedule_version?: number | null;
+  /** ADR-105; absent before its migration. Read it through `isEveningLive`. */
+  evening_live?: boolean;
 };
 
 export type MidweekStatus = "open" | "skipped" | "simulated" | "complete" | "void";
@@ -132,6 +135,40 @@ export function isLockedTonight(current: MidweekCurrent, now: Date): boolean {
     current.lock_at !== null &&
     Date.parse(current.lock_at) <= now.getTime()
   );
+}
+
+/**
+ * Whether the evening is live: the week is drawn and now is between its lock
+ * and the end of its final. `midweek_current.evening_live` says so from
+ * ADR-105's push; before it the column is absent, and `final_reveal_at`, the end
+ * of the final since ADR-104, is still readable from the lock.
+ */
+export function isEveningLive(current: MidweekCurrent, now: Date): boolean {
+  if (typeof current.evening_live === "boolean") return current.evening_live;
+  return (
+    current.status === "simulated" &&
+    current.lock_at !== null &&
+    Date.parse(current.lock_at) <= now.getTime() &&
+    current.final_reveal_at !== null &&
+    now.getTime() < Date.parse(current.final_reveal_at)
+  );
+}
+
+/**
+ * Compete's badge (ADR-107): `live` from the lock to the end of the final, for
+ * every member; `pick` while the week is open and a member taking part has no
+ * saved five. `hasSavedFive` is null when the squad read failed, which must
+ * not read as "not picked". Nothing otherwise.
+ */
+export function competeStatus(
+  current: MidweekCurrent | null,
+  hasSavedFive: boolean | null,
+  now: Date,
+): CompeteStatus | null {
+  if (!current?.tournament_id) return null;
+  if (isEveningLive(current, now)) return "live";
+  if (isPickingOpen(current, now) && !current.opted_out && hasSavedFive === false) return "pick";
+  return null;
 }
 
 // ---- dates, in club time ---------------------------------------------------

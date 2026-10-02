@@ -98,7 +98,7 @@ function amsterdamOffsetMs(instant: number): number {
 }
 
 /**
- * Last Wednesday's champion leads `/club/midweek` and the Home card until
+ * Last Wednesday's champion leads `/midweek` and the Home card until
  * Thursday 23:59 Europe/Amsterdam (D4); this is the first moment it no longer
  * does, Friday 00:00 in club time. Clocks change at 01:00 UTC on a Sunday,
  * never at a Friday midnight, so the offset at that midnight is the day's.

@@ -2,6 +2,10 @@ import { redirect } from "next/navigation";
 import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { isAdminRole } from "@/lib/auth/roles";
+import { competeStatus, isPickingOpen, type MidweekCurrent } from "@/lib/midweek/entry";
+import type { CompeteStatus } from "./routes";
+
+type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
 
 export type NavContext = {
   displayName: string;
@@ -14,7 +18,35 @@ export type NavContext = {
   balance: number | null;
   unreadCount: number;
   incomingOfferCount: number;
+  /** Compete's badge (ADR-107); null shows none, including when a read failed. */
+  competeStatus: CompeteStatus | null;
 };
+
+/**
+ * Compete's badge. Tolerant like every Midweek entry point (ADR-097): a failed
+ * or denied read shows no badge and never fails the page. The squad is read
+ * only while picking is open, the one time it matters.
+ */
+async function loadCompeteStatus(supabase: SupabaseServerClient): Promise<CompeteStatus | null> {
+  const { data, error } = await supabase
+    .schema("kut")
+    .from("midweek_current")
+    .select("*")
+    .maybeSingle();
+  if (error || !data) return null;
+  const current = data as MidweekCurrent;
+  const now = new Date();
+  let hasSavedFive: boolean | null = null;
+  if (current.tournament_id && !current.opted_out && isPickingOpen(current, now)) {
+    const squad = await supabase
+      .schema("kut")
+      .from("my_midweek_squad")
+      .select("slot", { count: "exact", head: true })
+      .eq("tournament_id", current.tournament_id);
+    hasSavedFive = squad.error ? null : (squad.count ?? 0) > 0;
+  }
+  return competeStatus(current, hasSavedFive, now);
+}
 
 /**
  * Powers the persistent AppNav shell. Separate from requireUser/requireAdmin,
@@ -30,7 +62,7 @@ export const getNavContext = cache(async (): Promise<NavContext> => {
     redirect("/login");
   }
 
-  const [profileResponse, walletResponse, notificationsResponse, offersResponse] =
+  const [profileResponse, walletResponse, notificationsResponse, offersResponse, compete] =
     await Promise.all([
       supabase
         .schema("kut")
@@ -50,6 +82,7 @@ export const getNavContext = cache(async (): Promise<NavContext> => {
         .select("offer_id", { count: "exact", head: true })
         .eq("is_outgoing", false)
         .eq("status", "active"),
+      loadCompeteStatus(supabase).catch(() => null),
     ]);
 
   const profile = profileResponse.data;
@@ -76,5 +109,6 @@ export const getNavContext = cache(async (): Promise<NavContext> => {
     balance: walletResponse.error ? null : (walletResponse.data?.balance ?? 0),
     unreadCount: notificationsResponse.count ?? 0,
     incomingOfferCount: offersResponse.count ?? 0,
+    competeStatus: compete,
   };
 });

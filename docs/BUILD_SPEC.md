@@ -2064,12 +2064,13 @@ Everything is gated by time in definer projections on
   night and afterwards, and only the "why" panel's pick labels appear once the
   week is complete.
 - **The pages (PR 8, ADR-098):** the report at
-  `/club/midweek/[weekStart]/match/[matchId]`, the bracket at
-  `/club/midweek/[weekStart]` (rounds as they are revealed, byes, the
+  `/midweek/[weekStart]/match/[matchId]`, the bracket at
+  `/midweek/[weekStart]` (rounds as they are revealed, byes, the
   champion, and pick shares once complete), and the evening on
-  `/club/midweek`. From round 1 every card on them shows its lock-time
-  snapshot, injury cast included. Last Wednesday's champion leads
-  `/club/midweek` and the Home card until Thursday 23:59 Europe/Amsterdam
+  `/midweek` (under `/club/midweek` until ADR-107, which redirects
+  there). From round 1 every card on them shows its lock-time snapshot,
+  injury cast included. Last Wednesday's champion leads `/midweek` and the
+  Home card until Thursday 23:59 Europe/Amsterdam
   (owner decision D4); a void week's URLs show only its notice.
 
 ### 44.11 Running without admin
@@ -2348,6 +2349,40 @@ unchanged and Collection does not own it. Collection carries a one-line
 Midweek strip under its header instead of the Club-page card the build plan
 had (D2). Neither the Midweek pages nor their entry points show while Midweek
 Madness is switched off with no week running.
+
+**Update (2026-10-02, ADR-107).** The fifth primary tab is **Compete**
+(`/midweek`), replacing Leaderboard (owner decisions DR1-1 and DR1-2 in
+`design/ux-review/HANDOFF.md`). Primary navigation is now:
+
+1. **Home** (`/`) — also owns the Chronicle (`/chronicle`)
+2. **Collection** (`/club/collection`) — also owns Club Value (`/club/value`)
+3. **Packs** (`/club/packs`)
+4. **Market** (`/market`) — badge: incoming trade offers
+5. **Compete** (`/midweek`) — also owns `/leaderboard` and `/players`; badge:
+   Midweek's status
+
+- **Compete's section tabs:** **Midweek** (`/midweek`) · **Standings**
+  (`/leaderboard`) · **Players** (`/players`), at the top of the picker and
+  evening, a week's bracket, Standings and the directory; a match report keeps
+  its back link instead. The Leaderboard page is titled **Standings**.
+- **Midweek Madness moves from Home to Compete,** at `/midweek` and the pages
+  beneath it. `/club/midweek` and everything under it are permanent redirects
+  to the same path under `/midweek` (query string kept). Home keeps its
+  Midweek card as the way in. While Midweek is switched off with no week
+  running, `/midweek` sends a member to Standings instead of a dead end.
+- **Compete's badge:** `Pick` (brass) while a week is open, the member has not
+  opted out, and they have no saved squad; `Live` (live red) from the lock to
+  the end of the final, for every member (`midweek_current.evening_live`, or
+  the end of the final where that column is absent); nothing otherwise. It sits
+  on the tab in both bars; `Live` also on the Midweek section tab. The link's
+  accessible name adds "Midweek Madness: you haven't picked your five" or
+  "Midweek Madness is live". On the bottom bar the badge is anchored to the
+  icon's right edge, so it cannot push the fifth tab past a 320 px screen.
+- **The Collection strip is removed** (owner decision Q12, retiring D2):
+  Compete's badge and Home's card replace it.
+- **The avatar links to Settings,** and is marked current on Settings, My
+  card, How KUT works and Admin. It is not a menu trigger: the app has worked
+  this way for a while, and this record still described ADR-053's menu.
 
 Desktop may use side/top navigation. Because the navigation is a public
 surface, this list remains the canonical record of it.

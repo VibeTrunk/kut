@@ -11,10 +11,9 @@ export type MidweekActionState =
   { ok: true; message: string } | { ok: false; error: string } | null;
 
 function revalidateMidweek() {
-  revalidatePath("/club/midweek");
-  revalidatePath("/"); // the Home card
-  revalidatePath("/club/collection"); // the strip
-  revalidatePath("/settings"); // the opt-out panel's wording
+  // Every page: Compete's badge rides the nav (ADR-107), and the picker,
+  // Home's card and the Settings opt-out panel read the same state.
+  revalidatePath("/", "layout");
 }
 
 export async function saveMidweekSquad(

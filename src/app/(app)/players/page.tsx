@@ -3,8 +3,7 @@ import { FilterBar } from "@/components/filter-bar";
 import { ARCHETYPES, ARCHETYPE_LABELS, isArchetype } from "@/game/archetypes";
 import { LiveCard, type LiveCardPlayer } from "@/components/live-card";
 import { requireUser } from "@/lib/auth/user";
-import { SectionTabs } from "@/components/app-shell/section-tabs";
-import { LEADERBOARD_TABS } from "@/lib/nav/routes";
+import { CompeteTabs } from "@/components/app-shell/compete-tabs";
 import { fetchInjuredPlayerIds } from "@/lib/injuries";
 import { toLiveCardPlayer } from "@/lib/live-card-player";
 import { resolvePhotoUrls } from "@/lib/player-photos";
@@ -80,6 +79,7 @@ export default async function PlayerDirectoryPage({ searchParams }: PlayerDirect
   return (
     <main className="board-ground min-h-screen p-5 text-ink sm:p-10">
       <section className="mx-auto max-w-6xl space-y-8 py-4 sm:py-8">
+        <CompeteTabs />
         <header className="space-y-3">
           <p className="text-[0.7rem] font-extrabold uppercase tracking-[0.26em] text-brass">
             KUT roster
@@ -92,9 +92,6 @@ export default async function PlayerDirectoryPage({ searchParams }: PlayerDirect
           <p className="text-xs font-bold text-ink-faint">
             {players.length} {players.length === 1 ? "player" : "players"}
           </p>
-          <div className="pt-2">
-            <SectionTabs label="Leaderboard" tabs={LEADERBOARD_TABS} />
-          </div>
         </header>
 
         <FilterBar

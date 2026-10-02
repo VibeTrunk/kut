@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { setMidweekOptOut, type MidweekActionState } from "@/app/(app)/club/midweek/actions";
+import { setMidweekOptOut, type MidweekActionState } from "@/app/(app)/midweek/actions";
 
 /** "Take part again": opting back in is one tap, with no confirmation. */
 export function MidweekOptInButton() {

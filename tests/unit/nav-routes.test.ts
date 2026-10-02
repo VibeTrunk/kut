@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
   ACCOUNT_ROUTES,
-  LEADERBOARD_TABS,
+  COMPETE_STATUS,
+  COMPETE_TABS,
   MARKET_TABS,
   PRIMARY_TABS,
   activeEntryKey,
   ariaCurrent,
+  buildCompeteTabs,
   formatBadgeCount,
   isSegmentPrefix,
 } from "@/lib/nav/routes";
@@ -38,16 +40,16 @@ describe("activeEntryKey — primary tabs", () => {
     ["/club/packs", "packs"],
     ["/market", "market"],
     ["/market/offers", "market"],
-    ["/leaderboard", "leaderboard"],
-    ["/players", "leaderboard"],
+    ["/leaderboard", "compete"],
+    ["/players", "compete"],
     ["/chronicle", "home"],
     ["/chronicle/2026-08-31", "home"],
     ["/club/value", "collection"],
-    // Owner decision D1 (ADR-097): Midweek Madness is Home's, not Collection's,
-    // although it sits under /club; its PR 8 result pages follow it.
-    ["/club/midweek", "home"],
-    ["/club/midweek/2026-10-05", "home"],
-    ["/club/midweek/2026-10-05/match/8f14e45f", "home"],
+    // DR1-1/DR1-2 (ADR-107): Midweek Madness moved from Home to Compete, with
+    // its result pages.
+    ["/midweek", "compete"],
+    ["/midweek/2026-10-05", "compete"],
+    ["/midweek/2026-10-05/match/8f14e45f", "compete"],
   ])("%s activates %s", (pathname, expected) => {
     // The query string never reaches usePathname(), but pin the plain paths anyway.
     expect(activeEntryKey(PRIMARY_TABS, pathname.split("?")[0])).toBe(expected);
@@ -59,7 +61,7 @@ describe("activeEntryKey — primary tabs", () => {
     // deliberate exceptions and are asserted separately below.
     for (const pathname of [
       "/chronicle",
-      "/club/midweek",
+      "/midweek",
       "/club/value",
       "/players",
       "/market/offers",
@@ -72,7 +74,7 @@ describe("activeEntryKey — primary tabs", () => {
     expect(activeEntryKey(PRIMARY_TABS, "/club/collection/8f14e45f")).toBe("collection");
     expect(activeEntryKey(PRIMARY_TABS, "/club/packs/8f14e45f")).toBe("packs");
     expect(activeEntryKey(PRIMARY_TABS, "/market/8f14e45f")).toBe("market");
-    expect(activeEntryKey(PRIMARY_TABS, "/players/alex-example")).toBe("leaderboard");
+    expect(activeEntryKey(PRIMARY_TABS, "/players/alex-example")).toBe("compete");
   });
 
   it("returns null where no primary tab owns the route", () => {
@@ -104,10 +106,12 @@ describe("activeEntryKey — longest prefix wins", () => {
     expect(activeEntryKey(ACCOUNT_ROUTES, "/settings/card")).toBe("card");
   });
 
-  it("resolves the leaderboard section tabs", () => {
-    expect(activeEntryKey(LEADERBOARD_TABS, "/leaderboard")).toBe("clubs");
-    expect(activeEntryKey(LEADERBOARD_TABS, "/players")).toBe("players");
-    expect(activeEntryKey(LEADERBOARD_TABS, "/players/alex-example")).toBe("players");
+  it("resolves Compete's section tabs", () => {
+    expect(activeEntryKey(COMPETE_TABS, "/midweek")).toBe("midweek");
+    expect(activeEntryKey(COMPETE_TABS, "/midweek/2026-10-05")).toBe("midweek");
+    expect(activeEntryKey(COMPETE_TABS, "/leaderboard")).toBe("standings");
+    expect(activeEntryKey(COMPETE_TABS, "/players")).toBe("players");
+    expect(activeEntryKey(COMPETE_TABS, "/players/alex-example")).toBe("players");
   });
 
   it("activates Admin from any admin route via `owns`", () => {
@@ -135,7 +139,7 @@ describe("activeEntryKey — longest prefix wins", () => {
 
 describe("ariaCurrent", () => {
   const market = PRIMARY_TABS.find((tab) => tab.key === "market")!;
-  const leaderboard = PRIMARY_TABS.find((tab) => tab.key === "leaderboard")!;
+  const compete = PRIMARY_TABS.find((tab) => tab.key === "compete")!;
 
   it("marks the exact page", () => {
     expect(ariaCurrent(market, "/market", "market")).toBe("page");
@@ -145,12 +149,13 @@ describe("ariaCurrent", () => {
     // Otherwise /market/offers carries two aria-current="page" at once: the
     // primary tab and the Offers section tab.
     expect(ariaCurrent(market, "/market/offers", "market")).toBe("true");
-    expect(ariaCurrent(leaderboard, "/players", "leaderboard")).toBe("true");
+    expect(ariaCurrent(compete, "/players", "compete")).toBe("true");
+    expect(ariaCurrent(compete, "/leaderboard", "compete")).toBe("true");
     expect(ariaCurrent(market, "/market/8f14e45f", "market")).toBe("true");
   });
 
   it("marks nothing when the entry is not active", () => {
-    expect(ariaCurrent(market, "/leaderboard", "leaderboard")).toBeUndefined();
+    expect(ariaCurrent(market, "/leaderboard", "compete")).toBeUndefined();
     expect(ariaCurrent(market, "/messages", null)).toBeUndefined();
   });
 });
@@ -179,7 +184,7 @@ describe("formatBadgeCount", () => {
 
 describe("route tables", () => {
   it("keeps keys unique within each table", () => {
-    for (const table of [PRIMARY_TABS, ACCOUNT_ROUTES, MARKET_TABS, LEADERBOARD_TABS]) {
+    for (const table of [PRIMARY_TABS, ACCOUNT_ROUTES, MARKET_TABS, COMPETE_TABS]) {
       expect(new Set(table.map((entry) => entry.key)).size).toBe(table.length);
     }
   });
@@ -190,7 +195,16 @@ describe("route tables", () => {
       "Collection",
       "Packs",
       "Market",
-      "Leaderboard",
+      "Compete",
+    ]);
+  });
+
+  it("lands Compete on Midweek, with Midweek · Standings · Players as its sections (ADR-107)", () => {
+    expect(PRIMARY_TABS.find((tab) => tab.key === "compete")?.href).toBe("/midweek");
+    expect(COMPETE_TABS.map((tab) => [tab.label, tab.href])).toEqual([
+      ["Midweek", "/midweek"],
+      ["Standings", "/leaderboard"],
+      ["Players", "/players"],
     ]);
   });
 
@@ -198,5 +212,28 @@ describe("route tables", () => {
     expect(ACCOUNT_ROUTES.filter((entry) => entry.adminOnly).map((entry) => entry.key)).toEqual([
       "admin",
     ]);
+  });
+});
+
+describe("Compete's status", () => {
+  it("puts Live on the Midweek section tab, and nothing else anywhere", () => {
+    expect(buildCompeteTabs("live").map((tab) => tab.status)).toEqual([
+      "live",
+      undefined,
+      undefined,
+    ]);
+  });
+
+  it("leaves Pick off the section tabs: the picker is where it asks", () => {
+    expect(buildCompeteTabs("pick").every((tab) => tab.status === undefined)).toBe(true);
+    expect(buildCompeteTabs(null).every((tab) => tab.status === undefined)).toBe(true);
+  });
+
+  it("names both badges in words for screen readers", () => {
+    expect(COMPETE_STATUS.pick).toEqual({
+      text: "Pick",
+      label: "Midweek Madness: you haven't picked your five",
+    });
+    expect(COMPETE_STATUS.live).toEqual({ text: "Live", label: "Midweek Madness is live" });
   });
 });

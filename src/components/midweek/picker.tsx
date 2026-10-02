@@ -11,7 +11,7 @@ import {
   prefillNotice,
   saveStatus,
 } from "@/lib/midweek/entry";
-import { saveMidweekSquad, type MidweekActionState } from "@/app/(app)/club/midweek/actions";
+import { saveMidweekSquad, type MidweekActionState } from "@/app/(app)/midweek/actions";
 import {
   MidweekKeeperCheck,
   MidweekNotice,

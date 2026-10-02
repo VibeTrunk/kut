@@ -1,17 +1,17 @@
 import Link from "next/link";
-import { formatClock, formatDayDate, formatShortLock, formatWeekday } from "@/lib/midweek/entry";
+import { formatClock, formatDayDate, formatWeekday } from "@/lib/midweek/entry";
 import type { ClockStop } from "@/lib/midweek/evening";
-import type { EntryMini, MidweekEntryPoint } from "@/lib/midweek/load";
+import type { EntryMini } from "@/lib/midweek/load";
 import { MidweekRevealClock } from "./clock";
 import { MidweekCountdown } from "./countdown";
 import { MidweekMiniCard } from "./mini-card";
 
 /**
- * The two ways into `/club/midweek` from elsewhere: the Home card and the
- * Collection strip, before the lock (PR 7), during the evening and, for Home,
- * after the final until owner decision D4's cutoff (PR 8). Which one shows is
- * `loadMidweekEntryPoint`'s call; nothing shows when Midweek is disabled or the
- * member has opted out.
+ * Home's way into `/midweek`: its card before the lock (PR 7), during the
+ * evening and after the final until owner decision D4's cutoff (PR 8). Which
+ * one shows is `loadMidweekEntryPoint`'s call; nothing shows when Midweek is
+ * disabled or the member has opted out. The Collection strip (owner decision
+ * D2) is gone: Compete's badge and this card replace it (Q12, ADR-107).
  */
 
 /** `MidweekEntryCard` on Home, directly under the header (Home-BeforeLock). */
@@ -29,7 +29,7 @@ export function MidweekEntryCard({
   return (
     <Link
       className="group grid gap-3.5 rounded-2xl border border-brass/50 bg-[radial-gradient(80%_140%_at_100%_0%,rgb(143_176_194/10%),transparent_60%)] bg-brass-bg/25 px-[18px] pt-[18px] pb-4 hover:border-brass sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:gap-x-8 sm:gap-y-4 sm:px-6 sm:py-[22px]"
-      href="/club/midweek"
+      href="/midweek"
     >
       <span className="grid gap-2.5">
         <span>
@@ -82,37 +82,6 @@ export function MidweekEntryCard({
   );
 }
 
-/** `MidweekStrip` under the Collection header (Collection-Card, owner decision D2). */
-export function MidweekStrip({ lockAt, saved }: { lockAt: string; saved: EntryMini[] }) {
-  const picked = saved.length > 0;
-  const lock = formatShortLock(lockAt);
-  return (
-    <Link
-      className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-[14px] border border-brass/40 bg-brass-bg/28 px-3 py-2.5 hover:border-brass"
-      href="/club/midweek"
-    >
-      {picked ? (
-        <MidweekMiniCard
-          injured={saved[0].injured}
-          ovr={saved[0].ovr}
-          rarityTier={saved[0].rarityTier}
-        />
-      ) : (
-        <MidweekMiniCard variant="unknown" />
-      )}
-      <span className="text-[13.5px] leading-snug text-ink-dim">
-        <b className="block text-[14.5px] text-ink">
-          {picked ? "Midweek Madness: your five are in" : "Midweek Madness: pick five of these"}
-        </b>
-        {picked ? `Change them until ${lock}.` : `Squads lock ${lock}. No pick, auto squad.`}
-      </span>
-      <span aria-hidden="true" className="text-xl font-black text-brass">
-        &rarr;
-      </span>
-    </Link>
-  );
-}
-
 const CARD =
   "group grid gap-3.5 rounded-2xl border border-brass/50 bg-[radial-gradient(80%_140%_at_100%_0%,rgb(143_176_194/10%),transparent_60%)] bg-brass-bg/25 px-[18px] pt-[18px] pb-4 hover:border-brass sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:gap-x-8 sm:gap-y-4 sm:px-6 sm:py-[22px]";
 const SECONDARY =
@@ -129,7 +98,7 @@ export function MidweekLiveCard({
   stops: ClockStop[] | null;
 }) {
   return (
-    <Link className={CARD} href="/club/midweek">
+    <Link className={CARD} href="/midweek">
       <span className="grid gap-3">
         <span>
           <span className="block text-[0.7rem] font-extrabold tracking-[0.26em] text-brass uppercase">
@@ -158,7 +127,7 @@ export function MidweekFinalCard({
   line: string;
 }) {
   return (
-    <Link className={CARD} href={`/club/midweek/${weekStart}`}>
+    <Link className={CARD} href={`/midweek/${weekStart}`}>
       <span className="grid gap-2.5">
         <span>
           <span className="block text-[0.7rem] font-extrabold tracking-[0.26em] text-brass uppercase">
@@ -171,36 +140,4 @@ export function MidweekFinalCard({
       <span className={SECONDARY}>See the bracket</span>
     </Link>
   );
-}
-
-/** The Collection strip's evening state: "Your five are playing tonight". */
-export function MidweekPlayingStrip({ line, mini }: { line: string; mini: EntryMini | null }) {
-  return (
-    <Link
-      className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-[14px] border border-brass/40 bg-brass-bg/28 px-3 py-2.5 hover:border-brass"
-      href="/club/midweek"
-    >
-      {mini ? (
-        <MidweekMiniCard injured={mini.injured} ovr={mini.ovr} rarityTier={mini.rarityTier} />
-      ) : (
-        <MidweekMiniCard variant="unknown" />
-      )}
-      <span className="text-[13.5px] leading-snug text-ink-dim">
-        <b className="block text-[14.5px] text-ink">Your five are playing tonight</b>
-        {line}
-      </span>
-      <span aria-hidden="true" className="text-xl font-black text-brass">
-        &rarr;
-      </span>
-    </Link>
-  );
-}
-
-/** Whichever Collection strip the moment calls for, if any. */
-export function MidweekCollectionStrip({ point }: { point: MidweekEntryPoint | null }) {
-  if (point?.kind === "pick") return <MidweekStrip lockAt={point.lockAt} saved={point.saved} />;
-  if (point?.kind === "live" && point.playing) {
-    return <MidweekPlayingStrip line={point.playing.line} mini={point.playing.mini} />;
-  }
-  return null;
 }

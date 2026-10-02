@@ -41,6 +41,10 @@
   --color-brick: #dd7a55;
   --color-brick-bg: #2a1712;
   --color-brick-line: #5c3221;
+  /* The Midweek evening's `Live` marker (design/ux-review/HANDOFF.md), pinker
+     than the brick `Out` chip; the on-colour keeps its text dark. */
+  --color-live: #ff8091;
+  --color-ink-on-live: #2a0a10;
 
   /* Instrument Serif carries the clubblad voice in page headings; Archivo
      does every interface job and every number. Both are self-hosted through

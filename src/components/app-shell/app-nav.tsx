@@ -3,7 +3,14 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { IconCoin, IconMessages } from "@/components/icons";
-import { activeEntryKey, ariaCurrent, formatBadgeCount, isSegmentPrefix } from "@/lib/nav/routes";
+import {
+  activeEntryKey,
+  ariaCurrent,
+  formatBadgeCount,
+  isSegmentPrefix,
+  type CompeteStatus,
+} from "@/lib/nav/routes";
+import { CompeteBadge, CompeteBadgeWords } from "./compete-badge";
 import { buildPrimaryNavItems, type NavItem } from "./nav-items";
 
 type AppNavProps = {
@@ -13,6 +20,7 @@ type AppNavProps = {
   balance: number | null;
   unreadCount: number;
   incomingOfferCount: number;
+  competeStatus: CompeteStatus | null;
 };
 
 const focusRing =
@@ -27,6 +35,7 @@ function balanceLabel(balance: number | null) {
 }
 
 function TabBadge({ item }: { item: NavItem }) {
+  if (item.status) return <CompeteBadge status={item.status} variant="inline" />;
   const text = formatBadgeCount(item.badgeCount ?? 0);
   if (!text) return null;
   return (
@@ -38,6 +47,7 @@ function TabBadge({ item }: { item: NavItem }) {
 }
 
 function TabBarBadge({ item }: { item: NavItem }) {
+  if (item.status) return <CompeteBadge status={item.status} variant="bar" />;
   const text = formatBadgeCount(item.badgeCount ?? 0);
   if (!text) return null;
   return (
@@ -72,9 +82,15 @@ function MessagesLink({ unreadCount, className }: { unreadCount: number; classNa
   );
 }
 
-export function AppNav({ displayName, balance, unreadCount, incomingOfferCount }: AppNavProps) {
+export function AppNav({
+  displayName,
+  balance,
+  unreadCount,
+  incomingOfferCount,
+  competeStatus,
+}: AppNavProps) {
   const pathname = usePathname();
-  const primaryItems = buildPrimaryNavItems(incomingOfferCount);
+  const primaryItems = buildPrimaryNavItems(incomingOfferCount, competeStatus);
   const activeKey = activeEntryKey(primaryItems, pathname);
   const initials = displayName
     .split(/\s+/)
@@ -179,6 +195,7 @@ export function AppNav({ displayName, balance, unreadCount, incomingOfferCount }
               <TabBarBadge item={item} />
             </span>
             <span className="whitespace-nowrap">{item.label}</span>
+            {item.status && <CompeteBadgeWords status={item.status} />}
           </Link>
         ))}
       </nav>

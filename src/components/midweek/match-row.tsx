@@ -138,7 +138,7 @@ export function MidweekMatchRow({
       <Link
         aria-label={`Match report: ${matchSentence(match)}`}
         className={`grid place-items-center border-l border-line/45 font-black text-brass hover:bg-brass/10 ${dense ? "w-[34px] text-[15px]" : "w-11 text-lg"}`}
-        href={`/club/midweek/${weekStart}/match/${match.match_id}`}
+        href={`/midweek/${weekStart}/match/${match.match_id}`}
       >
         <span aria-hidden="true">›</span>
       </Link>

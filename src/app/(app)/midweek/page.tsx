@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { CompeteTabs } from "@/components/app-shell/compete-tabs";
+import { redirect } from "next/navigation";
 import type { LiveCardPlayer } from "@/components/live-card";
 import { MidweekNotice, MidweekPrivacyLine } from "@/components/midweek/bits";
 import { MidweekLockBar } from "@/components/midweek/lock-bar";
@@ -89,9 +90,10 @@ export default async function MidweekPage({
   await runDueMidweek();
   const supabase = await createClient();
   const [state, { view }] = await Promise.all([loadMidweekEntryState(supabase), searchParams]);
-  // Disabled with nothing running, or not deployed yet: the route doesn't
-  // exist for members (Week-Disabled).
-  if (!state) notFound();
+  // Disabled with nothing running (Week-Disabled), or a failed read: Midweek
+  // doesn't show, and Compete's tab, which lands here, goes to Standings
+  // instead of a dead end (ADR-107).
+  if (!state) redirect("/leaderboard");
   const { current } = state;
   const now = new Date();
   const nowIso = now.toISOString();
@@ -100,6 +102,7 @@ export default async function MidweekPage({
     return (
       <main className={MIDWEEK_PAGE}>
         <section className="mx-auto max-w-2xl space-y-6 py-4 sm:py-8">
+          <CompeteTabs />
           <MidweekPageHead kicker="Midweek Madness" title="Opening soon" />
           <p className="text-ink-dim">
             The first week of Midweek Madness opens soon. Five of your cards, one knockout,
@@ -178,6 +181,7 @@ export default async function MidweekPage({
     return (
       <main className={MIDWEEK_PAGE}>
         <section className="mx-auto max-w-2xl space-y-6 py-4 sm:py-8">
+          <CompeteTabs />
           {strip && <LastWeek view={strip} />}
           <MidweekPageHead kicker="Midweek Madness" title="You’re sitting this out" />
           <section className="grid gap-3.5 rounded-2xl border border-line/60 bg-panel/60 p-6 text-ink-dim">
@@ -300,6 +304,7 @@ export default async function MidweekPage({
   return (
     <main className={MIDWEEK_PAGE}>
       <section className="mx-auto max-w-6xl space-y-7 py-4 sm:py-8">
+        <CompeteTabs />
         {strip && <LastWeek view={strip} />}
         <MidweekPageHead
           kicker={`Midweek Madness · ${formatDayDate(lockAt)}`}
@@ -374,6 +379,7 @@ async function NextWeekSoon({
   return (
     <main className={MIDWEEK_PAGE}>
       <section className="mx-auto max-w-2xl space-y-6 py-4 sm:py-8">
+        <CompeteTabs />
         <MidweekPageHead kicker="Midweek Madness" title="Next week opens soon" />
         {strip && <LastWeek view={strip} />}
         <p className="text-ink-dim">

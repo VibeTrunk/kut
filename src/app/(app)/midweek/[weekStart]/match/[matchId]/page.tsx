@@ -23,7 +23,7 @@ import { isUuid } from "@/lib/uuid";
 export const metadata = { title: "Midweek Madness match report" };
 
 /**
- * `/club/midweek/[weekStart]/match/[matchId]`: one match's report
+ * `/midweek/[weekStart]/match/[matchId]`: one match's report
  * (Report-Thrashing, Report-Shootout, Report-Injured), rendered on the server
  * from the stored match, its events and both sides' lock-time entries. A match
  * that isn't revealed yet, a bye or a void week has no report.
@@ -43,7 +43,7 @@ export default async function MidweekReportPage({
   if (!tournament) notFound();
 
   const back = {
-    href: `/club/midweek/${weekStart}`,
+    href: `/midweek/${weekStart}`,
     label: `${formatDayDate(tournament.lock_at)} bracket`,
   };
   const notice = skipOrVoidNotice(tournament, MIDWEEK.minEntrants);

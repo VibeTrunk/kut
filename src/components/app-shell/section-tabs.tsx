@@ -2,11 +2,18 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { activeEntryKey, ariaCurrent, formatBadgeCount, type RouteEntry } from "@/lib/nav/routes";
+import {
+  activeEntryKey,
+  ariaCurrent,
+  formatBadgeCount,
+  type CompeteStatus,
+  type RouteEntry,
+} from "@/lib/nav/routes";
+import { CompeteBadge } from "./compete-badge";
 
 /**
- * In-page tabs for a section: Market's Buy / Offers, the Leaderboard's
- * Clubs / Players, and the Admin row.
+ * In-page tabs for a section: Market's Buy / Offers, Compete's Midweek /
+ * Standings / Players, and the Admin row.
  *
  * TEXT-ONLY BY DESIGN. This is a client component rendered by server pages, so
  * an `Icon` prop would be a function crossing the RSC boundary and would fail
@@ -21,6 +28,8 @@ import { activeEntryKey, ariaCurrent, formatBadgeCount, type RouteEntry } from "
 export type SectionTab = RouteEntry & {
   badgeCount?: number;
   badgeNoun?: string;
+  /** Compete's word badge on the Midweek tab (ADR-107). */
+  status?: CompeteStatus;
 };
 
 type SectionTabsProps = {
@@ -46,6 +55,7 @@ const focusRing =
   "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brass";
 
 function TabBadge({ tab }: { tab: SectionTab }) {
+  if (tab.status) return <CompeteBadge status={tab.status} variant="inline" />;
   const text = formatBadgeCount(tab.badgeCount ?? 0);
   if (!text) return null;
   return (

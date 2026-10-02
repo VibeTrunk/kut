@@ -1,7 +1,7 @@
 "use client";
 
 import { startTransition, useActionState, useId, useState } from "react";
-import { setMidweekOptOut, type MidweekActionState } from "@/app/(app)/club/midweek/actions";
+import { setMidweekOptOut, type MidweekActionState } from "@/app/(app)/midweek/actions";
 import { optOutConfirmText } from "@/lib/midweek/entry";
 
 /**

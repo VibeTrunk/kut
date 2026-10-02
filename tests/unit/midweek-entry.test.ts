@@ -4,10 +4,12 @@ import { ovrFactorPpm } from "@/game/midweek/power";
 import { copyStrengthPpm, strongestCopies } from "@/lib/midweek/copies";
 import {
   allStillOwned,
+  competeStatus,
   countdownText,
   formatDayDate,
   formatSavedAt,
   formatShortLock,
+  isEveningLive,
   isLockedTonight,
   isMidweekVisible,
   isPickingOpen,
@@ -143,6 +145,60 @@ describe("visibility (ADR-097, HANDOFF open question 6)", () => {
     expect(isLockedTonight(current(), after)).toBe(true);
     expect(isLockedTonight(current({ status: "simulated" }), before)).toBe(true);
     expect(isLockedTonight(current({ status: "complete" }), after)).toBe(false);
+  });
+});
+
+describe("Compete's badge (ADR-107)", () => {
+  // Locks Wed 7 Oct 20:00 CEST in the fixture; the final ends at 21:05.
+  const beforeLock = new Date("2026-10-07T17:00:00Z");
+  const evening = new Date("2026-10-07T18:30:00Z");
+  const finalEnd = "2026-10-07T19:05:00Z";
+  const afterFinal = new Date("2026-10-07T19:06:00Z");
+  const drawn = (overrides: Partial<MidweekCurrent> = {}) =>
+    current({ status: "simulated", rounds: 5, final_reveal_at: finalEnd, ...overrides });
+
+  it("asks for a pick while the week is open and nothing is saved", () => {
+    expect(competeStatus(current(), false, beforeLock)).toBe("pick");
+    expect(competeStatus(current(), true, beforeLock)).toBeNull();
+  });
+
+  it("never asks an opted-out member, or when the squad read failed", () => {
+    expect(competeStatus(current({ opted_out: true }), false, beforeLock)).toBeNull();
+    expect(competeStatus(current(), null, beforeLock)).toBeNull();
+  });
+
+  it("stops asking at the lock, even before the worker has drawn the week", () => {
+    expect(competeStatus(current(), false, evening)).toBeNull();
+  });
+
+  it("is live from the lock to the end of the final, for every member", () => {
+    expect(competeStatus(drawn({ evening_live: true }), null, evening)).toBe("live");
+    expect(competeStatus(drawn({ evening_live: true, opted_out: true }), null, evening)).toBe(
+      "live",
+    );
+    expect(competeStatus(drawn({ evening_live: false }), null, afterFinal)).toBeNull();
+  });
+
+  it("follows evening_live once the view has it (ADR-105), whatever final_reveal_at says", () => {
+    // From ADR-105 final_reveal_at reads null until the final is over.
+    expect(isEveningLive(drawn({ evening_live: true, final_reveal_at: null }), evening)).toBe(true);
+    expect(isEveningLive(drawn({ evening_live: false }), evening)).toBe(false);
+  });
+
+  it("falls back to the end of the final before ADR-105's push, when the column is absent", () => {
+    expect(isEveningLive(drawn(), evening)).toBe(true);
+    expect(isEveningLive(drawn(), afterFinal)).toBe(false);
+    expect(isEveningLive(drawn(), beforeLock)).toBe(false);
+    expect(isEveningLive(drawn({ status: "complete" }), evening)).toBe(false);
+    expect(isEveningLive(drawn({ status: "void" }), evening)).toBe(false);
+    expect(isEveningLive(current(), evening)).toBe(false);
+  });
+
+  it("shows nothing with no tournament", () => {
+    expect(
+      competeStatus(current({ tournament_id: null, status: null }), false, beforeLock),
+    ).toBeNull();
+    expect(competeStatus(null, false, beforeLock)).toBeNull();
   });
 });
 

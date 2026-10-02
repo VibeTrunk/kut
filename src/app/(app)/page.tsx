@@ -275,7 +275,7 @@ export default async function Home() {
               {rank === null ? "—" : `#${rank}`}
             </dd>
             <dd className="mt-1 text-xs font-bold text-ink-faint group-hover:text-steel">
-              Club Value leaderboard &rarr;
+              Standings &rarr;
             </dd>
           </Link>
         </dl>

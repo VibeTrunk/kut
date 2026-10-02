@@ -1,3 +1,4 @@
+import { CompeteTabs } from "@/components/app-shell/compete-tabs";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 import { MidweekNotice } from "@/components/midweek/bits";
@@ -33,10 +34,10 @@ import { createClient } from "@/lib/supabase/server";
 export const metadata = { title: "Midweek Madness bracket" };
 
 const PANEL = "rounded-2xl border border-line/60 bg-panel/60 p-5 sm:p-6";
-const BACK = { href: "/club/midweek", label: "Midweek Madness" };
+const BACK = { href: "/midweek", label: "Midweek Madness" };
 
 /**
- * `/club/midweek/[weekStart]`: one week's bracket (Bracket-Revealing,
+ * `/midweek/[weekStart]`: one week's bracket (Bracket-Revealing,
  * Bracket-Complete). Rounds appear as they are revealed; after the week is
  * complete, the pick shares and the seed follow. Past weeks stay readable when
  * Midweek Madness is switched off, as history (HANDOFF question 6, ADR-097),
@@ -60,6 +61,7 @@ export default async function MidweekBracketPage({
   const shell = (children: ReactNode, title = "The bracket") => (
     <main className={MIDWEEK_PAGE}>
       <section className="mx-auto grid max-w-6xl gap-8 py-4 sm:gap-11 sm:py-8">
+        <CompeteTabs />
         <MidweekPageHead back={BACK} kicker={kicker} title={title} />
         {children}
       </section>

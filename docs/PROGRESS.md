@@ -4184,3 +4184,24 @@ in a row, and the gate passed for `5da5dd8`.
 
 Next for MM 2.0: PR 3 (B2, the draw and the five cards public from the lock,
 ADR-105), not in this push week.
+
+## MM 2.0 F1: Compete navigation — 2026-10-02
+
+`feat/compete-navigation` (ADR-107, no migration). The fifth primary tab is
+**Compete** (Midweek · Standings · Players), replacing Leaderboard, per the
+DR2-approved mockups:
+
+- Midweek Madness moved from `/club/midweek` to `/midweek`; everything under
+  the old path is a permanent redirect, so shared links keep working.
+- `CompeteBadge`: `Pick` until a member saves a squad for the open week, `Live`
+  from the lock to the end of the final (`evening_live` from ADR-105, with a
+  fallback for the deploy-before-push window).
+- The Leaderboard page is headed Standings; Compete's section tabs sit at the
+  top of the Midweek, bracket, Standings and Players pages.
+- The Collection strip is gone (Q12).
+
+Verification: `npm run verify:fast` (40 files, 387 tests); authenticated E2E
+20/20 at 320 px and 412 px (Pixel 7), including the new Compete tests: the
+`Pick` badge before and after a save, the tabs and their `aria-current`, the
+redirects, no strip on Collection, and a 1440 px pass of the top bar with no
+horizontal overflow.

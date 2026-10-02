@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth/user";
-import { SectionTabs } from "@/components/app-shell/section-tabs";
-import { LEADERBOARD_TABS } from "@/lib/nav/routes";
+import { CompeteTabs } from "@/components/app-shell/compete-tabs";
 import { createClient } from "@/lib/supabase/server";
 
 type LeaderboardClub = {
@@ -26,6 +25,8 @@ type LeaderboardClub = {
 // is load-bearing: the pre-round-3 layout applied these fixed tracks at every
 // width, so on a phone they overflowed and the name track collapsed to zero
 // (finding #3). Any column added here stays fixed or `auto` — never a second 1fr.
+export const metadata = { title: "Standings" };
+
 const COLUMNS =
   "grid-cols-[2rem_minmax(0,1fr)_auto] sm:grid-cols-[3.5rem_minmax(0,1fr)_9rem_5rem_5rem]";
 
@@ -47,11 +48,13 @@ export default async function LeaderboardPage() {
   return (
     <main className="board-ground min-h-screen p-5 text-ink sm:p-10">
       <section className="mx-auto max-w-5xl space-y-8 py-4 sm:py-8">
+        {/* Standings, Midweek and the directory are Compete's sections (ADR-107). */}
+        <CompeteTabs />
         <header className="space-y-3">
           <p className="text-[0.7rem] font-extrabold uppercase tracking-[0.26em] text-brass">
             KUT standings
           </p>
-          <h1 className="display text-3xl sm:text-6xl">Leaderboard</h1>
+          <h1 className="display text-3xl sm:text-6xl">Standings</h1>
           <p className="max-w-2xl text-base leading-relaxed text-ink-dim">
             Club Value is your KUT Coins, plus the discard value of every unburned card you own,
             plus your linked player&rsquo;s Live-card value counted 4&times;.{" "}
@@ -60,11 +63,6 @@ export default async function LeaderboardPage() {
             </Link>
             .
           </p>
-          {/* Clubs and Players are two rankings of the same season, so they are
-              tabs of one section rather than two menu rows (ADR-053). */}
-          <div className="pt-2">
-            <SectionTabs label="Leaderboard" tabs={LEADERBOARD_TABS} />
-          </div>
         </header>
 
         {clubs.length === 0 ? (

@@ -17,7 +17,6 @@ import {
   championLeads,
   liveLine,
   myNight,
-  nextMatchNoun,
   revealedRounds,
   revealStops,
   wonRounds,
@@ -84,15 +83,13 @@ export type EntryMini = {
 };
 
 /**
- * What the Home card and the Collection strip show, or null when neither
- * does (disabled, opted out, or a read failed):
+ * What the Home card shows, or null when it shows nothing (disabled, opted
+ * out, or a read failed):
  *
  * - `pick`: picking is open (PR 7, ADR-097);
- * - `live`: tonight's week is locked and its rounds are coming out (Home-Live;
- *   the strip's "Your five are playing tonight" while the member is still in);
+ * - `live`: tonight's week is locked and its rounds are coming out (Home-Live);
  * - `final`: after the final, until Thursday 23:59 Amsterdam (owner decision
- *   D4), when Home goes back to the picking prompt. The strip has no such
- *   state and keeps asking for a pick.
+ *   D4), when Home goes back to the picking prompt.
  */
 export type MidweekEntryPoint =
   | { kind: "pick"; lockAt: string; saved: EntryMini[] }
@@ -101,8 +98,6 @@ export type MidweekEntryPoint =
       title: string;
       line: string;
       stops: ClockStop[] | null;
-      /** The Collection strip's "playing tonight" line, while the member is still in. */
-      playing: { line: string; mini: EntryMini | null } | null;
     }
   | { kind: "final"; weekStart: string; lockAt: string; title: string; line: string };
 
@@ -111,8 +106,6 @@ export async function loadMidweekEntryPoint(
   injuredPlayerIds: ReadonlySet<string>,
   now: Date,
   userId: string,
-  /** Home follows D4's cutoff; the Collection strip keeps asking for a pick. */
-  { withChampion = true }: { withChampion?: boolean } = {},
 ): Promise<MidweekEntryPoint | null> {
   const state = await loadMidweekEntryState(supabase);
   if (!state || state.squad === null || state.current.opted_out) return null;
@@ -120,18 +113,15 @@ export async function loadMidweekEntryPoint(
   if (!current.lock_at || !current.tournament_id || !current.week_start) return null;
 
   if (isLockedTonight(current, now)) {
-    const saved = await savedMinis(supabase, state.squad, injuredPlayerIds);
-    return saved === null ? null : liveEntryPoint(supabase, current, now, userId, saved);
+    return liveEntryPoint(supabase, current, now, userId);
   }
 
-  if (withChampion) {
-    const latest = await latestTournaments(supabase, current.week_start);
-    if (latest === null) return null;
-    const leading = [latest.current, latest.previous].find(
-      (tournament) => tournament !== null && championLeads(tournament, now),
-    );
-    if (leading) return finalEntryPoint(supabase, leading, userId);
-  }
+  const latest = await latestTournaments(supabase, current.week_start);
+  if (latest === null) return null;
+  const leading = [latest.current, latest.previous].find(
+    (tournament) => tournament !== null && championLeads(tournament, now),
+  );
+  if (leading) return finalEntryPoint(supabase, leading, userId);
   if (!isPickingOpen(current, now)) return null;
 
   const saved = await savedMinis(supabase, state.squad, injuredPlayerIds);
@@ -164,7 +154,6 @@ async function liveEntryPoint(
   current: MidweekCurrent,
   now: Date,
   userId: string,
-  saved: EntryMini[],
 ): Promise<MidweekEntryPoint | null> {
   const lockAt = current.lock_at as string;
   const scheduleVersion = scheduleVersionOf(current);
@@ -174,7 +163,6 @@ async function liveEntryPoint(
     title: "Squads are locked",
     line: `Round 1 at ${roundOne}, then a round ${roundIntervalText(scheduleVersion)}.`,
     stops: null,
-    playing: saved.length > 0 ? { line: `Round 1 at ${roundOne}.`, mini: saved[0] } : null,
   };
   const rounds = current.rounds;
   if (current.status !== "simulated" || !rounds) return beforeRoundOne;
@@ -195,7 +183,6 @@ async function liveEntryPoint(
   }
 
   const night = myNight({ userId, rounds, lockAt, scheduleVersion, matches });
-  const next = night.rows.find((row) => row.kind === "next");
   return {
     kind: "live",
     title: out === rounds ? "The final is out" : `Round ${out} is out`,
@@ -207,13 +194,6 @@ async function liveEntryPoint(
       now,
       wonRounds: wonRounds(night),
     }).slice(1),
-    playing:
-      next && night.alive
-        ? {
-            line: `${nextMatchNoun(next.round, rounds)} at ${formatClock(next.revealAt)}.`,
-            mini: saved[0] ?? null,
-          }
-        : null,
   };
 }
 

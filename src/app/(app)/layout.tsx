@@ -9,6 +9,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     <>
       <AppNav
         balance={nav.balance}
+        competeStatus={nav.competeStatus}
         displayName={nav.displayName}
         incomingOfferCount={nav.incomingOfferCount}
         isAdmin={nav.isAdmin}

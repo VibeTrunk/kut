@@ -94,12 +94,9 @@ export function formatBadgeCount(count: number): string {
 export const PRIMARY_TABS: readonly RouteEntry[] = [
   // Home owns the Chronicle: both answer "what happened this week", Home is
   // where you enter it, and without this the Chronicle would be the one member
-  // destination the chrome cannot place you in.
-  // Midweek Madness joins it for the same reason (owner decision D1, ADR-097):
-  // it is "what's happening this week", and Home's card is its entry. It lives
-  // under /club, but the /club redirect to Collection stays and Collection
-  // does not own it.
-  { key: "home", href: "/", label: "Home", owns: ["/", "/chronicle", "/club/midweek"] },
+  // destination the chrome cannot place you in. Midweek Madness moved from
+  // here to Compete (DR1-1, ADR-107); Home keeps its card as the way in.
+  { key: "home", href: "/", label: "Home", owns: ["/", "/chronicle"] },
   // Club Value is "my club" and is now reached from the Collection header.
   {
     key: "collection",
@@ -109,12 +106,13 @@ export const PRIMARY_TABS: readonly RouteEntry[] = [
   },
   { key: "packs", href: "/club/packs", label: "Packs" },
   { key: "market", href: "/market", label: "Market" },
-  // The directory is a tab inside this section, so the primary tab owns it too.
+  // Compete (DR1-1, ADR-107): Midweek Madness, the standings and the player
+  // directory, each a section tab, so the primary tab owns all three.
   {
-    key: "leaderboard",
-    href: "/leaderboard",
-    label: "Leaderboard",
-    owns: ["/leaderboard", "/players"],
+    key: "compete",
+    href: "/midweek",
+    label: "Compete",
+    owns: ["/midweek", "/leaderboard", "/players"],
   },
 ];
 
@@ -133,8 +131,24 @@ export const MARKET_TABS: readonly RouteEntry[] = [
   { key: "offers", href: "/market/offers", label: "Offers" },
 ];
 
-/** A route entry carrying a per-request count. */
-export type BadgedRoute = RouteEntry & { badgeCount?: number; badgeNoun?: string };
+/**
+ * Compete's status (ADR-107): `pick` while the member hasn't saved a five for
+ * the open week, `live` from the lock to the end of the final.
+ */
+export type CompeteStatus = "pick" | "live";
+
+/** The badge's visible word, and what the link's accessible name adds. */
+export const COMPETE_STATUS: Record<CompeteStatus, { text: string; label: string }> = {
+  pick: { text: "Pick", label: "Midweek Madness: you haven't picked your five" },
+  live: { text: "Live", label: "Midweek Madness is live" },
+};
+
+/** A route entry carrying a per-request count, or Compete's status. */
+export type BadgedRoute = RouteEntry & {
+  badgeCount?: number;
+  badgeNoun?: string;
+  status?: CompeteStatus;
+};
 
 /**
  * Market's tabs with the incoming-offer count on Offers. Built here rather
@@ -149,7 +163,18 @@ export function buildMarketTabs(incomingOfferCount: number): BadgedRoute[] {
   );
 }
 
-export const LEADERBOARD_TABS: readonly RouteEntry[] = [
-  { key: "clubs", href: "/leaderboard", label: "Clubs" },
+export const COMPETE_TABS: readonly RouteEntry[] = [
+  { key: "midweek", href: "/midweek", label: "Midweek" },
+  { key: "standings", href: "/leaderboard", label: "Standings" },
   { key: "players", href: "/players", label: "Players" },
 ];
+
+/**
+ * Compete's tabs with the status on Midweek. Only `live` shows there: `pick`
+ * would sit on the picker itself, the page that asks for the pick (DR2 mockups).
+ */
+export function buildCompeteTabs(status: CompeteStatus | null): BadgedRoute[] {
+  return COMPETE_TABS.map((tab) =>
+    tab.key === "midweek" && status === "live" ? { ...tab, status } : { ...tab },
+  );
+}

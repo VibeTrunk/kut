@@ -9,7 +9,12 @@ import {
   IconSettings,
   IconUser,
 } from "@/components/icons";
-import { ACCOUNT_ROUTES, PRIMARY_TABS, type RouteEntry } from "@/lib/nav/routes";
+import {
+  ACCOUNT_ROUTES,
+  PRIMARY_TABS,
+  type CompeteStatus,
+  type RouteEntry,
+} from "@/lib/nav/routes";
 import type { ComponentType, SVGProps } from "react";
 
 /**
@@ -27,6 +32,8 @@ export type NavItem = RouteEntry & {
   badgeCount?: number;
   /** Screen-reader context for the number, e.g. "Market 2 incoming trade offers". */
   badgeNoun?: string;
+  /** Compete's word badge (ADR-107), instead of a count. */
+  status?: CompeteStatus;
 };
 
 type IconMap = Record<string, ComponentType<SVGProps<SVGSVGElement>>>;
@@ -36,7 +43,7 @@ const PRIMARY_ICONS: IconMap = {
   collection: IconCollection,
   packs: IconPack,
   market: IconMarket,
-  leaderboard: IconLeaderboard,
+  compete: IconLeaderboard,
 };
 
 const ACCOUNT_ICONS: IconMap = {
@@ -46,7 +53,10 @@ const ACCOUNT_ICONS: IconMap = {
   admin: IconAdmin,
 };
 
-export function buildPrimaryNavItems(incomingOfferCount: number): NavItem[] {
+export function buildPrimaryNavItems(
+  incomingOfferCount: number,
+  competeStatus: CompeteStatus | null,
+): NavItem[] {
   return PRIMARY_TABS.map((entry) => ({
     ...entry,
     Icon: PRIMARY_ICONS[entry.key],
@@ -55,6 +65,8 @@ export function buildPrimaryNavItems(incomingOfferCount: number): NavItem[] {
     ...(entry.key === "market" && incomingOfferCount > 0
       ? { badgeCount: incomingOfferCount, badgeNoun: "incoming trade offers" }
       : {}),
+    // Midweek's state rides Compete, which owns it (ADR-107).
+    ...(entry.key === "compete" && competeStatus ? { status: competeStatus } : {}),
   }));
 }
 

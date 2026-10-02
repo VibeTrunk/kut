@@ -1,11 +1,9 @@
 import Link from "next/link";
 import { FilterBar } from "@/components/filter-bar";
 import { LiveCard, type LiveCardPlayer } from "@/components/live-card";
-import { MidweekCollectionStrip } from "@/components/midweek/entry-points";
 import { requireUser } from "@/lib/auth/user";
 import { fetchInjuredPlayerIds } from "@/lib/injuries";
 import { toLiveCardPlayer } from "@/lib/live-card-player";
-import { loadMidweekEntryPoint } from "@/lib/midweek/load";
 import { resolvePhotoUrls } from "@/lib/player-photos";
 import { createClient } from "@/lib/supabase/server";
 import { CollectionAlbum } from "@/components/album/collection-album";
@@ -148,9 +146,6 @@ export default async function CollectionPage({ searchParams }: CollectionPagePro
       resolvePhotoUrls(supabase, visiblePaths),
       fetchInjuredPlayerIds(supabase),
     ]);
-    const midweek = await loadMidweekEntryPoint(supabase, injuredPlayerIds, new Date(), user.id, {
-      withChampion: false,
-    });
     return (
       <main className="board-ground min-h-screen p-5 text-ink sm:p-10">
         <section className="mx-auto max-w-6xl py-4 sm:py-8">
@@ -161,7 +156,6 @@ export default async function CollectionPage({ searchParams }: CollectionPagePro
             ownPlayerId={profileResponse.data?.player_id ?? null}
             pageValue={page}
             injuredPlayerIds={injuredPlayerIds}
-            midweek={<MidweekCollectionStrip point={midweek} />}
             photoUrls={photoUrls}
             roster={roster}
           />
@@ -193,10 +187,6 @@ export default async function CollectionPage({ searchParams }: CollectionPagePro
     ),
     fetchInjuredPlayerIds(supabase),
   ]);
-  // Owner decision D2: the retired Club-page card is this strip (ADR-097).
-  const midweek = await loadMidweekEntryPoint(supabase, injuredPlayerIds, new Date(), user.id, {
-    withChampion: false,
-  });
   const uniquePlayers = new Set(all.map((card) => card.player_id)).size;
   const discardValue = all.reduce((total, card) => total + (card.discard_value ?? 0), 0);
   const totalPlayers = directory.length;
@@ -214,7 +204,6 @@ export default async function CollectionPage({ searchParams }: CollectionPagePro
           totalPlayers={totalPlayers}
           uniquePlayers={uniquePlayers}
         />
-        <MidweekCollectionStrip point={midweek} />
 
         {query.discard &&
           Number.isSafeInteger(Number(query.discard)) &&

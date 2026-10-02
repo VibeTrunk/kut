@@ -5767,3 +5767,61 @@ for byte the same; only its config, schedule and timing vectors changed.
 
 Tier: data-changing (docs/OPERATIONS.md): it re-times the open week's lock
 and moves when the payout runs. Fresh cold-verified backup before the push.
+
+## ADR-107 — Compete replaces Leaderboard: Midweek, Standings and Players under one tab
+
+Date: 2026-10-02
+
+Status: Accepted (amends ADR-053's primary tabs and ADR-097's route and
+Collection strip; reverses owner decision D1 and retires D2; MM 2.0 frontend
+F1)
+
+Context: the UX review of 1 Oct found Midweek Madness hard to find: it lived
+under Home at `/club/midweek`, reached through Home's card and a strip on
+Collection, and the chrome could not show that a pick was due or the evening
+was on. The owner chose option C (DR1-1, DR1-2 in
+`design/ux-review/HANDOFF.md`): a fifth tab named Compete holding Midweek,
+the standings and the player directory, with Midweek at `/midweek`; DR2
+approved the mockups on 2 Oct, and Q12 (2 Oct) removed the Collection strip.
+ADR number: ADR-106 stays reserved for the live-reveal migration (B3), which
+an applied migration's comment already names.
+
+Decision (no migration):
+
+- **Compete is the fifth primary tab** (`/midweek`, owning `/midweek`,
+  `/leaderboard`, `/players`), in place of Leaderboard, with Leaderboard's
+  icon. Home no longer owns any Midweek route.
+- **Section tabs `COMPETE_TABS`:** Midweek · Standings · Players, at the top
+  of the picker and evening, a week's bracket, Standings and the directory.
+  Match reports keep their back link (the mockups show no tabs there). The
+  Leaderboard page is headed **Standings**; its URL stays `/leaderboard`.
+- **Midweek moves to `/midweek`.** `/club/midweek/:path*` is a permanent
+  redirect (308) in `next.config.ts`, which covers the evening, every bracket
+  and match link already shared, and `?view=pick`. A whole subtree with dynamic
+  segments is why it is a config redirect, not a page stub like `/club` and
+  `/sessions`. With Midweek switched off and no week running, `/midweek`
+  redirects to Standings: it used to be "not found", which would make the tab
+  itself a dead end.
+- **`CompeteBadge`:** `Pick` while a week is open, the member hasn't opted out,
+  and they have no saved squad; `Live` from the lock to the end of the final,
+  for every member; nothing otherwise, and no `Pick` when the squad read fails.
+  `Live` reads `midweek_current.evening_live` (ADR-105) and, where that column
+  is absent because Vercel deploys before the push, falls back to the end of
+  the final (`final_reveal_at`, readable from the lock until ADR-105). Shown on
+  the tab in both bars; `Live` also on the Midweek section tab, while `Pick`
+  stays off it because the picker is the page asking. The chip is hidden from
+  screen readers and one sentence stands in, so the link reads "Compete Pick.
+  Midweek Madness: you haven't picked your five". The nav context loads it
+  with the other badges: `midweek_current`, and the caller's squad only while
+  picking is open; a failed read shows no badge and never fails the page.
+- **The Collection strip is removed** (Q12), with the entry-point data only it
+  used. Home keeps its card. Midweek actions now revalidate the root layout,
+  since the badge is on every page.
+- **New tokens** `--color-live` (#ff8091) and `--color-ink-on-live` for the
+  `Live` chip, as in the mockups.
+- Copy: how-it-works §10 and Home's Rank tile say "standings".
+
+Consequences: one tap from anywhere to Midweek, and the chrome says when a pick
+is due or the evening is live. Standings is one tap deeper than before (Home's
+Rank tile links straight to it). BUILD_SPEC §46 records the new bar, and also
+corrects its description of the avatar, which links to Settings.

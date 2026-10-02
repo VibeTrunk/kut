@@ -83,9 +83,9 @@ don't add cross-repo coupling beyond the shared Supabase project.
 
 KUT is live at `https://kut.vibetrunk.com` as Vercel project `kut`.
 
-**Latest hosted migration:** `20261011000000_midweek_evening_timing.sql`
-(ADR-104), pushed 2026-10-02; `migration list --linked` showed 81
-entries, all present locally and remotely, no drift. Every hosted deploy, with its backup,
+**Latest hosted migration:** `20261012000000_midweek_draw_from_lock.sql`
+(ADR-105), pushed 2026-10-02; `migration list --linked` showed 82
+entries before the push, `20261012000000` the only local-only one, no drift. Every hosted deploy, with its backup,
 smoke test and rollback, is in [`docs/DEPLOYMENTS.md`](docs/DEPLOYMENTS.md).
 
 **Midweek Madness is live and switched on** since 2026-09-26; the first week

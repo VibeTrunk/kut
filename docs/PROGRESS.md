@@ -4211,7 +4211,7 @@ the D3 owner-count rule). The engine and B1 suites changed one assertion each,
 both pinning the old shape (squads hidden until round 1; `schedule_version` as
 `midweek_current`'s last column).
 
-Not on hosted yet.
+On hosted the same day (see below).
 
 ## MM 2.0 F1: Compete navigation — 2026-10-02
 
@@ -4233,3 +4233,12 @@ Verification: `npm run verify:fast` (40 files, 387 tests); authenticated E2E
 `Pick` badge before and after a save, the tabs and their `aria-current`, the
 redirects, no strip on Collection, and a 1440 px pass of the top bar with no
 horizontal overflow.
+
+## MM 2.0 B2 on hosted — 2026-10-02
+
+`20261012000000_midweek_draw_from_lock.sql` (ADR-105) is live: catalogue PR
+supabase #66, backup `20261002-110621`, gate passed for `2f3a94a` (#152 and
+#153), smoke row as expected (`docs/DEPLOYMENTS.md`). From the next lock
+(Wed 7 Oct 19:55) members can read the draw and every entered five before
+round 1, and the Compete tab's `Live` badge reads `evening_live`. F3 and F5,
+which waited for this, can now ship.

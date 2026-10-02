@@ -5755,6 +5755,10 @@ to push by Sat 10 Oct, making the week of 12 Oct (lock **Wed 14 Oct 19:55**)
 the first. A push after that is held until the 14 Oct payout, and the week of
 19 Oct (lock Wed 21 Oct 19:55) is the first.
 
+Update 2026-10-02: pushed on 2 Oct, so the **week of 5 Oct (lock Wed 7 Oct
+19:55)** is the first on version 2; the 28 Sep week stays on version 1
+(`docs/DEPLOYMENTS.md`).
+
 Consequences: the evening is shorter (final at 21:00 with 17–32 entrants) and
 coins land about 5–9 minutes after the final starts instead of at its reveal.
 Members see the earlier lock on the lock bar, the picker and how-it-works. No

@@ -192,6 +192,23 @@ test.describe("Compete (ADR-107)", () => {
       await expectNoHorizontalOverflow(page);
     }
   });
+
+  test("from 640 px to lg the top bar fits the screen (KB-033)", async ({ page }) => {
+    await signIn(page, "release_member");
+    for (const width of [640, 768, 1023]) {
+      await page.setViewportSize({ width, height: 900 });
+      for (const route of ["/", "/midweek", "/market"]) {
+        await page.goto(route);
+        // Icons only below lg, but every tab keeps its name.
+        await expect(competeTab(page)).toBeVisible();
+        await expect(
+          page.getByRole("navigation", { name: "Primary" }).getByRole("link", { name: "Market" }),
+        ).toBeVisible();
+        await expect(page.getByRole("link", { name: /^Settings, / })).toBeInViewport();
+        await expectNoHorizontalOverflow(page);
+      }
+    }
+  });
 });
 
 test.describe("Midweek Madness results (PR 8)", () => {

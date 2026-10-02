@@ -4348,3 +4348,19 @@ mid-evening, the champion view after the final and past weeks, each with the
 no-overflow check and the clock pinned on scroll. The draw, out, final,
 champion and past-weeks states were checked visually at 320, 412 and 1440 px
 against the mockups.
+
+## MM 2.0 PR 5: a result message for every entrant (ADR-109) — 2026-10-02
+
+`feat/midweek-result-for-everyone`, migration
+`20261013000000_midweek_result_for_everyone.sql` (data-changing tier).
+
+- Every entrant now gets a Midweek message when the week is paid, not only
+  the members who won coins. The title says how far they got; the body says
+  who beat them and how (penalties included), their coins, the champion, and
+  whether an auto squad played for them.
+- Payments are unchanged.
+
+Verification: every pgTAP suite through `docker exec` (the payouts suite
+updated: one message per entrant, the wording per finish, the auto-squad line,
+none for an opted-out or disabled member, still idempotent);
+`midweek-race` and `midweek-switch` integration tests; `npm run verify:fast`.

@@ -216,7 +216,7 @@ describe("local concurrent Midweek worker race", () => {
     }
 
     // One payout for the completed week: every pairing's winner once, a full
-    // bracket's worth, one ledger row per win and one message per member paid.
+    // bracket's worth, one ledger row per win and one message per entrant (ADR-109).
     const [late] = states.rows;
     const payout = await admin.query(
       `select (select count(*)::int from kut.midweek_rewards where tournament_id = $1) as rewards,
@@ -225,7 +225,7 @@ describe("local concurrent Midweek worker race", () => {
                 where reason = 'midweek_win' and reference_id = $1) as ledger,
               (select coalesce(sum(amount), 0)::int from kut.wallet_ledger
                 where reason = 'midweek_win' and reference_id = $1) as ledger_coins,
-              (select count(distinct user_id)::int from kut.midweek_rewards where tournament_id = $1) as members,
+              (select count(*)::int from kut.midweek_entries where tournament_id = $1) as entrants,
               (select count(*)::int from kut.user_notifications
                 where event_type = 'midweek_result' and reference_id = $1) as messages,
               kut._mm_round_payouts($2) as pays`,
@@ -240,7 +240,7 @@ describe("local concurrent Midweek worker race", () => {
     expect(paid.coins).toBe(fullBracket);
     expect(paid.ledger).toBe(paid.rewards);
     expect(paid.ledger_coins).toBe(paid.coins);
-    expect(paid.messages).toBe(paid.members);
+    expect(paid.messages).toBe(paid.entrants);
     const unpaid = await admin.query(
       "select count(*)::int as n from kut.midweek_rewards where tournament_id = $1",
       [fx.fresh],

@@ -231,7 +231,14 @@ function CardRow({
   );
 }
 
-export function MidweekWhyList({ why }: { why: readonly [WhySide, WhySide] }) {
+export function MidweekWhyList({
+  why,
+  beforeFullTime = false,
+}: {
+  why: readonly [WhySide, WhySide];
+  /** A match in play: its goals and assists are left out until full time (ADR-115). */
+  beforeFullTime?: boolean;
+}) {
   const [open, setOpen] = useState(false);
   const [tips, setTips] = useState<Tips>({ open: null, hover: null, dismissed: null });
   const showing = tips.open ?? tips.hover;
@@ -330,8 +337,9 @@ export function MidweekWhyList({ why }: { why: readonly [WhySide, WhySide] }) {
         Power is a card&rsquo;s strength in this match; 1.00, the tick on each bar, is an ordinary
         card. Green is stronger than that, amber and orange weaker. It multiplies the card&rsquo;s
         rating, form, pick, fitness and this match&rsquo;s day roll
-        {open && "; hover or tap a factor to see what it means"}. Who picked whom is on the bracket
-        page after the final.
+        {open && "; hover or tap a factor to see what it means"}.
+        {beforeFullTime && " Goals and assists are added at full time."} Who picked whom is on the
+        bracket page after the final.
       </p>
     </section>
   );

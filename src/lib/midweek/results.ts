@@ -1,5 +1,7 @@
 import type { createClient } from "@/lib/supabase/server";
 import type { MidweekTournament, MyRewardRow } from "./entry";
+import { maskInPlay } from "./live";
+import { loadMatchEnds } from "./live-load";
 import type { DrawRow, EntryCardRow, MatchRow, PickShareRow } from "./rows";
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
@@ -28,13 +30,15 @@ export async function loadTournamentByWeek(
 
 /**
  * One week as members may see it now: round 1's draw and every entered card
- * from the lock (ADR-105), and the pairings revealed so far, byes included.
+ * from the lock (ADR-105), and the pairings kicked off so far, byes included,
+ * each without its result while it is in play (`maskInPlay`, ADR-115).
  */
 export async function loadWeekResults(
   supabase: SupabaseServerClient,
   tournamentId: string,
+  now: Date = new Date(),
 ): Promise<{ draw: DrawRow[]; matches: MatchRow[]; entries: EntryCardRow[] }> {
-  const [draw, matches, entries] = await Promise.all([
+  const [draw, matches, entries, ends] = await Promise.all([
     supabase
       .schema("kut")
       .from("midweek_draw_public")
@@ -55,13 +59,14 @@ export async function loadWeekResults(
       .eq("tournament_id", tournamentId)
       .order("user_id")
       .order("slot"),
+    loadMatchEnds(tournamentId),
   ]);
   if (draw.error || matches.error || entries.error) {
     throw new Error("Could not load this week's results.");
   }
   return {
     draw: (draw.data ?? []) as DrawRow[],
-    matches: (matches.data ?? []) as MatchRow[],
+    matches: maskInPlay((matches.data ?? []) as MatchRow[], ends, now),
     entries: (entries.data ?? []) as EntryCardRow[],
   };
 }

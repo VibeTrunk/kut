@@ -3,6 +3,7 @@ import { CompeteTabs } from "@/components/app-shell/compete-tabs";
 import { LiveCard, type LiveCardPlayer } from "@/components/live-card";
 import { MidweekNotice, MidweekSaveStatus, MidweekTrialistCard } from "@/components/midweek/bits";
 import { MidweekClock } from "@/components/midweek/clock";
+import { MidweekLivePoller } from "@/components/midweek/live-poller";
 import { MidweekCountdown } from "@/components/midweek/countdown";
 import { MidweekFiveList } from "@/components/midweek/five-list";
 import { MidweekMatchRow } from "@/components/midweek/match-row";
@@ -10,7 +11,11 @@ import { MidweekMiniCard } from "@/components/midweek/mini-card";
 import { MIDWEEK_PAGE, MidweekPageHead, MidweekSectionHead } from "@/components/midweek/page-head";
 import { MidweekPath } from "@/components/midweek/path";
 import { MidweekPlaceholder } from "@/components/midweek/placeholder";
-import { MidweekScoreboard } from "@/components/midweek/report";
+import {
+  MidweekLaneTimeline,
+  MidweekScoreboard,
+  MidweekShootoutLive,
+} from "@/components/midweek/report";
 import { MidweekSeed } from "@/components/midweek/seed";
 import { MIDWEEK } from "@/game/midweek/config";
 import { seedHash } from "@/game/midweek/rng";
@@ -45,9 +50,11 @@ import {
   nightTotals,
   roundName,
   roundsYouAreIn,
+  settledWinner,
   sideScore,
   type BracketRound,
 } from "@/lib/midweek/evening";
+import { loadLiveMatch, type LiveMatch } from "@/lib/midweek/live-load";
 import { loadMyRewards, loadWeekResults } from "@/lib/midweek/results";
 import type { MatchRow } from "@/lib/midweek/rows";
 import { resolvePhotoUrls } from "@/lib/player-photos";
@@ -164,16 +171,19 @@ function RoundSection({
   weekStart,
   userId,
   link,
+  title = round.name,
 }: {
   round: BracketRound;
   weekStart: string;
   userId: string;
   link: boolean;
+  /** "This round" while it is in play (Evening-YourMatch). */
+  title?: string;
 }) {
   const id = `evening-round-${round.round}-h`;
   return (
     <section aria-labelledby={id} className="grid gap-3.5">
-      <MidweekSectionHead id={id} title={round.name}>
+      <MidweekSectionHead id={id} title={title}>
         {link ? (
           <Link
             className="text-sm font-bold text-brass hover:underline"
@@ -197,19 +207,21 @@ function RoundSection({
 }
 
 /**
- * The evening from the lock (MM 2.0 F5, ADR-113), under the sticky
- * `MidweekClock`:
+ * The evening from the lock (MM 2.0 F5, ADR-113; live states F6, ADR-115),
+ * under the sticky `MidweekClock`:
  *
  * - `draw` (Evening-Draw), lock to round 1: your first match with your five and
  *   your opponent's, or both possible opponents' after a bye, then round 1's
  *   pairings with their kick-off;
  * - `round` while you're in, and `out` (Evening-Out) once you've lost: your
- *   night, the next round's kick-offs, the round just played;
- * - `final`, for everyone: the final, and that coins and the champion follow
- *   its end.
+ *   match live while it plays (Evening-YourMatch), your night, then the round
+ *   in play ("This round", every other match in play with no score), or between
+ *   rounds the next round's kick-offs and the round just played;
+ * - `final`, for everyone: the final live, chance by chance and kick by kick
+ *   (Evening-FinalLive), and that coins and the champion follow its end.
  *
- * Matches are revealed whole at kick-off until ADR-106, so a round shows its
- * kick-off times and then its results; the live states are F6.
+ * While a match is in play the page asks for itself again every 20 seconds,
+ * and otherwise once at the next kick-off (`MidweekLivePoller`).
  */
 export async function WeekEvening({
   supabase,
@@ -231,7 +243,7 @@ export async function WeekEvening({
     return <WeekLocked current={current} now={now} squad={squad} supabase={supabase} />;
   }
 
-  const results = await loadWeekResults(supabase, current.tournament_id as string);
+  const results = await loadWeekResults(supabase, current.tournament_id as string, now);
   const scheduleVersion = scheduleVersionOf(current);
   const nowIso = now.toISOString();
   const night = myNight({ userId, rounds, lockAt, scheduleVersion, matches: results.matches });
@@ -258,6 +270,30 @@ export async function WeekEvening({
   });
   const roundOne = formatClock(bracket[0].kickoffAt);
   const finalAt = formatClock(bracket[rounds - 1].kickoffAt);
+  const thisRound = phase.round > 0 ? bracket[phase.round - 1] : null;
+  const inPlay = thisRound?.pairs.some((pair) => pair.kind === "inplay") ?? false;
+  const nextKickoff =
+    bracket.find((round) => Date.parse(round.kickoffAt) > now.getTime())?.kickoffAt ?? null;
+
+  // The one match this member watches live: theirs this round, or the final.
+  const watched = thisRound?.pairs.find(
+    (pair) =>
+      pair.kind === "inplay" &&
+      (phase.kind === "final" || pair.sides.some((side) => side.userId === userId)),
+  );
+  const live =
+    watched?.kind === "inplay"
+      ? await loadLiveMatch(supabase, {
+          tournament: {
+            tournament_id: current.tournament_id as string,
+            seed_hash: current.seed_hash,
+            rounds,
+          },
+          scheduleVersion,
+          match: watched.match,
+          now,
+        })
+      : null;
 
   const yourNight = night.entered && (
     <section aria-labelledby="night-h" className="grid content-start gap-4">
@@ -270,6 +306,30 @@ export async function WeekEvening({
       <MidweekPath now={nowIso} rounds={rounds} rows={night.rows} weekStart={weekStart} />
     </section>
   );
+
+  // The round in play, or between rounds the next one's kick-offs and the round just played.
+  const roundSections =
+    thisRound && inPlay ? (
+      <RoundSection
+        link
+        round={thisRound}
+        title="This round"
+        userId={userId}
+        weekStart={weekStart}
+      />
+    ) : (
+      <>
+        {bracket[phase.round] && (
+          <RoundSection
+            link={false}
+            round={bracket[phase.round]}
+            userId={userId}
+            weekStart={weekStart}
+          />
+        )}
+        {thisRound && <RoundSection link round={thisRound} userId={userId} weekStart={weekStart} />}
+      </>
+    );
 
   let body;
   if (phase.kind === "draw") {
@@ -313,23 +373,35 @@ export async function WeekEvening({
     const pair = bracket[rounds - 1].pairs[0];
     body = (
       <>
-        <section aria-labelledby="final-h" className="grid gap-3.5">
-          <MidweekSectionHead id="final-h" title="The final">
-            {pair.kind === "played" && (
-              <Link
-                className="text-sm font-bold text-brass hover:underline"
-                href={`/midweek/${weekStart}/match/${pair.match.match_id}`}
-              >
-                Report &rarr;
-              </Link>
+        {pair.kind === "inplay" ? (
+          <LiveMatchBlock
+            autoUserIds={autoUserIds}
+            id="final-h"
+            live={live}
+            match={pair.match}
+            title="The final"
+            userId={userId}
+            weekStart={weekStart}
+          />
+        ) : (
+          <section aria-labelledby="final-h" className="grid gap-3.5">
+            <MidweekSectionHead id="final-h" title="The final">
+              {pair.kind === "played" && (
+                <Link
+                  className="text-sm font-bold text-brass hover:underline"
+                  href={`/midweek/${weekStart}/match/${pair.match.match_id}`}
+                >
+                  Report &rarr;
+                </Link>
+              )}
+            </MidweekSectionHead>
+            {pair.kind === "played" ? (
+              <FinalScoreboard autoUserIds={autoUserIds} match={pair.match} userId={userId} />
+            ) : (
+              <MidweekMatchRow pair={pair} weekStart={weekStart} you={userId} />
             )}
-          </MidweekSectionHead>
-          {pair.kind === "played" ? (
-            <FinalScoreboard autoUserIds={autoUserIds} match={pair.match} userId={userId} />
-          ) : (
-            <MidweekMatchRow pair={pair} weekStart={weekStart} you={userId} />
-          )}
-        </section>
+          </section>
+        )}
         <p className={`${PANEL} text-sm text-ink-dim`}>
           The champion is named and coins are paid when the final ends.
           {night.entered ? ` You: +${night.coins} so far.` : ""}
@@ -340,9 +412,19 @@ export async function WeekEvening({
       </>
     );
   } else {
-    const next = bracket[phase.round];
     body = (
       <>
+        {watched?.kind === "inplay" && (
+          <LiveMatchBlock
+            autoUserIds={autoUserIds}
+            id="yours-h"
+            live={live}
+            match={watched.match}
+            title="Your match"
+            userId={userId}
+            weekStart={weekStart}
+          />
+        )}
         {phase.kind === "out" ? (
           <div className="grid gap-7 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)] lg:items-start lg:gap-10">
             {yourNight}
@@ -359,24 +441,26 @@ export async function WeekEvening({
                   The final &middot; {finalAt}
                 </p>
                 <h2 className="display text-2xl sm:text-3xl" id="final-card-h">
-                  Come back for the final
+                  Everyone watches it live
                 </h2>
-                <p className="text-sm text-ink-dim">Its result shows on this page at {finalAt}.</p>
+                <p className="text-sm text-ink-dim">Chance by chance, on this page.</p>
               </section>
             </div>
           </div>
         ) : (
           yourNight
         )}
-        {next && <RoundSection link={false} round={next} userId={userId} weekStart={weekStart} />}
-        <RoundSection link round={bracket[phase.round - 1]} userId={userId} weekStart={weekStart} />
+        {roundSections}
       </>
     );
   }
 
   return (
     <main className={MIDWEEK_PAGE}>
-      <MidweekClock stops={stops} />
+      <MidweekClock
+        stops={stops}
+        updated={<MidweekLivePoller at={nowIso} nextAt={nextKickoff} poll={inPlay} />}
+      />
       <section className="mx-auto grid max-w-6xl gap-8 pb-4 sm:gap-11 sm:pb-8">
         <CompeteTabs />
         <MidweekPageHead
@@ -386,6 +470,62 @@ export async function WeekEvening({
         {body}
       </section>
     </main>
+  );
+}
+
+/**
+ * A match this member watches live (Evening-YourMatch, Evening-FinalLive): the
+ * scoreboard in team colours, a single-match block (DR2-1), as it stands now;
+ * then the shoot-out's kicks once it has begun, or else the latest chance.
+ */
+function LiveMatchBlock({
+  title,
+  id,
+  match,
+  live,
+  userId,
+  autoUserIds,
+  weekStart,
+}: {
+  title: string;
+  id: string;
+  match: MatchRow;
+  live: LiveMatch | null;
+  userId: string;
+  autoUserIds: ReadonlySet<string>;
+  weekStart: string;
+}) {
+  const managers = [match.side_0_name, match.side_1_name ?? ""] as const;
+  const side1 = match.side_1_user_id ?? "";
+  return (
+    <section aria-labelledby={id} className="grid gap-3.5">
+      <MidweekSectionHead id={id} title={title}>
+        <Link
+          className="text-sm font-bold text-brass hover:underline"
+          href={`/midweek/${weekStart}/match/${match.match_id}`}
+        >
+          Watch it &rarr;
+        </Link>
+      </MidweekSectionHead>
+      <MidweekScoreboard
+        auto={[autoUserIds.has(match.side_0_user_id), autoUserIds.has(side1)]}
+        goals={live?.live.score ?? [0, 0]}
+        live={{ minute: live?.live.minute ?? 0, penalties: live?.live.penalties ?? null }}
+        managers={managers}
+        penalties={null}
+        winnerSide={null}
+        youSide={match.side_0_user_id === userId ? 0 : side1 === userId ? 1 : null}
+      />
+      {live?.live.shootout && live.live.penalties ? (
+        <MidweekShootoutLive
+          kicks={live.live.kicks}
+          managers={managers}
+          penalties={live.live.penalties}
+        />
+      ) : live && live.live.timeline.length > 0 ? (
+        <MidweekLaneTimeline live managers={managers} timeline={live.live.timeline.slice(-1)} />
+      ) : null}
+    </section>
   );
 }
 
@@ -408,7 +548,7 @@ function FinalScoreboard({
       goals={[a.goals, b.goals]}
       managers={[match.side_0_name, match.side_1_name ?? ""]}
       penalties={a.penalties !== null && b.penalties !== null ? [a.penalties, b.penalties] : null}
-      winnerSide={match.winner_side}
+      winnerSide={settledWinner(match)}
       youSide={match.side_0_user_id === userId ? 0 : side1 === userId ? 1 : null}
     />
   );

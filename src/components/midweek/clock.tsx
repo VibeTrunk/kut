@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import {
   eveningClockLabel,
   STOP_WORD,
@@ -21,7 +22,14 @@ const STOP_DOT: Record<StopState, string> = {
  * brass dot after the name. The list is one sentence for screen readers.
  * It replaced `MidweekRevealClock`, retired with Home's old card (ADR-114).
  */
-export function MidweekClock({ stops }: { stops: readonly EveningStop[] }) {
+export function MidweekClock({
+  stops,
+  updated = null,
+}: {
+  stops: readonly EveningStop[];
+  /** `Updated 20:18:20` under the clock while the evening polls (ADR-115). */
+  updated?: ReactNode;
+}) {
   return (
     <div className="sticky top-14 z-20 -mx-5 -mt-5 mb-5 border-b border-line/50 bg-board-deep/92 px-5 pt-2.5 pb-2 backdrop-blur-sm sm:top-16 sm:-mx-10 sm:-mt-10 sm:mb-10 sm:px-10 sm:pt-3 sm:pb-2.5">
       <ol
@@ -65,6 +73,7 @@ export function MidweekClock({ stops }: { stops: readonly EveningStop[] }) {
           </li>
         ))}
       </ol>
+      {updated && <div className="mx-auto mt-1 flex max-w-6xl justify-end">{updated}</div>}
     </div>
   );
 }

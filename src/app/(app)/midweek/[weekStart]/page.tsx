@@ -5,6 +5,7 @@ import { MidweekNotice } from "@/components/midweek/bits";
 import { MidweekBracket } from "@/components/midweek/bracket";
 import { MidweekClock } from "@/components/midweek/clock";
 import { MidweekJumpLinks } from "@/components/midweek/jump-links";
+import { MidweekLivePoller } from "@/components/midweek/live-poller";
 import { MIDWEEK_PAGE, MidweekPageHead } from "@/components/midweek/page-head";
 import { MidweekPickShares, type PickShareView } from "@/components/midweek/pick-shares";
 import { MidweekSeed } from "@/components/midweek/seed";
@@ -94,8 +95,8 @@ export default async function MidweekBracketPage({
     );
   }
 
-  const results = await loadWeekResults(supabase, tournament.tournament_id);
   const now = new Date();
+  const results = await loadWeekResults(supabase, tournament.tournament_id, now);
   const bracket = assembleBracket({
     rounds,
     lockAt,
@@ -117,8 +118,14 @@ export default async function MidweekBracketPage({
     const entered = bracket[0].pairs.some((pair) =>
       pair.sides.some((side) => side.userId === user.id),
     );
+    // While a match is in play the bracket asks for itself every 20 seconds,
+    // otherwise once at the next kick-off (ADR-115).
+    const inPlay = bracket.some((round) => round.pairs.some((pair) => pair.kind === "inplay"));
+    const nextKickoff =
+      bracket.find((round) => Date.parse(round.kickoffAt) > now.getTime())?.kickoffAt ?? null;
     clock = (
       <MidweekClock
+        updated={<MidweekLivePoller at={now.toISOString()} nextAt={nextKickoff} poll={inPlay} />}
         stops={eveningStops({
           lockAt,
           scheduleVersion,

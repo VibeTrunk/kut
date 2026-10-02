@@ -96,7 +96,8 @@ export function reportInputFromRows(input: {
   ownersPublished: boolean;
 }): ReportInput | null {
   const { match } = input;
-  if (match.bye || match.side_1_user_id === null) return null;
+  // A bye has no report, and a match in play has no result to report yet.
+  if (match.bye || match.side_1_user_id === null || match.winner_side === null) return null;
   const side0 = toSide(input.entries.filter((row) => row.user_id === match.side_0_user_id));
   const side1 = toSide(input.entries.filter((row) => row.user_id === match.side_1_user_id));
   if (!side0 || !side1) return null;

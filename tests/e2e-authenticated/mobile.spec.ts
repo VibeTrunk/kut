@@ -483,13 +483,16 @@ test.describe("Midweek Madness evening from the lock (F5, ADR-113)", () => {
     await expectNoHorizontalOverflow(page);
   });
 
-  test("mid-evening: results at full time, the next kick-offs and your night", async ({ page }) => {
+  test("between rounds: results at full time, the next kick-offs and your night", async ({
+    page,
+  }) => {
     await resetMidweek("release_member");
     let weekStart = "";
     await withDatabase(async (database) => {
       ({ weekStart } = await startFixtureEvening(database));
-      // Round 2 kicked off a minute ago: lock + 5 + 15 minutes.
-      await advanceFixtureEvening(database, 20);
+      // Round 1 (lock + 5) has ended, even with 50 kicks (8:55); round 2 kicks
+      // off in four minutes (lock + 20).
+      await advanceFixtureEvening(database, 15);
     });
     await signIn(page, "release_member");
     await page.goto("/midweek");
@@ -562,6 +565,136 @@ test.describe("Midweek Madness evening from the lock (F5, ADR-113)", () => {
     await expect(tree).toBeVisible();
     await expect(tree.getByText(/^Kick-off \d\d:\d\d$/).first()).toBeVisible();
     await expect(page.getByRole("navigation", { name: "Jump to" })).toBeHidden();
+    await expectNoHorizontalOverflow(page);
+  });
+});
+
+/** The fixture evening's matches in one round, and release_member's id. */
+async function roundMatches(weekStart: string, round: number) {
+  let result: {
+    member: string;
+    matches: { id: string; side_0_user_id: string; side_1_user_id: string }[];
+  } = { member: "", matches: [] };
+  await withDatabase(async (database) => {
+    const member = await database.query<{ id: string }>(
+      "select id from kut.profiles where username = 'release_member'",
+    );
+    const matches = await database.query<{
+      id: string;
+      side_0_user_id: string;
+      side_1_user_id: string;
+    }>(
+      `select m.id, m.side_0_user_id, m.side_1_user_id from kut.midweek_matches m
+       join kut.midweek_tournaments t on t.id = m.tournament_id
+       where t.week_start = $1 and m.round = $2 and not m.bye order by m.pairing`,
+      [weekStart, round],
+    );
+    result = { member: member.rows[0].id, matches: matches.rows };
+  });
+  return result;
+}
+
+test.describe("Midweek Madness live (F6, ADR-115)", () => {
+  test.afterEach(async () => {
+    await withDatabase(endFixtureEvening);
+  });
+
+  test("a match in play: your own live, every other in play, no result before full time", async ({
+    page,
+  }) => {
+    await resetMidweek("release_member");
+    let weekStart = "";
+    await withDatabase(async (database) => {
+      ({ weekStart } = await startFixtureEvening(database));
+      // Round 1 kicked off a minute ago.
+      await advanceFixtureEvening(database, 5);
+    });
+    const { member, matches } = await roundMatches(weekStart, 1);
+    const isMine = (m: (typeof matches)[number]) =>
+      m.side_0_user_id === member || m.side_1_user_id === member;
+    const match = matches.find(isMine) ?? matches[0];
+    const mine = isMine(match);
+    const other = matches.find((m) => !isMine(m));
+    await signIn(page, "release_member");
+
+    const home = page.getByRole("region", { name: "Now" }).getByRole("link").first();
+    await expect(home).toContainText("Live");
+    await expectNoHorizontalOverflow(page);
+
+    await page.goto("/midweek");
+    await expect(page.getByText(/^Updated \d\d:\d\d:\d\d$/)).toBeVisible();
+    await expect(eveningClock(page)).toHaveAccessibleName(/locked; [\w ]+ \d\d:\d\d, live/);
+    if (mine) {
+      await expect(page.getByRole("heading", { name: "Your match" })).toBeVisible();
+      await expect(page.getByRole("group", { name: /^Live, / })).toBeVisible();
+      await expect(page.getByRole("link", { name: "Watch it →" })).toBeVisible();
+    }
+    await expect(page.getByRole("heading", { name: "This round" })).toBeVisible();
+    if (other) {
+      await expect(
+        page.getByRole("group", { name: /, in play\. The result shows at full time\.$/ }).first(),
+      ).toBeVisible();
+    }
+    // Nothing about round 1 reads as played yet.
+    await expect(page.getByRole("group", { name: / won\.$/ })).toHaveCount(0);
+    await expectNoHorizontalOverflow(page);
+
+    await page.goto(`/midweek/${weekStart}`);
+    await expect(page.getByRole("navigation", { name: "Jump to" })).toBeVisible();
+    await expect(page.getByRole("link", { name: /^Match report: / })).toHaveCount(0);
+    await expectNoHorizontalOverflow(page);
+
+    await page.goto(`/midweek/${weekStart}/match/${match.id}`);
+    if (mine) {
+      await expect(page.getByText(/· your match · live$/)).toBeVisible();
+      await expect(page.getByRole("group", { name: /^Live, / })).toBeVisible();
+      await expect(page.getByText("A new chance every 20 seconds")).toBeVisible();
+    } else {
+      await expect(page.getByText(/ · in play$/)).toBeVisible();
+      await expect(page.getByText(/^You’re not in this match, so it isn’t shown/)).toBeVisible();
+      await expect(page.getByRole("region", { name: /’s line-up$/ })).toHaveCount(2);
+    }
+    await expect(page.getByText(/· checks for new chances every 20 seconds$/)).toBeVisible();
+    await expect(page.getByText(/Goals and assists are added at full time\./)).toBeVisible();
+    await expect(page.getByRole("group", { name: /^Final score:/ })).toHaveCount(0);
+    await expectNoHorizontalOverflow(page);
+
+    if (mine && other) {
+      await page.goto(`/midweek/${weekStart}/match/${other.id}`);
+      await expect(page.getByText(/ · in play$/)).toBeVisible();
+      await expect(page.getByText(/^You’re not in this match, so it isn’t shown/)).toBeVisible();
+      await expect(page.getByRole("region", { name: /’s line-up$/ })).toHaveCount(2);
+      await expectNoHorizontalOverflow(page);
+    }
+  });
+
+  test("the final is live for everyone, on the evening and its own page", async ({ page }) => {
+    await resetMidweek("release_member");
+    let weekStart = "";
+    let rounds = 0;
+    await withDatabase(async (database) => {
+      ({ weekStart, rounds } = await startFixtureEvening(database));
+      // The final kicked off a minute ago: lock + 5 + 15 × (rounds − 1).
+      await advanceFixtureEvening(database, 5 + 15 * (rounds - 1));
+    });
+    const { matches } = await roundMatches(weekStart, rounds);
+    await signIn(page, "release_member");
+    await page.goto("/midweek");
+    await expect(page.getByRole("heading", { level: 1, name: "The final is live" })).toBeVisible();
+    await expect(page.getByRole("group", { name: /^Live, / })).toBeVisible();
+    await expect(
+      page.getByText(/^The champion is named and coins are paid when the final ends\./),
+    ).toBeVisible();
+    await expectNoHorizontalOverflow(page);
+
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto(`/midweek/${weekStart}/match/${matches[0].id}`);
+    await expect(page.getByText(/^The final · live$/)).toBeVisible();
+    await expect(page.getByRole("heading", { name: "How it went" })).toBeVisible();
+    const story = await page.getByRole("heading", { name: "How it went" }).boundingBox();
+    const why = await page.getByRole("heading", { name: "Why" }).boundingBox();
+    // From lg the Why sits beside the story.
+    expect(why!.x).toBeGreaterThan(story!.x + 200);
     await expectNoHorizontalOverflow(page);
   });
 });

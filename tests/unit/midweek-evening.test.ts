@@ -784,7 +784,7 @@ describe("Home's evening card (ADR-114)", () => {
 
   it("your match this round at full time: the scoreboard and its report", () => {
     const played = rows.find((row) => row.round === 1 && !row.bye)!;
-    const winner = played.winner_user_id;
+    const winner = played.winner_user_id!;
     const loser = played.winner_side === 0 ? played.side_1_user_id! : played.side_0_user_id;
     expect(card("20:05", winner, upTo(1))).toMatchObject({
       kicker: "Midweek Madness · Round 1",
@@ -824,19 +824,84 @@ describe("Home's evening card (ADR-114)", () => {
     });
   });
 
-  it("a match in play (ADR-106) shows no result, only that it kicked off", () => {
-    const inPlay = rows.map((row) =>
-      row === final ? ({ ...row, winner_side: null } as unknown as MatchRow) : row,
-    );
+  it("a match in play (ADR-115) stays on the card, to watch", () => {
+    const playing = { ...final, winner_side: null, winner_user_id: null, in_play: true };
+    const inPlay = rows.map((row) => (row === final ? playing : row));
     expect(card("20:47", finalist, inPlay)).toMatchObject({
-      match: null,
-      line: "Your match kicked off at 20:45.",
+      match: playing,
       button: { label: "Watch your match", href: report(final) },
     });
     expect(card("20:47", "nobody", inPlay)).toMatchObject({
-      match: null,
-      line: "The final kicked off at 20:45.",
+      match: playing,
       button: { label: "Follow the final", href: "/midweek" },
     });
+  });
+});
+
+describe("the evening in play (ADR-115)", () => {
+  const LOCK2 = "2026-10-14T17:55:00.000Z";
+  const playing = (row: MatchRow): MatchRow => ({
+    ...row,
+    side_0_goals: null,
+    side_1_goals: null,
+    side_0_penalties: null,
+    side_1_penalties: null,
+    winner_side: null,
+    winner_user_id: null,
+    in_play: true,
+  });
+  const round2 = rows.find((row) => row.round === 2 && !row.bye)!;
+  const inPlay = upTo(2).map((row) => (row === round2 ? playing(row) : row));
+
+  it("your night says you are playing, and stops there", () => {
+    const you = round2.side_0_user_id;
+    const night = myNight({
+      userId: you,
+      rounds: 4,
+      lockAt: LOCK2,
+      scheduleVersion: 2,
+      matches: inPlay,
+    });
+    expect(night.rows.at(-1)).toEqual({
+      kind: "live",
+      round: 2,
+      revealAt: "2026-10-14T18:15:00.000Z",
+      opponent: round2.side_1_name,
+      matchId: round2.match_id,
+      coins: roundPayouts(4)[1],
+    });
+    expect(night.alive).toBe(true);
+    expect(night.coins).toBe(
+      night.rows.filter((row) => row.kind !== "live").reduce((s, r) => s + r.coins, 0),
+    );
+    expect(liveLine(night, 4, LOCK2, 2)).toBe(`Playing ${round2.side_1_name} now.`);
+  });
+
+  it("the bracket shows it in play, names its winner-to-be as a placeholder, and the clock says Live", () => {
+    const bracket = assembleBracket({
+      rounds: 4,
+      lockAt: LOCK2,
+      scheduleVersion: 2,
+      draw,
+      matches: inPlay,
+      autoUserIds: new Set(),
+    });
+    const pair = bracket[1].pairs[round2.pairing];
+    expect(pair.kind).toBe("inplay");
+    expect(pair.kind === "inplay" && pair.final).toBe(false);
+    expect(pairSentence(pair)).toMatch(/, in play\. The result shows at full time\.$/);
+    expect(bracket[1].played).toBe(false);
+    const next = bracket[2].pairs[round2.pairing >> 1];
+    expect(next.kind).toBe("upcoming");
+    expect(next.sides.some((side) => side.placeholder)).toBe(true);
+    const stops = eveningStops({
+      lockAt: LOCK2,
+      scheduleVersion: 2,
+      rounds: 4,
+      now: new Date("2026-10-14T18:17:00.000Z"),
+      matches: inPlay,
+      youThrough: null,
+    });
+    expect(stops[2].state).toBe("live");
   });
 });

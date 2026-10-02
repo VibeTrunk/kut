@@ -9,10 +9,19 @@ import { MidweekMiniCard } from "./mini-card";
  * with `in goal`. Nothing about form, pick or chances: those come at round 1's
  * kick-off (ADR-105). A panel sits at its own height.
  */
-export function MidweekFiveList({ five, you }: { five: FiveView; you: boolean }) {
+export function MidweekFiveList({
+  five,
+  you,
+  noun = "five",
+}: {
+  five: FiveView;
+  you: boolean;
+  /** "line-up" where the Why on the same page already names each side's five. */
+  noun?: string;
+}) {
   return (
     <section
-      aria-label={`${five.manager}’s five`}
+      aria-label={`${five.manager}’s ${noun}`}
       className={`grid content-start gap-2 rounded-[14px] border bg-panel/50 p-3 ${you ? "border-brass/55" : "border-line/60"}`}
     >
       <p className="flex flex-wrap items-center gap-1.5 font-black">

@@ -1,4 +1,4 @@
-import type { Archetype } from "@/game/archetypes";
+import { ARCHETYPES, type Archetype } from "@/game/archetypes";
 import { MIDWEEK, PPM, type MidweekConfig } from "@/game/midweek/config";
 import { mulPpm } from "@/game/midweek/fixed";
 import { playMatch, sideRatingPpm, type MatchOutcome } from "@/game/midweek/match";
@@ -61,7 +61,19 @@ function worldRandom(seed: number): () => number {
 
 // --- the world ------------------------------------------------------------
 
-type Player = { playerId: string; ovr: number; archetype: Archetype };
+/**
+ * A roster Player. `claimed` means a member is linked to them and chose their
+ * archetype; `active` and `collectible` mirror `kut.players`. The generated
+ * club has every Player active and collectible.
+ */
+export type Player = {
+  playerId: string;
+  ovr: number;
+  archetype: Archetype;
+  claimed: boolean;
+  active: boolean;
+  collectible: boolean;
+};
 
 export type Member = { userId: string; owned: EngineCard[]; strength: number };
 
@@ -122,12 +134,23 @@ export function generateWorld(seed: number, options: WorldOptions = DEFAULT_WORL
         )
       ];
     const ovr = tier.min + Math.floor(random() * (tier.max - tier.min + 1));
-    players.push({ playerId: `p${String(i).padStart(2, "0")}`, ovr, archetype: "all_rounder" });
+    players.push({
+      playerId: `p${String(i).padStart(2, "0")}`,
+      ovr,
+      archetype: "all_rounder",
+      claimed: false,
+      active: true,
+      collectible: true,
+    });
   }
   // Specialists land on random Players, so their ratings are spread like everyone's.
+  // A specialist is a claimed Player whose member chose the archetype; everyone
+  // else is unclaimed and keeps the default (ADR-027), which is what makes about
+  // 80% of the roster All-rounders.
   const order = players.map((_, i) => i).sort(() => random() - 0.5);
   specialists.forEach((archetype, i) => {
     players[order[i]].archetype = archetype;
+    players[order[i]].claimed = true;
   });
 
   const packWeights = players.map((p) => tierOf(p.ovr).packWeight);
@@ -159,6 +182,81 @@ export function collectionStrength(owned: readonly EngineCard[]): number {
   const top = [...best.values()].sort((a, b) => b - a).slice(0, 5);
   while (top.length < 5) top.push(30);
   return top.reduce((sum, v) => sum + v, 0) / 5;
+}
+
+// --- weekly archetype rotation (MM 2.0, C0) ----------------------------------
+
+/**
+ * How unclaimed Players' archetypes rotate (ROADMAP "Rotate unclaimed Players'
+ * archetypes weekly"; owner decisions 2026-09-30): only active, collectible,
+ * unclaimed Players rotate, the pool is every archetype including All-rounder
+ * and Goalkeeper, and claiming ends the rotation.
+ *
+ * - `off`: today; every Player keeps their archetype.
+ * - `uniform`: each rotating Player draws an archetype independently, every
+ *   archetype equally likely. With `keeperQuota`, exactly that many rotating
+ *   Players land on Goalkeeper and the rest draw from the other six.
+ * - `deal`: the archetypes are dealt out evenly, so each is held by the same
+ *   number of rotating Players (give or take one) every week.
+ *
+ * `everyWeeks` rotates once per that many weeks; the archetype holds in between.
+ */
+export type Rotation = {
+  mode: "off" | "uniform" | "deal";
+  keeperQuota: number | null;
+  everyWeeks: number;
+};
+
+export const NO_ROTATION: Rotation = { mode: "off", keeperQuota: null, everyWeeks: 1 };
+
+export function rotates(player: Player): boolean {
+  return player.active && player.collectible && !player.claimed;
+}
+
+const OUTFIELD_ARCHETYPES = ARCHETYPES.filter((archetype) => archetype !== "goalkeeper");
+
+/**
+ * Every Player's archetype for one week, decided before the week opens and
+ * frozen for the whole week, as the ADR-099 snapshot freezes it. Deterministic:
+ * keyed by `key` (seed and season), the rotation period and the Player, and
+ * never drawn from the world generator, so a run with rotation sees exactly the
+ * same collections, habits, injuries and dice as one without.
+ */
+export function weekArchetypes(
+  players: readonly Player[],
+  rotation: Rotation,
+  key: string,
+  week: number,
+): Map<string, Archetype> {
+  const result = new Map(players.map((player) => [player.playerId, player.archetype]));
+  if (rotation.mode === "off") return result;
+  const period = Math.floor(week / Math.max(1, rotation.everyWeeks));
+  const draw = (tag: string) => cyrb53(`rot:${key}:${period}:${tag}`, 3);
+  const rotating = players
+    .filter(rotates)
+    .map((player) => ({ id: player.playerId, rank: draw(`rank:${player.playerId}`) }))
+    .sort((a, b) => a.rank - b.rank || (a.id < b.id ? -1 : 1))
+    .map(({ id }) => id);
+
+  if (rotation.mode === "deal") {
+    // A shuffled order of all seven, so which archetypes get the extra Player varies.
+    const order = ARCHETYPES.map((archetype) => ({ archetype, rank: draw(`deal:${archetype}`) }))
+      .sort((a, b) => a.rank - b.rank || (a.archetype < b.archetype ? -1 : 1))
+      .map(({ archetype }) => archetype);
+    rotating.forEach((id, i) => result.set(id, order[i % order.length]));
+    return result;
+  }
+
+  rotating.forEach((id, i) => {
+    if (rotation.keeperQuota === null) {
+      result.set(id, ARCHETYPES[draw(`pick:${id}`) % ARCHETYPES.length]);
+    } else if (i < rotation.keeperQuota) {
+      result.set(id, "goalkeeper");
+    } else {
+      result.set(id, OUTFIELD_ARCHETYPES[draw(`pick:${id}`) % OUTFIELD_ARCHETYPES.length]);
+    }
+  });
+  return result;
 }
 
 // --- managers -------------------------------------------------------------
@@ -291,6 +389,7 @@ export type SimOptions = {
   world: WorldOptions;
   cfg: MidweekConfig;
   injuryRate: number;
+  rotation: Rotation;
 };
 
 export const DEFAULT_SIM: SimOptions = {
@@ -301,6 +400,7 @@ export const DEFAULT_SIM: SimOptions = {
   world: DEFAULT_WORLD,
   cfg: MIDWEEK,
   injuryRate: 0.04,
+  rotation: NO_ROTATION,
 };
 
 export type SimStats = ReturnType<typeof runSimulation>;
@@ -313,8 +413,39 @@ function entryOf(field: { entries: Entry[] }, userId: string): Entry {
   return field.entries.find((entry) => entry.userId === userId)!;
 }
 
+/** A histogram: value → count. */
+type Histogram = Map<number, number>;
+const bump = (h: Histogram, value: number) => h.set(value, (h.get(value) ?? 0) + 1);
+
+export type SquadGroup = "thoughtful" | "habit" | "auto";
+const groupOf = (strategy: Strategy): SquadGroup =>
+  strategy === "thoughtful" || strategy === "auto" ? strategy : "habit";
+
+/** Weeks watched before a member could tell a rotating Player from a fixed one. */
+export const OBSERVED_WEEKS = [2, 3, 4, 8] as const;
+
 export function runSimulation(options: SimOptions) {
   const cfg = options.cfg;
+  // Keepers (checkpoint Q8): how many Goalkeepers the roster holds each week,
+  // how often a member owns one, and how many each entered squad fields.
+  const rosterKeepers: Histogram = new Map();
+  const memberOwnsKeeper = rate();
+  const membersOwningKeeper: Histogram = new Map();
+  const squadKeepers = new Map<SquadGroup, Histogram>(
+    (["thoughtful", "habit", "auto"] as const).map((group) => [group, new Map()]),
+  );
+  const squadKeeperless = new Map<SquadGroup, Rate>(
+    (["thoughtful", "habit", "auto"] as const).map((group) => [group, rate()]),
+  );
+  const bracketKeeperless = rate();
+  // Visibility (checkpoint Q9): how plainly a Player's archetype history marks
+  // them as unclaimed.
+  const weeklyChange = { rotating: rate(), fixed: rate() };
+  const spottedAfter = new Map(OBSERVED_WEEKS.map((weeks) => [weeks, rate()]));
+  const unclaimedGivenShown = new Map<"all_rounder" | "specialist", Rate>([
+    ["all_rounder", rate()],
+    ["specialist", rate()],
+  ]);
   const strongBeatsWeak = rate();
   const strongBeatsWeakFull = rate();
   const strongWins8 = rate();
@@ -353,16 +484,54 @@ export function runSimulation(options: SimOptions) {
     const weakest = byStrength[byStrength.length - 1];
     const distinctPlayers = (m: Member) => new Set(m.owned.map((c) => c.playerId)).size;
     const weakestFull = [...byStrength].reverse().find((m) => distinctPlayers(m) >= 5);
+    const history = new Map(world.players.map((player) => [player.playerId, [] as Archetype[]]));
 
     for (let week = 0; week < options.weeksPerSeason; week += 1) {
       const rng = fastRng(cyrb53(`${options.seed}:${season}:${week}`, 1) >>> 0);
       const injured = new Set(
         world.players.filter(() => random() < options.injuryRate).map((p) => p.playerId),
       );
+      // The rotation runs before the week opens; the week plays what it set.
+      const archetypes = weekArchetypes(
+        world.players,
+        options.rotation,
+        `${options.seed}:${season}`,
+        week,
+      );
       const members = world.members.map((member) => ({
         ...member,
-        owned: member.owned.map((card) => ({ ...card, injured: injured.has(card.playerId) })),
+        owned: member.owned.map((card) => ({
+          ...card,
+          archetype: archetypes.get(card.playerId)!,
+          injured: injured.has(card.playerId),
+        })),
       }));
+
+      let keepers = 0;
+      for (const player of world.players) {
+        const archetype = archetypes.get(player.playerId)!;
+        if (archetype === "goalkeeper") keepers += 1;
+        const seen = history.get(player.playerId)!;
+        if (seen.length > 0) {
+          record(
+            rotates(player) ? weeklyChange.rotating : weeklyChange.fixed,
+            seen[seen.length - 1] !== archetype,
+          );
+        }
+        seen.push(archetype);
+        record(
+          unclaimedGivenShown.get(archetype === "all_rounder" ? "all_rounder" : "specialist")!,
+          !player.claimed,
+        );
+      }
+      bump(rosterKeepers, keepers);
+      let owning = 0;
+      for (const member of members) {
+        const owns = member.owned.some((card) => card.archetype === "goalkeeper");
+        record(memberOwnsKeeper, owns);
+        if (owns) owning += 1;
+      }
+      bump(membersOwningKeeper, owning);
       const inputs: EntrantInput[] = members.map((member) => ({
         userId: member.userId,
         owned: member.owned,
@@ -371,6 +540,14 @@ export function runSimulation(options: SimOptions) {
 
       const result = simulateTournament(rng, inputs, cfg) as SimulatedTournament;
       const entryByUser = new Map(result.entries.map((entry) => [entry.userId, entry]));
+
+      for (const entry of result.entries) {
+        const group = groupOf(strategies.get(entry.userId)!);
+        const count = entry.cards.filter((card) => card.archetype === "goalkeeper").length;
+        bump(squadKeepers.get(group)!, Math.min(3, count));
+        record(squadKeeperless.get(group)!, entry.keeperless);
+        record(bracketKeeperless, entry.keeperless);
+      }
 
       for (const payout of result.payouts) {
         coins.set(payout.userId, (coins.get(payout.userId) ?? 0) + payout.amount);
@@ -544,6 +721,18 @@ export function runSimulation(options: SimOptions) {
     }
 
     keeperGoalsPerSeason.push(keeperGoals);
+    for (const player of world.players) {
+      if (!rotates(player)) continue;
+      const seen = history.get(player.playerId)!;
+      for (const weeks of OBSERVED_WEEKS) {
+        if (weeks > seen.length) continue;
+        const window = seen.slice(0, weeks);
+        record(
+          spottedAfter.get(weeks)!,
+          window.some((archetype) => archetype !== window[0]),
+        );
+      }
+    }
     for (const member of world.members) {
       const strategy = strategies.get(member.userId)!;
       const bucket = habitCoins.get(strategy) ?? { coins: 0, memberSeasons: 0 };
@@ -585,6 +774,21 @@ export function runSimulation(options: SimOptions) {
       actual: b.n ? b.wins / b.n : NaN,
     })),
     matchCount,
+    keepers: {
+      roster: rosterKeepers,
+      memberOwnsKeeper: ratio(memberOwnsKeeper),
+      membersOwningKeeper,
+      squads: squadKeepers,
+      keeperless: new Map([...squadKeeperless].map(([group, r]) => [group, ratio(r)])),
+      bracketKeeperless: ratio(bracketKeeperless),
+    },
+    visibility: {
+      weeklyChangeRotating: ratio(weeklyChange.rotating),
+      weeklyChangeFixed: ratio(weeklyChange.fixed),
+      spottedAfter: new Map([...spottedAfter].map(([weeks, r]) => [weeks, ratio(r)])),
+      unclaimedGivenAllRounder: ratio(unclaimedGivenShown.get("all_rounder")!),
+      unclaimedGivenSpecialist: ratio(unclaimedGivenShown.get("specialist")!),
+    },
   };
 }
 

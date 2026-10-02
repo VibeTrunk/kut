@@ -2167,6 +2167,17 @@ The first and third rows pull against each other, and no tuning the harness
 found meets both. The owner accepted both as they are (ADR-092); the harness
 fails if either drifts past 72% or below 58%.
 
+**The archetype rotation (MM 2.0 C0).** The harness can also rotate unclaimed
+Players' archetypes each week, as the ROADMAP's "Rotate unclaimed Players'
+archetypes weekly" proposes: only active, collectible, unclaimed Players, the
+pool every archetype, decided before the week opens and frozen for it (ADR-099),
+seeded and deterministic. `node scripts/midweek/rotation.mjs` runs every
+rotation variant over the same seasons and rewrites
+`docs/archive/MIDWEEK_ROTATION.md`: the targets above, Goalkeepers per roster and
+per squad, and how visibly rotation marks a Player as unclaimed. It is the
+evidence for checkpoints Q8 and Q9 and changes no rule; `npm run sim:midweek`
+still plays today's fixed archetypes.
+
 ### 44.13 Invariants to come
 
 Added to Part L by the PR that makes each hold:

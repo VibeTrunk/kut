@@ -4435,3 +4435,86 @@ E2E at 320 px and 412 px (Pixel 7) plus 1440 px against these views. The live
 evening was checked visually at 320, 412 and 1440 px with the migration
 applied (the draw, a minute into round 1, between rounds, the final live, the
 champion), along with what a member's own reads return at each moment.
+
+## MM 2.0 PR 6 (C0): the archetype rotation in the simulation harness — 2026-10-03
+
+`feat/midweek-rotation-harness`. Harness only: no migration, no engine or SQL
+change; golden vectors and parity untouched. The evidence for checkpoints Q8
+and Q9, which PR 7 (C1, ADR-110) waits for. Neither is decided here.
+
+- `tests/sim/midweek-world.ts` can rotate unclaimed Players' archetypes each
+  week as the roadmap row decides (owner, 2026-09-30): only active,
+  collectible, unclaimed Players; the pool every archetype, Goalkeeper and
+  All-rounder included. It runs before each week opens, the week plays what
+  it set (the ADR-099 freeze), and it is seeded and deterministic from a hash,
+  never the world generator, so every variant sees the same collections,
+  habits, injuries and dice. The tuning club's seven specialists are its
+  claimed Players; the other 23 rotate. With rotation off, `npm run
+  sim:midweek` reproduces `MIDWEEK_TUNING.md` exactly.
+- `node scripts/midweek/rotation.mjs` runs six variants over the same 5,000
+  seasons (37 min) and writes `docs/archive/MIDWEEK_ROTATION.md`: no rotation;
+  weekly uniform (the roadmap decision); weekly dealt evenly; exactly three or
+  one rotating Goalkeepers; uniform every four weeks.
+
+**What the run shows (5,000 seasons):**
+
+| | Today | Weekly uniform | Dealt evenly | 3 rotating GKs | 1 rotating GK | Every 4 weeks |
+|---|---:|---:|---:|---:|---:|---:|
+| Strongest vs weakest (≤ 72%) | 70.6% | 65.7% | 65.4% | 65.9% | 68.0% | 65.7% |
+| Thought-through vs random (≥ 58%) | 58.7% | **55.0%** | **54.5%** | **54.8%** | **56.6%** | **54.9%** |
+| Habit lead (≤ 5%) | 4.5% | 1.7% | 1.5% | 1.6% | 1.3% | 2.0% |
+| Strongest wins 8 (22–33%) | 28.2% | 23.1% | 22.8% | 23.2% | 25.5% | 23.1% |
+| Goalkeepers on the roster, mean | 2.0 | 5.3 | 5.3 | 5.0 | 3.0 | 5.3 |
+| Squads without a Goalkeeper | 64.5% | 36.3% | 34.8% | 36.7% | 53.6% | 35.8% |
+| Fixed-habit squads with 2+ GKs | 2.4% | 19.2% | 18.5% | 16.6% | 6.0% | 19.3% |
+| Members owning a GK, leanest 1% of weeks (of 22) | 3 | 11 | 13 | 13 | 8 | 11 |
+| Rotating Player visibly changed within 2 / 3 weeks | — | 86% / 98% | 86% / 98% | 86% / 98% | 85% / 98% | 0% / 0% (86% in 8) |
+
+- **Q8 (smooth the keeper count?).** Smoothing changes no target: the uniform
+  draw, the even deal and a fixed quota of three land within half a point of
+  each other on every row. What smoothing does change is the spread: under the
+  uniform draw the roster holds 2 to 15 Goalkeepers in a week (3 or fewer in
+  14% of weeks, 8 or more in 10%), and in the leanest 1% of weeks only 11 of 22
+  members own one; dealt evenly it is always 5 or 6, and at least 13 own one.
+  The **level** is what moves the targets: rotation takes the roster from 2 to
+  about 5.3 Goalkeepers, so a fixed-habit five holds one 60% of the time instead of
+  31%, and the thinker's edge, which ADR-092 found comes mostly from fielding a
+  Goalkeeper, shrinks.
+- **Every rotation variant takes "a thought-through five beats a random five"
+  below its signed-off 58% floor** (54.5–56.6%), even with a single rotating
+  Goalkeeper. The other rows stay in band and mostly improve (strongest vs
+  weakest nearer "about 65%", the habit lead down from 4.5% to under 2%); the
+  8-entrant row sits near its 22% floor. So PR 7 on its own would leave the
+  ADR-092 sign-off unmet until something restores the thinking edge.
+- **Q9 (a rotating archetype shows a Player is unclaimed).** Weekly, an
+  attentive member tells 86% of unclaimed Players apart after watching two
+  weeks and 98% after three; no smoothing variant changes that. Rotating every
+  four weeks only delays it (86% after eight weeks) and costs the same balance.
+  What leaks is "this Player has no linked account", not which member is which
+  Player (`player_directory` still hides the link). Today the default already
+  leaks most of the same: about 80% of the roster is an unclaimed All-rounder.
+  The model has no claimed All-rounders, so it overstates today's one-week
+  signal; the history signal does not depend on that.
+
+**Options for the owner (not decided):**
+
+- Q8: (a) no smoothing, as decided on 2026-09-30; (b) deal evenly or fix the
+  rotating-keeper count, which removes the lean and glut weeks but does not
+  move any target; (c) fewer rotating Goalkeepers (a quota of one), which
+  softens the drop (56.6%) but still misses 58% and narrows "every archetype".
+- The 58% row, for PR 7 against PR 8: (a) accept the dip while C1 is live
+  alone and retune C2 (balance) with rotation on, so its sign-off restores
+  58%; (b) hold C1's hosted push until C2 is tuned, and ship them back to
+  back; (c) re-sign ADR-092's floor at about 55% for the rotating club.
+- Q9: (a) accept, and say in how-it-works that unclaimed Players' archetypes
+  rotate weekly; (b) rotate less often, which only delays it; (c) keep a
+  claimed Player rotating until their member first chooses an archetype, so
+  rotation means "nobody chose" rather than "unclaimed" (changes the
+  2026-09-30 "claiming ends the rotation"); hiding past archetypes in the UI
+  would not help, since every card face shows the week's.
+
+Verification: `npm run verify:fast` (422 tests, including the new
+`midweek-rotation` unit tests: only eligible Players rotate, every archetype
+is drawn, deterministic, the deal and quota are exact, off changes nothing);
+`npm run sim:midweek` passes and reproduces `MIDWEEK_TUNING.md`;
+`node scripts/midweek/rotation.mjs` at 5,000 seasons.

@@ -32,6 +32,15 @@ export type ChanceType = (typeof CHANCE_TYPES)[number];
 
 type TypeWeights = Partial<Record<ChanceType, number>>;
 
+export type ScheduleVersionConfig = {
+  lockHourLocal: number;
+  lockMinuteLocal: number;
+  roundOffsetMinutes: number;
+  roundIntervalMinutes: number;
+  slotSeconds: number;
+  kickSeconds: number;
+};
+
 export const MIDWEEK = {
   squadSize: 5,
   minEntrants: 4,
@@ -40,11 +49,37 @@ export const MIDWEEK = {
   /** Owner counts below this are never published (ADR-091). */
   ownerCountMin: 3,
 
+  /**
+   * The evening's clock (§44.1, ADR-104). A week stores the version it opened
+   * with (`schedule_version`) and keeps it (Part L #25), so changing a version
+   * here would re-time weeks already played: add a version instead. Round r
+   * starts `roundOffsetMinutes + roundIntervalMinutes × (r − 1)` after the lock.
+   * A match's chance slots last `slotSeconds` each and a shoot-out kick
+   * `kickSeconds`; version 1 reveals each match whole at its start.
+   */
   schedule: {
     /** Days after the ISO Monday: Wednesday. */
     lockDayOffset: 2,
-    lockHourLocal: 20,
-    revealIntervalMinutes: 30,
+    /** The version a newly opened week follows. */
+    current: 2,
+    versions: {
+      "1": {
+        lockHourLocal: 20,
+        lockMinuteLocal: 0,
+        roundOffsetMinutes: 30,
+        roundIntervalMinutes: 30,
+        slotSeconds: 0,
+        kickSeconds: 0,
+      },
+      "2": {
+        lockHourLocal: 19,
+        lockMinuteLocal: 55,
+        roundOffsetMinutes: 5,
+        roundIntervalMinutes: 15,
+        slotSeconds: 20,
+        kickSeconds: 5,
+      },
+    } as Record<string, ScheduleVersionConfig>,
   },
 
   ovr: { min: 30, max: 83, factorMaxPpm: 1_100_000 },

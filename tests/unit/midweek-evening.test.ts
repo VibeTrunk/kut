@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { roundPayouts } from "@/game/midweek/rewards";
-import { revealAt } from "@/game/midweek/schedule";
+import { roundStartAt } from "@/game/midweek/schedule";
 import type { SimulatedTournament, TournamentResult } from "@/game/midweek/tournament";
 import {
   assembleBracket,
@@ -31,12 +31,14 @@ const golden = JSON.parse(
   readFileSync(path.join(process.cwd(), "tests/fixtures/midweek-golden.json"), "utf8"),
 ) as { tournaments: { name: string; result: TournamentResult }[] };
 
+// A version-1 week (lock 20:00, a round every 30 minutes), as every week before ADR-104.
 const LOCK = "2026-10-07T18:00:00.000Z";
+const V1 = 1;
 const nameOf = (userId: string) => `Manager ${userId.slice(0, 8)}`;
 
 /** A golden tournament as `kut.midweek_matches_public` returns it once every round is out. */
 function storedRows(result: SimulatedTournament): MatchRow[] {
-  const reveal = (round: number) => revealAt(new Date(LOCK), round).toISOString();
+  const reveal = (round: number) => roundStartAt(new Date(LOCK), round, V1).toISOString();
   const base = {
     tournament_id: "t",
     week_start: "2026-10-05",
@@ -166,7 +168,13 @@ describe("owner decision D4: the champion leads until Thursday 23:59 Amsterdam",
 
 describe("the reveal clock", () => {
   const stops = (now: string) =>
-    revealStops({ lockAt: LOCK, rounds: 5, now: new Date(now), wonRounds: new Set([1, 2]) });
+    revealStops({
+      lockAt: LOCK,
+      scheduleVersion: V1,
+      rounds: 5,
+      now: new Date(now),
+      wonRounds: new Set([1, 2]),
+    });
 
   it("marks rounds out, the next one, and the rest hidden", () => {
     const evening = stops("2026-10-07T19:05:00.000Z");
@@ -197,6 +205,32 @@ describe("the reveal clock", () => {
     expect(evening.map((s) => s.you)).toEqual([false, true, true, false, false, false]);
   });
 
+  it("runs a version-2 evening: lock 19:55, round 1 at 20:00, a round every 15 minutes", () => {
+    const evening = revealStops({
+      lockAt: "2026-10-14T17:55:00.000Z",
+      scheduleVersion: 2,
+      rounds: 5,
+      now: new Date("2026-10-14T18:20:00.000Z"),
+      wonRounds: new Set(),
+    });
+    expect(evening.map((s) => s.time)).toEqual([
+      "19:55",
+      "20:00",
+      "20:15",
+      "20:30",
+      "20:45",
+      "21:00",
+    ]);
+    expect(evening.map((s) => s.state)).toEqual([
+      "lock",
+      "done",
+      "done",
+      "next",
+      "hidden",
+      "hidden",
+    ]);
+  });
+
   it("stops at the lock before round 1 and at the final after it", () => {
     expect(stops("2026-10-07T18:12:00.000Z").map((s) => s.state)).toEqual([
       "lock",
@@ -215,6 +249,7 @@ describe("the bracket", () => {
     const bracket = assembleBracket({
       rounds: 4,
       lockAt: LOCK,
+      scheduleVersion: V1,
       matches: rows,
       autoUserIds: new Set(),
     });
@@ -237,6 +272,7 @@ describe("the bracket", () => {
     const bracket = assembleBracket({
       rounds: 4,
       lockAt: LOCK,
+      scheduleVersion: V1,
       matches: upTo(1),
       autoUserIds: new Set([nine.entries[0].userId]),
     });
@@ -276,7 +312,13 @@ describe("your night", () => {
   const pays = roundPayouts(4);
 
   it("follows the champion to 250 coins and a Champion finish", () => {
-    const night = myNight({ userId: nine.championUserId, rounds: 4, lockAt: LOCK, matches: rows });
+    const night = myNight({
+      userId: nine.championUserId,
+      rounds: 4,
+      lockAt: LOCK,
+      scheduleVersion: V1,
+      matches: rows,
+    });
     expect(night.champion).toBe(true);
     expect(night.coins).toBe(250);
     expect(night.rows.at(-1)!.kind).toBe("won");
@@ -287,7 +329,13 @@ describe("your night", () => {
   it("stops at the round a member went out in, with no coins for it", () => {
     const final = rows.find((row) => row.round === 4)!;
     const loser = final.winner_side === 0 ? final.side_1_user_id! : final.side_0_user_id;
-    const night = myNight({ userId: loser, rounds: 4, lockAt: LOCK, matches: rows });
+    const night = myNight({
+      userId: loser,
+      rounds: 4,
+      lockAt: LOCK,
+      scheduleVersion: V1,
+      matches: rows,
+    });
     expect(night.alive).toBe(false);
     expect(night.rows.at(-1)).toMatchObject({ kind: "out", round: 4, coins: 0 });
     expect(night.coins).toBe(pays[0] + pays[1] + pays[2]);
@@ -300,6 +348,7 @@ describe("your night", () => {
       userId: bye.side_0_user_id,
       rounds: 4,
       lockAt: LOCK,
+      scheduleVersion: V1,
       matches: upTo(1),
     });
     expect(night.rows[0]).toMatchObject({ kind: "bye", round: 1, coins: pays[0] });
@@ -313,22 +362,34 @@ describe("your night", () => {
     });
     expect(night.alive).toBe(true);
     expect(night.coins).toBe(pays[0]);
-    expect(liveLine(night, 4, LOCK)).toMatch(
+    expect(liveLine(night, 4, LOCK, V1)).toMatch(
       /^You had a bye\. Quarter-final against Manager \w+ at 21:00\.$/,
     );
   });
 
   it("is empty for a member who isn't in the bracket", () => {
-    const night = myNight({ userId: "someone-else", rounds: 4, lockAt: LOCK, matches: rows });
+    const night = myNight({
+      userId: "someone-else",
+      rounds: 4,
+      lockAt: LOCK,
+      scheduleVersion: V1,
+      matches: rows,
+    });
     expect(night).toMatchObject({ entered: false, coins: 0, rows: [] });
     expect(finishStat(night, 4)).toEqual({ value: "—", note: "sat it out" });
-    expect(liveLine(night, 4, LOCK)).toBe("The final is at 22:00.");
+    expect(liveLine(night, 4, LOCK, V1)).toBe("The final is at 22:00.");
   });
 
   it("scores from your side first, and says how you went out", () => {
     const shootout = rows.find((row) => row.side_0_penalties !== null && row.round < 4)!;
     const loser = shootout.winner_side === 0 ? shootout.side_1_user_id! : shootout.side_0_user_id;
-    const night = myNight({ userId: loser, rounds: 4, lockAt: LOCK, matches: rows });
+    const night = myNight({
+      userId: loser,
+      rounds: 4,
+      lockAt: LOCK,
+      scheduleVersion: V1,
+      matches: rows,
+    });
     const out = night.rows.at(-1)!;
     expect(out.kind).toBe("out");
     if (out.kind !== "out") return;
@@ -338,7 +399,7 @@ describe("your night", () => {
         ? [shootout.side_0_penalties, shootout.side_1_penalties]
         : [shootout.side_1_penalties, shootout.side_0_penalties];
     expect(out.score).toMatch(new RegExp(`^(\\d+)–\\1, ${my}–${their} on penalties$`));
-    expect(liveLine(night, 4, LOCK)).toMatch(/^You went out to Manager \w+ on penalties\./);
+    expect(liveLine(night, 4, LOCK, V1)).toMatch(/^You went out to Manager \w+ on penalties\./);
   });
 });
 

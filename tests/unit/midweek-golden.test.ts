@@ -14,7 +14,7 @@ import {
 } from "@/game/midweek/power";
 import { roundPayouts } from "@/game/midweek/rewards";
 import { seedHash, shaRng } from "@/game/midweek/rng";
-import { lockAt, revealAt } from "@/game/midweek/schedule";
+import { lockAt, matchTiming, roundStartAt } from "@/game/midweek/schedule";
 import { lineMultsPpm } from "@/game/midweek/shape";
 import { simulateTournament, type EntrantInput } from "@/game/midweek/tournament";
 
@@ -47,9 +47,19 @@ describe("midweek golden vectors", () => {
     for (const s of golden.powerShares) expect(powerSharePpm(s.a, s.b, s.k)).toBe(s.ppm);
     for (const p of golden.payouts) expect(roundPayouts(p.rounds)).toEqual(p.pays);
     for (const s of golden.schedule) {
-      const lock = lockAt(s.weekStart);
+      const lock = lockAt(s.weekStart, s.version);
       expect(lock.toISOString()).toBe(s.lockAt);
-      expect(revealAt(lock, 1).toISOString()).toBe(s.round1RevealAt);
+      expect(
+        s.roundStarts.map((_: string, index: number) =>
+          roundStartAt(lock, index + 1, s.version).toISOString(),
+        ),
+      ).toEqual(s.roundStarts);
+    }
+    expect(new Set(golden.schedule.map((s: { version: number }) => s.version))).toEqual(
+      new Set(Object.keys(MIDWEEK.schedule.versions).map(Number)),
+    );
+    for (const t of golden.timings) {
+      expect(matchTiming(golden.matches[t.match].outcome.events, t.version)).toEqual(t.timing);
     }
   });
 

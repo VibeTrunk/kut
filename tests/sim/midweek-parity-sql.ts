@@ -21,7 +21,8 @@ type Golden = {
   lineMults: Record<string, { attPpm: number; midPpm: number; defPpm: number }>;
   powerShares: Array<{ a: number; b: number; k: number; ppm: number }>;
   payouts: Array<{ rounds: number; pays: number[] }>;
-  schedule: Array<{ weekStart: string; lockAt: string; round1RevealAt: string }>;
+  schedule: Array<{ weekStart: string; version: number; lockAt: string; roundStarts: string[] }>;
+  timings: Array<{ match: number; version: number; timing: Json }>;
   matches: Array<{
     name: string;
     seed: string;
@@ -103,11 +104,18 @@ export function buildParitySql(golden: Golden): string {
     );
   }
   for (const s of golden.schedule) {
+    const lock = `kut._mm_lock_at(${text(s.weekStart)}::date, ${s.version})`;
     add(
-      `select is(kut._mm_lock_at(${text(s.weekStart)}::date), ${text(s.lockAt)}::timestamptz, ${text(`lock of the week of ${s.weekStart}`)});`,
+      `select is(${lock}, ${text(s.lockAt)}::timestamptz, ${text(`lock of the week of ${s.weekStart}, schedule ${s.version}`)});`,
     );
     add(
-      `select is(kut._mm_reveal_at(kut._mm_lock_at(${text(s.weekStart)}::date), 1), ${text(s.round1RevealAt)}::timestamptz, ${text(`round 1 reveal of the week of ${s.weekStart}`)});`,
+      `select is(array(select kut._mm_round_start_at(${lock}, r, ${s.version}) from generate_series(1, ${s.roundStarts.length}) r), array[${s.roundStarts.map((at) => `${text(at)}::timestamptz`).join(",")}], ${text(`round starts of the week of ${s.weekStart}, schedule ${s.version}`)});`,
+    );
+  }
+  for (const t of golden.timings) {
+    const events = (golden.matches[t.match].outcome as { events: Json }).events;
+    add(
+      `select is(kut._mm_match_timing(${json(events)}, ${t.version}), ${json(t.timing)}, ${text(`match ${t.match + 1}: event times on schedule ${t.version}`)});`,
     );
   }
 
@@ -160,7 +168,8 @@ export function buildParitySql(golden: Golden): string {
     "--",
     "-- Midweek Madness engine parity (BUILD_SPEC §44.8, ADR-090): the SQL engine in",
     "-- 20261005000000_midweek_engine.sql reproduces every golden value the TypeScript",
-    "-- twin in src/game/midweek/ produced, draw for draw.",
+    "-- twin in src/game/midweek/ produced, draw for draw, and the clock in",
+    "-- 20261011000000_midweek_evening_timing.sql every lock, round start and event time (ADR-104).",
     "begin;",
     "create extension if not exists pgtap with schema extensions;",
     "set local search_path to extensions,kut,public;",

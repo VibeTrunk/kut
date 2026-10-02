@@ -11,19 +11,47 @@
 
 import { archetypeLabel } from "@/game/archetypes";
 import { MIDWEEK } from "@/game/midweek/config";
+import { scheduleFor } from "@/game/midweek/schedule";
 
 const AMS = "Europe/Amsterdam";
 
 const pad = (value: number) => String(value).padStart(2, "0");
 
-/** "20:00": the lock, in club time, from the engine's schedule. */
-export const LOCK_CLOCK = `${pad(MIDWEEK.schedule.lockHourLocal)}:00`;
+const clockOf = (minutes: number) => `${pad(Math.floor(minutes / 60) % 24)}:${pad(minutes % 60)}`;
 
-/** "20:30": round 1's reveal, when members first see the entered fives. */
-export const ROUND_ONE_CLOCK = (() => {
-  const minutes = MIDWEEK.schedule.lockHourLocal * 60 + MIDWEEK.schedule.revealIntervalMinutes;
-  return `${pad(Math.floor(minutes / 60))}:${pad(minutes % 60)}`;
-})();
+/**
+ * A week's schedule version (ADR-104). The column is absent from rows read
+ * before the migration (version 1), and null on `midweek_current` before any
+ * tournament exists; with no row or no tournament, the next week opens on the
+ * current version.
+ */
+export function scheduleVersionOf(
+  row: { schedule_version?: number | null } | null | undefined,
+): number {
+  if (!row) return MIDWEEK.schedule.current;
+  if (!("schedule_version" in row)) return 1;
+  return row.schedule_version ?? MIDWEEK.schedule.current;
+}
+
+/** "every 15 minutes", or "every half hour" on version 1: how often a round starts. */
+export function roundIntervalText(version: number): string {
+  const minutes = scheduleFor(version).roundIntervalMinutes;
+  return minutes === 30 ? "every half hour" : `every ${minutes} minutes`;
+}
+
+/** "19:55": the lock, in club time, from the week's schedule. */
+export function lockClock(version: number): string {
+  const schedule = scheduleFor(version);
+  return clockOf(schedule.lockHourLocal * 60 + schedule.lockMinuteLocal);
+}
+
+/** "20:00": round 1's start, when members first see the entered fives. */
+export function roundOneClock(version: number): string {
+  const schedule = scheduleFor(version);
+  return clockOf(
+    schedule.lockHourLocal * 60 + schedule.lockMinuteLocal + schedule.roundOffsetMinutes,
+  );
+}
 
 /** The row `kut.midweek_current` returns (migration 20261003000000). */
 export type MidweekCurrent = {
@@ -39,6 +67,8 @@ export type MidweekCurrent = {
   final_reveal_at: string | null;
   seed: string | null;
   opted_out: boolean;
+  /** ADR-104; absent before its migration. Read it through `scheduleVersionOf`. */
+  schedule_version?: number | null;
 };
 
 export type MidweekStatus = "open" | "skipped" | "simulated" | "complete" | "void";
@@ -58,6 +88,8 @@ export type MidweekTournament = {
   seed?: string | null;
   champion_user_id?: string | null;
   champion_name?: string | null;
+  /** ADR-104; absent before its migration. Read it through `scheduleVersionOf`. */
+  schedule_version?: number | null;
 };
 
 /** A `kut.my_midweek_squad` row: the caller's own saved slot, 1–5. */
@@ -419,7 +451,7 @@ export function squadSaveError(code: string | undefined, message: string | undef
     return "You've opted out. Take part again to pick a five.";
   }
   if (code === "P0001" && message?.includes("locked")) {
-    return `Squads are locked. Your five from before ${LOCK_CLOCK} is the one that plays.`;
+    return "Squads are locked. The five you saved before the lock is the one that plays.";
   }
   if (code === "P0002") return "There's no Midweek Madness week open to pick for right now.";
   if (code === "42501") return "Only active KUT members can take part.";

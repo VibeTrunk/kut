@@ -8,10 +8,16 @@ import { MidweekPickShares, type PickShareView } from "@/components/midweek/pick
 import { MidweekSeed } from "@/components/midweek/seed";
 import { MIDWEEK } from "@/game/midweek/config";
 import { seedHash } from "@/game/midweek/rng";
-import { revealAt } from "@/game/midweek/schedule";
+import { roundStartAt } from "@/game/midweek/schedule";
 import { getRarityTier } from "@/game/rating-engine";
 import { requireUser } from "@/lib/auth/user";
-import { formatClock, formatDayDate, skipOrVoidNotice } from "@/lib/midweek/entry";
+import {
+  formatClock,
+  formatDayDate,
+  roundIntervalText,
+  scheduleVersionOf,
+  skipOrVoidNotice,
+} from "@/lib/midweek/entry";
 import {
   assembleBracket,
   isWeekStart,
@@ -69,13 +75,14 @@ export default async function MidweekBracketPage({
     );
   }
 
-  const roundOne = formatClock(revealAt(new Date(lockAt), 1).toISOString());
+  const scheduleVersion = scheduleVersionOf(tournament);
+  const roundOne = formatClock(roundStartAt(new Date(lockAt), 1, scheduleVersion).toISOString());
   const rounds = tournament.rounds;
   if (tournament.status === "open" || !rounds) {
     return shell(
       <MidweekNotice tone="info">
         <b>The bracket is drawn at the lock</b>, {formatDayDate(lockAt)} at {formatClock(lockAt)}.
-        Round 1 comes out at {roundOne}, then a round every half hour.
+        Round 1 comes out at {roundOne}, then a round {roundIntervalText(scheduleVersion)}.
       </MidweekNotice>,
     );
   }
@@ -83,8 +90,14 @@ export default async function MidweekBracketPage({
   const results = await loadWeekResults(supabase, tournament.tournament_id);
   const out = revealedRounds(results.matches);
   const now = new Date();
-  const night = myNight({ userId: user.id, rounds, lockAt, matches: results.matches });
-  const stops = revealStops({ lockAt, rounds, now, wonRounds: wonRounds(night) });
+  const night = myNight({
+    userId: user.id,
+    rounds,
+    lockAt,
+    scheduleVersion,
+    matches: results.matches,
+  });
+  const stops = revealStops({ lockAt, scheduleVersion, rounds, now, wonRounds: wonRounds(night) });
   const clock = (
     <section aria-label="Tonight" className={PANEL}>
       <MidweekRevealClock label="Jump to a round" linkRounds={out > 0} stops={stops} />
@@ -105,6 +118,7 @@ export default async function MidweekBracketPage({
   const bracket = assembleBracket({
     rounds,
     lockAt,
+    scheduleVersion,
     matches: results.matches,
     autoUserIds: new Set(results.entries.filter((row) => row.auto).map((row) => row.user_id)),
   });

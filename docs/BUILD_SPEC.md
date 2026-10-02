@@ -1751,10 +1751,22 @@ engine must reproduce that file (ADR-090).
 
 - **One tournament per football week (§9),** identified by that week's Monday
   (`week_start`).
-- **The lock is Wednesday 20:00 Europe/Amsterdam** (`lock_at`), computed in
+- **The lock is Wednesday 19:55 Europe/Amsterdam** (`lock_at`), computed in
   that time zone so daylight saving is handled.
-- **Round `r` is revealed at `lock_at + 30 min × r`,** so round 1 appears at
-  20:30 and the final at `lock_at + 30 min × R` (`final_reveal_at`).
+- **Round `r` starts at `lock_at + 5 min + 15 min × (r − 1)`,** so round 1
+  starts at 20:00 and, with 17–32 entrants (5 rounds), the final at 21:00.
+- **A match lasts 4:40 plus its shoot-out.** Its clock runs from 0' to 90' over
+  the 14 chance slots of 20 seconds each, so a chance is due at
+  `kick-off + minute × 280 s / 90`; after full time each shoot-out kick, and a
+  settling draw, follows 5 seconds after the one before. A match ends
+  (`ends_at`) at full time or with its last kick; the longest possible (50
+  kicks and a draw) ends 8:55 after kick-off, inside a round.
+  `final_reveal_at` is the end of the final.
+- **Each week keeps the clock it opened with** (`schedule_version`, ADR-104).
+  Version 2 is the clock above. Version 1, every week up to the push of
+  ADR-104, locked at 20:00 and revealed round `r` whole at `lock_at + 30 min ×
+  r`; its final ends as it is revealed. Pages compute every time from the
+  week's version, never from the current one.
 - **Picking opens when the tournament exists** and closes at the lock. The next
   week's tournament is created as soon as the current one is complete, skipped
   or void.
@@ -1921,8 +1933,8 @@ pay_R = 250 − Σ pay_r (r < R)                the final absorbs the rounding
 - Because the whole roster is entered and byes pay, every run issues a full
   bracket's worth: with 17–32 entrants, 953 coins, about four attendance
   rewards a week.
-- **Payment is lazy and happens once:** after `final_reveal_at`, never at
-  simulation time, so wallet balances cannot spoil results early. At most one
+- **Payment is lazy and happens once:** after `final_reveal_at`, the end of
+  the final (ADR-104), never at simulation time or while the final plays, so wallet balances cannot spoil results early. At most one
   payment per (tournament, round, member), ledger reason `midweek_win`, through
   a security-definer path shaped like `grant_bibs_reward`. It pays the winners
   stored in the bracket, in the same transaction that completes the week, so a
@@ -1970,7 +1982,9 @@ Everything is gated by time in definer projections on
   tournament's times and `seed_hash`.
 - **Entries** (the five cards of every squad, with their week-long factors)
   appear with round 1.
-- **Each round's matches and events** appear at that round's reveal time.
+- **Each round's matches and events** appear at that round's start, whole.
+  Each event's own time is stored (§44.1) but not yet used to gate it; that is
+  ADR-106's change, pushed with the live viewer.
 - **Pick shares** appear once the tournament is `complete`. An owner count is
   shown only when at least `MIDWEEK_OWNER_COUNT_MIN` (3) entrants own the
   Player; below that it is null and the report says "fewer than 3 owners" (until
@@ -2061,8 +2075,8 @@ KUT has no scheduler; like ADR-061, one idempotent, service-role-only worker
   config is enabled;
 - **lock:** after `lock_at`, apply the gates, build auto squads, snapshot,
   simulate the whole bracket and store it (`simulated`);
-- **pay:** after `final_reveal_at`, pay, publish the seed and pick shares
-  (`complete`).
+- **pay:** after `final_reveal_at`, the end of the final, pay, publish the
+  seed and pick shares (`complete`).
 
 Claims use `for update skip locked`, so concurrent calls do the work once.
 Given the field, the result is identical whenever it is computed; only the
@@ -2178,6 +2192,11 @@ slots stay 1–5, and the lock moves the surviving picks up into engine slots.
 All projections are definer views gated on `kut.is_active_member()` (the admin
 overview on `kut.is_admin()`), and a void week shows no result in any of them.
 
+Since the evening timing migration (`20261011000000`, ADR-104) the lock step
+stores `reveal_at` as each match's start on the week's clock (§44.1), not
+`lock_at + 30 min × round`, and the complete step waits for the end of the
+final.
+
 **Payouts (`20261006000000_midweek_payouts.sql`, ADR-096).** Adds Part L #26.
 
 | Object | What it holds or does |
@@ -2197,6 +2216,22 @@ overview on `kut.is_admin()`), and a void week shows no result in any of them.
 | Trigger `midweek_tournament_archetype_snapshot` | After insert on `kut.midweek_tournaments`: snapshots every row of `kut.players` for the new tournament, whatever inserted it. |
 | `kut._mm_field(uuid, timestamptz)` | Re-created: a card's archetype is the tournament's snapshot, or the live one for a Player without a row. Otherwise unchanged. |
 | `kut.midweek_archetypes` | The snapshots (`tournament_id`, `player_id`, `archetype`) for the picker. A definer view gated on `kut.is_active_member()`. |
+
+**Evening timing (`20261011000000_midweek_evening_timing.sql`, ADR-104).**
+
+| Object | What it holds or does |
+|---|---|
+| `kut._mm_config()` | `schedule` becomes `{lockDayOffset, current, versions: {1, 2}}`, each version with `lockHourLocal`, `lockMinuteLocal`, `roundOffsetMinutes`, `roundIntervalMinutes`, `slotSeconds` and `kickSeconds`. Every other key is unchanged. |
+| `kut._mm_schedule(int)`, `kut._mm_lock_at(date, int)`, `kut._mm_round_start_at(timestamptz, int, int)`, `kut._mm_match_timing(jsonb, int)` | The clock, twins of `src/game/midweek/schedule.ts` (`scheduleFor`, `lockAt`, `roundStartAt`, `matchTiming`), pinned by the golden vectors. `_mm_match_timing` takes a match's engine events and returns `{eventOffsetsMs, endOffsetMs}`. `_mm_lock_at(date)` now means the current version; `_mm_reveal_at` is dropped. Internal, like every `_mm_` function. |
+| `kut.midweek_tournaments.schedule_version` | 1 or 2. Existing weeks are 1; the open step names the current version, and the default is 2. Fixed once the week locks. |
+| `kut.midweek_matches.ends_at` | When the match ends: full time, or its shoot-out's last kick or settling draw; a bye ends as it starts. Null on weeks simulated before ADR-104. |
+| `kut.midweek_match_events.reveal_at` | When the event is due (§44.1). Null on weeks simulated before ADR-104. |
+| Part L #25 guard | The schedule version, like the lock, may change only while the week is open. `ends_at` and the event times are covered by the existing guard: a stored result is never updated. |
+| `kut._mm_lock_tournament(uuid)` | Re-created: writes each match's `reveal_at` (its start) and `ends_at`, each event's `reveal_at`, and `final_reveal_at` as the end of the final, on the week's version. |
+| `kut._mm_open_next()` | Re-created: opens the next week on the current version, with that version's lock. |
+| `kut.admin_midweek_rehearsal()` | Re-created: each round's `reveal_at` on the open week's clock (or the current one), plus each round's `ends_at` (when its last match ends) and `schedule_version` at the top level. |
+| `kut.midweek_current`, `kut.midweek_tournaments_public` | Append `schedule_version` (null on `midweek_current` before any week exists). |
+| The open week | Moved to version 2 at the push (lock 20:00 → 19:55), unless 19:55 had already passed. |
 
 ---
 
@@ -4797,8 +4832,11 @@ STARTER_CARD_COUNT = 3
 # the code is src/game/midweek/config.ts.
 MIDWEEK_CHAMPION_TOTAL = 250  # a champion's total over all rounds; its own constant (ECONOMY.midweekChampionTotal, ADR-096)
 MIDWEEK_SQUAD_SIZE = 5
-MIDWEEK_LOCK = Wednesday 20:00 Europe/Amsterdam
-MIDWEEK_REVEAL_INTERVAL_MINUTES = 30
+MIDWEEK_LOCK = Wednesday 19:55 Europe/Amsterdam  # schedule version 2 (ADR-104); version 1 was 20:00
+MIDWEEK_ROUND_OFFSET_MINUTES = 5  # round 1 starts 5 minutes after the lock; version 1: 30
+MIDWEEK_ROUND_INTERVAL_MINUTES = 15  # between round starts; version 1: 30
+MIDWEEK_SLOT_SECONDS = 20  # per chance slot: a match's 14 slots take 4:40; version 1: 0 (whole matches)
+MIDWEEK_KICK_SECONDS = 5  # per shoot-out kick or settling draw after full time; version 1: 0
 MIDWEEK_MIN_ENTRANTS = 4
 MIDWEEK_OWNER_COUNT_MIN = 3  # owner counts below this are never shown, ADR-091
 MIDWEEK_OVR_FACTOR_MAX = 1.10  # 1.00 at OVR 30; started at 1.35
@@ -5124,7 +5162,7 @@ Tasks:
 22. Trade-offer escrow is conserved (ADR-042): coins/cards offered are removed from the proposer at propose time and are either returned in full (reject / withdraw / expire / listing gone) or transferred atomically on accept — never both, never neither. A `held_by_offer_id` card cannot be listed, discarded, burned, or re-offered.
 23. An accepted trade offer is never written to `market_sales`, so it never affects Reference Value (ADR-042).
 24. An injury check-in protects at most one (Player, football week), pays its stipend at most once, and protects only a week in which that Player made zero appearances (ADR-082).
-25. A Midweek Madness tournament is simulated at most once and its stored result never changes: a void hides it, never recomputes it. A tournament only moves forward (`open` → `skipped`, `simulated` or `void`; `simulated` → `complete` or `void`), and squads are immutable after the lock (§44.8, ADR-095).
+25. A Midweek Madness tournament is simulated at most once and its stored result never changes: a void hides it, never recomputes it. A tournament only moves forward (`open` → `skipped`, `simulated` or `void`; `simulated` → `complete` or `void`), and squads are immutable after the lock (§44.8, ADR-095). Its lock and its clock (`schedule_version`) may move only while it is open, and the times stored at the lock (each match's start and end, each event's time) never change (ADR-104).
 26. A Midweek Madness win pays at most once per (tournament, round, member), only for a win in the stored bracket at its round's amount, and one tournament pays any member at most `MIDWEEK_CHAMPION_TOTAL`. A week is paid exactly when it completes, so a paid week cannot be voided (§44.7, ADR-096).
 
 Every coding agent should treat this section as a regression checklist.

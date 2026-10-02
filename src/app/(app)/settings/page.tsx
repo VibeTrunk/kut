@@ -3,7 +3,13 @@ import { LogoutButton } from "@/components/logout-button";
 import { MidweekOptOutPanel } from "@/components/midweek/opt-out-panel";
 import { requireUser } from "@/lib/auth/user";
 import { isAdminRole } from "@/lib/auth/roles";
-import { isLockedTonight, isPickingOpen, nextEntryWeekLabel } from "@/lib/midweek/entry";
+import {
+  isLockedTonight,
+  isPickingOpen,
+  nextEntryWeekLabel,
+  roundOneClock,
+  scheduleVersionOf,
+} from "@/lib/midweek/entry";
 import { loadMidweekEntryState } from "@/lib/midweek/load";
 import { createClient } from "@/lib/supabase/server";
 import { ClubNameForm } from "./club-name-form";
@@ -59,6 +65,7 @@ export default async function SettingsPage() {
             }
             locked={isLockedTonight(midweek.current, now)}
             optedOut={midweek.current.opted_out}
+            roundOne={roundOneClock(scheduleVersionOf(midweek.current))}
             weekLabel={nextEntryWeekLabel(midweek.current, now)}
           />
         )}

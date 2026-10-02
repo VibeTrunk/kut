@@ -4130,3 +4130,38 @@ rounds and for the new line); the authenticated E2E's completed week gains a
 fifth entrant, so round 1 mixes byes and matches, and a new test checks at
 1280 px that every group's bracket line ends on the middles of its two
 pairings and that its middle is the next-round match's.
+
+## MM 2.0 B1: the evening's new clock (ADR-104) — 2026-10-01
+
+The first migration of MM 2.0 (`20261011000000_midweek_evening_timing.sql`).
+Squads lock at 19:55, round 1 starts at 20:00 and a round every 15 minutes
+(the final of five rounds at 21:00), and the payout waits for the end of the
+final.
+
+- **A clock per week.** `MIDWEEK.schedule` now holds version 1 (every week so
+  far: 20:00, a round every 30 minutes) and version 2, and each tournament
+  stores its `schedule_version`. Pages compute every time from the week's
+  version and read a row without the column as version 1, so the code is right
+  both before and after the hosted push.
+- **Every event has its moment.** The lock step stores each match's start and
+  end and each event's time: the match clock runs 0' to 90' over 4:40 (14
+  slots of 20 s), and shoot-out kicks follow 5 s apart. The longest possible
+  match (50 kicks and a settling draw) ends after 8:55, inside a round.
+  `final_reveal_at` is now the end of the final, which is what the payout
+  already waits for. The views still reveal matches whole at kick-off; event by
+  event is ADR-106.
+- **The open week moves to 19:55 at the push**, unless that's already past.
+  Target: on hosted by Sat 10 Oct, so the week locking Wed 14 Oct is the first.
+
+Verification: `npm run verify:fast` (40 files, 376 tests); every pgTAP suite
+on the local stack, including the new `midweek_evening_timing.test.sql` (42)
+and the regenerated parity test (190: the SQL clock matches the TypeScript one
+on both versions, and no engine result changed); `midweek-race`,
+`midweek-switch` and `finalizer-readiness`. The engine and payout suites now
+pin their weeks to version 1, whose timings they were written for. The
+authenticated E2E passed 15 of 16 in two of three runs and 16 of 16 in one:
+the failure is `/club/collection` at 320 px (323 px wide), the flake first seen
+during KB-030/031. It isn't this change: the Collection page's Album · Manage ·
+Trading switcher needs about 303 px at min-content, more than the 280 px
+content box, and whether it overflows depends on which font is loaded when the
+check measures. To be registered on its own.

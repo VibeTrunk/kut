@@ -15,7 +15,10 @@
 --   J     -- admin, with no card.
 --   K     -- an auth.users row with no kut.profiles row.
 --
--- Tournaments, all created open and moved to their lock once squads are saved:
+-- Tournaments, all created open on schedule version 1 (lock, then round r
+-- revealed whole 30 min × r later; ADR-104 kept it for weeks drawn before it,
+-- and midweek_evening_timing.test.sql covers version 2), and moved to their
+-- lock once squads are saved:
 --   T1 locked 5 hours ago     -> simulated and completed by one worker call
 --   T2 locked 45 minutes ago  -> simulated; round 1 revealed, round 2 not
 --   T3 locked 10 minutes ago  -> simulated; nothing revealed yet
@@ -45,8 +48,8 @@ select has_view('kut','midweek_admin_overview','the admin overview exists');
 select is((select array_agg(attname::text order by attnum) from pg_attribute
   where attrelid='kut.midweek_tournaments_public'::regclass and attnum>0 and not attisdropped),
   array['tournament_id','week_start','lock_at','seed_hash','status','status_reason','void_note','rounds',
-    'final_reveal_at','seed','champion_user_id','champion_name'],
-  'the tournament list keeps its columns and appends the champion last');
+    'final_reveal_at','seed','champion_user_id','champion_name','schedule_version'],
+  'the tournament list keeps its columns and appends the champion, then the schedule version (ADR-104)');
 
 select table_privs_are('kut','midweek_entries','authenticated',array[]::text[],'members cannot read entries directly');
 select table_privs_are('kut','midweek_entry_cards','authenticated',array[]::text[],'members cannot read entry cards directly');
@@ -129,9 +132,9 @@ insert into kut.match_sessions(id,season_id,session_date,session_type,status,pub
 select ('00000095-0000-4000-8000-00000000070' || n)::uuid, '00000095-0000-4000-8000-0000000000f0', d, 'other', 'published', now()
 from (values (1, date '2025-01-01'), (2, date '2025-01-08'), (3, date '2025-01-15'), (5, date '2025-01-29')) s(n, d);
 
-insert into kut.midweek_tournaments(id,week_start,lock_at,seed_hash)
+insert into kut.midweek_tournaments(id,week_start,lock_at,seed_hash,schedule_version)
 select ('00000095-0000-4000-8000-00000000050' || n)::uuid, date '2025-01-06' + 7 * (n - 1), now() + interval '1 day',
-  encode(sha256(decode(repeat(to_hex(n) || 'c', 32),'hex')),'hex')
+  encode(sha256(decode(repeat(to_hex(n) || 'c', 32),'hex')),'hex'), 1
 from generate_series(1,6) n;
 insert into kut.midweek_tournament_secrets(tournament_id,seed)
 select ('00000095-0000-4000-8000-00000000050' || n)::uuid, repeat(to_hex(n) || 'c', 32)

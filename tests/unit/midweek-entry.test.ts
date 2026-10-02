@@ -3,8 +3,6 @@ import { MIDWEEK } from "@/game/midweek/config";
 import { ovrFactorPpm } from "@/game/midweek/power";
 import { copyStrengthPpm, strongestCopies } from "@/lib/midweek/copies";
 import {
-  LOCK_CLOCK,
-  ROUND_ONE_CLOCK,
   allStillOwned,
   countdownText,
   formatDayDate,
@@ -16,11 +14,15 @@ import {
   joinNames,
   keeperCheck,
   lastWeekSummary,
+  lockClock,
   nextEntryWeekLabel,
   optOutConfirmText,
   prefillNotice,
   prefillSlots,
+  roundIntervalText,
+  roundOneClock,
   saveStatus,
+  scheduleVersionOf,
   skipOrVoidText,
   squadSaveError,
   stageName,
@@ -74,10 +76,22 @@ describe("club time", () => {
     expect(formatSavedAt("2026-10-06T12:02:00Z")).toBe("Tue 6 Oct, 14:02");
   });
 
-  it("derives the lock and round-1 clocks from the engine's schedule", () => {
-    expect(LOCK_CLOCK).toBe("20:00");
-    expect(ROUND_ONE_CLOCK).toBe("20:30");
-    expect(MIDWEEK.schedule.lockHourLocal).toBe(20);
+  it("derives the lock and round-1 clocks from the week's schedule", () => {
+    expect(lockClock(2)).toBe("19:55");
+    expect(roundOneClock(2)).toBe("20:00");
+    expect(roundIntervalText(2)).toBe("every 15 minutes");
+    expect(lockClock(1)).toBe("20:00");
+    expect(roundOneClock(1)).toBe("20:30");
+    expect(roundIntervalText(1)).toBe("every half hour");
+  });
+
+  it("reads a week's schedule version, version 1 before the column exists", () => {
+    expect(scheduleVersionOf({ schedule_version: 2 })).toBe(2);
+    expect(scheduleVersionOf({ schedule_version: 1 })).toBe(1);
+    expect(scheduleVersionOf({})).toBe(1);
+    // midweek_current before any tournament exists, or no row at all.
+    expect(scheduleVersionOf({ schedule_version: null })).toBe(MIDWEEK.schedule.current);
+    expect(scheduleVersionOf(null)).toBe(MIDWEEK.schedule.current);
   });
 });
 
@@ -296,7 +310,7 @@ describe("words for the picker", () => {
       "Pick between one and five cards you own, one per Player.",
     );
     expect(squadSaveError("P0001", "squads are locked")).toBe(
-      "Squads are locked. Your five from before 20:00 is the one that plays.",
+      "Squads are locked. The five you saved before the lock is the one that plays.",
     );
     expect(squadSaveError("P0001", "you have opted out of Midweek Madness")).toBe(
       "You've opted out. Take part again to pick a five.",

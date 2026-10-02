@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { IconInfo } from "@/components/icons";
-import { ROUND_ONE_CLOCK, type Segment } from "@/lib/midweek/entry";
+import type { Segment } from "@/lib/midweek/entry";
 
 /**
  * The small pieces of the Midweek pages: the save status, the keeper check,
@@ -111,13 +111,13 @@ export function MidweekNotice({
 }
 
 /** The privacy line (ADR-091): what other members will see, said up front. */
-export function MidweekPrivacyLine() {
+export function MidweekPrivacyLine({ roundOne }: { roundOne: string }) {
   return (
     <p className="flex items-start gap-2.5 text-[13px] leading-normal text-ink-dim">
       <IconInfo aria-hidden="true" className="mt-px h-4 w-4 flex-none text-steel" />
       <span>
-        From {ROUND_ONE_CLOCK} on Wednesday, members see the five cards you enter. Never the rest of
-        your collection.
+        From {roundOne} on Wednesday, members see the five cards you enter. Never the rest of your
+        collection.
       </span>
     </p>
   );

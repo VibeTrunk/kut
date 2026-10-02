@@ -1,8 +1,8 @@
 import { createHash } from "node:crypto";
 import { ARCHETYPE_LABELS } from "@/game/archetypes";
-import { PPM } from "@/game/midweek/config";
+import { MIDWEEK, PPM } from "@/game/midweek/config";
 import { seedHash, shaRng } from "@/game/midweek/rng";
-import { lockAt, revealAt } from "@/game/midweek/schedule";
+import { lockAt, roundStartAt } from "@/game/midweek/schedule";
 import {
   simulateTournament,
   type EntrantInput,
@@ -104,7 +104,7 @@ export function buildSample() {
     round: match.round,
     pairing: match.pairing,
     managers: match.userIds.map(directory.manager),
-    revealAt: revealAt(lock, match.round).toISOString(),
+    revealAt: roundStartAt(lock, match.round, MIDWEEK.schedule.current).toISOString(),
     report: renderMatchReport(reportInput(tournament, match, hash, directory)),
   }));
 

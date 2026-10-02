@@ -5688,3 +5688,78 @@ discard payout" is untouched: the page only displays). A listing may be priced
 as low as 80% of the discard value (`get_listing_bounds`), so a visible floor
 makes buying such a listing and discarding it an obvious small profit. The
 owner accepted that; the page states the facts and adds no "bargain" label.
+
+## ADR-104 — The Midweek evening runs on a versioned clock: lock 19:55, a round every 15 minutes, paid after the final ends
+
+Date: 2026-10-01
+
+Status: Accepted (amends ADR-089 §44.1 times and ADR-096 payout timing; MM 2.0
+release B, first of three)
+
+Context: the owner chose a faster evening for MM 2.0 (`docs/ROADMAP.md`,
+"MM 2.0"): squads lock at 19:55, round 1 starts at 20:00 and a round every 15
+minutes, so with 17–32 entrants the final starts at 21:00 instead of 22:30.
+Matches are to unfold chance by chance (Q6, decided 2026-10-01: 20 seconds per
+chance slot, 5 seconds per penalty kick; Q7: the same pacing for every match),
+so the payout must wait for the end of the final, not its start, or the inbox
+message names the champion while the final is still playing. Three things made
+a plain constant change wrong: every page computed every time from today's
+config, so changing it would re-time weeks already played on screen; Vercel
+deploys before the hosted push, so for a few days new code meets old rows; and
+Part L #25 says a simulated week keeps what it was drawn with.
+
+Decision (migration `20261011000000_midweek_evening_timing.sql`):
+
+- **A schedule version per week.** `MIDWEEK.schedule` holds
+  `versions` (1 and 2) and `current` (2); `kut.midweek_tournaments` stores
+  `schedule_version`, which the open step sets and which is fixed once the week
+  locks (Part L #25, guard extended). Version 1 is every week before this ADR:
+  lock 20:00, round r revealed whole 30 × r minutes later. Version 2: lock
+  19:55, round r starts `lock + 5 + 15 × (r − 1)` minutes. One formula covers
+  both (`roundOffsetMinutes`, `roundIntervalMinutes`), and adding a clock later
+  means adding a version, never editing one.
+- **Pages take the clock from the week.** `scheduleVersionOf(row)` reads the
+  column, and treats a row without it as version 1, which is exactly what every
+  hosted week is until the push. The lock and round-1 clocks in copy (how-it-works
+  §12, the privacy line, Settings) come from the week too.
+- **Every event gets its moment, stored at the lock.** The match clock runs
+  0' to 90' over the 14 chance slots of 20 seconds (4:40), so a chance is due
+  at `kick-off + minute × 280 s / 90`; after full time each shoot-out kick, and
+  a settling draw, follows 5 seconds after the one before. `midweek_matches.ends_at`
+  is the last of these (full time without a shoot-out, kick-off for a bye) and
+  `midweek_match_events.reveal_at` each event's. Derived from the minute rather
+  than the slot, so a live viewer can run a match clock that reaches each event
+  as it happens. `kut._mm_match_timing` and `matchTiming` are twins, pinned by
+  the golden vectors (both versions, every golden match). Weeks simulated
+  before this keep null times: they reveal whole matches, as drawn.
+- **The longest match fits in a round.** 4:40 plus 50 kicks (5 + 20
+  sudden-death rounds a side) and a settling draw is 8:55, under 15 minutes; a
+  unit test pins it for every version, so a winner is never due in two matches
+  at once.
+- **`final_reveal_at` is the end of the final.** The complete step and the
+  reward guard already wait for it, so the seed, pick shares, coins and inbox
+  message now land when the final ends; neither function changed. Under
+  version 1 the end equals the reveal, so its meaning is unchanged there.
+- **Views are unchanged except for the version.** `midweek_current` and
+  `midweek_tournaments_public` append `schedule_version`; matches and events are
+  still revealed whole at their start (§44.9). Revealing them event by event is
+  ADR-106's views-only migration, pushed together with the live viewer.
+- **The rehearsal uses the week's clock** and also gives each round's end and
+  the version.
+- **The open week moves to version 2 at the push**, its lock from 20:00 to
+  19:55, unless 19:55 is already past (then it stays on version 1). An open
+  week's lock may move (Part L #25).
+
+First week on the new clock: the one open when the push lands. The target is
+to push by Sat 10 Oct, making the week of 12 Oct (lock **Wed 14 Oct 19:55**)
+the first. A push after that is held until the 14 Oct payout, and the week of
+19 Oct (lock Wed 21 Oct 19:55) is the first.
+
+Consequences: the evening is shorter (final at 21:00 with 17–32 entrants) and
+coins land about 5–9 minutes after the final starts instead of at its reveal.
+Members see the earlier lock on the lock bar, the picker and how-it-works. No
+engine result changes: the golden fixture's matches and tournaments are byte
+for byte the same; only its config, schedule and timing vectors changed.
+
+Tier: data-changing (docs/OPERATIONS.md): it re-times the open week's lock
+and moves when the payout runs. Fresh cold-verified backup before the push.

@@ -15,9 +15,24 @@ import type { MatchReport, ReportInput, ReportSide } from "./types";
  * `node:crypto`.
  */
 
+type RevealedCardRow = EntryCardRow & {
+  form_roll_ppm: number;
+  pick_factor_ppm: number;
+  power_ppm: number;
+};
+
+/** Whether the view has released the card's dice, which it withholds until round 1 (ADR-105). */
+function isRevealed(row: EntryCardRow): row is RevealedCardRow {
+  return row.form_roll_ppm !== null && row.pick_factor_ppm !== null && row.power_ppm !== null;
+}
+
 function toSide(rows: readonly EntryCardRow[]): ReportSide | null {
   if (rows.length === 0) return null;
-  const cards = [...rows].sort((a, b) => a.slot - b.slot);
+  const sorted = [...rows].sort((a, b) => a.slot - b.slot);
+  // A match is only visible from its kick-off, when the dice are out; entries
+  // read a moment before round 1 may still lack them, and a report needs all.
+  const cards = sorted.filter(isRevealed);
+  if (cards.length !== sorted.length) return null;
   return {
     manager: cards[0].manager_name,
     auto: cards[0].auto,

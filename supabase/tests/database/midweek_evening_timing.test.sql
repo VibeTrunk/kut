@@ -30,8 +30,10 @@ select has_column('kut','midweek_match_events','reveal_at','an event stores when
 select hasnt_function('kut','_mm_reveal_at',array['timestamp with time zone','integer'],'the version-less reveal clock is gone');
 select function_privs_are('kut','_mm_match_timing',array['jsonb','integer'],'authenticated',array[]::text[],
   'members cannot call the clock directly');
-select is((select attname::text from pg_attribute where attrelid='kut.midweek_current'::regclass and attnum>0
-  and not attisdropped order by attnum desc limit 1),'schedule_version','midweek_current appends the version last');
+-- Appended last by ADR-104; ADR-105 appends evening_live after it.
+select is((select attname::text from pg_attribute where attrelid='kut.midweek_current'::regclass
+  and attnum = (select attnum + 1 from pg_attribute where attrelid='kut.midweek_current'::regclass and attname = 'opted_out')),
+  'schedule_version','midweek_current appends the version after the existing columns');
 
 -- ---------------------------------------------------------------------------
 -- The clock

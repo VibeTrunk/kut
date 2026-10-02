@@ -21,7 +21,7 @@
 -- lock once squads are saved:
 --   T1 locked 5 hours ago     -> simulated and completed by one worker call
 --   T2 locked 45 minutes ago  -> simulated; round 1 revealed, round 2 not
---   T3 locked 10 minutes ago  -> simulated; nothing revealed yet
+--   T3 locked 10 minutes ago  -> simulated; squads out (ADR-105), no match yet
 --   T4 locked an hour ago, no session the week before -> skipped (club break)
 --   T5 locks later in the file with two entrants left -> skipped (too few)
 --   T6 locks tomorrow         -> open, for the rehearsal and the squad guard
@@ -403,11 +403,13 @@ select is((select count(*)::int from kut.midweek_pick_shares_public where tourna
 select results_eq($q$select status, champion_user_id, seed from kut.midweek_tournaments_public where tournament_id='00000095-0000-4000-8000-000000000502'$q$,
   $q$values ('simulated', null::uuid, null::text)$q$,'no champion and no seed before the final');
 
--- T3, locked, nothing revealed.
+-- T3, locked, no match revealed. Squads show from the lock (ADR-105;
+-- midweek_draw_from_lock.test.sql covers the rest).
 select is((select count(*)::int from kut.midweek_matches_public where tournament_id='00000095-0000-4000-8000-000000000503'),0,
-  'nothing shows between the lock and round 1');
-select is((select count(*)::int from kut.midweek_entries_public where tournament_id='00000095-0000-4000-8000-000000000503'),0,
-  'squads stay hidden until round 1');
+  'no match shows between the lock and round 1');
+select ok((select count(*) > 0 and bool_and(form_roll_ppm is null and pick_factor_ppm is null and power_ppm is null)
+  from kut.midweek_entries_public where tournament_id='00000095-0000-4000-8000-000000000503'),
+  'squads show from the lock, without the week''s dice until round 1');
 select is((select count(*)::int from kut.midweek_events_public where tournament_id='00000095-0000-4000-8000-000000000503'),0,
   'events stay hidden until their round');
 select is((select status from kut.midweek_tournaments_public where tournament_id='00000095-0000-4000-8000-000000000504'),'skipped',

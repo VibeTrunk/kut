@@ -4184,3 +4184,31 @@ in a row, and the gate passed for `5da5dd8`.
 
 Next for MM 2.0: PR 3 (B2, the draw and the five cards public from the lock,
 ADR-105), not in this push week.
+
+## MM 2.0 B2: the draw and every five from the lock — 2026-10-02
+
+PR 3 of MM 2.0 (`feat/midweek-draw-from-lock`, ADR-105, migration
+`20261012000000_midweek_draw_from_lock.sql`, views only). What members may read
+from 19:55, for the evening's first five minutes as DR2 approved them:
+
+- **`kut.midweek_draw_public`, new:** round 1's pairings and byes with both
+  managers and the kick-off, from the lock, with no result column.
+- **`midweek_entries_public` from the lock** instead of round 1: the five cards
+  and everything that follows from them. The week's dice (form roll, pick
+  factor, power) read null until round 1 kicks off. Columns unchanged.
+- **Leak fix:** `final_reveal_at` (the end of the final since ADR-104) shows in
+  the member views only once it has passed; at the lock it told an API reader
+  whether the final would go to penalties. No page read it.
+- **`evening_live`** appended to `midweek_current` for F1's Compete badge.
+- Pages: the three entry columns are nullable and a report waits for them;
+  nothing changes on screen until F5.
+
+Verification: `npm run verify:fast` (40 files, 377 tests); every pgTAP suite on
+the local stack, including the new `midweek_draw_from_lock.test.sql` (49:
+before the lock, between the lock and round 1, round 1 under way, the final in
+play, after the final, a void week, a week past its lock but not drawn, and
+the D3 owner-count rule). The engine and B1 suites changed one assertion each,
+both pinning the old shape (squads hidden until round 1; `schedule_version` as
+`midweek_current`'s last column).
+
+Not on hosted yet.

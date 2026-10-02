@@ -1,0 +1,423 @@
+<title>KUT UX Review</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;800;900&family=Instrument+Serif&display=swap">
+<style>
+/* Layout: one reading column (~68ch) on the KUT board; screenshots and phone sketches sit beside the text from 900px, under it below. KUT is dark-only, so this page is too. */
+:root {
+  color-scheme: dark;
+  --board: #15130f; --deep: #0b0a07; --panel: #211c15; --panel2: #2a2318; --line: #4a4030;
+  --ink: #f4efe3; --dim: #b3a891; --faint: #8a8072; --on-accent: #1c150a;
+  --brass: #e0ac4a; --brass-bg: #2b1f0a; --brass-line: #5c4419;
+  --steel: #8fb0c2; --steel-bg: #16232a; --moss: #8bbd6c; --brick: #dd7a55; --brick-bg: #2a1712;
+  --blue: #7fa8ff; --blue-bg: #17223a; --red: #ff8a7a; --red-bg: #3a1a17;
+  --sans: "Archivo", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --serif: "Instrument Serif", Georgia, "Times New Roman", serif;
+}
+* { box-sizing: border-box; }
+body { background: var(--board); color: var(--ink); font: 16px/1.6 var(--sans); margin: 0; }
+.wrap { max-width: 1120px; margin: 0 auto; padding-inline: 20px; padding-block: 40px 80px; }
+h1, h2, h3 { font-family: var(--serif); font-weight: 400; line-height: 1.05; text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(2.6rem, 7vw, 4.4rem); }
+h2 { font-size: clamp(2rem, 4.5vw, 2.8rem); margin-top: 72px; padding-top: 24px; border-top: 2px solid var(--brass); }
+h3 { font-size: 1.7rem; }
+p { margin: 0; }
+.kicker { font-size: .72rem; font-weight: 800; letter-spacing: .24em; text-transform: uppercase; color: var(--brass); }
+.dim { color: var(--dim); } .faint { color: var(--faint); }
+.prose { max-width: 68ch; display: grid; gap: 14px; }
+.lede { font-size: 1.15rem; color: var(--dim); max-width: 62ch; }
+code { font-size: .88em; background: var(--panel); padding: 1px 5px; border-radius: 4px; color: var(--dim); }
+a { color: var(--brass); }
+strong { color: var(--ink); }
+ul.tight { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
+
+.answer { margin-top: 32px; display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+.answer > div { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 20px; display: grid; gap: 8px; align-content: start; }
+.answer .big { font-family: var(--serif); font-size: 1.6rem; line-height: 1.15; }
+
+.problem { display: grid; gap: 28px; grid-template-columns: minmax(0, 1fr); padding-block: 32px; border-bottom: 1px solid var(--line); }
+@media (min-width: 900px) { .problem { grid-template-columns: minmax(0, 1fr) 300px; } .problem.wide { grid-template-columns: minmax(0, 1fr); } }
+.problem .text { display: grid; gap: 12px; align-content: start; min-width: 0; }
+.problem h3 { display: flex; gap: 14px; align-items: baseline; }
+.rank { font-family: var(--sans); font-weight: 900; font-size: 1rem; color: var(--on-accent); background: var(--brass); border-radius: 999px; min-width: 30px; height: 30px; display: inline-grid; place-items: center; flex: none; }
+.meta { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { font-size: .72rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; padding: 3px 9px; border-radius: 999px; border: 1px solid var(--line); color: var(--dim); }
+.chip.route { color: var(--steel); border-color: #3a5866; background: var(--steel-bg); text-transform: none; letter-spacing: 0; font-family: ui-monospace, Consolas, monospace; font-weight: 600; }
+.chip.kb { color: var(--brick); border-color: #5c3221; background: var(--brick-bg); }
+.label { font-size: .7rem; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; color: var(--faint); }
+.shots { display: grid; gap: 12px; align-content: start; }
+.shots figure { margin: 0; display: grid; gap: 6px; }
+.shots img { width: 100%; border-radius: 14px; border: 1px solid var(--line); display: block; }
+.shots figcaption { font-size: .8rem; color: var(--faint); }
+.shots.row { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+
+/* Phone sketches: deliberately rough, KUT colours, 248px phones. */
+.sketches { display: grid; gap: 28px; grid-template-columns: repeat(auto-fit, minmax(248px, 1fr)); margin-top: 24px; }
+.sk { display: grid; gap: 10px; align-content: start; justify-items: center; }
+.sk .cap { max-width: 300px; font-size: .9rem; color: var(--dim); display: grid; gap: 4px; }
+.sk .cap b { color: var(--ink); }
+.phone { width: 248px; max-width: 100%; border: 2px solid var(--line); border-radius: 26px; background: var(--deep); overflow: hidden; display: grid; grid-template-rows: auto 1fr auto; min-height: 470px; font-size: 11px; line-height: 1.35; }
+.phone .top { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; border-bottom: 1px solid var(--line); font-weight: 900; }
+.phone .top .pill { font-size: 9px; color: var(--brass); border: 1px solid var(--brass-line); border-radius: 99px; padding: 1px 6px; }
+.phone .body { padding: 10px; display: grid; gap: 8px; align-content: start; }
+.phone .tabs { display: grid; border-top: 1px solid var(--line); background: var(--board); }
+.phone .tabs span { display: grid; justify-items: center; gap: 2px; padding: 7px 0 9px; font-size: 8.5px; font-weight: 700; color: var(--faint); position: relative; white-space: nowrap; overflow: hidden; }
+.phone .tabs span::before { content: ""; width: 14px; height: 14px; border-radius: 4px; border: 1.5px solid currentColor; }
+.phone .tabs span.on { color: var(--brass); }
+.phone .tabs span.tight { color: var(--brick); }
+.phone .tabs .badge { position: absolute; top: 3px; left: 54%; font-size: 7px; font-weight: 900; background: var(--brass); color: var(--on-accent); border-radius: 99px; padding: 0 4px; }
+.phone .tabs .badge.live { background: var(--red); }
+.sec { display: flex; gap: 4px; padding: 3px; border: 1px solid var(--line); border-radius: 9px; }
+.sec span { flex: 1; text-align: center; padding: 4px 0; border-radius: 6px; font-weight: 800; color: var(--faint); font-size: 10px; }
+.sec span.on { background: var(--panel2); color: var(--brass); }
+.box { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 8px; display: grid; gap: 4px; }
+.box.brass { border-color: var(--brass-line); background: var(--brass-bg); }
+.box.dashed { border-style: dashed; background: transparent; color: var(--faint); }
+.box .h { font-family: var(--serif); font-size: 16px; line-height: 1.05; }
+.box .k { font-size: 8px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; color: var(--brass); }
+.bar { height: 7px; border-radius: 4px; background: var(--panel2); }
+.bar.short { width: 60%; } .bar.mid { width: 80%; }
+.clock { display: flex; justify-content: space-between; padding: 6px 4px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); }
+.clock span { display: grid; justify-items: center; gap: 2px; font-size: 8px; color: var(--faint); font-weight: 700; }
+.clock span i { width: 9px; height: 9px; border-radius: 50%; border: 1.5px dashed var(--faint); }
+.clock span.done { color: var(--dim); } .clock span.done i { background: var(--brass); border: 1.5px solid var(--brass); }
+.clock span.now { color: var(--brass); } .clock span.now i { border: 2px solid var(--brass); box-shadow: 0 0 0 3px var(--brass-bg); }
+.score { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 6px; padding: 8px; border-radius: 10px; background: var(--panel); border: 1px solid var(--line); }
+.score .b { color: var(--blue); font-weight: 900; } .score .r { color: var(--red); font-weight: 900; text-align: right; }
+.score .n { font-weight: 900; font-size: 20px; letter-spacing: .02em; }
+.score .sub { grid-column: 1 / -1; text-align: center; font-size: 9px; color: var(--faint); }
+.ev { border-radius: 8px; padding: 6px 8px; font-size: 10px; display: grid; gap: 2px; }
+.ev.b { background: var(--blue-bg); border-left: 3px solid var(--blue); margin-right: 26px; }
+.ev.r { background: var(--red-bg); border-right: 3px solid var(--red); margin-left: 26px; }
+.ev .who { font-weight: 800; font-size: 9px; }
+.ev.b .who { color: var(--blue); } .ev.r .who { color: var(--red); text-align: right; }
+.ev.new { outline: 1px solid var(--brass); }
+.minis { display: flex; gap: 3px; }
+.mini { width: 18px; height: 25px; border-radius: 3px; background: var(--panel2); border: 1px solid var(--line); font-size: 7px; font-weight: 900; display: grid; place-items: center; color: var(--dim); }
+.mini.gold { background: #6b5320; color: #f5d98a; } .mini.silver { background: #4b5560; color: #e6edf2; } .mini.bronze { background: #6a4426; color: #f1c79a; }
+.row { display: flex; justify-content: space-between; gap: 6px; align-items: center; }
+.ph { border: 1px dashed var(--brick); color: var(--brick); border-radius: 8px; padding: 6px 8px; font-size: 9.5px; font-weight: 700; }
+.btn { background: var(--brass); color: var(--on-accent); font-weight: 900; text-align: center; padding: 6px; border-radius: 8px; font-size: 10px; }
+.btn.ghost { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+.tag { font-size: 8px; font-weight: 900; padding: 1px 5px; border-radius: 99px; border: 1px solid var(--line); color: var(--dim); }
+.tag.live { color: var(--red); border-color: var(--red); }
+.tag.ft { color: var(--moss); border-color: #3c5230; }
+
+.options { display: grid; gap: 28px; margin-top: 28px; }
+.option { display: grid; gap: 22px; grid-template-columns: minmax(0, 1fr); padding: 24px; border: 1px solid var(--line); border-radius: 18px; background: var(--panel); }
+@media (min-width: 900px) { .option { grid-template-columns: 260px minmax(0, 1fr); } }
+.option.pick { border-color: var(--brass); background: linear-gradient(180deg, var(--brass-bg), var(--panel) 60%); }
+.option .text { display: grid; gap: 10px; align-content: start; min-width: 0; }
+.costs { display: grid; gap: 6px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 640px) { .costs { grid-template-columns: 1fr 1fr; } }
+.costs div { display: grid; gap: 6px; align-content: start; }
+.verdict { margin-top: 28px; padding: 22px; border-left: 4px solid var(--brass); background: var(--brass-bg); border-radius: 0 14px 14px 0; display: grid; gap: 10px; max-width: 78ch; }
+
+table { border-collapse: collapse; width: 100%; font-size: .95rem; }
+.tablewrap { overflow-x: auto; margin-top: 18px; }
+th, td { text-align: left; vertical-align: top; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+th { font-size: .7rem; letter-spacing: .14em; text-transform: uppercase; color: var(--faint); }
+td:first-child { font-weight: 700; min-width: 160px; }
+
+ol.questions { margin: 20px 0 0; padding-left: 24px; display: grid; gap: 16px; max-width: 74ch; }
+ol.questions li::marker { color: var(--brass); font-weight: 900; }
+:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+</style>
+
+<div class="wrap">
+  <header style="display:grid; gap:14px">
+    <p class="kicker">Kelderklasse Ultimate Team · design review, step 1</p>
+    <h1>KUT UX review</h1>
+    <p class="lede">How KUT could work better on a phone, and where Midweek Madness should live. A ten-minute read. Nothing is built yet: pick a direction and the mockups follow.</p>
+    <p class="faint" style="font-size:.85rem">1 Oct 2026. Taken from the app as it is on <code>main</code> (a472b4a) at 390 px and 1440 px, signed in as an ordinary member on a local stack. The Midweek week in the screenshots is invented: 21 entrants, as on 30 Sep, with made-up names and clock times.</p>
+  </header>
+
+  <section class="answer" aria-label="The short version">
+    <div><p class="label">Where Midweek should live</p><p class="big">Its own tab, made by turning Leaderboard into the club's competition tab.</p><p class="dim">Midweek, Standings and Players as its sections, at <code>/midweek</code>. Still five tabs.</p></div>
+    <div><p class="label">The biggest problem overall</p><p class="big">The app doesn't lead with what's happening now.</p><p class="dim">On a Wednesday night, the live round is the third thing on Home, under a 390 px masthead.</p></div>
+    <div><p class="label">The MM 2.0 evening</p><p class="big">One page with a clock as its spine.</p><p class="dim">Your match first, blue left and red right, other matches shown at full time.</p></div>
+  </section>
+
+  <h2 id="problems">1 · The seven problems that matter most</h2>
+  <p class="lede" style="margin-top:14px">Ranked by how much they cost a member over a normal week: Monday and Friday football, a pack when the coins allow, Wednesday night.</p>
+
+  <article class="problem">
+    <div class="text">
+      <h3><span class="rank">1</span>Home doesn't lead with what's happening now</h3>
+      <div class="meta"><span class="chip route">/</span><span class="chip">every visit</span></div>
+      <p><strong>What a member sees.</strong> On a phone, Home opens with a kicker, a 48 px "This week in KUT", the subtitle "Kelderklasse Ultimate Team", a paragraph about risers and two links. That's 390 px before anything you can act on. Then "Open a pack", and only then the Midweek card. At 20:50 on a Wednesday, with round 2 just out, the live evening is the third block on the page. The same goes for the +50-coin session report and the injury check-in, the two other things on Home with a deadline.</p>
+      <p><strong>Why it matters.</strong> Home is where every link from the group chat lands. It's the only page every member sees every visit, and it currently spends its best space on things that never change. The nav audit compressed the header on Market, Collection and Packs; Home kept the desktop masthead.</p>
+      <p><strong>Direction.</strong> A short header, then a "now" stack ordered by deadline: the Midweek evening while it runs, otherwise the earliest deadline among picking, the report and the check-in. Then risers, then activity. "Open a pack" stays a button, just not above a live event.</p>
+    </div>
+    <div class="shots"><figure><img src="home-evening.jpg" alt="KUT Home on a 390 px phone during the Midweek evening: masthead and Open a pack fill the screen, the live Round 2 card starts at the bottom"><figcaption>Home at 390 px, Wednesday evening.</figcaption></figure></div>
+  </article>
+
+  <article class="problem">
+    <div class="text">
+      <h3><span class="rank">2</span>Midweek Madness has no place of its own</h3>
+      <div class="meta"><span class="chip route">/club/midweek</span><span class="chip">weekly, plus Wednesday night</span></div>
+      <p><strong>What a member sees.</strong> On the picker, the bracket and every match report, the tab bar lights <em>Home</em>. The way in is a Home card and a strip on Collection. The Leaderboard and the Chronicle never mention Midweek, and there is no list of past weeks: last week's bracket survives only as a one-line strip until the next lock.</p>
+      <p><strong>Why it matters.</strong> It's the only part of KUT with a weekly deadline and a live evening, and it's what members will share in the group chat. A shared link that lands on a page lit "Home" doesn't teach anyone where Midweek lives. MM 2.0 makes this worse: the draw from 19:55, live matches and ratings all add surfaces. The options are in <a href="#placement">section 2</a>.</p>
+    </div>
+    <div class="shots"><figure><img src="bracket-you.jpg" alt="Phone bracket: the member's own pairing, with the name truncated to Member beside YOU and BYE chips"><figcaption>The bracket at 390 px. Home is the lit tab.</figcaption></figure></div>
+  </article>
+
+  <article class="problem">
+    <div class="text">
+      <h3><span class="rank">3</span>The inbox is a dead end</h3>
+      <div class="meta"><span class="chip route">/messages</span><span class="chip">after every event</span></div>
+      <p><strong>What a member sees.</strong> Each message is a 200 px card with its own "Mark read" button, so a phone shows two and a half per screen. Nothing links to what the message is about: not the sale, not the offer, not the Chronicle issue the message mentions, not the Midweek bracket. A member who went out without winning a match gets no Midweek message at all, because ADR-096 only messages members who were paid.</p>
+      <p><strong>Why it matters.</strong> The inbox is the app's only "this happened to you" channel. In the first week, 5 of 16 result messages had been read 40 minutes after the final, and the 5 entrants who won nothing were never told. If opening a message leads nowhere, members stop opening them.</p>
+      <p><strong>Direction.</strong> Every message links to its subject, and opening one marks it read. Compact two-line rows, grouped by day. "Mark all read" stays.</p>
+    </div>
+    <div class="shots"><figure><img src="messages.jpg" alt="Messages at 390 px: two large message cards, each with a Mark read button and no link"><figcaption>Messages at 390 px.</figcaption></figure></div>
+  </article>
+
+  <article class="problem">
+    <div class="text">
+      <h3><span class="rank">4</span>The picker hides the five slots, and its own Save bar covers them</h3>
+      <div class="meta"><span class="chip route">/club/midweek</span><span class="chip kb">KB-028</span><span class="chip kb">KB-029</span></div>
+      <p><strong>What a member sees.</strong> On a phone: the kicker, the title, the lock bar, a privacy line and an auto-squad notice come before "Your five" (about 570 px down). The sticky Save bar already overlaps slots 1 and 2 when the page loads. Below the slots, every card you own is a full-size <code>LiveCard</code> with a button: 17 Players make a 4,100 px page, sorted by OVR, with no archetype filter.</p>
+      <p>On desktop (KB-029), the countdown "in 1 day" floats top right beside the fairness seal and reads as the seal's, and the Save bar is a wide empty box with the button pushed to the far right. KB-028: a Player whose archetype changes next week says so only in the phone's slot rows. The desktop team sheet and the card grid at every width show only this week's archetype.</p>
+      <p><strong>Why it matters.</strong> 17 of 21 members picked in the first week, and they picked by archetype: 39% of picked cards were All-rounders, against about 80% of the roster. The picker should be built for that. Squad shape needs a compact list and an archetype filter, not a long scroll of full cards.</p>
+    </div>
+    <div class="shots">
+      <figure><img src="picker-phone.jpg" alt="Picker at 390 px: four information blocks, then slot 1, with the sticky Save bar covering slot 2"><figcaption>Picker at 390 px, on load.</figcaption></figure>
+      <figure><img src="picker-desktop.jpg" alt="Picker at 1440 px: the countdown sits top right beside the fairness seal; the save bar is an empty box with the button on the far right"><figcaption>Picker at 1440 px (KB-029).</figcaption></figure>
+    </div>
+  </article>
+
+  <article class="problem">
+    <div class="text">
+      <h3><span class="rank">5</span>The evening stands still between reveals, and goes quiet once you're out</h3>
+      <div class="meta"><span class="chip route">/club/midweek/[week]</span><span class="chip">Wednesday night</span></div>
+      <p><strong>What a member sees.</strong> After the lock, the bracket page tells you the bracket is drawn and "every match is already decided", then shows nothing until round 1. Between reveals nothing moves. Once you're out, your page is "+0 · Round 1 · out on penalties" and a link to next week.</p>
+      <p><strong>Why it matters.</strong> MM 2.0 has already decided most of the fix: the draw from the lock, chance-by-chance matches and 15-minute rounds. The design job is to make that one page worth keeping open, and to give the 14 of 22 members who are out by about 20:20 a reason to stay until the final at 21:00. Section 3 sketches it.</p>
+    </div>
+    <div class="shots">
+      <figure><img src="bracket-after-lock.jpg" alt="Bracket page after the lock: only the clock and a notice that every match is already decided"><figcaption>The bracket after the lock, today.</figcaption></figure>
+      <figure><img src="knocked-out.jpg" alt="After the final, for a member out in round 1: +0, Round 1, and a link to next week"><figcaption>Out in round 1, after the final.</figcaption></figure>
+    </div>
+  </article>
+
+  <article class="problem">
+    <div class="text">
+      <h3><span class="rank">6</span>Long phone pages give you no way to find yourself</h3>
+      <div class="meta"><span class="chip route">bracket</span><span class="chip route">match report</span></div>
+      <p><strong>What a member sees.</strong> The phone bracket is 3,300 px during the evening and 5,200 px once complete (with pick shares). Your own match is wherever the draw put it, and there's no jump to it. A match report is 3,400 px, of which the "Why" panel takes about 2,000. In the report, whose chance it is appears only as small grey text ("Member B's chance"). In the bracket, "Member B" truncates to "Membe…" beside its YOU and BYE chips.</p>
+      <p><strong>Why it matters.</strong> These are the pages a member opens on the night, one-handed, to answer two questions: how did I do, and who's next? Both answers are buried. The "Why" panel is the traceability promise of §44 (goal 4) and should stay, but behind a tap.</p>
+    </div>
+    <div class="shots"><figure><img src="report-phone.jpg" alt="Top third of a match report at 390 px: headline, score, three fact lines and a timeline where the side is named in small grey text"><figcaption>Report at 390 px, top third of 3,400 px.</figcaption></figure></div>
+  </article>
+
+  <article class="problem">
+    <div class="text">
+      <h3><span class="rank">7</span>A pack ends without saying what it did to your collection</h3>
+      <div class="meta"><span class="chip route">/club/packs/[id]</span><span class="chip">every pack</span></div>
+      <p><strong>What a member sees.</strong> The reveal itself works: a tier tease, tap to flip, "Skip all". The summary then stacks three full cards (1,900 px) under "Your new Live Cards". Nothing says which card is new to your album and which is a third copy, or what that copy would discard for. The only mention of duplicates is on the confirm sheet: "Duplicates can happen."</p>
+      <p><strong>Why it matters.</strong> Collecting all 29 is KUT's long game (the Collection header shows "17 / 29"), and opening a pack is where that number moves. The moment that should feel best currently ends on a plain list.</p>
+      <p><strong>Direction.</strong> A "New · fills slot 14" or "×3 · discards for 63" chip on each card, using the <code>LiveCard</code> badge slot from ADR-102, and one summary line: "2 new Players. Album 19 / 29."</p>
+    </div>
+    <div class="shots"><figure><img src="pack-summary.jpg" alt="Pack summary at 390 px: Your new Live Cards, a full-width card, with no new or duplicate marker"><figcaption>Pack summary at 390 px.</figcaption></figure></div>
+  </article>
+
+  <h2 id="placement">2 · Where Midweek Madness should live</h2>
+  <div class="prose" style="margin-top:14px">
+    <p class="lede">Three options. Each sketch shows the phone's tab bar on a Wednesday evening at 390 px. At 320 px each of five tabs gets 64 px and each of six gets 53 px.</p>
+  </div>
+
+  <div class="options">
+    <section class="option">
+      <div class="sk">
+        <div class="phone" aria-label="Sketch: Home with section tabs Today, Midweek, Chronicle">
+          <div class="top"><span>KUT</span><span class="pill">5,370</span></div>
+          <div class="body">
+            <div class="sec"><span>Today</span><span class="on">Midweek</span><span>Chronicle</span></div>
+            <div class="clock"><span class="done"><i></i>R1</span><span class="done"><i></i>R2</span><span class="now"><i></i>QF</span><span><i></i>SF</span><span><i></i>F</span></div>
+            <div class="box"><span class="k">Your match · live</span><div class="bar mid"></div><div class="bar short"></div></div>
+            <div class="box dashed">Round 2 results</div>
+          </div>
+          <div class="tabs" style="grid-template-columns:repeat(5,1fr)"><span class="on">Home</span><span>Collection</span><span>Packs</span><span>Market</span><span>Leaderboard</span></div>
+        </div>
+      </div>
+      <div class="text">
+        <p class="kicker">Option A</p>
+        <h3>A section tab under Home</h3>
+        <p>Home gets section tabs, <em>Today · Midweek · Chronicle</em>, like Market's <em>Buy · Offers</em>. D1 stands. The tab bar doesn't change.</p>
+        <div class="costs">
+          <div><p class="label">Gains</p><ul class="tight"><li>No change to the five tabs or ADR-053.</li><li>The Chronicle gets a visible home as well.</li><li>The cheapest build: one <code>SectionTabs</code> row.</li></ul></div>
+          <div><p class="label">Costs</p><ul class="tight"><li>The lit tab still says "Home", so a shared link still doesn't teach the place.</li><li>A tab row on the landing page pushes the "now" stack down about 60 px.</li><li>On Wednesday night members land on <em>Today</em>, one tap away from the evening.</li></ul></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="option">
+      <div class="sk">
+        <div class="phone" aria-label="Sketch: six primary tabs, with Collection and Leaderboard labels too wide at 320 px">
+          <div class="top"><span>KUT</span><span class="pill">5,370</span></div>
+          <div class="body">
+            <div class="clock"><span class="done"><i></i>R1</span><span class="done"><i></i>R2</span><span class="now"><i></i>QF</span><span><i></i>SF</span><span><i></i>F</span></div>
+            <div class="box"><span class="k">Your match · live</span><div class="bar mid"></div><div class="bar short"></div></div>
+            <div class="box dashed">Round 2 results</div>
+          </div>
+          <div class="tabs" style="grid-template-columns:repeat(6,1fr)"><span>Home</span><span class="tight">Collecti…</span><span>Packs</span><span>Market</span><span class="on">Midweek<b class="badge live">LIVE</b></span><span class="tight">Leaderb…</span></div>
+        </div>
+      </div>
+      <div class="text">
+        <p class="kicker">Option B</p>
+        <h3>A sixth primary tab</h3>
+        <p>Home · Collection · Packs · Market · Midweek · Leaderboard.</p>
+        <div class="costs">
+          <div><p class="label">Gains</p><ul class="tight"><li>The most visible option: always one tap away, with a status on the tab.</li><li>Nothing else moves.</li></ul></div>
+          <div><p class="label">Costs</p><ul class="tight"><li>At 320 px "Collection" and "Leaderboard" no longer fit their 53 px. Shortening them only on phones would break the nav audit's "one name everywhere" rule, so they'd be renamed everywhere.</li><li>Undoes ADR-053's five-tab decision; six crowds the thumb zone.</li><li>Leaves Leaderboard as a thin tab next to a rich one.</li></ul></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="option pick">
+      <div class="sk">
+        <div class="phone" aria-label="Sketch: the fifth tab becomes the competition tab with sections Midweek, Standings, Players">
+          <div class="top"><span>KUT</span><span class="pill">5,370</span></div>
+          <div class="body">
+            <div class="sec"><span class="on">Midweek</span><span>Standings</span><span>Players</span></div>
+            <div class="clock"><span class="done"><i></i>R1</span><span class="done"><i></i>R2</span><span class="now"><i></i>QF</span><span><i></i>SF</span><span><i></i>F</span></div>
+            <div class="box"><span class="k">Your match · live</span><div class="bar mid"></div><div class="bar short"></div></div>
+            <div class="box dashed">Round 2 results</div>
+          </div>
+          <div class="tabs" style="grid-template-columns:repeat(5,1fr)"><span>Home</span><span>Collection</span><span>Packs</span><span>Market</span><span class="on">Compete<b class="badge live">LIVE</b></span></div>
+        </div>
+      </div>
+      <div class="text">
+        <p class="kicker">Option C · recommended</p>
+        <h3>Leaderboard becomes the club's competition tab</h3>
+        <p>The fifth tab (working name <em>Compete</em>, yours to name) gets three sections: <em>Midweek · Standings · Players</em>. Midweek comes first and moves to <code>/midweek</code>, with a redirect from <code>/club/midweek</code>. <code>/leaderboard</code> and <code>/players</code> keep their URLs and become Standings and Players. The tab carries a status in words as well as a mark: "not picked" before the lock, "LIVE" during the evening. Past weeks get a list under Midweek. MM 2.0's season table or knockout follow-up can live here later.</p>
+        <div class="costs">
+          <div><p class="label">Gains</p><ul class="tight"><li>Midweek gets a tab that lights, a short URL to share, and room for every MM 2.0 screen.</li><li>Still five tabs. The longest label drops from 11 letters to 7.</li><li>Competition and standings sit together: the club's two "how am I doing against the others" surfaces.</li></ul></div>
+          <div><p class="label">Costs</p><ul class="tight"><li>"Leaderboard" leaves the bar. The Club Value table is one tap deeper; Home's Rank tile still links straight to it.</li><li>Reverses owner decision D1 and amends ADR-053, ADR-097 and BUILD_SPEC §46. That means a new ADR, frontend only.</li><li>Players (the card directory) is a slightly odd tenant. It's scouting, so it can stay.</li></ul></div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="verdict">
+    <p class="kicker">Recommendation</p>
+    <p><strong>Option C.</strong> Midweek is the only part of KUT that runs on a clock, and the evening is the one time members will open the app together. That needs a place that lights up, a URL people can paste into the group chat, and a tab that can say "live". The Club Value table is a monthly glance rather than a weekly habit, so it's the cheapest thing to move one tap deeper. And C keeps ADR-053's five tabs, which B can't.</p>
+    <p>Whichever you pick, Home keeps its Midweek card as the "now" entry (problem 1), and the Collection strip (D2) goes: one entry per state is enough.</p>
+  </div>
+
+  <h3 style="margin-top:40px">Where I disagree with the earlier navigation audit</h3>
+  <div class="prose" style="margin-top:12px">
+    <ul class="tight">
+      <li><strong>Home's lead (audit #8).</strong> The audit made the latest Chronicle issue Home's lead block. I'd lead with whatever has a clock (Midweek, the open report, the injury check-in) and put the Chronicle second. It's a weekly read, not a deadline.</li>
+      <li><strong>The freed tab (#2, ADR-053).</strong> The audit gave the slot freed by <code>/club</code> to the Leaderboard. I'd now give it to the competition, with standings inside it.</li>
+      <li><strong>Editorial headers (#21).</strong> The audit kept full headers on editorial pages, and Home kept the desktop masthead. On a phone Home is the most utilitarian page in the app.</li>
+      <li><strong>The account menu (#10, #11).</strong> The avatar now links straight to Settings rather than opening a menu or a sheet. That's simpler and right. Only §46, which still describes a menu, needs updating.</li>
+      <li>Still open from the audit, and still right: the duplicate KUT Coins tile under the coin pill (#18), and capping Club activity at six rows (#23).</li>
+    </ul>
+  </div>
+
+  <h2 id="evening">3 · A direction for the MM 2.0 evening</h2>
+  <div class="prose" style="margin-top:14px">
+    <p class="lede">The feel: a match night in your pocket. One page, <code>/midweek</code>, that changes through the evening, with the clock as its spine. You glance at it, put the phone down, and glance again. It's built on the evening as decided: lock 19:55, rounds at 20:00, 20:15, 20:30, 20:45 and the final at 21:00, a chance every 20 s, a kick every 5 s, polling and no push.</p>
+    <ul class="tight">
+      <li><strong>The clock is the page.</strong> A sticky strip of stops (Lock · R1 · R2 · QF · SF · F). The current stop is ringed and named in words, and each stop jumps to its round.</li>
+      <li><strong>Your match first,</strong> then this round's other matches, then the bracket. Once you're out, the final takes your match's place.</li>
+      <li><strong>Blue left, red right, and always in words.</strong> Side 0 is blue and on the left everywhere: scoreboard, timeline and "Why". On a phone the timeline stays one column, but each event leans to its side (a blue rail on the left, or a red rail on the right) and names the manager. Position and name carry the meaning, colour adds to it.</li>
+      <li><strong>Other matches never get ahead of anyone.</strong> They show "In play" until their full time (about 20:05 for round 1, later after a shoot-out), then the result. Never a live score.</li>
+      <li><strong>Polling, shown quietly.</strong> A new chance slides in and the score ticks. "Updated 20:03:40" sits small under the clock. Reduced motion swaps the slide for a plain update.</li>
+      <li><strong>Long shoot-outs.</strong> A sudden-death run can reach 50 kicks (4:10 at 5 s). The tally should grow in place and keep the score readable, not scroll the page.</li>
+    </ul>
+  </div>
+
+  <div class="sketches">
+    <div class="sk">
+      <div class="phone" aria-label="Sketch at 19:57: the draw and your first opponent's five">
+        <div class="top"><span>KUT</span><span class="pill">5,370</span></div>
+        <div class="body">
+          <div class="clock"><span class="now"><i></i>Lock</span><span><i></i>20:00</span><span><i></i>20:15</span><span><i></i>20:30</span><span><i></i>20:45</span><span><i></i>21:00</span></div>
+          <div class="box brass"><span class="k">Round 1 · kick-off 20:00 · in 3 min</span><div class="h">You v Joris B.</div>
+            <div class="row"><div class="minis"><span class="mini gold">63</span><span class="mini bronze">47</span><span class="mini bronze">45</span><span class="mini bronze">42</span><span class="mini bronze">41</span></div><span class="faint">you</span></div>
+            <div class="row"><div class="minis"><span class="mini silver">52</span><span class="mini silver">51</span><span class="mini bronze">48</span><span class="mini bronze">45</span><span class="mini bronze">42</span></div><span class="faint">Joris</span></div>
+            <span class="faint">Form, pick factor and chances at 20:00.</span></div>
+          <div class="box"><span class="k">The draw · 21 entrants</span><div class="row"><span>Lieke M. v Ruben V.</span><span class="tag">20:00</span></div><div class="row"><span>Femke D.</span><span class="tag">bye</span></div><div class="row"><span>Thomas R. v Wout H.</span><span class="tag">20:00</span></div><span class="faint">… full bracket</span></div>
+        </div>
+        <div class="tabs" style="grid-template-columns:repeat(5,1fr)"><span>Home</span><span>Collection</span><span>Packs</span><span>Market</span><span class="on">Compete</span></div>
+      </div>
+      <div class="cap"><b>19:57 · the draw is out</b>The draw and every five are public from the lock. Your opponent's five lead, as mini cards. Their numbers wait for 20:00.</div>
+    </div>
+
+    <div class="sk">
+      <div class="phone" aria-label="Sketch at 20:02: your match live, chance by chance">
+        <div class="top"><span>KUT</span><span class="pill">5,370</span></div>
+        <div class="body">
+          <div class="clock"><span class="done"><i></i>Lock</span><span class="now"><i></i>R1</span><span><i></i>R2</span><span><i></i>QF</span><span><i></i>SF</span><span><i></i>F</span></div>
+          <div class="score"><span class="b">You</span><span class="n">1–0</span><span class="r">Joris B.</span><span class="sub"><span class="tag live">LIVE</span> chance 6 of 14 · full time about 20:05</span></div>
+          <div class="ev b new"><span class="who">Member B · goal</span>Max slides it to Alex Example without looking up…</div>
+          <div class="ev r"><span class="who">Joris B. · save</span>Steffen drives it low. Leihko gets down…</div>
+          <div class="ev b"><span class="who">Member B · wide</span>Bea Test drags it wide.</div>
+          <div class="box dashed"><div class="row"><span>7 more matches</span><span class="tag">in play</span></div></div>
+          <span class="faint" style="text-align:center">updated 20:02:40</span>
+        </div>
+        <div class="tabs" style="grid-template-columns:repeat(5,1fr)"><span>Home</span><span>Collection</span><span>Packs</span><span>Market</span><span class="on">Compete<b class="badge live">LIVE</b></span></div>
+      </div>
+      <div class="cap"><b>20:02 · your match, live</b>Newest chance on top. Each leans to its side and names the manager. The other matches say "in play" until their full time.</div>
+    </div>
+
+    <div class="sk">
+      <div class="phone" aria-label="Sketch at 20:20: knocked out, follow the evening">
+        <div class="top"><span>KUT</span><span class="pill">5,370</span></div>
+        <div class="body">
+          <div class="clock"><span class="done"><i></i>R1</span><span class="done"><i></i>R2</span><span class="now"><i></i>QF</span><span><i></i>SF</span><span><i></i>F</span></div>
+          <div class="box"><span class="k">Your night</span><div class="row"><span>Bye · counts as a win</span><span class="tag ft">+17</span></div><div class="row"><span>Out: Joris B. 2–2, pens</span><span class="tag">report</span></div><span class="faint">Coins are paid after the final ends.</span></div>
+          <div class="ph">Placeholder · something to follow after a knockout (prediction, consolation or season table: not decided)</div>
+          <div class="box brass"><span class="k">The final · 21:00</span><div class="h">Watch it live</div><span class="faint">Everyone watches the final chance by chance.</span></div>
+          <div class="box dashed"><div class="row"><span>Quarter-finals</span><span class="tag">20:30</span></div></div>
+        </div>
+        <div class="tabs" style="grid-template-columns:repeat(5,1fr)"><span>Home</span><span>Collection</span><span>Packs</span><span>Market</span><span class="on">Compete<b class="badge live">LIVE</b></span></div>
+      </div>
+      <div class="cap"><b>20:20 · you're out</b>Your result folds into "Your night". The final becomes the thing to come back for, with a marked slot for the follow-up you haven't decided yet.</div>
+    </div>
+
+    <div class="sk">
+      <div class="phone" aria-label="Sketch at 21:06: champion, ratings and share placeholders">
+        <div class="top"><span>KUT</span><span class="pill">5,387</span></div>
+        <div class="body">
+          <div class="box brass"><span class="k">Champion · Wed 7 Oct</span><div class="h">Wout H.</div><span>Beat Ruben V. on penalties. 250 coins over the night.</span><div class="minis"><span class="mini">30</span><span class="mini bronze">47</span><span class="mini silver">55</span><span class="mini gold">63</span><span class="mini silver">52</span></div></div>
+          <div class="box"><div class="row"><span>You · round 2</span><span class="tag ft">+17 paid</span></div></div>
+          <div class="ph">Placeholder · your five's ratings, 1–10 (not decided)</div>
+          <div class="ph">Placeholder · share image (what it shows: not decided)</div>
+          <div class="btn ghost">Pick your five for Wed 14 Oct</div>
+        </div>
+        <div class="tabs" style="grid-template-columns:repeat(5,1fr)"><span>Home</span><span>Collection</span><span>Packs</span><span>Market</span><span class="on">Compete</span></div>
+      </div>
+      <div class="cap"><b>21:06 · after the final</b>The champion is named and coins are paid only once the final's last chance or kick is shown. Ratings and the share image are marked placeholders.</div>
+    </div>
+  </div>
+
+  <h2 id="remove">4 · What I'd remove or simplify</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th scope="col">Where</th><th scope="col">Today</th><th scope="col">Instead</th></tr></thead>
+      <tbody>
+        <tr><td>Home masthead</td><td>Kicker, display title, subtitle, a risers paragraph, two links: 390 px on a phone.</td><td>One line of header. The risers paragraph becomes the risers section's own subtitle.</td></tr>
+        <tr><td>Home stat tiles</td><td>KUT Coins tile directly under the coin pill (audit #18).</td><td>Drop the Coins tile. Keep Club Value and Rank as links that look like links.</td></tr>
+        <tr><td>Club activity</td><td>12 rows, often "Member B opened a pack" five times in a row.</td><td>Six rows, with repeats folded: "Member B opened 5 packs".</td></tr>
+        <tr><td>Collection Midweek strip</td><td>A third Midweek entry point (D2).</td><td>Remove it. The tab status and the Home card cover it.</td></tr>
+        <tr><td>Picker preamble</td><td>Lock bar, privacy line and auto-squad notice above the slots.</td><td>The lock time in the header and the slots straight after. The privacy line stays, once and short, under the slots (ADR-091). The auto-squad explanation becomes one line in the "Not picked yet" status.</td></tr>
+        <tr><td>Fairness seal</td><td>On the picker, the locked page, the evening and the bracket.</td><td>In the bracket's footer and on the champion view, where the seed can be checked.</td></tr>
+        <tr><td>Messages</td><td>A "Mark read" button on every message.</td><td>Opening a message marks it read. Keep "Mark all read".</td></tr>
+        <tr><td>Report "Why"</td><td>About 2,000 px of factor strips on a phone.</td><td>The odds bar stays visible, and each side's cards open with a tap. Desktop keeps it as a side column.</td></tr>
+        <tr><td>Settings</td><td>"Notification preferences are planned for a later polish pass."</td><td>Delete the placeholder. Plans belong in ROADMAP.md.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2 id="questions">5 · Questions for you</h2>
+  <p class="lede" style="margin-top:14px">Only the decisions I can't make myself.</p>
+  <ol class="questions">
+    <li><strong>Placement: A, B or C?</strong> I recommend C. If C, what's the tab called? "Compete" is a working name; "Matchday" or something the club already says may suit TFH better. It has to fit about 64 px at 320 px.</li>
+    <li><strong>Move Midweek to <code>/midweek</code></strong>, with permanent redirects from <code>/club/midweek</code>? This reverses D1, so it needs your word and an ADR.</li>
+    <li><strong>Should every entrant get a result message,</strong> including members who won nothing? Today ADR-096 only messages members who were paid, so 5 of 21 heard nothing on 30 Sep. If not, the Home card and the share image are the only way they hear about it.</li>
+    <li><strong>The Groundmasters mini card:</strong> deferred until you pick a card direction. The mockups will reserve a Special variant of <code>MidweekMiniCard</code> that keys off the edition type. If you've already picked a direction, name it and I'll mock it.</li>
+  </ol>
+  <p class="dim" style="margin-top:28px; max-width:70ch">Once you've picked, step 2 mocks the chosen direction at 320 px, 412 px and desktop in <code>design/ux-review/</code>, with a <code>HANDOFF.md</code>. That covers the picker (KB-028, KB-029), the draw from the lock, your match and the final live, a match you're not in before and after full time, the clock, whose chance it is, and Home's "now" stack. Ratings, the post-knockout follow-up and the share image stay marked placeholders.</p>
+</div>

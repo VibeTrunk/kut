@@ -15,7 +15,7 @@ const { ARCHETYPE_LABELS } = src("game/archetypes.ts");
 const { ARCHETYPE_OFFSETS } = src("game/rating-engine.ts");
 export const { roundPayouts } = src("game/midweek/rewards.ts");
 export const { MIDWEEK } = src("game/midweek/config.ts");
-export const { revealAt, lockAt, finalRevealAt } = src("game/midweek/schedule.ts");
+export const { roundStartAt } = src("game/midweek/schedule.ts");
 
 // ---------------------------------------------------------------- helpers ----
 
@@ -132,7 +132,8 @@ export function buildBracket() {
   return rounds;
 }
 export const BRACKET = buildBracket();
-export const revealTimes = Array.from({ length: T.rounds }, (_, i) => revealAt(new Date(T.lockAt), i + 1));
+// These mockups predate ADR-104: they show schedule version 1 (lock 20:00, a round revealed whole every 30 minutes).
+export const revealTimes = Array.from({ length: T.rounds }, (_, i) => roundStartAt(new Date(T.lockAt), i + 1, 1));
 
 // ---------------------------------------------------------------- chrome -----
 

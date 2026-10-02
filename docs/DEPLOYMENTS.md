@@ -18,6 +18,53 @@ dated "Hosted deployment…" entries in `PROGRESS.md`.
 then bump the "Latest hosted migration" line in `CLAUDE.md`. Record the tier,
 backup id, pre/post `migration list` counts, the smoke row, and the rollback.
 
+## 2026-10-02 — `20261013000000` a Midweek result message for every entrant (ADR-109)
+
+Deployed 2026-10-02 from `VibeTrunk/supabase` (catalogue PR #68 there), on its
+own `db push`:
+
+- `20261013000000_midweek_result_for_everyone.sql` (BUILD_SPEC §44.7, §44.14,
+  ADR-109 amending ADR-096, owner decision DR1-3, KUT PR #161, tier
+  data-changing) &mdash; MM 2.0 PR 5: every entrant hears how their week ended,
+  not only those paid.
+  - **What changed.** `kut._mm_pay_tournament(uuid)` is re-created with the
+    same signature, still security definer and still internal (no execute for
+    public, anon, authenticated or the service role). The payment part is
+    unchanged word for word (Part L #26). Its message step now writes one
+    `midweek_result` per entrant who is not disabled, titled by finish ("You
+    won Midweek Madness", "You went out in the semi-finals"), with who beat
+    them and how, their coins if any, the champion (not on the runner-up's),
+    and "Your auto squad played for you." for an auto squad. Idempotent through
+    the inbox's unique index, as before.
+  - **No DML.** A week paid before the push keeps its old messages; the first
+    week paid under it is Wed 7 Oct.
+  - **Before the push.** Fresh backup `20261002-232536`, cold-verified, no
+    cards in escrow. `migration list --linked` showed 82 entries with
+    `20261013000000` the only local-only one and no remote-only drift; the dry
+    run named exactly that file, and again from the catalogue's merged main
+    just before the push; the catalogue check reported 83 approved source
+    migrations. The production gate **passed** for `b468a48` (2026-10-02 23:34
+    Amsterdam: CI checks, catalogue parity, the backup re-verified,
+    authenticated E2E). No evening was running (Friday).
+  - **Smoke test on hosted.** The one-row query below was handed to the owner
+    for the SQL editor; the local run returned `t | t | t | t | f | f`
+    (recorded, every entrant's line in the function, titled by finish, definer,
+    no execute for members, none for the service role):
+
+    ```sql
+    select
+      exists (select 1 from supabase_migrations.schema_migrations where version = '20261013000000') as recorded,
+      pg_get_functiondef('kut._mm_pay_tournament(uuid)'::regprocedure) like '%Your auto squad played for you.%' as every_entrant,
+      pg_get_functiondef('kut._mm_pay_tournament(uuid)'::regprocedure) like '%You went out in %' as titled_by_finish,
+      (select prosecdef from pg_proc where oid = 'kut._mm_pay_tournament(uuid)'::regprocedure) as definer,
+      has_function_privilege('authenticated', 'kut._mm_pay_tournament(uuid)', 'execute') as members_can_call,
+      has_function_privilege('service_role', 'kut._mm_pay_tournament(uuid)', 'execute') as service_can_call;
+    ```
+  - **Deploy ordering** was safe: no page reads the message text, and KUT PR
+    #161 deployed on merge with nothing depending on the push.
+  - Rollback: re-create `kut._mm_pay_tournament` from
+    `20261006000000_midweek_payouts.sql` section 4 and re-apply its revoke.
+
 ## 2026-10-02 — `20261012000000` Midweek draw from the lock (ADR-105)
 
 Deployed 2026-10-02 from `VibeTrunk/supabase` (catalogue PR #66 there), on its

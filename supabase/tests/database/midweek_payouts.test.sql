@@ -1,10 +1,11 @@
 -- Midweek Madness, migration D (20261006000000): the payouts. BUILD_SPEC §44.7,
--- §44.14, Part L #26 (and #4/#5); ADR-096.
+-- §44.14, Part L #26 (and #4/#5); ADR-096. Since 20261013000000 (ADR-109) every
+-- entrant gets a result message, not only those paid.
 --
 -- Every profile outside this file is opted out a year ago, so the field is
 -- exactly these personas:
 --   M1-M9 -- active members, each owning one card; nobody saves a squad, so
---            every entrant plays an auto squad. M1 starts with a wallet of 100,
+--            every entrant plays an auto squad, except M1 in T3. M1 starts with a wallet of 100,
 --            the others with none. M7-M9 opt out 4.5 hours ago and M5-M6
 --            3.5 hours ago, so each lock below sees a different field.
 --   A     -- admin, with no card.
@@ -21,7 +22,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path to extensions,kut,public;
 
-select plan(63);
+select plan(65);
 
 -- ---------------------------------------------------------------------------
 -- Shape and access
@@ -110,6 +111,11 @@ from generate_series(1,4) n;
 insert into kut.midweek_tournament_secrets(tournament_id,seed)
 select ('00000096-0000-4000-8000-00000000050' || n)::uuid, repeat(to_hex(n) || 'd', 32)
 from generate_series(1,4) n;
+-- M1 saves a five for T3 while it is open, so one entrant there is not an auto squad.
+insert into kut.midweek_squads(id,tournament_id,user_id) values
+('00000096-0000-4000-8000-000000000601','00000096-0000-4000-8000-000000000503','00000096-0000-4000-8000-000000000001');
+insert into kut.midweek_squad_cards(squad_id,slot,card_id,player_id) values
+('00000096-0000-4000-8000-000000000601',1,'00000096-0000-4000-8000-000000000301','00000096-0000-4000-8000-000000000101');
 update kut.midweek_tournaments set lock_at = now() - interval '5 hours' where id = '00000096-0000-4000-8000-000000000501';
 update kut.midweek_tournaments set lock_at = now() - interval '4 hours' where id = '00000096-0000-4000-8000-000000000502';
 update kut.midweek_tournaments set lock_at = now() - interval '3 hours' where id = '00000096-0000-4000-8000-000000000503';
@@ -183,31 +189,61 @@ select ok((select bool_and(exists (select 1 from kut.midweek_rewards r where r.u
   from kut.wallets w where w.user_id::text like '00000096-%' and w.user_id <> '00000096-0000-4000-8000-000000000001'),
   'a wallet is opened for a member paid who had none');
 
--- The inbox: one message per member paid per tournament.
+-- The inbox (ADR-109): one message per entrant per tournament, paid or not.
 select results_eq($q$select reference_id, count(*)::int, count(distinct user_id)::int from kut.user_notifications
   where event_type = 'midweek_result' and user_id::text like '00000096-%' group by reference_id order by reference_id$q$,
-  $q$select tournament_id, count(distinct user_id)::int, count(distinct user_id)::int from kut.midweek_rewards
-  where tournament_id::text like '00000096-%' group by tournament_id order by tournament_id$q$,
-  'one message per member paid, per tournament');
-select ok((select bool_and(title = 'Midweek Madness' and reference_type = 'midweek_tournament') from kut.user_notifications
-  where event_type = 'midweek_result' and user_id::text like '00000096-%'),'each message is titled and points at its tournament');
+  $q$values ('00000096-0000-4000-8000-000000000501'::uuid,9,9),('00000096-0000-4000-8000-000000000502'::uuid,6,6),
+    ('00000096-0000-4000-8000-000000000503'::uuid,4,4)$q$,
+  'one message per entrant, per tournament');
+select is((select count(*)::int from kut.user_notifications n
+  where n.event_type = 'midweek_result' and n.user_id::text like '00000096-%'
+    and not exists (select 1 from kut.midweek_entries e where e.tournament_id = n.reference_id and e.user_id = n.user_id)),0,
+  'and none for a member who opted out before the lock');
+select is((select count(*)::int from kut.user_notifications n
+  join kut.midweek_tournaments t on t.id = n.reference_id
+  join kut.midweek_matches final on final.tournament_id = t.id and final.round = t.rounds
+  where n.event_type = 'midweek_result' and n.user_id::text like '00000096-%'
+    and (n.reference_type <> 'midweek_tournament'
+      or n.title <> case when n.user_id = final.winner_user_id then 'You won Midweek Madness'
+        else 'You went out in ' || (select case t.rounds - m.round when 0 then 'the final' when 1 then 'the semi-finals'
+          when 2 then 'the quarter-finals' else 'round ' || m.round end
+          from kut.midweek_matches m where m.tournament_id = t.id and not m.bye
+            and n.user_id in (m.side_0_user_id, m.side_1_user_id) and m.winner_user_id <> n.user_id) end)),0,
+  'each is titled by how far the member got, and points at its tournament');
 select is((select n.body from kut.user_notifications n
   join kut.midweek_matches final on final.tournament_id = n.reference_id and final.round = 4 and final.winner_user_id = n.user_id
   where n.event_type = 'midweek_result' and n.reference_id = '00000096-0000-4000-8000-000000000501'),
-  'You won Midweek Madness on Wed 5 Mar: 250 KUT Coins over the night.','the champion''s message');
+  '250 KUT Coins over the night. Your auto squad played for you.','the champion''s message');
 select is((select n.body from kut.user_notifications n
   join kut.midweek_matches final on final.tournament_id = n.reference_id and final.round = 2
     and n.user_id = case final.winner_side when 0 then final.side_1_user_id else final.side_0_user_id end
   where n.event_type = 'midweek_result' and n.reference_id = '00000096-0000-4000-8000-000000000503'),
-  (select format('You reached the final on Wed 19 Mar: +83 KUT Coins. %s won it.', p.display_name)
+  (select concat_ws(' ',
+     case when final.side_0_penalties is null
+       then format('%s beat you %s–%s.', p.display_name,
+         greatest(final.side_0_goals, final.side_1_goals), least(final.side_0_goals, final.side_1_goals))
+       else format('%s beat you on penalties, %s–%s.', p.display_name,
+         greatest(final.side_0_penalties, final.side_1_penalties), least(final.side_0_penalties, final.side_1_penalties)) end,
+     '+83 KUT Coins.',
+     case when e.auto then 'Your auto squad played for you.' end)
    from kut.midweek_matches final join kut.profiles p on p.id = final.winner_user_id
+   join kut.midweek_entries e on e.tournament_id = final.tournament_id
+     and e.user_id = case final.winner_side when 0 then final.side_1_user_id else final.side_0_user_id end
    where final.tournament_id = '00000096-0000-4000-8000-000000000503' and final.round = 2),
-  'the runner-up''s message names how far they got, their coins and the champion');
+  'the runner-up''s message: who beat them and how, and their coins');
 select is((select count(*)::int from kut.midweek_entries e
+  join kut.user_notifications n on n.user_id = e.user_id and n.reference_id = e.tournament_id and n.event_type = 'midweek_result'
   where e.tournament_id = '00000096-0000-4000-8000-000000000503'
     and not exists (select 1 from kut.midweek_rewards r where r.tournament_id = e.tournament_id and r.user_id = e.user_id)
-    and not exists (select 1 from kut.user_notifications n where n.user_id = e.user_id and n.reference_id = e.tournament_id)),2,
-  'the two out in round 1 without a bye get neither coins nor a message');
+    and n.title = 'You went out in the semi-finals' and n.body not like '%KUT Coins%' and n.body like '% won it.%'),2,
+  'the two out in their first match without a bye are told too, with no coins');
+select results_eq($q$select n.reference_id, bool_and((n.body like '% Your auto squad played for you.') = e.auto),
+  count(*) filter (where not e.auto)::int
+  from kut.user_notifications n join kut.midweek_entries e on e.tournament_id = n.reference_id and e.user_id = n.user_id
+  where n.event_type = 'midweek_result' and n.user_id::text like '00000096-%' group by n.reference_id order by n.reference_id$q$,
+  $q$values ('00000096-0000-4000-8000-000000000501'::uuid,true,0),('00000096-0000-4000-8000-000000000502'::uuid,true,0),
+    ('00000096-0000-4000-8000-000000000503'::uuid,true,1)$q$,
+  'an auto squad''s message says so, and only an auto squad''s');
 
 -- ---------------------------------------------------------------------------
 -- A second call pays nothing

@@ -6234,3 +6234,47 @@ the evening card at the draw and mid-evening, opens a Midweek result and a club
 notice from the inbox, and opens a pack (last in the file, as it spends coins).
 
 Tier: no migration.
+
+## ADR-109 — Every entrant hears how their Midweek night went
+
+Date: 2026-10-02
+
+Status: Accepted (amends ADR-096's inbox message; owner decision DR1-3 in
+`design/ux-review/HANDOFF.md`; MM 2.0 backend PR 5)
+
+Context: ADR-096 sent one `midweek_result` message per member paid, and none
+to a member out in round 1 without a bye, on the reasoning that the inbox
+reports what happened to the wallet. On 30 Sep that left 5 of 21 entrants
+with no word at all, and the UX review found the inbox the only "this
+happened to you" channel. The owner decided every entrant gets one (DR1-3),
+and DR2 approved its wording.
+
+Decision (migration `20261013000000_midweek_result_for_everyone.sql`):
+
+- **One message per entrant**, from `kut.midweek_entries`, re-created in
+  `kut._mm_pay_tournament`'s message step. Members opted out were never
+  entered; a member disabled since the lock is neither paid nor told, as before.
+- **Worded by finish** (HANDOFF "Messages"). The title says how far the member
+  got: `You won Midweek Madness`, `You went out in the final` / `the
+  semi-finals` / `the quarter-finals`, or `… in round 2`. The body says who
+  beat them and how, winner's score first (`Sophie beat you 2–1.`, or `Sophie
+  beat you on penalties, 7–6.` after a draw), then the coins if any (`+50 KUT
+  Coins.`), then the champion (`Joris won it.`). The champion's message reads
+  `250 KUT Coins over the night.`, and an auto squad's adds `Your auto squad
+  played for you.`. Two details beyond the mockup's lines: the runner-up's
+  message leaves out `Joris won it.`, since Joris is the one who beat them, and
+  the date ("on Wed 7 Oct") is gone, since the inbox dates every message.
+- **The reference stays the tournament**, so the inbox links the message to
+  that week's bracket (ADR-114).
+- **Payments are unchanged** word for word: rewards, ledger rows, wallets and
+  the return value. Part L #26 is untouched, and the inbox's unique index on
+  (user, type, reference) keeps the step idempotent.
+
+Consequences: every Wednesday night now ends with a message for everyone who
+played. A week paid before the push keeps its old messages. The payouts pgTAP
+suite now expects one message per entrant (M1 saves a five for one week, so a
+message without the auto-squad line is tested), and the concurrency test
+expects as many messages as entrants.
+
+Tier: data-changing (docs/OPERATIONS.md): it changes what the worker writes
+when it pays a week. Fresh cold-verified backup before the push.

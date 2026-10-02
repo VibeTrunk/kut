@@ -1944,9 +1944,10 @@ pay_R = 250 − Σ pay_r (r < R)                the final absorbs the rounding
   week is complete exactly when it has been paid (ADR-096).
 - **A member disabled between the lock and the payout is not paid,** as the
   bibs bonus skips a disabled member.
-- **One inbox message** (`midweek_result`) per member paid, per tournament: how
-  far they got, their coins and the champion. A member out in round 1 without
-  a bye is paid nothing and gets no message.
+- **One inbox message** (`midweek_result`) per entrant, per tournament, paid
+  or not (ADR-109; until then only members paid were told): titled by how far
+  they got, then who beat them and how, their coins if any, and the champion;
+  an auto squad's message says so. A member disabled since the lock gets none.
 - **The faucet** (ADR-096): about 43 coins per member a week at a roster of 22,
   and never more than one attendance reward to any member, so showing up stays
   the dominant coin source.
@@ -2276,6 +2277,12 @@ Views only.
 | `kut.midweek_draw_public` | Round 1 of a drawn week (`simulated` or `complete`) from the lock: `match_id`, `tournament_id`, `week_start`, `pairing`, `bye`, both managers' ids and names, and `kickoff_at` (round 1's start on the week's clock). No result column. |
 | `kut.midweek_entries_public` | Re-created: every entered card from the lock instead of round 1's reveal; `form_roll_ppm`, `pick_factor_ppm` and `power_ppm` null until round 1 kicks off. Columns, and the D3 rule for `picks` and `owners`, unchanged. |
 | `kut.midweek_current`, `kut.midweek_tournaments_public` | `final_reveal_at` null until it has passed. `midweek_current` appends `evening_live`: the latest week is `simulated` and now is between its lock and the end of its final. |
+
+**A result for every entrant (`20261013000000_midweek_result_for_everyone.sql`, ADR-109).**
+
+| Object | What it holds or does |
+|---|---|
+| `kut._mm_pay_tournament(uuid)` | Re-created. Pays exactly as before; its message step now sends one `midweek_result` per entrant not disabled, titled by finish (`You won Midweek Madness`, `You went out in the semi-finals`), with who beat them and how, their coins, the champion (not on the runner-up's) and, for an auto squad, `Your auto squad played for you.` The reference stays the tournament. |
 
 ---
 

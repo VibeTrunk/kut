@@ -1,10 +1,12 @@
-import { revealAt } from "@/game/midweek/schedule";
+import { roundStartAt } from "@/game/midweek/schedule";
 import type { createClient } from "@/lib/supabase/server";
 import {
   formatClock,
   isLockedTonight,
   isMidweekVisible,
   isPickingOpen,
+  roundIntervalText,
+  scheduleVersionOf,
   stageName,
   type MidweekCurrent,
   type MidweekTournament,
@@ -165,11 +167,12 @@ async function liveEntryPoint(
   saved: EntryMini[],
 ): Promise<MidweekEntryPoint | null> {
   const lockAt = current.lock_at as string;
-  const roundOne = formatClock(revealAt(new Date(lockAt), 1).toISOString());
+  const scheduleVersion = scheduleVersionOf(current);
+  const roundOne = formatClock(roundStartAt(new Date(lockAt), 1, scheduleVersion).toISOString());
   const beforeRoundOne: MidweekEntryPoint = {
     kind: "live",
     title: "Squads are locked",
-    line: `Round 1 at ${roundOne}, then a round every half hour.`,
+    line: `Round 1 at ${roundOne}, then a round ${roundIntervalText(scheduleVersion)}.`,
     stops: null,
     playing: saved.length > 0 ? { line: `Round 1 at ${roundOne}.`, mini: saved[0] } : null,
   };
@@ -187,17 +190,23 @@ async function liveEntryPoint(
   if (out === 0) {
     return {
       ...beforeRoundOne,
-      stops: revealStops({ lockAt, rounds, now, wonRounds: new Set() }).slice(1),
+      stops: revealStops({ lockAt, scheduleVersion, rounds, now, wonRounds: new Set() }).slice(1),
     };
   }
 
-  const night = myNight({ userId, rounds, lockAt, matches });
+  const night = myNight({ userId, rounds, lockAt, scheduleVersion, matches });
   const next = night.rows.find((row) => row.kind === "next");
   return {
     kind: "live",
     title: out === rounds ? "The final is out" : `Round ${out} is out`,
-    line: liveLine(night, rounds, lockAt),
-    stops: revealStops({ lockAt, rounds, now, wonRounds: wonRounds(night) }).slice(1),
+    line: liveLine(night, rounds, lockAt, scheduleVersion),
+    stops: revealStops({
+      lockAt,
+      scheduleVersion,
+      rounds,
+      now,
+      wonRounds: wonRounds(night),
+    }).slice(1),
     playing:
       next && night.alive
         ? {

@@ -13,7 +13,7 @@ import {
 } from "@/game/midweek/power";
 import { roundPayouts } from "@/game/midweek/rewards";
 import { seedHash, shaRng } from "@/game/midweek/rng";
-import { lockAt, revealAt } from "@/game/midweek/schedule";
+import { lockAt, matchTiming, roundStartAt } from "@/game/midweek/schedule";
 import { lineMultsPpm } from "@/game/midweek/shape";
 import {
   buildField,
@@ -273,6 +273,7 @@ export function buildGolden() {
     };
   });
 
+  const scheduleVersions = Object.keys(MIDWEEK.schedule.versions).map(Number);
   const formRng = shaRng(seedFor("forms"));
   const dayRng = shaRng(seedFor("days"));
   return {
@@ -320,14 +321,27 @@ export function buildGolden() {
       "2026-10-26",
       "2027-03-29",
       "2027-10-25",
-    ].map((weekStart) => {
-      const lock = lockAt(weekStart);
-      return {
-        weekStart,
-        lockAt: lock.toISOString(),
-        round1RevealAt: revealAt(lock, 1).toISOString(),
-      };
-    }),
+    ].flatMap((weekStart) =>
+      scheduleVersions.map((version) => {
+        const lock = lockAt(weekStart, version);
+        return {
+          weekStart,
+          version,
+          lockAt: lock.toISOString(),
+          roundStarts: [1, 2, 3, 4, 5].map((round) =>
+            roundStartAt(lock, round, version).toISOString(),
+          ),
+        };
+      }),
+    ),
+    // When each event of every golden match is due, on every clock (ADR-104).
+    timings: matches.flatMap((m, index) =>
+      scheduleVersions.map((version) => ({
+        match: index,
+        version,
+        timing: matchTiming(m.outcome.events, version),
+      })),
+    ),
     matches,
     tournaments,
   };

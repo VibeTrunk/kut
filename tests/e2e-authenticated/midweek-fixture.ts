@@ -175,7 +175,8 @@ async function seedCompletedWeek(database: Client, memberId: string) {
   );
 
   const tournament = await database.query<{ id: string }>(
-    "insert into kut.midweek_tournaments(week_start, lock_at, seed_hash) values ($1, now() + interval '1 hour', $2) returning id",
+    // Schedule version 1 (ADR-104): a 20:00 lock, rounds revealed whole every 30 minutes.
+    "insert into kut.midweek_tournaments(week_start, lock_at, seed_hash, schedule_version) values ($1, now() + interval '1 hour', $2, 1) returning id",
     [COMPLETED_WEEK, seedHash(COMPLETED_SEED)],
   );
   const tournamentId = tournament.rows[0].id;

@@ -101,9 +101,11 @@ select ('00000096-0000-4000-8000-00000000070' || n)::uuid, '00000096-0000-4000-8
   date '2025-02-26' + 7 * (n - 1), 'other', 'published', now()
 from generate_series(1,5) n;
 
-insert into kut.midweek_tournaments(id,week_start,lock_at,seed_hash)
+-- Schedule version 1 (round r revealed whole 30 min × r after the lock), which
+-- these times were chosen for; midweek_evening_timing.test.sql pays a version-2 week.
+insert into kut.midweek_tournaments(id,week_start,lock_at,seed_hash,schedule_version)
 select ('00000096-0000-4000-8000-00000000050' || n)::uuid, date '2025-03-03' + 7 * (n - 1), now() + interval '1 day',
-  encode(sha256(decode(repeat(to_hex(n) || 'd', 32),'hex')),'hex')
+  encode(sha256(decode(repeat(to_hex(n) || 'd', 32),'hex')),'hex'), 1
 from generate_series(1,4) n;
 insert into kut.midweek_tournament_secrets(tournament_id,seed)
 select ('00000096-0000-4000-8000-00000000050' || n)::uuid, repeat(to_hex(n) || 'd', 32)
@@ -258,9 +260,9 @@ select is((select count(*)::int from kut.user_notifications where reference_id =
 -- ---------------------------------------------------------------------------
 -- T5: the guard against a wrong payment, and a member disabled before payout
 -- ---------------------------------------------------------------------------
-insert into kut.midweek_tournaments(id,week_start,lock_at,seed_hash) values
+insert into kut.midweek_tournaments(id,week_start,lock_at,seed_hash,schedule_version) values
 ('00000096-0000-4000-8000-000000000505', date '2025-03-31', now() + interval '1 day',
-  encode(sha256(decode(repeat('5d', 32),'hex')),'hex'));
+  encode(sha256(decode(repeat('5d', 32),'hex')),'hex'), 1);
 insert into kut.midweek_tournament_secrets(tournament_id,seed) values ('00000096-0000-4000-8000-000000000505', repeat('5d', 32));
 update kut.midweek_tournaments set lock_at = now() - interval '6 hours' where id = '00000096-0000-4000-8000-000000000505';
 select is(kut._mm_lock_tournament('00000096-0000-4000-8000-000000000505'),'simulated','T5 locks with the whole field');

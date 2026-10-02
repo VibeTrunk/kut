@@ -7,7 +7,7 @@ import { MidweekOptInButton } from "@/components/midweek/opt-in-button";
 import { MIDWEEK_PAGE, MidweekPageHead } from "@/components/midweek/page-head";
 import { MidweekPicker, type PickCard } from "@/components/midweek/picker";
 import { MIDWEEK } from "@/game/midweek/config";
-import { revealAt } from "@/game/midweek/schedule";
+import { roundStartAt } from "@/game/midweek/schedule";
 import { requireUser } from "@/lib/auth/user";
 import { fetchInjuredPlayerIds } from "@/lib/injuries";
 import { toLiveCardPlayer } from "@/lib/live-card-player";
@@ -19,6 +19,7 @@ import {
   isPickingOpen,
   joinNames,
   prefillSlots,
+  scheduleVersionOf,
   starterNotice,
   weekArchetype,
   type MidweekTournament,
@@ -169,7 +170,9 @@ export default async function MidweekPage({
 
   const strip = previous ? await lastWeekView(supabase, user.id, previous, consecutive) : null;
   const lockAt = current.lock_at;
-  const roundOne = formatClock(revealAt(new Date(lockAt), 1).toISOString());
+  const roundOne = formatClock(
+    roundStartAt(new Date(lockAt), 1, scheduleVersionOf(current)).toISOString(),
+  );
 
   if (current.opted_out) {
     return (
@@ -304,7 +307,7 @@ export default async function MidweekPage({
           title="Pick your five"
         />
         <MidweekLockBar lockAt={lockAt} now={nowIso} seedHash={current.seed_hash} />
-        <MidweekPrivacyLine />
+        <MidweekPrivacyLine roundOne={roundOne} />
         {cards.length === 0 ? (
           <MidweekNotice tone="info">
             <b>You need at least one card to take part.</b> Every Player you add from a pack can

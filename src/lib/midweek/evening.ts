@@ -11,7 +11,7 @@
 import type { LiveCardPlayer } from "@/components/live-card";
 import { isArchetype } from "@/game/archetypes";
 import { roundPayouts } from "@/game/midweek/rewards";
-import { revealAt } from "@/game/midweek/schedule";
+import { roundStartAt } from "@/game/midweek/schedule";
 import { ARCHETYPE_OFFSETS, getRarityTier } from "@/game/rating-engine";
 import { formatClock } from "./entry";
 import type { EntryCardRow, MatchRow } from "./rows";
@@ -132,6 +132,8 @@ export type ClockStop = {
 /** `MidweekRevealClock`'s stops: the lock, then one per round, out, next or hidden. */
 export function revealStops(input: {
   lockAt: string;
+  /** The week's schedule version (ADR-104), from `scheduleVersionOf`. */
+  scheduleVersion: number;
   rounds: number;
   now: Date;
   wonRounds: ReadonlySet<number>;
@@ -142,7 +144,7 @@ export function revealStops(input: {
   ];
   let nextGiven = false;
   for (let round = 1; round <= input.rounds; round += 1) {
-    const at = revealAt(lock, round);
+    const at = roundStartAt(lock, round, input.scheduleVersion);
     const out = at.getTime() <= input.now.getTime();
     const state = out ? "done" : nextGiven ? "hidden" : "next";
     if (!out) nextGiven = true;
@@ -204,6 +206,7 @@ export type BracketRound = {
 export function assembleBracket(input: {
   rounds: number;
   lockAt: string;
+  scheduleVersion: number;
   matches: readonly MatchRow[];
   autoUserIds: ReadonlySet<string>;
 }): BracketRound[] {
@@ -267,7 +270,7 @@ export function assembleBracket(input: {
     result.push({
       round,
       name: roundName(round, rounds),
-      revealAt: revealAt(lock, round).toISOString(),
+      revealAt: roundStartAt(lock, round, input.scheduleVersion).toISOString(),
       revealed,
       pairs,
     });
@@ -352,6 +355,7 @@ export function myNight(input: {
   userId: string;
   rounds: number;
   lockAt: string;
+  scheduleVersion: number;
   matches: readonly MatchRow[];
 }): MyNight {
   const { rounds, userId } = input;
@@ -365,7 +369,7 @@ export function myNight(input: {
       (m) => m.round === round && (m.side_0_user_id === userId || m.side_1_user_id === userId),
     );
     if (!match) break;
-    const at = revealAt(lock, round).toISOString();
+    const at = roundStartAt(lock, round, input.scheduleVersion).toISOString();
     if (match.bye) {
       rows.push({ kind: "bye", round, revealAt: at, coins: pays[round - 1] });
       coins += pays[round - 1];
@@ -407,7 +411,7 @@ export function myNight(input: {
     rows.push({
       kind: "next",
       round,
-      revealAt: revealAt(lock, round).toISOString(),
+      revealAt: roundStartAt(lock, round, input.scheduleVersion).toISOString(),
       opponent: sibling ? winnerName(sibling) : null,
       coins: pays[round - 1],
     });
@@ -440,8 +444,15 @@ export function finishStat(night: MyNight, rounds: number): { value: string; not
  * The Home card during the evening (Home-Live): your latest result and what
  * happens next. "You beat Eline 1–0. Quarter-final against Sophie at 21:30."
  */
-export function liveLine(night: MyNight, rounds: number, lockAt: string): string {
-  const finalAt = formatClock(revealAt(new Date(lockAt), rounds).toISOString());
+export function liveLine(
+  night: MyNight,
+  rounds: number,
+  lockAt: string,
+  scheduleVersion: number,
+): string {
+  const finalAt = formatClock(
+    roundStartAt(new Date(lockAt), rounds, scheduleVersion).toISOString(),
+  );
   const played = night.rows.filter((row) => row.kind !== "next");
   const last = played.at(-1);
   const next = night.rows.find((row) => row.kind === "next");

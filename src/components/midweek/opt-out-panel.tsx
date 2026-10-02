@@ -2,7 +2,7 @@
 
 import { startTransition, useActionState, useId, useState } from "react";
 import { setMidweekOptOut, type MidweekActionState } from "@/app/(app)/club/midweek/actions";
-import { ROUND_ONE_CLOCK, optOutConfirmText } from "@/lib/midweek/entry";
+import { optOutConfirmText } from "@/lib/midweek/entry";
 
 /**
  * `MidweekOptOutPanel` on Settings (Settings-TakingPart, Settings-OptedOut).
@@ -14,11 +14,14 @@ export function MidweekOptOutPanel({
   hasSavedSquadThisWeek,
   locked,
   weekLabel,
+  roundOne,
 }: {
   optedOut: boolean;
   hasSavedSquadThisWeek: boolean;
   locked: boolean;
   weekLabel: string | null;
+  /** Round 1's start in the week's schedule, "20:00" (`roundOneClock`). */
+  roundOne: string;
 }) {
   const headingId = useId();
   const confirmId = useId();
@@ -93,7 +96,7 @@ export function MidweekOptOutPanel({
           {[
             <>
               Members see <b className="text-ink">the five cards you enter</b>, or your auto squad,
-              from {ROUND_ONE_CLOCK} on the Wednesday, with their numbers for the week.
+              from {roundOne} on the Wednesday, with their numbers for the week.
             </>,
             <b className="text-ink" key="rest">
               The rest of your collection is never shown.

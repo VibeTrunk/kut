@@ -10,7 +10,7 @@ import { MidweekPath } from "@/components/midweek/path";
 import { MidweekSeed } from "@/components/midweek/seed";
 import { MIDWEEK } from "@/game/midweek/config";
 import { seedHash } from "@/game/midweek/rng";
-import { revealAt } from "@/game/midweek/schedule";
+import { roundStartAt } from "@/game/midweek/schedule";
 import { fetchInjuredPlayerIds } from "@/lib/injuries";
 import { toLiveCardPlayer, type OwnedCardRow } from "@/lib/live-card-player";
 import {
@@ -20,6 +20,8 @@ import {
   formatDayMonth,
   joinNames,
   lastWeekSummary,
+  roundIntervalText,
+  scheduleVersionOf,
   skipOrVoidNotice,
   type MidweekCurrent,
   type MidweekTournament,
@@ -179,11 +181,13 @@ export async function WeekEvening({
     );
   }
 
-  const night = myNight({ userId, rounds, lockAt, matches: results.matches });
-  const stops = revealStops({ lockAt, rounds, now, wonRounds: wonRounds(night) });
+  const scheduleVersion = scheduleVersionOf(current);
+  const night = myNight({ userId, rounds, lockAt, scheduleVersion, matches: results.matches });
+  const stops = revealStops({ lockAt, scheduleVersion, rounds, now, wonRounds: wonRounds(night) });
   const bracket = assembleBracket({
     rounds,
     lockAt,
+    scheduleVersion,
     matches: results.matches,
     autoUserIds: new Set(results.entries.filter((row) => row.auto).map((row) => row.user_id)),
   });
@@ -253,9 +257,12 @@ async function WeekLocked({
 }) {
   const lockAt = current.lock_at as string;
   const lock = new Date(lockAt);
-  const roundOneAt = revealAt(lock, 1).toISOString();
+  const scheduleVersion = scheduleVersionOf(current);
+  const roundOneAt = roundStartAt(lock, 1, scheduleVersion).toISOString();
   const roundOne = formatClock(roundOneAt);
-  const stops = rounds ? revealStops({ lockAt, rounds, now, wonRounds: new Set() }) : null;
+  const stops = rounds
+    ? revealStops({ lockAt, scheduleVersion, rounds, now, wonRounds: new Set() })
+    : null;
 
   let five: { cards: (LiveCardPlayer | null)[]; lost: string[] } | null = null;
   if (!current.opted_out && squad && squad.length > 0) {
@@ -302,7 +309,7 @@ async function WeekLocked({
     };
   }
 
-  const lede = `The bracket is drawn and every match is already decided. Round 1 comes out at ${roundOne}, then a round every half hour.`;
+  const lede = `The bracket is drawn and every match is already decided. Round 1 comes out at ${roundOne}, then a round ${roundIntervalText(scheduleVersion)}.`;
   return (
     <main className={MIDWEEK_PAGE}>
       <section className="mx-auto grid max-w-6xl gap-8 py-4 sm:gap-11 sm:py-8">
@@ -316,7 +323,13 @@ async function WeekLocked({
           <p className="text-center text-[13px] text-ink-dim">
             <b className="text-ink">Round 1 at {roundOne}</b>,{" "}
             <MidweekCountdown now={now.toISOString()} target={roundOneAt} />.
-            {rounds && <> The final at {formatClock(revealAt(lock, rounds).toISOString())}.</>}
+            {rounds && (
+              <>
+                {" "}
+                The final at{" "}
+                {formatClock(roundStartAt(lock, rounds, scheduleVersion).toISOString())}.
+              </>
+            )}
           </p>
         </section>
         {current.opted_out ? (
@@ -387,7 +400,13 @@ export async function WeekComplete({
     championCards.map((row) => row.photo_path),
   );
   const final = results.matches.find((match) => match.round === rounds && !match.bye);
-  const night = myNight({ userId, rounds, lockAt: tournament.lock_at, matches: results.matches });
+  const night = myNight({
+    userId,
+    rounds,
+    lockAt: tournament.lock_at,
+    scheduleVersion: scheduleVersionOf(tournament),
+    matches: results.matches,
+  });
   const finish = finishStat(night, rounds);
   const coins = rewards.reduce((sum, row) => sum + Number(row.amount), 0);
   const field = fieldCounts(results.entries);

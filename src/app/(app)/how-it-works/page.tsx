@@ -13,7 +13,13 @@ import {
   calculateLiveDiscardValue,
 } from "@/game/rating-engine";
 import { requireUser } from "@/lib/auth/user";
-import { LOCK_CLOCK, ROUND_ONE_CLOCK } from "@/lib/midweek/entry";
+import {
+  lockClock,
+  roundIntervalText,
+  roundOneClock,
+  scheduleVersionOf,
+} from "@/lib/midweek/entry";
+import { createClient } from "@/lib/supabase/server";
 
 export const metadata = { title: "How KUT works" };
 
@@ -50,6 +56,19 @@ function Section({
 
 export default async function HowItWorksPage() {
   await requireUser();
+  // The clock of the latest week (ADR-104), so the rules match the week being
+  // played; a failed read falls back to the version the next week opens on.
+  const supabase = await createClient();
+  const { data: midweekCurrent } = await supabase
+    .schema("kut")
+    .from("midweek_current")
+    .select("*")
+    .maybeSingle();
+  const scheduleVersion = scheduleVersionOf(
+    midweekCurrent as { schedule_version?: number | null } | null,
+  );
+  const lockAtClock = lockClock(scheduleVersion);
+  const roundOneAt = roundOneClock(scheduleVersion);
 
   const activityOvrRows = [10, 27, 48, 80, 100].map((activity) => ({
     activity,
@@ -388,12 +407,12 @@ export default async function HowItWorksPage() {
             <li>
               Pick up to {MIDWEEK.squadSize} cards from your collection,{" "}
               <strong className="text-ink">one per Player</strong>, any time until{" "}
-              <strong className="text-ink">Wednesday {LOCK_CLOCK}</strong>. Change them as often as
+              <strong className="text-ink">Wednesday {lockAtClock}</strong>. Change them as often as
               you like.
             </li>
             <li>
-              Round 1 comes out at {ROUND_ONE_CLOCK}, then a round every{" "}
-              {MIDWEEK.schedule.revealIntervalMinutes} minutes until the final.
+              Round 1 comes out at {roundOneAt}, then a round {roundIntervalText(scheduleVersion)}{" "}
+              until the final.
             </li>
             <li>
               No TFH session the week before means a club break: no Midweek Madness that week.
@@ -464,10 +483,10 @@ export default async function HowItWorksPage() {
           </table>
           <h3 className="pt-2 font-black text-ink">What other members see</h3>
           <p className="rounded-xl bg-steel-bg/60 p-3 text-sm font-semibold text-steel">
-            From {ROUND_ONE_CLOCK} on the Wednesday, members see the five cards you entered (or your
-            auto squad) and their numbers for the week. Nobody ever sees the rest of your
-            collection. Owner counts are shown only when at least {MIDWEEK.ownerCountMin} members
-            own a Player. Don&rsquo;t want to take part?{" "}
+            From {roundOneAt} on the Wednesday, members see the five cards you entered (or your auto
+            squad) and their numbers for the week. Nobody ever sees the rest of your collection.
+            Owner counts are shown only when at least {MIDWEEK.ownerCountMin} members own a Player.
+            Don&rsquo;t want to take part?{" "}
             <Link className="underline" href="/settings">
               Opt out in Settings
             </Link>{" "}

@@ -1992,9 +1992,11 @@ Everything is gated by time in definer projections on
   follow from those (OVR factor, fitness, handicap, lines).
 - **From round 1's kick-off,** the week's dice: each card's form roll, pick
   factor and power, null until then.
-- **Each round's matches and events** appear at that round's start, whole.
-  Each event's own time is stored (§44.1) but not yet used to gate it; that is
-  ADR-106's change, pushed with the live viewer.
+- **Each match** appears at its kick-off (the pairing, its win chance and day
+  rolls), **each event** at its own moment (§44.1), and the match's goals,
+  penalties, winner and end only once it has ended; the champion once the final
+  has (ADR-106). A week simulated before ADR-104 has no stored times and shows
+  whole matches at kick-off.
 - **Pick shares** appear once the tournament is `complete`. An owner count is
   shown only when at least `MIDWEEK_OWNER_COUNT_MIN` (3) entrants own the
   Player; below that it is null and the report says "fewer than 3 owners" (until
@@ -2293,6 +2295,14 @@ Views only.
 | Object | What it holds or does |
 |---|---|
 | `kut._mm_pay_tournament(uuid)` | Re-created. Pays exactly as before; its message step now sends one `midweek_result` per entrant not disabled, titled by finish (`You won Midweek Madness`, `You went out in the semi-finals`), with who beat them and how, their coins, the champion (not on the runner-up's) and, for an auto squad, `Your auto squad played for you.` The reference stays the tournament. |
+
+**Live reveal (`20261014000000_midweek_live_reveal.sql`, ADR-106).** Views only.
+
+| Object | What it holds or does |
+|---|---|
+| `kut.midweek_matches_public` | Re-created: goals, penalties, `winner_side` and `winner_user_id` null until the match has ended; appends `ends_at` (null until passed) and `in_play`. |
+| `kut.midweek_events_public` | Re-created: each event from its own `reveal_at` (with its match before ADR-104); appends `reveal_at`. |
+| `kut.midweek_tournaments_public` | The champion from the end of the final. |
 
 ---
 

@@ -222,8 +222,8 @@ select results_eq($q$select tournament_id, schedule_version::int from kut.midwee
   $q$values ('00000104-0000-4000-8000-0000000005a1'::uuid, 2),('00000104-0000-4000-8000-0000000005b1'::uuid, 2),
     ('00000104-0000-4000-8000-0000000005d1'::uuid, 1),('00000104-0000-4000-8000-0000000005c1'::uuid, 2)$q$,
   'the tournament list carries each week''s version');
-select isnt((select champion_user_id from kut.midweek_tournaments_public where tournament_id='00000104-0000-4000-8000-0000000005a1'),null,
-  'matches are still revealed whole at kick-off (§44.9 until ADR-106), so the final''s winner shows while it plays');
+select is((select champion_user_id from kut.midweek_tournaments_public where tournament_id='00000104-0000-4000-8000-0000000005a1'),null,
+  'since ADR-106 the champion waits for the end of the final, not its kick-off');
 
 -- The rehearsal, on the open week's clock.
 select set_config('request.jwt.claim.sub','00000104-0000-4000-8000-00000000000a',true);

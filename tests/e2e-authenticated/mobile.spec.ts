@@ -866,11 +866,11 @@ test("a pack's summary names the slots it fills and the copies it adds (ADR-114)
   test.skip(testInfo.project.name !== "authenticated-320", "runs once, last");
   await signIn(page, "release_member");
   await page.goto("/club/packs");
-  await page.getByRole("button", { name: /^Open for \d+ KUT Coins$/ }).click();
-  await page.getByRole("button", { name: /^Pay \d+$/ }).click();
-  await expect(page).toHaveURL(/\/club\/packs\/[0-9a-f-]{36}$/);
-  const openingId = page.url().split("/").pop()!;
   try {
+    await page.getByRole("button", { name: /^Open for \d+ KUT Coins$/ }).click();
+    await page.getByRole("button", { name: /^Pay \d+$/ }).click();
+    // The first opening on a dev server compiles the reveal page.
+    await expect(page).toHaveURL(/\/club\/packs\/[0-9a-f-]{36}$/, { timeout: 30_000 });
     await page.getByRole("button", { name: "Skip all" }).click();
     await expect(page.getByRole("heading", { name: "Your new Live Cards" })).toBeVisible();
     await expect(
@@ -883,12 +883,15 @@ test("a pack's summary names the slots it fills and the copies it adds (ADR-114)
   } finally {
     // An opening restricts deleting its member, and a card it drew of a
     // fixture Player restricts deleting the fixture: the teardown needs both gone.
+    // The member is recreated every run, so its openings are this test's, also
+    // when the reveal page never loaded.
     await withDatabase(async (database) => {
+      const openings = `select o.id from kut.pack_openings o join auth.users u on u.id = o.user_id
+        where u.email = 'release_member@users.kut.local'`;
       const cards = await database.query<{ card_id: string }>(
-        "delete from kut.pack_opening_cards where opening_id = $1 returning card_id",
-        [openingId],
+        `delete from kut.pack_opening_cards where opening_id in (${openings}) returning card_id`,
       );
-      await database.query("delete from kut.pack_openings where id = $1", [openingId]);
+      await database.query(`delete from kut.pack_openings where id in (${openings})`);
       await database.query("delete from kut.user_cards where id = any($1::uuid[])", [
         cards.rows.map((row) => row.card_id),
       ]);

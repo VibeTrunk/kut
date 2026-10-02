@@ -2396,6 +2396,10 @@ Madness is switched off with no week running.
 - **The avatar links to Settings,** and is marked current on Settings, My
   card, How KUT works and Admin. It is not a menu trigger: the app has worked
   this way for a while, and this record still described ADR-053's menu.
+- **The top bar from `sm` to `lg` shows the five tabs as icons** (KB-033):
+  with their labels, the tabs, coins, messages and avatar need about 880 px.
+  Each label stays in its link for screen readers and as its hover title, and
+  the labels return from `lg`.
 
 Desktop may use side/top navigation. Because the navigation is a public
 surface, this list remains the canonical record of it.

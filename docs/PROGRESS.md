@@ -4280,3 +4280,16 @@ were checked visually at 320 px, 412 px and 1440 px from the design sample.
 Found on the way, not part of this change: from 640 px to about 880 px the
 desktop top bar is wider than the screen on every page. It is registered and
 fixed separately.
+
+## KB-033: the top bar fits from 640 px — 2026-10-02
+
+`fix/top-bar-tablet` (no migration). From `sm` to about 880 px every page was
+wider than the screen: the desktop header's five labelled tabs, coins,
+messages and avatar need about 880 px. Below `lg` the tabs now show their
+icons only. Each keeps its label for screen readers and as a hover title, so
+every link's name is unchanged. Found while checking the F2 match page at
+700 px. No E2E width fell in that band.
+
+Verification: `npm run verify:fast`; authenticated E2E with a new test at 640,
+768 and 1023 px on Home, Midweek and Market (no horizontal overflow, every tab
+named, the avatar on screen).

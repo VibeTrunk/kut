@@ -106,7 +106,10 @@ export function AppNav({
   return (
     <>
       <header className="sticky top-0 z-30 hidden border-b border-line/40 bg-board-deep/80 backdrop-blur sm:block">
-        <div className="mx-auto flex h-16 max-w-6xl items-center gap-6 px-6">
+        {/* Below lg the five labels don't fit beside the coins, messages and
+            avatar (KB-033): the tabs show their icons, and each label stays in
+            the link for screen readers and as its hover title. */}
+        <div className="mx-auto flex h-16 max-w-6xl items-center gap-4 px-4 lg:gap-6 lg:px-6">
           <Link
             className={`flex items-center gap-2.5 rounded-lg text-xl font-black tracking-tight text-ink ${focusRing}`}
             href="/"
@@ -118,12 +121,13 @@ export function AppNav({
             {primaryItems.map((item) => (
               <Link
                 aria-current={ariaCurrent(item, pathname, activeKey)}
-                className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-bold transition-colors ${focusRing} ${item.key === activeKey ? "bg-brass/10 text-brass" : "text-ink-dim hover:text-ink"}`}
+                className={`flex items-center gap-2 rounded-lg px-2.5 py-2 text-sm font-bold transition-colors lg:px-3 ${focusRing} ${item.key === activeKey ? "bg-brass/10 text-brass" : "text-ink-dim hover:text-ink"}`}
                 href={item.href}
                 key={item.key}
+                title={item.label}
               >
                 <item.Icon className="h-4 w-4" />
-                {item.label}
+                <span className="sr-only lg:not-sr-only">{item.label}</span>
                 <TabBadge item={item} />
               </Link>
             ))}

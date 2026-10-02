@@ -5768,6 +5768,72 @@ for byte the same; only its config, schedule and timing vectors changed.
 Tier: data-changing (docs/OPERATIONS.md): it re-times the open week's lock
 and moves when the payout runs. Fresh cold-verified backup before the push.
 
+## ADR-105 — Midweek from the lock: the draw and every five, the week's dice from round 1
+
+Date: 2026-10-02
+
+Status: Accepted (amends ADR-091 "only from round 1's reveal", ADR-095
+"entries appear once a round-1 row is revealed", ADR-098's Week-Locked "before
+round 1 nothing about the rest of the field is visible", and ADR-104 "views are
+unchanged except for the version"; MM 2.0 release B, second of three)
+
+Context: the owner approved the MM 2.0 evening in DR2 (2 Oct,
+`design/ux-review/HANDOFF.md`). Its first five minutes, 19:55 to 20:00
+(`Evening-Draw`, `Bracket-FromLock`), show who you meet and when, and both
+fives, "with no form, pick or chance until 20:00". Until now nothing about the
+field was readable before round 1's reveal, so the data has to come first; the
+pages follow in F5. The same review found a leak ADR-104 introduced: since
+`final_reveal_at` became the end of the final, `midweek_current` and
+`midweek_tournaments_public` showed it from the lock, and its distance from
+the final's kick-off told an API reader at 19:55 whether the final would go to
+penalties. And the Compete tab's badge (F1) needs to say `Live` from the lock
+to the end of the final, which a member can no longer compute once that end is
+hidden.
+
+Decision (migration `20261012000000_midweek_draw_from_lock.sql`):
+
+- **`kut.midweek_draw_public`, new:** round 1 of a drawn week from the lock:
+  each pairing's position, byes (one entrant, which counts as a win and is no
+  secret), both managers and the kick-off (`kickoff_at`, the round-1 match's
+  stored start on the week's clock, ADR-104). It has no result column at all:
+  goals, penalties, winner, win chance, day rolls and `ends_at` stay in
+  `midweek_matches_public`, from kick-off. Gated like every Midweek projection
+  (definer view on `kut.is_active_member()`, a void or undrawn week shows
+  nothing).
+- **`midweek_entries_public` from the lock instead of round 1.** Visible from
+  the lock: the five cards, OVR, archetype, injury flag, trialist, auto, the
+  keeper slot (the draw shows `in goal`), and the factors that follow from those
+  anyway (OVR factor, fitness, handicap, line multipliers). **Withheld until
+  round 1 kicks off:** `form_roll_ppm`, `pick_factor_ppm` and `power_ppm`, the
+  week's dice and the pick shares; they read null. Columns unchanged (views
+  only gain columns at the end); picks and owner counts keep owner decision
+  D3, unchanged.
+- **`final_reveal_at` only once it has passed,** in both member views. No page
+  reads it there; the worker and the admin page read the table.
+- **`midweek_current` appends `evening_live`:** the latest week is `simulated`
+  and now is between its lock and the end of its final. A week past its lock
+  that the worker hasn't drawn yet is not live, since it may still be skipped;
+  a drawn week whose final is over is not live even before the worker pays it.
+- **Pages tolerate the withheld dice.** `EntryCardRow`'s three columns are
+  nullable, and `reportInputFromRows` gives no report while any are null, which
+  can only happen when the entries are read a moment before round 1's kick-off
+  and the match a moment after; the match page then shows "not found", as for
+  an unrevealed match. Today's evening page stays in its Week-Locked state
+  until round 1, so nothing changes on screen until F5 uses these views.
+
+What it still gives away, accepted: the keeper slot. With two Goalkeepers in a
+squad the one in goal is the stronger this week, and a keeperless squad's
+keeper is the outfielder with the most defence times power: a hint at
+relative form inside one squad, never a number.
+
+Consequences: from 19:55 every member reads the whole draw and every entered
+five, which ADR-091 already makes public from 20:00; the privacy line moves to
+"From 19:55" with the picker (F3). Matches and events are still revealed whole
+at their start; event by event is ADR-106 (PR 4).
+
+Tier: additive (docs/OPERATIONS.md): views only, no table, function or row
+changes.
+
 ## ADR-107 — Compete replaces Leaderboard: Midweek, Standings and Players under one tab
 
 Date: 2026-10-02

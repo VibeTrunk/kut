@@ -51,7 +51,11 @@ export type EventRow = {
   p_goal_ppm: number | null;
 };
 
-/** A `kut.midweek_entries_public` row: one entered card with its lock-time snapshot. */
+/**
+ * A `kut.midweek_entries_public` row: one entered card with its lock-time
+ * snapshot. Visible from the lock; the week's dice (form roll, pick factor and
+ * so power) only from round 1's kick-off (ADR-105).
+ */
 export type EntryCardRow = {
   tournament_id: string;
   week_start: string;
@@ -70,11 +74,14 @@ export type EntryCardRow = {
   /** The injury flag at the lock, which is what the engine used (ADR-085). */
   injured: boolean;
   ovr_factor_ppm: number;
-  form_roll_ppm: number;
-  pick_factor_ppm: number;
+  /** Null until round 1 kicks off (ADR-105). */
+  form_roll_ppm: number | null;
+  /** Null until round 1 kicks off (ADR-105). */
+  pick_factor_ppm: number | null;
   fitness_ppm: number;
   handicap_ppm: number;
-  power_ppm: number;
+  /** Null until round 1 kicks off (ADR-105). */
+  power_ppm: number | null;
   /** Null until the week is complete (owner decision D3). */
   picks: number | null;
   /** Null until complete, and below three owners always (ADR-091). */

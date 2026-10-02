@@ -65,6 +65,7 @@ export type MidweekCurrent = {
   status_reason: "club_break" | "too_few_entrants" | "admin_void" | null;
   void_note: string | null;
   rounds: number | null;
+  /** The end of the final; null until it has passed (ADR-105), so pages must not schedule on it. */
   final_reveal_at: string | null;
   seed: string | null;
   opted_out: boolean;
@@ -86,6 +87,7 @@ export type MidweekTournament = {
   void_note: string | null;
   rounds: number | null;
   seed_hash?: string;
+  /** The end of the final; null until it has passed (ADR-105). */
   final_reveal_at?: string | null;
   /** Published once the week is complete (§44.8). */
   seed?: string | null;

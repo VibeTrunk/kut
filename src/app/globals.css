@@ -45,6 +45,18 @@
      than the brick `Out` chip; the on-colour keeps its text dark. */
   --color-live: #ff8091;
   --color-ink-on-live: #2a0a10;
+  /* Team colours (HANDOFF "Team colours", DR2-1): side 0 is blue and on the
+     left, side 1 red and on the right, for every viewer. Only where one match
+     is open: a match page and the blocks that preview one; lists of matches
+     stay neutral. Both pass AA on board, panel and their tinted lanes. */
+  --color-team-blue: #7cb0ff;
+  --color-team-blue-bg: #14213a;
+  --color-team-blue-line: #2f4f86;
+  --color-ink-on-team-blue: #0b1424;
+  --color-team-red: #ff8091;
+  --color-team-red-bg: #331419;
+  --color-team-red-line: #7a2d3b;
+  --color-ink-on-team-red: #2a0a10;
 
   /* Instrument Serif carries the clubblad voice in page headings; Archivo
      does every interface job and every number. Both are self-hosted through

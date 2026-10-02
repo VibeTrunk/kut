@@ -51,6 +51,15 @@ export type ReportInput = {
   ownersPublished: boolean;
 };
 
+/**
+ * A run of report text (HANDOFF "PlayerName"): plain, or a name with its side,
+ * so a page can colour every Player and manager without re-parsing the text.
+ * A name carries the base display name only; `owner` is the manager whose copy
+ * it is when both sides fielded the Player, which the plain `text` fields spell
+ * out as "Iris W. (Sanne)" and a page keeps for screen readers.
+ */
+export type Segment = { text: string; side?: Side; owner?: string };
+
 export type MomentKind = "goal" | "save" | "block" | "woodwork" | "wide";
 
 export type TimelineItem = {
@@ -58,6 +67,8 @@ export type TimelineItem = {
   side: Side;
   kind: MomentKind;
   text: string;
+  /** `text` as segments. */
+  parts: Segment[];
   /** The running score after this moment, side 0 first. */
   score: [number, number];
 };
@@ -75,10 +86,14 @@ export type ShootoutReport = {
   score: [number, number];
   /** Intro, each kick not scored, and the decisive kick or draw. */
   lines: string[];
+  /** `lines` as segments. */
+  lineParts: Segment[][];
 };
 
 export type WhyCard = {
   name: string;
+  /** `name` as one name segment: the base name, with `owner` when both sides fielded the Player. */
+  label: Segment;
   trialist: boolean;
   injured: boolean;
   inGoal: boolean;
@@ -108,13 +123,15 @@ export type WhySide = {
   cards: WhyCard[];
 };
 
-export type ReportFact = { kind: string; text: string };
+export type ReportFact = { kind: string; text: string; parts: Segment[] };
 
 /** Which phrasebook line produced which part of the report, for review and tests. */
 export type PhraseUse = { layer: string; template: string };
 
 export type MatchReport = {
   headline: string;
+  /** `headline` as segments. */
+  headlineParts: Segment[];
   /** The final score, winner first, with penalties when they decided it. */
   score: string;
   winnerSide: Side;

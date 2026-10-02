@@ -36,6 +36,7 @@ import type {
   ReportCard,
   ReportFact,
   ReportInput,
+  Segment,
   ShootoutReport,
   TimelineItem,
   WhySide,
@@ -96,25 +97,86 @@ class Picker {
   }
 }
 
-export function fill(template: string, values: Record<string, string>): string {
-  const text = template.replace(/\{(\w+)\}/g, (_, key: string) => {
-    const value = values[key];
-    if (value === undefined) throw new Error(`No value for {${key}} in "${template}"`);
-    return value;
-  });
-  // Display names often end in an initial ("Iris W."), so a name at the end of a
-  // sentence would otherwise leave a double full stop.
-  const tidy = text.replace(/\.\./g, ".");
-  return tidy.charAt(0).toUpperCase() + tidy.slice(1);
+/** A rendered line, as plain text and as segments (HANDOFF "PlayerName"). */
+export type Styled = { text: string; parts: Segment[] };
+
+/** A name as plain text: the base name, with the manager when both sides fielded the Player. */
+export const nameText = (segment: Segment) =>
+  segment.owner === undefined ? segment.text : `${segment.text} (${segment.owner})`;
+
+const capitalise = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
+
+/**
+ * Fills a phrasebook line. Values are plain strings or name segments; the text
+ * form spells each name out with `nameText`, the segment form keeps it whole
+ * with its side. Display names often end in an initial ("Iris W."), so a name
+ * at the end of a sentence would leave a double full stop: the text drops one,
+ * and the segments drop the sentence's own, since a page shows "Kees R. (Bart)."
+ * as "Kees R." with the manager for screen readers only.
+ */
+export function compose(template: string, values: Record<string, string | Segment>): Styled {
+  const raw: Segment[] = [];
+  let last = 0;
+  for (const match of template.matchAll(/\{(\w+)\}/g)) {
+    const value = values[match[1]];
+    if (value === undefined) throw new Error(`No value for {${match[1]}} in "${template}"`);
+    raw.push({ text: template.slice(last, match.index) });
+    raw.push(typeof value === "string" ? { text: value } : value);
+    last = match.index + match[0].length;
+  }
+  raw.push({ text: template.slice(last) });
+
+  const text = capitalise(raw.map(nameText).join("").replace(/\.\./g, "."));
+
+  // Plain runs merge first, so a tidy across a value's edge matches the text's.
+  const merged: Segment[] = [];
+  for (const segment of raw) {
+    const previous = merged[merged.length - 1];
+    if (segment.side === undefined && previous && previous.side === undefined) {
+      previous.text += segment.text;
+    } else {
+      merged.push({ ...segment });
+    }
+  }
+  const parts: Segment[] = [];
+  for (const segment of merged) {
+    if (segment.side !== undefined) {
+      parts.push(segment);
+      continue;
+    }
+    let plain = segment.text.replace(/\.\./g, ".");
+    const previous = parts[parts.length - 1];
+    if (previous?.side !== undefined && previous.text.endsWith(".") && plain.startsWith(".")) {
+      plain = plain.slice(1);
+    }
+    if (plain) parts.push({ text: plain });
+  }
+  if (parts.length > 0) parts[0] = { ...parts[0], text: capitalise(parts[0].text) };
+  return { text, parts };
+}
+
+export function fill(template: string, values: Record<string, string | Segment>): string {
+  return compose(template, values).text;
+}
+
+/** Lines joined by a space, as one moment's build-up, finish and aside. */
+function joinStyled(lines: readonly Styled[]): Styled {
+  return {
+    text: lines.map((line) => line.text).join(" "),
+    parts: lines.flatMap((line, index) =>
+      index === 0 ? line.parts : [{ text: " " }, ...line.parts],
+    ),
+  };
 }
 
 const ORDINALS = ["first", "second", "third", "fourth", "fifth"];
 
 /**
- * Display names per side. Trialists are the manager's, numbered when there is
- * more than one; a Player fielded by both sides gets the manager's name added.
+ * Display names per side, as name segments. Trialists are the manager's,
+ * numbered when there is more than one; a Player fielded by both sides carries
+ * the manager as its `owner`, which the text spells out as "Iris W. (Sanne)".
  */
-function sideNames(input: ReportInput): [string[], string[]] {
+function sideNames(input: ReportInput): [Segment[], Segment[]] {
   const raw = input.sides.map((side) => {
     const trialists = side.cards.filter((card) => card.name === null).length;
     let seen = 0;
@@ -127,13 +189,19 @@ function sideNames(input: ReportInput): [string[], string[]] {
   });
   const shared = new Set(raw[0].filter((name) => raw[1].includes(name)));
   return raw.map((names, s) =>
-    names.map((name, slot) =>
+    names.map((name, slot): Segment =>
       shared.has(name) && input.sides[s].cards[slot].name !== null
-        ? `${name} (${input.sides[s].manager})`
-        : name,
+        ? { text: name, side: s as Side, owner: input.sides[s].manager }
+        : { text: name, side: s as Side },
     ),
-  ) as [string[], string[]];
+  ) as [Segment[], Segment[]];
 }
+
+/** A manager's name as a segment on their side. */
+const managerOf = (input: ReportInput, side: Side): Segment => ({
+  text: input.sides[side].manager,
+  side,
+});
 
 /**
  * The label for a Player too few entrants own to print a count (ADR-091). It
@@ -191,18 +259,18 @@ export function renderMatchReport(input: ReportInput): MatchReport {
   const timeline: TimelineItem[] = selectMoments(chances).map((event) => {
     const attacking = sides[event.side];
     const opp: Side = event.side === 0 ? 1 : 0;
-    const values: Record<string, string> = {
+    const values: Record<string, string | Segment> = {
       creator: names[event.side][event.creator],
       shooter: names[event.side][event.shooter],
       keeper: names[opp][sides[opp].keeperSlot],
       defender: event.defender === null ? "" : names[opp][event.defender],
     };
-    const parts: string[] = [];
+    const parts: Styled[] = [];
     const solo = event.creator === event.shooter;
     const buildPool = solo ? SOLO_BUILDUP[event.chanceType] : BUILDUP[event.chanceType];
     if (buildPool) {
       parts.push(
-        fill(
+        compose(
           picker.pick(solo ? `solo:${event.chanceType}` : `buildup:${event.chanceType}`, buildPool),
           values,
         ),
@@ -213,35 +281,37 @@ export function renderMatchReport(input: ReportInput): MatchReport {
     if (event.outcome === "goal") {
       const tier = goalTier(event.pGoalPpm);
       parts.push(
-        fill(
+        compose(
           picker.pick(`finish:${event.chanceType}:${tier}`, FINISHES[event.chanceType][tier]),
           values,
         ),
       );
       if (attacking.cards[event.shooter].injured) {
-        parts.push(fill(picker.pick(`injured-goal:${tier}`, INJURED_GOAL[tier]), values));
+        parts.push(compose(picker.pick(`injured-goal:${tier}`, INJURED_GOAL[tier]), values));
       } else if (!solo && attacking.cards[event.creator].injured) {
-        parts.push(fill(picker.pick("injured-creator", INJURED_CREATOR), values));
+        parts.push(compose(picker.pick("injured-creator", INJURED_CREATOR), values));
       }
     } else if (event.outcome === "save") {
       const tier = saveTier(event.pGoalPpm);
-      parts.push(fill(picker.pick(`save:${tier}`, SAVES[tier]), values));
+      parts.push(compose(picker.pick(`save:${tier}`, SAVES[tier]), values));
       if (sides[opp].cards[sides[opp].keeperSlot].injured) {
-        parts.push(fill(picker.pick("injured-keeper", INJURED_KEEPER), values));
+        parts.push(compose(picker.pick("injured-keeper", INJURED_KEEPER), values));
       }
     } else if (event.outcome === "block") {
-      parts.push(fill(picker.pick("block", BLOCKS), values));
+      parts.push(compose(picker.pick("block", BLOCKS), values));
     } else if (event.outcome === "woodwork") {
-      parts.push(fill(picker.pick("woodwork", WOODWORK), values));
+      parts.push(compose(picker.pick("woodwork", WOODWORK), values));
     } else {
       kind = "wide";
-      parts.push(fill(picker.pick("wide", WIDE), values));
+      parts.push(compose(picker.pick("wide", WIDE), values));
     }
+    const line = joinStyled(parts);
     return {
       minute: event.minute,
       side: event.side,
       kind,
-      text: parts.join(" "),
+      text: line.text,
+      parts: line.parts,
       score: running.get(event)!,
     };
   });
@@ -265,7 +335,8 @@ export function renderMatchReport(input: ReportInput): MatchReport {
     keeperless: side.keeperless,
     winChancePpm: s === 0 ? outcome.winChancePpm : PPM - outcome.winChancePpm,
     cards: side.cards.map((card, slot) => ({
-      name: names[s][slot],
+      name: nameText(names[s][slot]),
+      label: names[s][slot],
       trialist: card.trialist,
       injured: card.injured,
       inGoal: slot === side.keeperSlot,
@@ -285,7 +356,8 @@ export function renderMatchReport(input: ReportInput): MatchReport {
   })) as [WhySide, WhySide];
 
   return {
-    headline,
+    headline: headline.text,
+    headlineParts: headline.parts,
     score,
     winnerSide: winner,
     facts: reportFacts,
@@ -298,18 +370,18 @@ export function renderMatchReport(input: ReportInput): MatchReport {
 
 function renderShootout(
   input: ReportInput,
-  names: [string[], string[]],
+  names: [Segment[], Segment[]],
   picker: Picker,
 ): ShootoutReport {
-  const { outcome, sides } = input;
+  const { outcome } = input;
   const kicks = outcome.events.filter((e): e is PenaltyEvent => e.kind === "penalty");
   const toss = outcome.events.find((e) => e.kind === "toss");
   const firstSide = kicks[0].side;
   const secondSide: Side = firstSide === 0 ? 1 : 0;
-  const lines = [
-    fill(picker.pick("shootout-intro", SHOOTOUT_INTRO), {
-      first: sides[firstSide].manager,
-      second: sides[secondSide].manager,
+  const lines: Styled[] = [
+    compose(picker.pick("shootout-intro", SHOOTOUT_INTRO), {
+      first: managerOf(input, firstSide),
+      second: managerOf(input, secondSide),
     }),
   ];
   kicks.forEach((kick, index) => {
@@ -323,7 +395,7 @@ function renderShootout(
           : kick.outcome === "save"
             ? DECISIVE_SAVED
             : DECISIVE_MISSED;
-      lines.push(fill(picker.pick(`penalty-decisive:${kick.outcome}`, pool), values));
+      lines.push(compose(picker.pick(`penalty-decisive:${kick.outcome}`, pool), values));
     } else if (kick.outcome !== "goal") {
       const pool =
         kick.outcome === "save"
@@ -331,13 +403,13 @@ function renderShootout(
           : kick.outcome === "woodwork"
             ? PENALTY_WOODWORK
             : PENALTY_WIDE;
-      lines.push(fill(picker.pick(`penalty:${kick.outcome}`, pool), values));
+      lines.push(compose(picker.pick(`penalty:${kick.outcome}`, pool), values));
     }
   });
   if (toss) {
     lines.push(
-      fill(picker.pick("shootout-toss", SHOOTOUT_TOSS), {
-        winner: sides[outcome.winnerSide].manager,
+      compose(picker.pick("shootout-toss", SHOOTOUT_TOSS), {
+        winner: managerOf(input, outcome.winnerSide),
       }),
     );
   }
@@ -346,22 +418,23 @@ function renderShootout(
     kicks: kicks.map((kick) => ({
       side: kick.side,
       round: kick.round,
-      kicker: names[kick.side][kick.kicker],
+      kicker: nameText(names[kick.side][kick.kicker]),
       outcome: kick.outcome,
     })),
     score: outcome.penalties!,
-    lines,
+    lines: lines.map((line) => line.text),
+    lineParts: lines.map((line) => line.parts),
   };
 }
 
 function renderHeadline(
   input: ReportInput,
   facts: readonly Fact[],
-  names: [string[], string[]],
+  names: [Segment[], Segment[]],
   score: string,
   picker: Picker,
   stats: ReturnType<typeof cardStats>,
-): string {
+): Styled {
   const { outcome, sides } = input;
   const winner = outcome.winnerSide;
   const loser: Side = winner === 0 ? 1 : 0;
@@ -417,9 +490,9 @@ function renderHeadline(
   else if (margin >= 2) kind = "comfortable";
   else kind = "narrow";
 
-  return fill(picker.pick(`headline:${kind}`, HEADLINES[kind]), {
-    winner: sides[winner].manager,
-    loser: sides[loser].manager,
+  return compose(picker.pick(`headline:${kind}`, HEADLINES[kind]), {
+    winner: managerOf(input, winner),
+    loser: managerOf(input, loser),
     score,
     hero: names[winner][hero],
   });
@@ -428,7 +501,7 @@ function renderHeadline(
 function renderFacts(
   input: ReportInput,
   facts: readonly Fact[],
-  names: [string[], string[]],
+  names: [Segment[], Segment[]],
   picker: Picker,
 ): ReportFact[] {
   const lines: ReportFact[] = [];
@@ -441,11 +514,10 @@ function renderFacts(
 
     const side = input.sides[fact.side];
     const card = fact.slot === null ? null : side.cards[fact.slot];
-    const opponent = input.sides[fact.side === 0 ? 1 : 0].manager;
     let lineKind: FactLineKind;
-    const values: Record<string, string> = {
-      manager: side.manager,
-      opponent,
+    const values: Record<string, string | Segment> = {
+      manager: managerOf(input, fact.side),
+      opponent: managerOf(input, fact.side === 0 ? 1 : 0),
       name: fact.slot === null ? "" : names[fact.side][fact.slot],
       value: "",
       picks: "",
@@ -486,10 +558,8 @@ function renderFacts(
       default:
         lineKind = fact.kind;
     }
-    lines.push({
-      kind: fact.kind,
-      text: fill(picker.pick(`fact:${lineKind}`, FACT_LINES[lineKind]), values),
-    });
+    const line = compose(picker.pick(`fact:${lineKind}`, FACT_LINES[lineKind]), values);
+    lines.push({ kind: fact.kind, text: line.text, parts: line.parts });
   }
   return lines;
 }

@@ -4,14 +4,20 @@ import { describe, expect, it } from "vitest";
 import { roundPayouts } from "@/game/midweek/rewards";
 import { roundStartAt } from "@/game/midweek/schedule";
 import type { SimulatedTournament, TournamentResult } from "@/game/midweek/tournament";
+import { formatDayDate, type MidweekTournament } from "@/lib/midweek/entry";
 import {
   assembleBracket,
   championLeads,
   championLeadsUntil,
+  eveningClockLabel,
+  eveningPhase,
+  eveningStops,
   factorText,
   fieldCounts,
   finalLine,
   finishStat,
+  firstMatch,
+  fiveOf,
   handicapText,
   isWeekStart,
   liveLine,
@@ -19,13 +25,17 @@ import {
   matchSentence,
   myNight,
   nightTotals,
+  pairSentence,
+  pastWeeks,
   revealStops,
   roundName,
+  roundsYouAreIn,
   roundShort,
   treeGroupRows,
   wonRounds,
+  yourNextRound,
 } from "@/lib/midweek/evening";
-import type { MatchRow } from "@/lib/midweek/rows";
+import type { DrawRow, EntryCardRow, MatchRow } from "@/lib/midweek/rows";
 
 const golden = JSON.parse(
   readFileSync(path.join(process.cwd(), "tests/fixtures/midweek-golden.json"), "utf8"),
@@ -244,23 +254,46 @@ describe("the reveal clock", () => {
   });
 });
 
+/** Round 1 as `kut.midweek_draw_public` returns it from the lock: no result. */
+const draw: DrawRow[] = rows
+  .filter((row) => row.round === 1)
+  .sort((a, b) => a.pairing - b.pairing)
+  .map((row) => ({
+    match_id: row.match_id,
+    tournament_id: row.tournament_id,
+    week_start: row.week_start,
+    pairing: row.pairing,
+    bye: row.bye,
+    side_0_user_id: row.side_0_user_id,
+    side_0_name: row.side_0_name,
+    side_1_user_id: row.side_1_user_id,
+    side_1_name: row.side_1_name,
+    kickoff_at: row.reveal_at,
+  }));
+const roundOneMatch = draw.find((row) => !row.bye)!;
+
 describe("the bracket", () => {
-  it("lays out every pairing, byes as their own rows, each entrant once in round 1", () => {
-    const bracket = assembleBracket({
+  const bracketOf = (matches: readonly MatchRow[], withDraw = true) =>
+    assembleBracket({
       rounds: 4,
       lockAt: LOCK,
       scheduleVersion: V1,
-      matches: rows,
-      autoUserIds: new Set(),
+      draw: withDraw ? draw : [],
+      matches,
+      autoUserIds: new Set([nine.entries[0].userId]),
     });
+
+  it("lays out every pairing, byes as their own rows, each entrant once in round 1", () => {
+    const bracket = bracketOf(rows);
     expect(bracket.map((r) => r.pairs.length)).toEqual([8, 4, 2, 1]);
-    expect(bracket.every((r) => r.revealed)).toBe(true);
+    expect(bracket.every((r) => r.played)).toBe(true);
     const round1 = bracket[0].pairs;
     expect(round1.filter((p) => p.kind === "bye")).toHaveLength(7);
+    expect(round1.filter((p) => p.kind === "played")).toHaveLength(1);
     const entrants = round1.flatMap((p) => p.sides.map((s) => s.userId));
     expect(new Set(entrants).size).toBe(9);
     expect(entrants).toHaveLength(9);
-    expect(bracket.map((r) => r.revealAt)).toEqual([
+    expect(bracket.map((r) => r.kickoffAt)).toEqual([
       "2026-10-07T18:30:00.000Z",
       "2026-10-07T19:00:00.000Z",
       "2026-10-07T19:30:00.000Z",
@@ -268,43 +301,339 @@ describe("the bracket", () => {
     ]);
   });
 
-  it("names who meet once the round before is out, and where they come from otherwise", () => {
-    const bracket = assembleBracket({
-      rounds: 4,
-      lockAt: LOCK,
-      scheduleVersion: V1,
-      matches: upTo(1),
-      autoUserIds: new Set([nine.entries[0].userId]),
+  it("from the lock: round 1 as drawn, then 'Winner of …' in round 2 and 'Winner, Quarters 1' beyond", () => {
+    const bracket = bracketOf([]);
+    expect(bracket.some((r) => r.played)).toBe(false);
+    const round1 = bracket[0].pairs;
+    expect(round1.filter((p) => p.kind === "bye")).toHaveLength(7);
+    const upcoming = round1.find((p) => p.kind === "upcoming")!;
+    expect(upcoming.sides.map((s) => s.userId)).toEqual([
+      roundOneMatch.side_0_user_id,
+      roundOneMatch.side_1_user_id,
+    ]);
+    expect(upcoming.kind === "upcoming" && upcoming.kickoffAt).toBe("2026-10-07T18:30:00.000Z");
+
+    // Round 2 (the quarter-finals of four rounds): byes go through by name, the
+    // one round-1 match is "Winner of A v B".
+    const fed = bracket[1].pairs[roundOneMatch.pairing >> 1];
+    const waiting = fed.sides[roundOneMatch.pairing & 1];
+    expect(waiting).toMatchObject({
+      userId: null,
+      placeholder: true,
+      name: `Winner of ${roundOneMatch.side_0_name} v ${roundOneMatch.side_1_name}`,
     });
-    const round2 = bracket[1];
-    expect(round2.revealed).toBe(false);
-    for (const pair of round2.pairs) {
-      expect(pair.kind).toBe("hidden");
-      if (pair.kind !== "hidden") continue;
-      expect(pair.known).toBe(true);
+    expect(bracket[1].pairs.flatMap((p) => p.sides).filter((s) => s.placeholder)).toHaveLength(1);
+    expect(bracket[2].pairs[1].sides.map((s) => s.name)).toEqual([
+      "Winner, Quarters 3",
+      "Winner, Quarters 4",
+    ]);
+    expect(bracket[3].pairs[0].sides.map((s) => s.name)).toEqual([
+      "Winner, Semis 1",
+      "Winner, Semis 2",
+    ]);
+    expect(bracket.flatMap((r) => r.pairs).filter((p) => p.kind === "played")).toHaveLength(0);
+    // Auto squads are marked from the lock; a placeholder never is.
+    const auto = round1.flatMap((p) => p.sides).filter((s) => s.auto);
+    expect(auto.map((s) => s.userId)).toEqual([nine.entries[0].userId]);
+  });
+
+  it("names who meet once the round before is at full time", () => {
+    const bracket = bracketOf(upTo(1));
+    expect(bracket[0].played).toBe(true);
+    for (const pair of bracket[1].pairs) {
+      expect(pair.kind).toBe("upcoming");
+      expect(pair.sides.some((s) => s.placeholder)).toBe(false);
       const feeders = [2 * pair.pairing, 2 * pair.pairing + 1].map(
         (p) => rows.find((row) => row.round === 1 && row.pairing === p)!.winner_user_id,
       );
       expect(pair.sides.map((s) => s.userId)).toEqual(feeders);
     }
-    const semis = bracket[2].pairs[1];
-    expect(semis.kind === "hidden" && semis.known).toBe(false);
-    expect(semis.sides.map((s) => s.name)).toEqual(["Winner, QF 3", "Winner, QF 4"]);
-    const final = bracket[3].pairs[0];
-    expect(final.sides.map((s) => s.name)).toEqual(["Winner, SF 1", "Winner, SF 2"]);
-    const auto = bracket[0].pairs.flatMap((p) => p.sides).filter((s) => s.auto);
-    expect(auto.map((s) => s.userId)).toEqual([nine.entries[0].userId]);
+    expect(bracket[2].pairs[0].sides.map((s) => s.name)).toEqual([
+      "Winner, Quarters 1",
+      "Winner, Quarters 2",
+    ]);
   });
 
-  it("describes a match in one sentence, penalties included", () => {
+  it("reads the same before the draw view exists: round 1 from its revealed rows", () => {
+    expect(bracketOf(upTo(1), false)).toEqual(bracketOf(upTo(1)));
+  });
+
+  it("describes a pairing in one sentence in every state, penalties included", () => {
     const shootout = rows.find((row) => row.side_0_penalties !== null)!;
-    const sentence = matchSentence(shootout);
-    expect(sentence).toMatch(
+    expect(matchSentence(shootout)).toMatch(
       /^Manager \w+ (\d+), Manager \w+ \1, \d+–\d+ on penalties\. Manager \w+ won\.$/,
     );
-    expect(matchSentence(rows.find((row) => row.bye)!)).toMatch(
-      /has a bye\. A bye counts as a win\.$/,
+    const [round1] = bracketOf([]);
+    expect(pairSentence(round1.pairs.find((p) => p.kind === "bye")!)).toMatch(
+      /^Manager \w+ has a bye, which counts as a win\.$/,
     );
+    expect(pairSentence(round1.pairs.find((p) => p.kind === "upcoming")!)).toBe(
+      `${roundOneMatch.side_0_name} v ${roundOneMatch.side_1_name}, kick-off 20:30.`,
+    );
+  });
+
+  it("jumps to the member's next match until they have none left", () => {
+    const byeUser = draw.find((row) => row.bye)!.side_0_user_id;
+    expect(yourNextRound(bracketOf([]), byeUser)?.round).toBe(2);
+    expect(yourNextRound(bracketOf([]), roundOneMatch.side_0_user_id)?.round).toBe(1);
+    expect(yourNextRound(bracketOf(rows), nine.championUserId)).toBeNull();
+    expect(yourNextRound(bracketOf([]), "nobody")).toBeNull();
+  });
+});
+
+describe("the evening from the lock (ADR-113)", () => {
+  // A version-2 week: lock 19:55, round 1 at 20:00, a round every 15 minutes.
+  const LOCK2 = "2026-10-14T17:55:00.000Z";
+  const at = (hhmm: string) => new Date(`2026-10-14T${hhmm}:00+02:00`);
+  const stops = (now: string, matches: readonly MatchRow[], youThrough: number | null = 2) =>
+    eveningStops({
+      lockAt: LOCK2,
+      scheduleVersion: 2,
+      rounds: 4,
+      now: at(now),
+      matches,
+      youThrough,
+    });
+
+  it("marks the clock locked, played, live, next and later", () => {
+    const draw = stops("19:57", []);
+    expect(draw.map((s) => s.state)).toEqual(["locked", "next", "later", "later", "later"]);
+    expect(draw.map((s) => s.time)).toEqual(["19:55", "20:00", "20:15", "20:30", "20:45"]);
+    expect(draw.map((s) => s.name)).toEqual(["Lock", "Round 1", "Quarters", "Semis", "Final"]);
+    expect(draw.map((s) => s.you)).toEqual([false, true, true, false, false]);
+    // Revealed whole at kick-off today, so a round is played once its rows show.
+    expect(stops("20:16", upTo(2)).map((s) => s.state)).toEqual([
+      "locked",
+      "played",
+      "played",
+      "next",
+      "later",
+    ]);
+    // A round that has kicked off without every result yet is live (ADR-106's
+    // per-event views, or a read a moment before the reveal).
+    expect(stops("20:16", upTo(1)).map((s) => s.state)).toEqual([
+      "locked",
+      "played",
+      "live",
+      "next",
+      "later",
+    ]);
+    expect(stops("19:50", []).map((s) => s.state)).toEqual([
+      "next",
+      "later",
+      "later",
+      "later",
+      "later",
+    ]);
+    expect(stops("19:57", [], null).every((s) => !s.you)).toBe(true);
+  });
+
+  it("reads the clock as one sentence", () => {
+    expect(eveningClockLabel(stops("20:16", upTo(2)))).toBe(
+      "Wednesday evening: Lock 19:55, locked; Round 1 20:00, played, you're in; Quarters 20:15, played, you're in; Semis 20:30, next; Final 20:45, later.",
+    );
+  });
+
+  it("marks the rounds a member is in: up to the one they went out in, or all", () => {
+    const out = rows.find((row) => row.round === 2 && !row.bye)!;
+    const loser = out.winner_side === 0 ? out.side_1_user_id! : out.side_0_user_id;
+    const night = (userId: string) =>
+      myNight({ userId, rounds: 4, lockAt: LOCK, scheduleVersion: V1, matches: rows });
+    expect(roundsYouAreIn(night(loser), true, 4)).toBe(2);
+    expect(roundsYouAreIn(night(nine.championUserId), true, 4)).toBe(4);
+    expect(roundsYouAreIn(night("nobody"), false, 4)).toBeNull();
+  });
+
+  it("picks the page and its title from the kick-offs and the member's night", () => {
+    const phase = (now: string, userId: string, matches: readonly MatchRow[]) =>
+      eveningPhase({
+        rounds: 4,
+        lockAt: LOCK2,
+        scheduleVersion: 2,
+        now: at(now),
+        night: myNight({ userId, rounds: 4, lockAt: LOCK2, scheduleVersion: 2, matches }),
+      });
+    expect(phase("19:57", nine.championUserId, [])).toEqual({
+      kind: "draw",
+      round: 0,
+      title: "The draw is out",
+    });
+    expect(phase("20:01", nine.championUserId, upTo(1))).toMatchObject({
+      kind: "round",
+      round: 1,
+      title: "Round 1 is live",
+    });
+    expect(phase("20:16", nine.championUserId, upTo(2)).title).toBe("Quarter-finals are live");
+    const out = rows.find((row) => row.round === 2 && !row.bye)!;
+    const loser = out.winner_side === 0 ? out.side_1_user_id! : out.side_0_user_id;
+    expect(phase("20:16", loser, upTo(2))).toMatchObject({ kind: "out", title: "You’re out" });
+    expect(phase("20:46", loser, rows)).toMatchObject({
+      kind: "final",
+      round: 4,
+      title: "The final is live",
+    });
+    expect(phase("20:16", "nobody", upTo(2)).kind).toBe("round");
+  });
+
+  it("says who a member meets first, and after a bye both possible opponents", () => {
+    const first = (userId: string, rowsOfDraw: readonly DrawRow[] = draw) =>
+      firstMatch({ userId, draw: rowsOfDraw, rounds: 4, lockAt: LOCK2, scheduleVersion: 2 });
+    expect(first(roundOneMatch.side_0_user_id)).toEqual({
+      round: 1,
+      kickoffAt: "2026-10-14T18:00:00.000Z",
+      text: `You meet ${roundOneMatch.side_1_name} at 20:00.`,
+      opponentIds: [roundOneMatch.side_1_user_id],
+    });
+    const neighbour = draw.find((row) => row.pairing === (roundOneMatch.pairing ^ 1))!;
+    expect(neighbour.bye).toBe(true);
+    expect(first(neighbour.side_0_user_id)).toEqual({
+      round: 2,
+      kickoffAt: "2026-10-14T18:15:00.000Z",
+      text: `Round 1 is a bye for you, which counts as a win (+${roundPayouts(4)[0]}). In the quarter-finals you meet the winner of ${roundOneMatch.side_0_name} v ${roundOneMatch.side_1_name}.`,
+      opponentIds: [roundOneMatch.side_0_user_id, roundOneMatch.side_1_user_id],
+    });
+    const lonely = draw.find((row) => row.bye && row.pairing >> 1 !== roundOneMatch.pairing >> 1)!;
+    const other = draw.find((row) => row.pairing === (lonely.pairing ^ 1))!;
+    expect(first(lonely.side_0_user_id)?.text).toMatch(
+      new RegExp(`In the quarter-finals you meet ${other.side_0_name}\\.$`),
+    );
+    expect(first(lonely.side_0_user_id)?.opponentIds).toEqual([other.side_0_user_id]);
+    expect(first("nobody")).toBeNull();
+  });
+
+  it("lists an entered five with the lock's numbers and none of the week's dice", () => {
+    const card = (slot: number, extra: Partial<EntryCardRow>): EntryCardRow => ({
+      tournament_id: "t",
+      week_start: "2026-10-12",
+      user_id: "u",
+      manager_name: "Sanne",
+      auto: true,
+      keeper_slot: 1,
+      keeperless: false,
+      slot,
+      trialist: false,
+      player_id: `p${slot}`,
+      player_name: `Player ${slot}`,
+      photo_path: null,
+      ovr: 40,
+      archetype: "all_rounder",
+      injured: false,
+      ovr_factor_ppm: 1_000_000,
+      form_roll_ppm: null,
+      pick_factor_ppm: null,
+      fitness_ppm: 1_000_000,
+      handicap_ppm: 575_000,
+      power_ppm: null,
+      picks: null,
+      owners: null,
+      ...extra,
+    });
+    const five = fiveOf(
+      [
+        card(1, { archetype: "goalkeeper", ovr: 54, injured: true }),
+        card(0, {}),
+        card(2, { trialist: true, player_id: null, player_name: null, ovr: 30 }),
+        card(0, { user_id: "other" }),
+      ],
+      "u",
+    );
+    expect(five).toEqual({
+      userId: "u",
+      manager: "Sanne",
+      auto: true,
+      cards: [
+        {
+          slot: 0,
+          name: "Player 0",
+          detail: "All-rounder · Bronze · 40",
+          mini: { rarityTier: "bronze", ovr: 40, injured: false },
+        },
+        {
+          slot: 1,
+          name: "Player 1",
+          detail: "Goalkeeper · Silver · 54 · in goal",
+          mini: { rarityTier: "silver", ovr: 54, injured: true },
+        },
+        { slot: 2, name: "Trialist", detail: "Common All-rounder · 30", mini: null },
+      ],
+    });
+    expect(fiveOf([], "u")).toBeNull();
+  });
+
+  it("lists past weeks newest first, with the member's finish or why nothing was played", () => {
+    const week = (
+      week_start: string,
+      status: MidweekTournament["status"],
+      extra: Partial<MidweekTournament> = {},
+    ): MidweekTournament => ({
+      tournament_id: week_start,
+      week_start,
+      lock_at: new Date(Date.parse(`${week_start}T17:55:00.000Z`) + 2 * 86_400_000).toISOString(),
+      status,
+      status_reason: null,
+      void_note: null,
+      rounds: 5,
+      champion_user_id: "w",
+      champion_name: "Wout H.",
+      ...extra,
+    });
+    const entrants = [
+      ...Array.from({ length: 21 }, (_, i) => ({ tournament_id: "2026-09-28", user_id: `x${i}` })),
+      { tournament_id: "2026-09-28", user_id: "me" },
+      { tournament_id: "2026-09-21", user_id: "me" },
+      { tournament_id: "2026-09-21", user_id: "w" },
+    ];
+    const rewards = [
+      { tournament_id: "2026-09-28", round_no: 1, amount: 17 },
+      { tournament_id: "2026-09-28", round_no: 2, amount: 33 },
+      { tournament_id: "2026-09-28", round_no: 3, amount: 50 },
+    ];
+    const weeks = pastWeeks({
+      tournaments: [
+        week("2026-09-21", "complete"),
+        week("2026-10-12", "open"),
+        week("2026-10-05", "simulated"),
+        week("2026-09-28", "complete"),
+        week("2026-09-14", "skipped", { status_reason: "club_break" }),
+        week("2026-09-07", "skipped", { status_reason: "too_few_entrants" }),
+        week("2026-08-31", "void", { void_note: "Pitch flooded" }),
+        week("2026-08-24", "complete", { champion_user_id: "me", champion_name: "Me" }),
+      ],
+      entrants,
+      rewards,
+      userId: "me",
+      minEntrants: 4,
+    });
+    expect(weeks.map((w) => [w.weekStart, w.text])).toEqual([
+      ["2026-09-28", "Wout H. won it · 22 entrants. You: semi-finals, +100."],
+      ["2026-09-21", "Wout H. won it · 2 entrants. You: round 1."],
+      ["2026-09-14", "No Midweek Madness: the club was on a break. Nothing played or paid."],
+      ["2026-09-07", "No Midweek Madness: fewer than 4 clubs were in. Nothing played or paid."],
+      ["2026-08-31", "Called off by an admin. No results, and nothing paid."],
+      ["2026-08-24", "Me won it · 0 entrants. You: champion, +0."],
+    ]);
+    // The row's date is the Wednesday of the lock.
+    expect(weeks[0].date).toBe(formatDayDate("2026-09-30T17:55:00.000Z"));
+    expect(weeks[0].weekStart).toBe("2026-09-28");
+    expect(
+      pastWeeks({
+        tournaments: [week("2026-09-21", "complete")],
+        entrants: [],
+        rewards: [],
+        userId: "me",
+        minEntrants: 4,
+      })[0].text,
+    ).toBe("Wout H. won it · 0 entrants. You sat it out.");
+    // Out in round 1 of a three-round week: that round is the quarter-finals.
+    expect(
+      pastWeeks({
+        tournaments: [week("2026-09-21", "complete", { rounds: 3 })],
+        entrants: [{ tournament_id: "2026-09-21", user_id: "me" }],
+        rewards: [],
+        userId: "me",
+        minEntrants: 4,
+      })[0].text,
+    ).toBe("Wout H. won it · 1 entrants. You: quarter-finals.");
   });
 });
 

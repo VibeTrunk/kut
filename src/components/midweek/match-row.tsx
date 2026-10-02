@@ -1,147 +1,141 @@
 import Link from "next/link";
 import { formatClock } from "@/lib/midweek/entry";
-import {
-  matchSentence,
-  sideScore,
-  type BracketPair,
-  type BracketSlot,
-} from "@/lib/midweek/evening";
+import { pairSentence, sideScore, type BracketPair, type BracketSlot } from "@/lib/midweek/evening";
 import { Chip } from "./chip";
 
-const SIDE = "grid grid-cols-[14px_minmax(0,1fr)_auto] items-center gap-1.5";
-const SECOND = "border-t border-line/45";
-
-function Who({ slot, you, auto = slot.auto }: { slot: BracketSlot; you: boolean; auto?: boolean }) {
+function Side({
+  slot,
+  you,
+  won,
+  lost,
+  bye,
+  score,
+}: {
+  slot: BracketSlot;
+  you: boolean;
+  won: boolean;
+  lost: boolean;
+  bye: boolean;
+  score: { goals: number; penalties: number | null } | null;
+}) {
+  const tone = slot.placeholder
+    ? "text-ink-faint"
+    : won
+      ? "font-extrabold text-ink"
+      : lost
+        ? "text-ink-faint"
+        : "text-ink";
   return (
-    <span className="flex min-w-0 items-center gap-1.5">
-      <span className="truncate">{slot.name}</span>
+    <p className="flex min-w-0 items-center gap-1.5">
+      <span className={`min-w-[5ch] truncate ${tone}`}>{slot.name}</span>
+      {won && <span className="font-black text-moss">✓</span>}
       {you && <Chip tone="you">You</Chip>}
-      {auto && <Chip tone="auto">Auto</Chip>}
-    </span>
+      {slot.auto && <Chip tone="auto">Auto</Chip>}
+      {bye && <Chip>Bye</Chip>}
+      {score && (
+        <span className={`ml-auto pl-2 tabular-nums ${won ? "font-black" : "font-bold"}`}>
+          {score.goals}
+          {score.penalties !== null && (
+            <small className="ml-[3px] text-[11px] font-bold text-ink-faint">
+              ({score.penalties})
+            </small>
+          )}
+        </span>
+      )}
+    </p>
   );
 }
 
 /**
- * `MidweekMatchRow`: one pairing. A played match shows both sides with the
- * winner ticked and bold, penalties as "1 (5)", and a link to its report; a bye
- * is one dashed row; a pairing not revealed yet names who meet (or where they
- * come from) and when it comes out. Each is a group with one full sentence as
- * its label, so a screen reader hears the result, not the layout.
+ * `MidweekMatchRow` (HANDOFF "Bracket"), neutral, never in team colours
+ * (DR2-1). Three states: `Kick-off 20:15` before a pairing starts, naming who
+ * meet or where they come from (`Winner of Mila v Eline`); `Full time` with
+ * both scores, the winner ticked and a link to the report; a bye as one dashed
+ * row that counts as a win. Matches are revealed whole at kick-off until
+ * ADR-106, so there is no in-play state yet (F6). Each row is a group with one
+ * full sentence as its name; `dense` is the desktop tree's box.
  */
 export function MidweekMatchRow({
   pair,
   you,
   weekStart,
-  revealAt,
   dense = false,
 }: {
   pair: BracketPair;
   you: string | null;
   weekStart: string;
-  revealAt: string;
   dense?: boolean;
 }) {
-  const sideSize = dense
-    ? "min-h-[30px] px-2 py-[3px] pl-1.5 text-[13px]"
-    : "min-h-[34px] py-1 pr-2.5 pl-2 text-sm";
-  const isYou = pair.sides.some((side) => side.userId !== null && side.userId === you);
-
-  if (pair.kind === "bye") {
-    const [slot] = pair.sides;
+  const mine = (slot: BracketSlot) => !slot.placeholder && you !== null && slot.userId === you;
+  const isYou = pair.sides.some(mine);
+  const sentence = pairSentence(pair);
+  const frame =
+    pair.kind === "bye"
+      ? `border-dashed bg-transparent ${isYou ? "border-brass" : "border-line/70"}`
+      : `bg-panel/55 ${isYou ? "border-brass shadow-[0_0_0_1px_rgb(224_172_74/25%)]" : "border-line/60"}`;
+  const sides = pair.sides.map((slot, index) => {
+    const played = pair.kind === "played";
+    const won = played && pair.match.winner_side === index;
     return (
-      <div
-        aria-label={matchSentence(pair.match)}
-        className={`grid overflow-hidden rounded-xl border border-dashed bg-panel/35 ${isYou ? "border-brass-line" : "border-line/70"}`}
-        role="group"
+      <Side
+        bye={pair.kind === "bye"}
+        key={index}
+        lost={played && !won}
+        score={played ? sideScore(pair.match, index as 0 | 1) : null}
+        slot={slot}
+        won={won}
+        you={mine(slot)}
+      />
+    );
+  });
+
+  let state;
+  if (pair.kind === "played") {
+    state = (
+      <Link
+        aria-label={`Match report: ${sentence}`}
+        className={`grid content-center gap-0.5 border-l border-line/40 font-bold text-ink-faint hover:bg-brass/10 ${dense ? "w-8 justify-items-center" : "min-w-11 justify-items-end px-3 text-xs"}`}
+        href={`/midweek/${weekStart}/match/${pair.match.match_id}`}
       >
-        <div
-          className={`${SIDE} ${sideSize} ${dense ? "" : "min-h-9"} font-black ${isYou ? "bg-brass/[9%] shadow-[inset_3px_0_0_var(--color-brass)]" : ""}`}
-        >
-          <span aria-hidden="true" className="text-center text-[11px] font-black text-moss">
-            ✓
-          </span>
-          <span className="flex min-w-0 items-center gap-1.5">
-            <span className="truncate text-ink">{slot.name}</span>
-            {isYou && <Chip tone="you">You</Chip>}
-            <Chip>Bye</Chip>
-          </span>
-          <span />
-        </div>
-      </div>
+        {!dense && <span>Full time</span>}
+        <b aria-hidden="true" className="text-lg leading-none font-black text-brass">
+          ›
+        </b>
+      </Link>
+    );
+  } else if (pair.kind === "upcoming") {
+    const time = formatClock(pair.kickoffAt);
+    state = dense ? (
+      <b className="self-center pr-2 text-[12.5px] font-black text-ink tabular-nums">{time}</b>
+    ) : (
+      <span className="grid content-center justify-items-end gap-0.5 pr-3 text-xs font-bold text-ink-faint">
+        <span>Kick-off</span>
+        <b className="text-[15px] font-black text-ink tabular-nums">{time}</b>
+      </span>
+    );
+  } else {
+    state = dense ? (
+      <span />
+    ) : (
+      <span className="self-center pr-3 text-xs font-bold whitespace-nowrap text-ink-faint max-[359px]:hidden">
+        counts as a win
+      </span>
     );
   }
 
-  if (pair.kind === "hidden") {
-    const time = formatClock(revealAt);
-    return (
-      <div
-        aria-label={`${pair.sides[0].name} v ${pair.sides[1].name}, result revealed at ${time}`}
-        className={`grid grid-cols-[minmax(0,1fr)_auto] items-stretch overflow-hidden rounded-xl border border-dashed bg-board-deep/35 ${isYou && pair.known ? "border-brass-line" : "border-line/80"}`}
-        role="group"
-      >
-        <div className="grid min-w-0">
-          {pair.sides.map((slot, index) => (
-            <div
-              className={`${SIDE} ${sideSize} ${index > 0 ? SECOND : ""} font-semibold text-ink-dim ${slot.userId !== null && slot.userId === you ? "bg-brass/[9%] shadow-[inset_3px_0_0_var(--color-brass)]" : ""}`}
-              key={index}
-            >
-              <span />
-              <Who auto={false} slot={slot} you={slot.userId !== null && slot.userId === you} />
-              <span />
-            </div>
-          ))}
-        </div>
-        <div className="grid place-items-center content-center border-l border-dashed border-line/80 px-3 text-center text-[11px] leading-tight font-extrabold text-ink-faint tabular-nums">
-          <span>Reveals</span>
-          <b className="text-[13px] text-ink-dim">{time}</b>
-        </div>
-      </div>
-    );
-  }
-
-  const { match } = pair;
   return (
     <div
-      aria-label={matchSentence(match)}
-      className={`grid grid-cols-[minmax(0,1fr)_auto] items-stretch overflow-hidden rounded-xl border bg-panel/85 ${isYou ? "border-brass-line" : "border-line/70"}`}
+      aria-label={sentence}
+      className={`grid grid-cols-[minmax(0,1fr)_auto] items-stretch gap-x-2 overflow-hidden rounded-xl border ${frame}`}
       role="group"
     >
-      <div className="grid min-w-0">
-        {pair.sides.map((slot, index) => {
-          const side = index as 0 | 1;
-          const won = match.winner_side === side;
-          const score = sideScore(match, side);
-          const mine = slot.userId === you;
-          return (
-            <div
-              className={`${SIDE} ${sideSize} ${index > 0 ? SECOND : ""} ${won ? "font-black text-ink" : "font-semibold text-ink-faint"} ${mine ? "bg-brass/[9%] shadow-[inset_3px_0_0_var(--color-brass)]" : ""}`}
-              key={index}
-            >
-              <span aria-hidden="true" className="text-center text-[11px] font-black text-moss">
-                {won ? "✓" : ""}
-              </span>
-              <Who slot={slot} you={mine} />
-              <span
-                className={`min-w-[1.5ch] text-right tabular-nums ${won ? "font-black" : "font-bold"}`}
-              >
-                {score.goals}
-                {score.penalties !== null && (
-                  <small className="ml-[3px] text-[11px] font-extrabold text-ink-faint">
-                    ({score.penalties})
-                  </small>
-                )}
-              </span>
-            </div>
-          );
-        })}
-      </div>
-      <Link
-        aria-label={`Match report: ${matchSentence(match)}`}
-        className={`grid place-items-center border-l border-line/45 font-black text-brass hover:bg-brass/10 ${dense ? "w-[34px] text-[15px]" : "w-11 text-lg"}`}
-        href={`/midweek/${weekStart}/match/${match.match_id}`}
+      <div
+        aria-hidden="true"
+        className={`grid min-w-0 content-center gap-1 ${dense ? "py-1 pl-2 text-[12.5px] leading-[1.45]" : "py-2.5 pl-3 text-sm"}`}
       >
-        <span aria-hidden="true">›</span>
-      </Link>
+        {sides}
+      </div>
+      {state}
     </div>
   );
 }

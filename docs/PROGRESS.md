@@ -4317,3 +4317,34 @@ and checks the KB-028 wording, the filter, that Save stays in view with
 unsaved changes, and the badges at 1440 px. Every page was checked for no
 horizontal overflow. The empty, unsaved and saved states were checked
 visually at 320 px, 412 px and 1440 px.
+
+## MM 2.0 F5: the evening from the lock (ADR-113, KB-034) — 2026-10-02
+
+`feat/midweek-evening-from-lock` (no migration). The evening and the bracket
+follow the DR2-approved mockups, in their kick-off and full-time states.
+Matches are still revealed whole, and the live states come with F6.
+
+- A sticky clock under the app header shows the lock and every round as
+  Locked, Played, Live, Next or Later, with a brass dot on the rounds you're in.
+- From 19:55 the evening page shows the draw: your first match, your five and
+  your opponent's (both possible opponents after a bye) with OVR, archetype,
+  tier and keeper, and round 1's kick-off times. Form, pick and chances still
+  wait for 20:00.
+- Through the evening: your night, the next round's kick-offs and the round
+  just played. Once you're out, a marked placeholder for the follow-up and a
+  card for the final; from the final's kick-off, the final for everyone.
+- Match rows show `Kick-off 20:15`, full time with scores, or a bye. Later
+  rounds name `Winner of Mila v Eline` or `Winner, Quarters 1`. The bracket has
+  jump links on phones and kick-off times in the desktop tree.
+- `/midweek/past` lists every finished week with its champion, the field and
+  how you did. The champion view links to it, with placeholders for ratings
+  and sharing.
+- KB-034, found on the way: during the evening the Compete tabs with the
+  `Live` chip made every Compete page 360 px wide on a 320 px phone. Fixed.
+
+Verification: `npm run verify:fast` (395 tests); authenticated E2E at 320 px
+and 412 px (Pixel 7) plus 1440 px, with new tests for the draw, the
+mid-evening, the champion view after the final and past weeks, each with the
+no-overflow check and the clock pinned on scroll. The draw, out, final,
+champion and past-weeks states were checked visually at 320, 412 and 1440 px
+against the mockups.

@@ -9,12 +9,18 @@
  */
 
 import type { LiveCardPlayer } from "@/components/live-card";
-import { isArchetype } from "@/game/archetypes";
+import { archetypeLabel, isArchetype } from "@/game/archetypes";
 import { roundPayouts } from "@/game/midweek/rewards";
 import { roundStartAt } from "@/game/midweek/schedule";
 import { ARCHETYPE_OFFSETS, getRarityTier } from "@/game/rating-engine";
-import { formatClock } from "./entry";
-import type { EntryCardRow, MatchRow } from "./rows";
+import {
+  formatClock,
+  formatDayDate,
+  stageName,
+  type MidweekTournament,
+  type MyRewardRow,
+} from "./entry";
+import type { DrawRow, EntryCardRow, MatchRow } from "./rows";
 
 const AMS = "Europe/Amsterdam";
 
@@ -169,75 +175,119 @@ export function revealedRounds(matches: readonly Pick<MatchRow, "round">[]): num
 export const winnerName = (match: MatchRow) =>
   match.winner_side === 0 ? match.side_0_name : (match.side_1_name ?? match.side_0_name);
 
-export type BracketSlot = { userId: string | null; name: string; auto: boolean };
+/**
+ * Whether a revealed pairing is at full time: a bye always is, and a match once
+ * its result shows. Matches are revealed whole at kick-off until ADR-106, so
+ * today every visible match is; from then a row without a result is still
+ * being played.
+ */
+export const atFullTime = (match: MatchRow) => match.bye || match.winner_side != null;
+
+export type BracketSlot = {
+  userId: string | null;
+  name: string;
+  auto: boolean;
+  /** Not settled yet: "Winner of Mila v Eline", "Winner, Quarters 1". */
+  placeholder: boolean;
+};
 
 export type BracketPair =
   | {
-      kind: "match";
+      kind: "played";
       round: number;
       pairing: number;
       match: MatchRow;
       sides: [BracketSlot, BracketSlot];
     }
-  | { kind: "bye"; round: number; pairing: number; match: MatchRow; sides: [BracketSlot] }
-  /** Not revealed yet: the two who meet, when the round before is out, or where they come from. */
+  | { kind: "bye"; round: number; pairing: number; sides: [BracketSlot] }
+  /** Not kicked off yet: the two who meet, or where they come from. */
   | {
-      kind: "hidden";
+      kind: "upcoming";
       round: number;
       pairing: number;
-      known: boolean;
+      kickoffAt: string;
       sides: [BracketSlot, BracketSlot];
     };
 
 export type BracketRound = {
   round: number;
   name: string;
-  revealAt: string;
-  revealed: boolean;
+  kickoffAt: string;
+  /** Every pairing is at full time (byes always are). */
+  played: boolean;
   pairs: BracketPair[];
 };
 
+/** "Quarters 1", "Semis 2", "R2 M3": where a later round's entrant comes from. */
+export function feederName(round: number, pairing: number, rounds: number): string {
+  const fromEnd = rounds - round;
+  if (fromEnd === 1) return `Semis ${pairing + 1}`;
+  if (fromEnd === 2) return `Quarters ${pairing + 1}`;
+  return `R${round} M${pairing + 1}`;
+}
+
 /**
- * Every pairing of every round, from the revealed rows (§44.6: the winners of
- * pairings 2k and 2k + 1 meet in pairing k of the next round). A round whose
- * rows aren't visible yet is laid out from the round before: its sides when
- * that round is out, otherwise "Winner, QF 1".
+ * Every pairing of every round (§44.6: the winners of pairings 2k and 2k + 1
+ * meet in pairing k of the next round), from round 1's draw (from the lock,
+ * ADR-105) and the pairings revealed so far. A pairing not at full time is
+ * `upcoming` with its kick-off: round 2 names a match still to be played as
+ * "Winner of Mila v Eline", later rounds "Winner, Quarters 1" (HANDOFF
+ * "Bracket").
  */
 export function assembleBracket(input: {
   rounds: number;
   lockAt: string;
   scheduleVersion: number;
+  draw?: readonly DrawRow[];
   matches: readonly MatchRow[];
   autoUserIds: ReadonlySet<string>;
 }): BracketRound[] {
   const { rounds } = input;
   const lock = new Date(input.lockAt);
   const byKey = new Map(input.matches.map((match) => [`${match.round}/${match.pairing}`, match]));
-  const slot = (userId: string | null, name: string): BracketSlot => ({
+  const drawn = new Map((input.draw ?? []).map((row) => [row.pairing, row]));
+  const slot = (userId: string | null, name: string, placeholder = false): BracketSlot => ({
     userId,
     name,
-    auto: userId !== null && input.autoUserIds.has(userId),
+    placeholder,
+    auto: !placeholder && userId !== null && input.autoUserIds.has(userId),
   });
   const result: BracketRound[] = [];
   for (let round = 1; round <= rounds; round += 1) {
+    const kickoffAt = roundStartAt(lock, round, input.scheduleVersion).toISOString();
     const count = 2 ** (rounds - round);
-    const revealed = input.matches.some((match) => match.round === round);
+    const before = result[round - 2];
+    const fromFeeder = (pairing: number): BracketSlot => {
+      const feeder = before?.pairs[pairing];
+      if (feeder?.kind === "bye") return { ...feeder.sides[0] };
+      if (feeder?.kind === "played") {
+        return slot(feeder.match.winner_user_id, winnerName(feeder.match));
+      }
+      if (round === 2 && feeder && !feeder.sides.some((side) => side.placeholder)) {
+        return slot(null, `Winner of ${feeder.sides[0].name} v ${feeder.sides[1].name}`, true);
+      }
+      return slot(
+        null,
+        round > 1 ? `Winner, ${feederName(round - 1, pairing, rounds)}` : "To be drawn",
+        true,
+      );
+    };
     const pairs: BracketPair[] = [];
     for (let pairing = 0; pairing < count; pairing += 1) {
       const match = byKey.get(`${round}/${pairing}`);
-      if (match?.bye) {
+      const source = match ?? (round === 1 ? drawn.get(pairing) : undefined);
+      if (source?.bye) {
         pairs.push({
           kind: "bye",
           round,
           pairing,
-          match,
-          sides: [slot(match.side_0_user_id, match.side_0_name)],
+          sides: [slot(source.side_0_user_id, source.side_0_name)],
         });
         continue;
       }
-      if (match && match.side_1_user_id !== null) {
+      if (match && match.side_1_user_id !== null && atFullTime(match)) {
         pairs.push({
-          kind: "match",
+          kind: "played",
           round,
           pairing,
           match,
@@ -248,34 +298,45 @@ export function assembleBracket(input: {
         });
         continue;
       }
-      const feeders = [2 * pairing, 2 * pairing + 1].map((p) => byKey.get(`${round - 1}/${p}`));
-      const known = round > 1 && feeders.every((feeder) => feeder !== undefined);
       pairs.push({
-        kind: "hidden",
+        kind: "upcoming",
         round,
         pairing,
-        known,
-        sides: feeders.map((feeder, index) =>
-          known && feeder
-            ? slot(feeder.winner_user_id, winnerName(feeder))
-            : slot(
-                null,
-                round > 1
-                  ? `Winner, ${shortMatch(round - 1, 2 * pairing + index, rounds)}`
-                  : "To be drawn",
-              ),
-        ) as [BracketSlot, BracketSlot],
+        kickoffAt,
+        sides:
+          source && source.side_1_user_id !== null
+            ? [
+                slot(source.side_0_user_id, source.side_0_name),
+                slot(source.side_1_user_id, source.side_1_name ?? ""),
+              ]
+            : [fromFeeder(2 * pairing), fromFeeder(2 * pairing + 1)],
       });
     }
     result.push({
       round,
       name: roundName(round, rounds),
-      revealAt: roundStartAt(lock, round, input.scheduleVersion).toISOString(),
-      revealed,
+      kickoffAt,
+      played: pairs.every((pair) => pair.kind !== "upcoming"),
       pairs,
     });
   }
   return result;
+}
+
+/**
+ * The round of the member's next match still to kick off, for the jump link
+ * "Your match · R2 20:15"; null once they are out or have no match left.
+ */
+export function yourNextRound(bracket: readonly BracketRound[], you: string): BracketRound | null {
+  return (
+    bracket.find((round) =>
+      round.pairs.some(
+        (pair) =>
+          pair.kind === "upcoming" &&
+          pair.sides.some((side) => !side.placeholder && side.userId === you),
+      ),
+    ) ?? null
+  );
 }
 
 /**
@@ -306,9 +367,9 @@ export function sideScore(
   };
 }
 
-/** `MidweekMatchRow`'s accessible sentence: "Julia 1, Stijn 1, 5–4 on penalties. Julia won." */
+/** A played match in one sentence: "Julia 1, Stijn 1, 5–4 on penalties. Julia won." */
 export function matchSentence(match: MatchRow): string {
-  if (match.bye) return `${match.side_0_name} has a bye. A bye counts as a win.`;
+  if (match.bye) return `${match.side_0_name} has a bye, which counts as a win.`;
   const a = sideScore(match, 0);
   const b = sideScore(match, 1);
   const pens =
@@ -316,6 +377,13 @@ export function matchSentence(match: MatchRow): string {
       ? `, ${a.penalties}–${b.penalties} on penalties`
       : "";
   return `${match.side_0_name} ${a.goals}, ${match.side_1_name} ${b.goals}${pens}. ${winnerName(match)} won.`;
+}
+
+/** `MidweekMatchRow`'s accessible sentence, in every state. */
+export function pairSentence(pair: BracketPair): string {
+  if (pair.kind === "played") return matchSentence(pair.match);
+  if (pair.kind === "bye") return `${pair.sides[0].name} has a bye, which counts as a win.`;
+  return `${pair.sides[0].name} v ${pair.sides[1].name}, kick-off ${formatClock(pair.kickoffAt)}.`;
 }
 
 // ---- your night ------------------------------------------------------------------------
@@ -565,4 +633,299 @@ export function entryCardFace(
     rarityTier: getRarityTier(row.ovr),
     photoUrl: row.photo_path ? (photoUrls.get(row.photo_path) ?? null) : null,
   };
+}
+
+// ---- the evening from the lock (MM 2.0 F5, ADR-113) ------------------------------
+
+export type StopState = "locked" | "played" | "live" | "next" | "later";
+
+/** The words `MidweekClock` prints under each stop. */
+export const STOP_WORD: Record<StopState, string> = {
+  locked: "Locked",
+  played: "Played",
+  live: "Live",
+  next: "Next",
+  later: "Later",
+};
+
+export type EveningStop = {
+  time: string;
+  name: string;
+  state: StopState;
+  /** A round the member is still in (or went out in): a brass dot after its name. */
+  you: boolean;
+  /** Null for the lock. */
+  round: number | null;
+};
+
+/**
+ * `MidweekClock`'s stops (HANDOFF "Midweek: the evening"): the lock, then one
+ * per round. A round is `played` once every one of its pairings is at full
+ * time, `live` from its kick-off until then, and of the rounds still to come
+ * the first is `next` and the rest `later`. Today a match shows whole at its
+ * kick-off, so a round goes straight to `played`; with ADR-106 a round shows
+ * `live` while it plays, with no change here.
+ */
+export function eveningStops(input: {
+  lockAt: string;
+  scheduleVersion: number;
+  rounds: number;
+  now: Date;
+  matches: readonly MatchRow[];
+  /** The last round the member is in (`roundsYouAreIn`), or null. */
+  youThrough: number | null;
+}): EveningStop[] {
+  const lock = new Date(input.lockAt);
+  const now = input.now.getTime();
+  let nextGiven = lock.getTime() > now;
+  const stops: EveningStop[] = [
+    {
+      time: formatClock(input.lockAt),
+      name: "Lock",
+      state: nextGiven ? "next" : "locked",
+      you: false,
+      round: null,
+    },
+  ];
+  for (let round = 1; round <= input.rounds; round += 1) {
+    const at = roundStartAt(lock, round, input.scheduleVersion);
+    const pairings = 2 ** (input.rounds - round);
+    const done = input.matches.filter((match) => match.round === round && atFullTime(match));
+    let state: StopState;
+    if (at.getTime() <= now) state = done.length === pairings ? "played" : "live";
+    else if (!nextGiven) {
+      state = "next";
+      nextGiven = true;
+    } else state = "later";
+    stops.push({
+      time: formatClock(at.toISOString()),
+      name: roundShort(round, input.rounds),
+      state,
+      you: input.youThrough !== null && round <= input.youThrough,
+      round,
+    });
+  }
+  return stops;
+}
+
+/** The clock as one sentence for screen readers. */
+export function eveningClockLabel(stops: readonly EveningStop[]): string {
+  const parts = stops.map(
+    (stop) =>
+      `${stop.name} ${stop.time}, ${STOP_WORD[stop.state].toLowerCase()}${stop.you ? ", you're in" : ""}`,
+  );
+  return `Wednesday evening: ${parts.join("; ")}.`;
+}
+
+/**
+ * The last round the member plays in tonight: the round they went out in, or
+ * the final while they are still in; null when they aren't entered.
+ */
+export function roundsYouAreIn(night: MyNight, entered: boolean, rounds: number): number | null {
+  if (!entered) return null;
+  const out = night.rows.find((row) => row.kind === "out");
+  return out ? out.round : rounds;
+}
+
+export type EveningPhase = {
+  /**
+   * `draw` from the lock to round 1 (Evening-Draw); `round` while the member is
+   * still in, or isn't entered; `out` once they have lost (Evening-Out);
+   * `final` from the final's kick-off, for everyone.
+   */
+  kind: "draw" | "round" | "out" | "final";
+  /** The latest round that has kicked off; 0 before round 1. */
+  round: number;
+  title: string;
+};
+
+/** Which evening page to show, and its title (HANDOFF "Titles"). */
+export function eveningPhase(input: {
+  rounds: number;
+  lockAt: string;
+  scheduleVersion: number;
+  now: Date;
+  night: MyNight;
+}): EveningPhase {
+  const lock = new Date(input.lockAt);
+  let round = 0;
+  while (
+    round < input.rounds &&
+    roundStartAt(lock, round + 1, input.scheduleVersion).getTime() <= input.now.getTime()
+  ) {
+    round += 1;
+  }
+  if (round === 0) return { kind: "draw", round, title: "The draw is out" };
+  if (round === input.rounds) return { kind: "final", round, title: "The final is live" };
+  if (input.night.entered && !input.night.alive) {
+    return { kind: "out", round, title: "You’re out" };
+  }
+  const name = roundName(round, input.rounds);
+  return { kind: "round", round, title: `${name} ${name.endsWith("finals") ? "are" : "is"} live` };
+}
+
+export type FirstMatch = {
+  round: number;
+  kickoffAt: string;
+  /** "Round 1 is a bye for you, … In the semi-finals you meet the winner of Mila v Eline." */
+  text: string;
+  /** Who the member meets: one, or both possible opponents after a bye. */
+  opponentIds: string[];
+};
+
+/**
+ * "Your first match" on the draw (Evening-Draw), from round 1 as drawn at the
+ * lock: the opponent, or after a bye the neighbouring pairing's two, whose
+ * winner the member meets in round 2 (§44.6).
+ */
+export function firstMatch(input: {
+  userId: string;
+  draw: readonly DrawRow[];
+  rounds: number;
+  lockAt: string;
+  scheduleVersion: number;
+}): FirstMatch | null {
+  const mine = input.draw.find(
+    (row) => row.side_0_user_id === input.userId || row.side_1_user_id === input.userId,
+  );
+  if (!mine) return null;
+  const lock = new Date(input.lockAt);
+  if (!mine.bye) {
+    const kickoffAt = roundStartAt(lock, 1, input.scheduleVersion).toISOString();
+    const theirs = mine.side_0_user_id === input.userId ? 1 : 0;
+    const name = (theirs === 0 ? mine.side_0_name : mine.side_1_name) ?? "";
+    const id = theirs === 0 ? mine.side_0_user_id : mine.side_1_user_id;
+    return {
+      round: 1,
+      kickoffAt,
+      text: `You meet ${name} at ${formatClock(kickoffAt)}.`,
+      opponentIds: id ? [id] : [],
+    };
+  }
+  const kickoffAt = roundStartAt(lock, 2, input.scheduleVersion).toISOString();
+  const lead = `Round 1 is a bye for you, which counts as a win (+${roundPayouts(input.rounds)[0]}).`;
+  const stage = stageName(2, input.rounds);
+  const neighbour = input.draw.find((row) => row.pairing === (mine.pairing ^ 1));
+  if (!neighbour) return { round: 2, kickoffAt, text: lead, opponentIds: [] };
+  if (neighbour.bye || neighbour.side_1_user_id === null) {
+    return {
+      round: 2,
+      kickoffAt,
+      text: `${lead} In ${stage} you meet ${neighbour.side_0_name}.`,
+      opponentIds: [neighbour.side_0_user_id],
+    };
+  }
+  return {
+    round: 2,
+    kickoffAt,
+    text: `${lead} In ${stage} you meet the winner of ${neighbour.side_0_name} v ${neighbour.side_1_name}.`,
+    opponentIds: [neighbour.side_0_user_id, neighbour.side_1_user_id],
+  };
+}
+
+export const TIER_LABEL: Record<LiveCardPlayer["rarityTier"], string> = {
+  common: "Common",
+  bronze: "Bronze",
+  silver: "Silver",
+  gold: "Gold",
+  holo: "Holo",
+  elite: "Elite",
+};
+
+export type FiveCard = {
+  slot: number;
+  name: string;
+  /** "All-rounder · Bronze · 40 · in goal". */
+  detail: string;
+  /** The mini card; null for a trialist. */
+  mini: { rarityTier: LiveCardPlayer["rarityTier"]; ovr: number; injured: boolean } | null;
+};
+
+export type FiveView = {
+  userId: string;
+  manager: string;
+  auto: boolean;
+  cards: FiveCard[];
+};
+
+/**
+ * An entered five as `MidweekFiveList` shows it on the draw: each card's
+ * lock-time OVR, archetype and tier, the keeper and the injury cast, never the
+ * week's dice (ADR-105).
+ */
+export function fiveOf(entries: readonly EntryCardRow[], userId: string): FiveView | null {
+  const rows = entries.filter((row) => row.user_id === userId).sort((a, b) => a.slot - b.slot);
+  if (rows.length === 0) return null;
+  return {
+    userId,
+    manager: rows[0].manager_name,
+    auto: rows[0].auto,
+    cards: rows.map((row) => {
+      const inGoal = row.slot === row.keeper_slot ? " · in goal" : "";
+      if (row.trialist || row.player_name === null) {
+        return {
+          slot: row.slot,
+          name: "Trialist",
+          detail: `Common ${archetypeLabel(row.archetype)} · ${row.ovr}${inGoal}`,
+          mini: null,
+        };
+      }
+      const tier = getRarityTier(row.ovr);
+      return {
+        slot: row.slot,
+        name: row.player_name,
+        detail: `${archetypeLabel(row.archetype)} · ${TIER_LABEL[tier]} · ${row.ovr}${inGoal}`,
+        mini: { rarityTier: tier, ovr: row.ovr, injured: row.injured },
+      };
+    }),
+  };
+}
+
+export type PastWeek = { weekStart: string; date: string; text: string };
+
+/**
+ * `/midweek/past` (`MidweekWeekList`): one row per finished week, newest
+ * first: who won, the field and how the member did, or why nothing was played.
+ * Open and running weeks are left out.
+ */
+export function pastWeeks(input: {
+  tournaments: readonly MidweekTournament[];
+  entrants: readonly { tournament_id: string; user_id: string }[];
+  rewards: readonly MyRewardRow[];
+  userId: string;
+  minEntrants: number;
+}): PastWeek[] {
+  return [...input.tournaments]
+    .filter((week) => ["complete", "skipped", "void"].includes(week.status))
+    .sort((a, b) => (a.week_start < b.week_start ? 1 : -1))
+    .map((week) => {
+      const base = { weekStart: week.week_start, date: formatDayDate(week.lock_at) };
+      if (week.status === "void") {
+        return { ...base, text: "Called off by an admin. No results, and nothing paid." };
+      }
+      if (week.status === "skipped") {
+        return {
+          ...base,
+          text:
+            week.status_reason === "club_break"
+              ? "No Midweek Madness: the club was on a break. Nothing played or paid."
+              : `No Midweek Madness: fewer than ${input.minEntrants} clubs were in. Nothing played or paid.`,
+        };
+      }
+      const field = input.entrants.filter((row) => row.tournament_id === week.tournament_id);
+      const mine = input.rewards.filter((row) => row.tournament_id === week.tournament_id);
+      const coins = mine.reduce((sum, row) => sum + Number(row.amount), 0);
+      let you: string;
+      if (week.champion_user_id === input.userId) you = `You: champion, +${coins}.`;
+      else if (mine.length > 0 && week.rounds) {
+        const furthest = Math.max(...mine.map((row) => row.round_no));
+        you = `You: ${stageName(furthest + 1, week.rounds).replace(/^the /, "")}, +${coins}.`;
+      } else if (field.some((row) => row.user_id === input.userId) && week.rounds) {
+        you = `You: ${stageName(1, week.rounds).replace(/^the /, "")}.`;
+      } else you = "You sat it out.";
+      return {
+        ...base,
+        text: `${week.champion_name ?? "Somebody"} won it · ${field.length} entrants. ${you}`,
+      };
+    });
 }

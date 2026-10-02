@@ -2,8 +2,9 @@ import { CompeteTabs } from "@/components/app-shell/compete-tabs";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 import { MidweekNotice } from "@/components/midweek/bits";
-import { MidweekBracket, MidweekBracketLegend } from "@/components/midweek/bracket";
-import { MidweekRevealClock } from "@/components/midweek/clock";
+import { MidweekBracket } from "@/components/midweek/bracket";
+import { MidweekClock } from "@/components/midweek/clock";
+import { MidweekJumpLinks } from "@/components/midweek/jump-links";
 import { MIDWEEK_PAGE, MidweekPageHead } from "@/components/midweek/page-head";
 import { MidweekPickShares, type PickShareView } from "@/components/midweek/pick-shares";
 import { MidweekSeed } from "@/components/midweek/seed";
@@ -21,11 +22,11 @@ import {
 } from "@/lib/midweek/entry";
 import {
   assembleBracket,
+  eveningStops,
   isWeekStart,
   myNight,
-  revealedRounds,
-  revealStops,
-  wonRounds,
+  roundsYouAreIn,
+  yourNextRound,
 } from "@/lib/midweek/evening";
 import { loadPickShares, loadTournamentByWeek, loadWeekResults } from "@/lib/midweek/results";
 import { runDueMidweek } from "@/lib/midweek/run-due";
@@ -33,12 +34,13 @@ import { createClient } from "@/lib/supabase/server";
 
 export const metadata = { title: "Midweek Madness bracket" };
 
-const PANEL = "rounded-2xl border border-line/60 bg-panel/60 p-5 sm:p-6";
 const BACK = { href: "/midweek", label: "Midweek Madness" };
 
 /**
- * `/midweek/[weekStart]`: one week's bracket (Bracket-Revealing,
- * Bracket-Complete). Rounds appear as they are revealed; after the week is
+ * `/midweek/[weekStart]`: one week's bracket (Bracket-FromLock,
+ * Bracket-Evening, Bracket-Complete). From the lock round 1 shows as drawn,
+ * with every kick-off (ADR-105, ADR-113); while the evening runs the sticky
+ * clock leads and jump links take you to your match. After the week is
  * complete, the pick shares and the seed follow. Past weeks stay readable when
  * Midweek Madness is switched off, as history (HANDOFF question 6, ADR-097),
  * and a void week shows only its notice (§44.9).
@@ -58,9 +60,12 @@ export default async function MidweekBracketPage({
 
   const lockAt = tournament.lock_at;
   const kicker = `Midweek Madness · ${formatDayDate(lockAt)}`;
-  const shell = (children: ReactNode, title = "The bracket") => (
+  const shell = (children: ReactNode, title = "The bracket", clock: ReactNode = null) => (
     <main className={MIDWEEK_PAGE}>
-      <section className="mx-auto grid max-w-6xl gap-8 py-4 sm:gap-11 sm:py-8">
+      {clock}
+      <section
+        className={`mx-auto grid max-w-6xl gap-8 sm:gap-11 ${clock ? "pb-4 sm:pb-8" : "py-4 sm:py-8"}`}
+      >
         <CompeteTabs />
         <MidweekPageHead back={BACK} kicker={kicker} title={title} />
         {children}
@@ -84,46 +89,47 @@ export default async function MidweekBracketPage({
     return shell(
       <MidweekNotice tone="info">
         <b>The bracket is drawn at the lock</b>, {formatDayDate(lockAt)} at {formatClock(lockAt)}.
-        Round 1 comes out at {roundOne}, then a round {roundIntervalText(scheduleVersion)}.
+        Round 1 kicks off at {roundOne}, then a round {roundIntervalText(scheduleVersion)}.
       </MidweekNotice>,
     );
   }
 
   const results = await loadWeekResults(supabase, tournament.tournament_id);
-  const out = revealedRounds(results.matches);
   const now = new Date();
-  const night = myNight({
-    userId: user.id,
-    rounds,
-    lockAt,
-    scheduleVersion,
-    matches: results.matches,
-  });
-  const stops = revealStops({ lockAt, scheduleVersion, rounds, now, wonRounds: wonRounds(night) });
-  const clock = (
-    <section aria-label="Tonight" className={PANEL}>
-      <MidweekRevealClock label="Jump to a round" linkRounds={out > 0} stops={stops} />
-    </section>
-  );
-  if (out === 0) {
-    return shell(
-      <>
-        {clock}
-        <MidweekNotice tone="info">
-          <b>Squads are locked.</b> The bracket is drawn and every match is already decided. Round 1
-          comes out at {roundOne}.
-        </MidweekNotice>
-      </>,
-    );
-  }
-
   const bracket = assembleBracket({
     rounds,
     lockAt,
     scheduleVersion,
+    draw: results.draw,
     matches: results.matches,
     autoUserIds: new Set(results.entries.filter((row) => row.auto).map((row) => row.user_id)),
   });
+  const evening = tournament.status === "simulated";
+  let clock: ReactNode = null;
+  if (evening) {
+    const night = myNight({
+      userId: user.id,
+      rounds,
+      lockAt,
+      scheduleVersion,
+      matches: results.matches,
+    });
+    const entered = bracket[0].pairs.some((pair) =>
+      pair.sides.some((side) => side.userId === user.id),
+    );
+    clock = (
+      <MidweekClock
+        stops={eveningStops({
+          lockAt,
+          scheduleVersion,
+          rounds,
+          now,
+          matches: results.matches,
+          youThrough: roundsYouAreIn(night, entered, rounds),
+        })}
+      />
+    );
+  }
   const complete = tournament.status === "complete";
   const shares = complete ? await loadPickShares(supabase, tournament.tournament_id) : [];
   // The chip's tier comes from the locked OVR of an entered copy, never today's rating.
@@ -146,8 +152,7 @@ export default async function MidweekBracketPage({
 
   return shell(
     <>
-      {clock}
-      <MidweekBracketLegend />
+      <MidweekJumpLinks rounds={bracket} yours={evening ? yourNextRound(bracket, user.id) : null} />
       <MidweekBracket rounds={bracket} weekStart={weekStart} you={user.id} />
       {complete && shareRows.length > 0 && (
         <MidweekPickShares ownerCountMin={MIDWEEK.ownerCountMin} rows={shareRows} />
@@ -159,7 +164,9 @@ export default async function MidweekBracketPage({
           seedMatches={seed !== null && seedHash(seed) === seal}
         />
       )}
+      {evening && seal && <MidweekSeed seedHash={seal} />}
     </>,
     complete && tournament.champion_name ? `${tournament.champion_name} won it` : "The bracket",
+    clock,
   );
 }

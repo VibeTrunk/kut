@@ -6061,3 +6061,91 @@ puts it back). It checks the KB-028 line, the filter, that Save stays in view
 with unsaved changes on a phone, and the badges at 1440 px.
 
 Tier: no migration.
+
+## ADR-113 — The evening from the lock: a sticky clock, the draw with every five, kick-off and full-time rows, and past weeks
+
+Date: 2026-10-02
+
+Status: Accepted (amends ADR-098's evening and bracket pages; MM 2.0 frontend
+F5, built to the DR2-approved `Evening-Draw`, `Evening-Out`,
+`Evening-Champion`, `Bracket-FromLock`, `Bracket-Evening` and `Weeks-Past`
+mockups; fixes KB-034)
+
+Context: ADR-105 put the draw and every entered five in the member views from
+the lock, but the pages still showed only "Squads are locked" until round 1,
+and then "Round 2 is out" with the old reveal clock. `design/ux-review/HANDOFF.md`
+("Midweek: the evening", "Bracket", "Placeholders") redesigns the evening and
+the bracket around the MM 2.0 clock. Matches are still revealed whole at their
+kick-off until ADR-106 (PR 4), so this slice builds the kick-off and full-time
+states; in-play, live and polling are F6, which ships with PR 4's push.
+
+Decision (no migration):
+
+- **`MidweekClock`** replaces `MidweekRevealClock` on the evening and bracket
+  pages: sticky under the app header, edge to edge, the lock and every round
+  with its time, in five states that differ in shape and word (`Locked`,
+  `Played`, `Live`, `Next`, `Later`). A round is `Played` once every pairing
+  shows a result (a bye always does), `Live` from its kick-off until then. With
+  whole-match reveals a round goes straight to `Played`; under ADR-106 the same
+  rule gives `Live` while it plays, so the clock needs no change in F6. Rounds
+  the member is in (up to the one they went out in) carry a brass dot, and the
+  list is one sentence for screen readers. Home's card keeps the old clock
+  until F4/F6.
+- **The evening page in four phases** (`eveningPhase`), each with HANDOFF's
+  title: `The draw is out` from the lock to round 1; `{Round} is live` (or
+  `… are live` for the quarter- and semi-finals) while the member is in or not
+  entered; `You’re out` once they have lost; `The final is live` from the
+  final's kick-off for everyone. The champion view (D4) is unchanged in place.
+- **The draw:** `Your first match` names the opponent and kick-off, or after a
+  bye the round-2 stage and both possible opponents (`In the semi-finals you
+  meet the winner of Mila v Eline`, or one name when the neighbouring pairing
+  is a bye too). `MidweekFiveList` shows the member's five (outlined in brass)
+  and the opponents', from `midweek_entries_public`: mini card, name,
+  `archetype · tier · OVR`, `in goal`, and the auto-squad chip. No form, pick or
+  chance before 20:00. Then round 1's pairings with their kick-off.
+- **Later phases:** `Your night`, then the next round with its kick-off and the
+  round just played at full time. Out: the follow-up `MidweekPlaceholder` and a
+  card for the final beside `Your night`. The final: the full-time
+  `MidweekScoreboard` in team colours (a single-match block, DR2-1), the note
+  that the champion and coins follow its end, and the semi-finals.
+- **One deviation from HANDOFF's copy, until F6:** the final card on
+  `You’re out` says `Come back for the final` / `Its result shows on this page
+  at 21:00.` instead of `Everyone watches it live` / `Chance by chance, on this
+  page.` Today the final shows whole at kick-off, so the approved line would be
+  untrue for every evening before F6; F6 restores it. The draw's one-opponent
+  variant, the past-weeks skip, void and round-1 lines are derived the same way
+  from approved copy.
+- **`MidweekMatchRow`** (neutral, DR2-1) has three states: `Kick-off 20:15`,
+  `Full time` with scores and the report link, and a dashed bye that counts as
+  a win. `assembleBracket` now takes round 1 from `midweek_draw_public` and
+  names a pairing not yet decided as `Winner of Mila v Eline` in round 2 and
+  `Winner, Quarters 1` (or `Semis 1`, `R2 M1` in a bigger bracket) beyond,
+  per HANDOFF. Round headings say `Kick-off 20:00` in the list and the `lg`
+  tree (DR2-4). Without the draw view the bracket is built from the revealed
+  round-1 rows exactly as before (unit-tested).
+- **The bracket page** shows the clock and the fairness seal while the evening
+  runs, and `MidweekJumpLinks` (`Your match · R2 20:15`, then each round). The
+  jump links show below `lg` only: from `lg` the tree shows every round side by
+  side, so there is nowhere to jump. The legend under the clock went, as in
+  the mockups; every row's spoken sentence says what its marks mean. Round
+  headings are no longer sticky, because the clock now holds that place.
+- **`/midweek/past`** (`MidweekWeekList`): every complete, skipped or void
+  week, newest first, each opening its bracket: `{Wout H.} won it · {21}
+  entrants. You: {semi-finals}, +{100}.`, or why nothing was played. The
+  champion view links to it (`Past weeks →`) and gains the two marked
+  placeholders, ratings and share.
+- **KB-034:** Compete's section tabs with the `Live` chip on Midweek needed
+  about 308 px in a 320 px screen's 280 px content box, so every Compete page
+  scrolled sideways during the evening on the narrowest phones. Phone tabs now
+  use `px-2`, and below 360 px 13 px labels with almost no padding (262 px,
+  16 px to spare); the E2E checks the tabs stay inside the gutter.
+
+Consequences: from Wed 7 Oct members see the draw and both fives at 19:55, and
+the evening reads as a clock rather than a reveal schedule. The authenticated
+E2E turns the open fixture week into tonight's evening
+(`startFixtureEvening`), moves it forward in time for the later states
+(`advanceFixtureEvening`, which bypasses the Part L #25 guards with
+`session_replication_role = replica` in one transaction on the local stack),
+and puts the open week back after each test (`endFixtureEvening`).
+
+Tier: no migration.

@@ -72,8 +72,11 @@ export function SectionTabs({ label, tabs, variant = "segmented", activeKey }: S
 
   // `w-full … sm:w-fit` with `flex-1 … sm:flex-none` matters: without it two
   // tabs inside a max-w-6xl section stretch to ~576px each on desktop. On a
-  // phone the tabs keep `px-3`: at `px-5` the Collection's three (Album, Manage,
-  // Trading) needed ~303px, more than a 320px screen's 280px content box (KB-032).
+  // phone the tabs stay narrow: at `px-5` the Collection's three (Album, Manage,
+  // Trading) needed ~303px, more than a 320px screen's 280px content box
+  // (KB-032), and at `px-3` Compete's three with the `Live` chip on Midweek
+  // needed ~308px during the evening (KB-034). Below 360px they shrink to 13px
+  // labels with almost no padding, leaving about 12px to spare.
   const navClass =
     variant === "row"
       ? "flex flex-wrap gap-2"
@@ -88,7 +91,7 @@ export function SectionTabs({ label, tabs, variant = "segmented", activeKey }: S
             ? `inline-flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm font-bold ${
                 active ? "bg-brass/10 text-brass" : "text-ink-faint hover:text-ink"
               }`
-            : `flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg px-3 text-sm font-black sm:flex-none sm:px-6 ${
+            : `flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-lg px-2 text-sm font-black max-[359px]:gap-1 max-[359px]:px-0.5 max-[359px]:text-[13px] sm:flex-none sm:gap-2 sm:px-6 ${
                 active ? "bg-brass/15 text-brass" : "text-ink-dim hover:text-ink"
               }`;
         return (

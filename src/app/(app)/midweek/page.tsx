@@ -26,7 +26,7 @@ import {
   type MidweekTournament,
   type MySquadRow,
 } from "@/lib/midweek/entry";
-import { championLeads } from "@/lib/midweek/evening";
+import { championLeads, TIER_LABEL } from "@/lib/midweek/evening";
 import { loadMidweekEntryState } from "@/lib/midweek/load";
 import { runDueMidweek } from "@/lib/midweek/run-due";
 import { resolvePhotoUrls } from "@/lib/player-photos";
@@ -52,15 +52,6 @@ type CollectionRow = {
   phy: number;
   rarity_tier: LiveCardPlayer["rarityTier"];
   photo_path: string | null;
-};
-
-const TIER_LABEL: Record<LiveCardPlayer["rarityTier"], string> = {
-  common: "Common",
-  bronze: "Bronze",
-  silver: "Silver",
-  gold: "Gold",
-  holo: "Holo",
-  elite: "Elite",
 };
 
 /** Display names for Players the member no longer owns, for the notices. */

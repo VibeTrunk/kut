@@ -5,7 +5,6 @@ import {
   type BracketPair,
   type BracketRound,
 } from "@/lib/midweek/evening";
-import { Chip } from "./chip";
 import { MidweekMatchRow } from "./match-row";
 
 /** Pairs 2k and 2k + 1, whose winners meet next (§44.6). */
@@ -16,7 +15,7 @@ function groups(pairs: readonly BracketPair[]): BracketPair[][] {
 }
 
 const hasYou = (pair: BracketPair, you: string | null) =>
-  you !== null && pair.sides.some((side) => side.userId === you);
+  you !== null && pair.sides.some((side) => !side.placeholder && side.userId === you);
 
 const TREE_COLS: Record<number, string> = {
   1: "lg:grid-cols-1",
@@ -71,15 +70,15 @@ const ROW_SPAN: Record<number, string> = {
 };
 
 function RoundTime({ round }: { round: BracketRound }) {
-  const time = formatClock(round.revealAt);
-  return round.revealed ? <>Out at {time}</> : <b className="text-brass">Reveals {time}</b>;
+  return <>Kick-off {formatClock(round.kickoffAt)}</>;
 }
 
 /**
  * `MidweekBracket`. Below `lg`, the rounds as sections in order, each pair of
  * pairings joined by a bracket line naming the match its winners meet in.
- * From `lg`, the same data as a tree, one column per round. Your path is brass
- * in both.
+ * From `lg`, the same data as a tree, one column per round (DR2-4). Every
+ * round shows its kick-off, and every pairing its state: kick-off, full time,
+ * or a bye (ADR-113). Your path is brass in both; names are neutral.
  *
  * HANDOFF drew the tree `aria-hidden` beside a list that is `display: none`
  * from `lg`, which leaves a screen reader nothing at that width. So the tree
@@ -101,11 +100,11 @@ export function MidweekBracket({
         {rounds.map((round) => (
           <section
             aria-labelledby={`round-${round.round}-h`}
-            className="grid scroll-mt-16 gap-3 sm:scroll-mt-20"
+            className="grid scroll-mt-36 gap-3 sm:scroll-mt-40"
             id={`round-${round.round}`}
             key={round.round}
           >
-            <div className="sticky top-14 z-[2] flex items-baseline justify-between gap-3 bg-[linear-gradient(var(--color-board)_80%,transparent)] py-2 sm:top-16">
+            <div className="flex items-baseline justify-between gap-3">
               <h2 className="display text-[26px]" id={`round-${round.round}-h`}>
                 {round.name}
               </h2>
@@ -130,7 +129,6 @@ export function MidweekBracket({
                       <MidweekMatchRow
                         key={pair.pairing}
                         pair={pair}
-                        revealAt={round.revealAt}
                         weekStart={weekStart}
                         you={you}
                       />
@@ -194,13 +192,7 @@ export function MidweekBracket({
                       key={pair.pairing}
                     >
                       <div className="w-full">
-                        <MidweekMatchRow
-                          dense
-                          pair={pair}
-                          revealAt={round.revealAt}
-                          weekStart={weekStart}
-                          you={you}
-                        />
+                        <MidweekMatchRow dense pair={pair} weekStart={weekStart} you={you} />
                       </div>
                     </div>
                   ))}
@@ -211,29 +203,5 @@ export function MidweekBracket({
         ))}
       </div>
     </>
-  );
-}
-
-/** The bracket's legend: every mark in words. */
-export function MidweekBracketLegend() {
-  return (
-    <p className="flex flex-wrap gap-x-4 gap-y-2 text-xs text-ink-dim">
-      <span className="inline-flex items-center gap-1.5">
-        <b aria-hidden="true" className="text-moss">
-          ✓
-        </b>
-        went through
-      </span>
-      <span className="inline-flex items-center gap-1.5">
-        <Chip tone="you">You</Chip> your path
-      </span>
-      <span className="inline-flex items-center gap-1.5">
-        <Chip tone="auto">Auto</Chip> auto squad
-      </span>
-      <span className="inline-flex items-center gap-1.5">
-        <Chip>Bye</Chip> counts as a win
-      </span>
-      <span>(4) penalties</span>
-    </p>
   );
 }

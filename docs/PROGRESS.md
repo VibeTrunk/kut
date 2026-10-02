@@ -4513,6 +4513,16 @@ and Q9, which PR 7 (C1, ADR-110) waits for. Neither is decided here.
   2026-09-30 "claiming ends the rotation"); hiding past archetypes in the UI
   would not help, since every card face shows the week's.
 
+**Decided by the owner, 2026-10-03, after the report (merged as #168):**
+
+- **Q8: (a)**, no smoothing. Each rotating Player draws any of the seven
+  archetypes independently, as decided on 2026-09-30.
+- **The 58% row: (a)**. Accept the dip while C1 is live on its own; PR 8 (C2,
+  balance) is tuned with rotation on, and its sign-off restores
+  thought-through vs random to at least 58%.
+- **Q9: (a)**, accept. How-it-works says that unclaimed Players' archetypes
+  rotate weekly.
+
 Verification: `npm run verify:fast` (422 tests, including the new
 `midweek-rotation` unit tests: only eligible Players rotate, every archetype
 is drawn, deterministic, the deal and quota are exact, off changes nothing);

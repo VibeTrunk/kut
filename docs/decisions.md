@@ -5891,3 +5891,44 @@ Consequences: one tap from anywhere to Midweek, and the chrome says when a pick
 is due or the evening is live. Standings is one tap deeper than before (Home's
 Rank tile links straight to it). BUILD_SPEC §46 records the new bar, and also
 corrects its description of the avatar, which links to Settings.
+
+## ADR-108 — The release gate runs in the owner's session: no launcher, no session receipt
+
+Date: 2026-10-02
+
+Status: Accepted (reverses the agent-session part of ADR-071 and its
+addendum; ADR-106 stays reserved for MM 2.0 B3)
+
+Context: ADR-071 required production-sensitive work to start through
+`scripts/start-production-claude.ps1` or `start-production-codex.ps1`. The
+launcher wrote a receipt bound to the candidate SHA, session hooks recorded the
+model they could observe, a `PreModelSwitch` hook blocked a downgrade off Opus,
+and `request-production-gate.ps1` refused to run without a valid receipt. In
+practice every migration release needed a second, cold agent session, opened
+from a terminal at the candidate commit, only to run the gate, and the owner
+then had to return to the working session. The receipt certified which model
+ran the gate; it protected no data, and Claude Code cannot reliably report the
+model to `SessionStart` anyway, so much of it was "launcher-enforced" by the
+script it was meant to check.
+
+Decision: remove the agent-session requirement entirely.
+
+- `request-production-gate.ps1` no longer reads a receipt, and its manifest no
+  longer has an `agent_session` block.
+- Deleted: both launchers, `scripts/lib/KutSessionReceipt.psm1` and
+  `scripts/test-kut-session-receipt.ps1` (`npm run test:session-receipt`), the
+  Claude `SessionStart` and `PreModelSwitch` hooks, the Codex `SessionStart`
+  hook, their registrations and their unit tests.
+- The production invariant now says the gate runs in the owner's ordinary
+  agent session and does not certify the model; the release-gate invariant
+  drops "valid agent-session evidence".
+
+Everything that guards hosted data stays: CI for the exact SHA, a clean
+checkout at it, catalogue parity, a fresh cold-verified backup re-verified at
+gate time, finalizer readiness, authenticated mobile E2E, and the rule that
+every merge, push and hosted mutation needs its own explicit instruction from
+the owner.
+
+Consequences: the whole release, gate included, runs from one session. Gate
+evidence written before this change still carries `agent_session`; nothing
+reads it.

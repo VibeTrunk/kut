@@ -3,37 +3,15 @@
 This runbook defines the repository-side safety controls. It does not change
 GitHub branch protection, Vercel, Supabase, credentials, or any hosted state.
 
-## Production agent sessions
+## Agent sessions
 
-Start production-sensitive work through one of these launchers:
-
-```powershell
-powershell -NoProfile -File scripts/start-production-codex.ps1
-powershell -NoProfile -File scripts/start-production-claude.ps1
-```
-
-Codex requests `gpt-6-astra` with `model_reasoning_effort="high"`; pass
-`-Model gpt-5.6-sol` for the approved fallback. Claude requests the current
-`opus` alias. Each `SessionStart` hook writes what it observed into a local
-receipt under `.release-evidence/sessions/`.
-
-What each runtime can actually prove differs, and the tooling says so rather
-than implying a uniform guarantee:
-
-| Control | Codex | Claude Code |
-|---|---|---|
-| Model at session start | Hook-attested — the payload carries the slug | Attested *when* the payload carries `model`; the reference says it "doesn't always" include it |
-| Reasoning / thinking level | Launcher-enforced, not exposed to hooks | Launcher-enforced |
-| Aborting a disallowed session from the hook | Supported by the Codex runtime | **Not possible** — `continue: false` is not honoured at `SessionStart` and exit code 2 is non-blocking there |
-| Blocking a mid-session downgrade | — | Enforced: `PreModelSwitch` denies any non-Opus target with exit code 2 |
-
-Because `SessionStart` cannot stop a Claude session, the hook does not pretend
-to. It records one of three outcomes — `hook` (an Opus model was seen),
-`unavailable` (no model was reported), or `rejected` (a non-Opus model was
-seen) — and `request-production-gate.ps1` is what fails closed: `rejected` or
-a missing attestation is refused, and `unavailable` is accepted only as
-launcher-enforced and labelled that way in the gate manifest. A missing or
-unreadable receipt fails the gate outright.
+Production-sensitive work, the release gate included, runs in the owner's
+ordinary agent session. Until ADR-108 it had to start through a launcher script
+that wrote a session receipt, which the gate checked to certify the model. That
+check guarded no data and cost a separate session per release, so the launchers,
+receipts and session hooks were removed. What protects hosted data is unchanged:
+the checks below, and the owner's explicit instruction for every merge, push and
+hosted mutation.
 
 ## Test targets
 
@@ -124,8 +102,8 @@ to `main` is denied outright.
 
 ## Production gate and approval
 
-From a clean checkout at the exact candidate commit, inside a production agent
-session, with the local full Supabase stack running and its `API_URL`,
+From a clean checkout at the exact candidate commit, with the local full
+Supabase stack running and its `API_URL`,
 `ANON_KEY`, `SERVICE_ROLE_KEY`, and `DB_URL` exported:
 
 ```powershell
@@ -137,8 +115,7 @@ powershell -NoProfile -File scripts/release/request-production-gate.ps1 `
 The gate reads GitHub check evidence for that SHA, checks byte-identical central
 migration catalogue parity, requires a cold-verified backup less than 24 hours
 old, and freshly decrypts and hash-checks that ciphertext in another process.
-It also validates the production-session receipt and runs authenticated member
-+ admin mobile Playwright tests. Missing, skipped, cancelled, stale,
+It also runs authenticated member + admin mobile Playwright tests. Missing, skipped, cancelled, stale,
 duplicated, or mismatched evidence fails closed. Its manifest explicitly
 records that release approval is absent and deployment is unauthorized.
 

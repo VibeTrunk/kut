@@ -5472,8 +5472,8 @@ Hosted migration authority remains exclusively in `VibeTrunk/supabase`.
 
 A production gate additionally requires byte-identical catalogue parity, an
 authenticated member/admin mobile E2E pass, finalizer-readiness proof, a fresh
-separate-process cold-verified encrypted backup, and production-agent session
-evidence. The gate and the separate release approval both explicitly deny
+separate-process cold-verified encrypted backup. Since ADR-108 it no longer
+requires production-agent session evidence. The gate and the separate release approval both explicitly deny
 deployment authority. Deployment, hosted migration application, branch
 protection, and secret changes always require their own explicit instruction.
 

@@ -4233,3 +4233,11 @@ Verification: `npm run verify:fast` (40 files, 387 tests); authenticated E2E
 `Pick` badge before and after a save, the tabs and their `aria-current`, the
 redirects, no strip on Collection, and a 1440 px pass of the top bar with no
 horizontal overflow.
+
+## Release gate without the launcher (ADR-108) — 2026-10-02
+
+`chore/remove-production-launcher` (no migration). The production gate no
+longer needs a separate launcher session: the launchers, the session receipt
+and its module, and the Claude and Codex session hooks are gone, with their
+tests. Every data-guarding gate check is unchanged. The next migration release
+runs its gate in the working session.

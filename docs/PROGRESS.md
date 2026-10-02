@@ -4251,6 +4251,36 @@ and its module, and the Claude and Codex session hooks are gone, with their
 tests. Every data-guarding gate check is unchanged. The next migration release
 runs its gate in the working session.
 
+## MM 2.0 F2: the match page in team colours (ADR-111) — 2026-10-02
+
+`feat/midweek-match-page` (no migration). The match report now follows the
+approved DR2 mockup (`Match-Other-FullTime`), in its full-time state. Matches
+are still revealed whole, and the live states come with F6.
+
+- Every Player and manager name is in its side's colour: blue left, red
+  right, for every viewer. A Player both sides fielded shows only its name on
+  screen; screen readers still hear whose copy it is. The renderer now returns
+  each line as segments next to its unchanged text, so the page never
+  re-parses names.
+- The scoreboard has team-coloured names and digits. The timeline puts each
+  chance in its side's lane, and from 600 px of its own width it becomes two
+  lanes either side of the minute and score. Shoot-out rows show the manager,
+  the total, then the kicks.
+- The Why is a list: each card's Power in this match in a pill tinted by
+  strength, with a bar against an ordinary card, strongest first.
+  `Show every factor` opens Rating, Form, Pick, Fitness and Day for every
+  card, and each factor explains itself on hover, tap or focus, with figures
+  taken from the config. Owner counts leave the report.
+
+Verification: `npm run verify:fast`; authenticated E2E 22/22 at 320 px and
+412 px (Pixel 7), including the factors opened, an explanation shown on focus
+and closed with Escape, and a 1440 px pass with the Why beside the story, all
+with no horizontal overflow. A shoot-out and a Player fielded by both sides
+were checked visually at 320 px, 412 px and 1440 px from the design sample.
+Found on the way, not part of this change: from 640 px to about 880 px the
+desktop top bar is wider than the screen on every page. It is registered and
+fixed separately.
+
 ## KB-033: the top bar fits from 640 px — 2026-10-02
 
 `fix/top-bar-tablet` (no migration). From `sm` to about 880 px every page was

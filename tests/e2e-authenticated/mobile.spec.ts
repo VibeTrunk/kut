@@ -20,6 +20,35 @@ async function expectNoHorizontalOverflow(page: Page) {
   expect(scrollWidth, page.url()).toBeLessThanOrEqual(width + 1);
 }
 
+/**
+ * The match page's Why (ADR-111): every card in team colour with its Power,
+ * `Show every factor` opens five boxes per card, and a factor's explanation
+ * shows on focus and closes on Escape, all inside the screen.
+ */
+async function expectMatchPageWhy(page: Page) {
+  const why = page.getByRole("region", { name: /’s five$/ });
+  await expect(why).toHaveCount(2);
+  await expect(
+    why.first().getByText(/ power, (strong|above ordinary|below ordinary|weak)$/),
+  ).toHaveCount(5);
+  await page.getByRole("button", { name: "Show every factor" }).click();
+  await expect(page.getByRole("button", { name: "Hide the factors" })).toHaveAttribute(
+    "aria-expanded",
+    "true",
+  );
+  const form = page.getByRole("button", { name: "Form", exact: true }).first();
+  await expect(form).toHaveAccessibleDescription(/^The Player's form this week/);
+  await form.focus();
+  const tip = page
+    .getByRole("tooltip")
+    .filter({ hasText: /^The Player's form this week/ })
+    .first();
+  await expect(tip).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+  await page.keyboard.press("Escape");
+  await expect(tip).toBeHidden();
+}
+
 /** Compete's tab while it asks for a pick: the word, then what it means (ADR-107). */
 const PICK_NAME = /^Compete Pick\. Midweek Madness: you haven't picked your five$/;
 
@@ -240,6 +269,24 @@ test.describe("Midweek Madness results (PR 8)", () => {
     await expect(page.getByRole("heading", { name: "Why" })).toBeVisible();
     await expect(page.getByRole("img", { name: /^Before kick-off: / })).toBeVisible();
     await expectNoHorizontalOverflow(page);
+
+    await expectMatchPageWhy(page);
+  });
+
+  test("on a 1440 px desktop a match report puts the Why beside the story", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await signIn(page, "release_member");
+    await page.goto(`/midweek/${COMPLETED_WEEK}`);
+    await page
+      .getByRole("link", { name: /^Match report: / })
+      .first()
+      .click();
+    await expect(page).toHaveURL(new RegExp(`/midweek/${COMPLETED_WEEK}/match/[0-9a-f-]{36}$`));
+    const story = await page.getByRole("list", { name: "Key moments" }).boundingBox();
+    const why = await page.getByRole("heading", { name: "Why" }).boundingBox();
+    expect(why!.x).toBeGreaterThan(story!.x + story!.width);
+    await expectNoHorizontalOverflow(page);
+    await expectMatchPageWhy(page);
   });
 
   test("from lg, every bracket line meets the match it leads to (KB-031)", async ({ page }) => {

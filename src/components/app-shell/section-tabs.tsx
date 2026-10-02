@@ -61,7 +61,9 @@ export function SectionTabs({ label, tabs, variant = "segmented", activeKey }: S
   const resolved = activeKey ?? activeEntryKey(tabs, pathname);
 
   // `w-full … sm:w-fit` with `flex-1 … sm:flex-none` matters: without it two
-  // tabs inside a max-w-6xl section stretch to ~576px each on desktop.
+  // tabs inside a max-w-6xl section stretch to ~576px each on desktop. On a
+  // phone the tabs keep `px-3`: at `px-5` the Collection's three (Album, Manage,
+  // Trading) needed ~303px, more than a 320px screen's 280px content box (KB-032).
   const navClass =
     variant === "row"
       ? "flex flex-wrap gap-2"
@@ -76,7 +78,7 @@ export function SectionTabs({ label, tabs, variant = "segmented", activeKey }: S
             ? `inline-flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm font-bold ${
                 active ? "bg-brass/10 text-brass" : "text-ink-faint hover:text-ink"
               }`
-            : `flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg px-5 text-sm font-black sm:flex-none sm:px-6 ${
+            : `flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg px-3 text-sm font-black sm:flex-none sm:px-6 ${
                 active ? "bg-brass/15 text-brass" : "text-ink-dim hover:text-ink"
               }`;
         return (

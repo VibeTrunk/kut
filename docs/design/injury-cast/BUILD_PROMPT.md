@@ -2,7 +2,7 @@
 
 Paste the block below into a fresh Claude Code session opened in this
 repository. It is a UI-only change, with no migration and no hosted
-action, so it does not need the production launcher.
+action.
 
 ```text
 Build the injury-mode "plaster cast" card for KUT.

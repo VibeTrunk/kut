@@ -14,7 +14,6 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
-Import-Module (Join-Path $repoRoot 'scripts\lib\KutSessionReceipt.psm1') -Force
 $CandidateSha = $CandidateSha.ToLowerInvariant()
 $head = (& git -C $repoRoot rev-parse HEAD).Trim().ToLowerInvariant()
 if ($LASTEXITCODE -ne 0 -or $head -ne $CandidateSha) {
@@ -22,16 +21,6 @@ if ($LASTEXITCODE -ne 0 -or $head -ne $CandidateSha) {
 }
 $dirty = & git -C $repoRoot status --porcelain --untracked-files=all
 if ($LASTEXITCODE -ne 0 -or $dirty) { throw 'Production gate requires a completely clean candidate checkout.' }
-
-$receiptPath = $env:KUT_PRODUCTION_SESSION_RECEIPT
-if (-not $receiptPath -or -not (Test-Path -LiteralPath $receiptPath -PathType Leaf)) {
-  throw 'No production-session receipt. Start through scripts/start-production-codex.ps1 or start-production-claude.ps1.'
-}
-$receipt = Get-Content -LiteralPath $receiptPath -Raw | ConvertFrom-Json
-$modelEnforcement = Assert-KutSessionReceipt -Receipt $receipt -CandidateSha $CandidateSha
-if ($modelEnforcement -eq 'launcher-enforced') {
-  Write-Warning 'The runtime did not report a model to the session hook; the model requirement is launcher-enforced for this candidate.'
-}
 
 $checksJson = & gh api "repos/VibeTrunk/kut/commits/$CandidateSha/check-runs?per_page=100"
 if ($LASTEXITCODE -ne 0) { throw 'Could not read GitHub check evidence.' }
@@ -157,17 +146,6 @@ $manifest = [ordered]@{
     result = 'passed-end-to-end-in-database-job'
     test = 'tests/integration/finalizer-readiness.test.ts'
     github_check_id = ($checkEvidence | Where-Object { $_.name -eq 'database' } | Select-Object -First 1).id
-  }
-  agent_session = [ordered]@{
-    provider = $receipt.provider
-    requested_model = $receipt.requested_model
-    observed_model = (Get-KutReceiptField -Record $receipt -Name 'observed_model')
-    model_attestation = (Get-KutReceiptField -Record $receipt -Name 'model_attestation')
-    model_enforcement = $modelEnforcement
-    reasoning_effort = (Get-KutReceiptField -Record $receipt -Name 'reasoning_effort')
-    session_id = (Get-KutReceiptField -Record $receipt -Name 'session_id')
-    hook_verified_at = $receipt.hook_verified_at
-    receipt_path = $receiptPath
   }
 }
 $manifestPending = "$manifestPath.pending"

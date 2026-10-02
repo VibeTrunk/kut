@@ -78,8 +78,8 @@ protection is a separate external action. Those bare job names are the contexts
 GitHub actually reports — `verify / merge-gate` would never report and would
 block every PR.
 
-A release candidate is one exact commit SHA. From a clean checkout and a
-hook-verified production agent session, run:
+A release candidate is one exact commit SHA. From a clean checkout at that
+commit, run:
 
 ```powershell
 powershell -NoProfile -File scripts/release/request-production-gate.ps1 `

@@ -80,33 +80,6 @@
   },
 
   "hooks": {
-    "SessionStart": [
-      {
-        "matcher": "startup|resume|clear|compact",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node",
-            "args": [".claude/hooks/require-production-session.cjs"],
-            "timeout": 10,
-            "statusMessage": "Production session check"
-          }
-        ]
-      }
-    ],
-    "PreModelSwitch": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node",
-            "args": [".claude/hooks/guard-production-model-switch.cjs"],
-            "timeout": 10,
-            "statusMessage": "Production model guard"
-          }
-        ]
-      }
-    ],
     "PreToolUse": [
       {
         "matcher": "Bash|PowerShell",

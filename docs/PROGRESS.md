@@ -4242,3 +4242,11 @@ supabase #66, backup `20261002-110621`, gate passed for `2f3a94a` (#152 and
 (Wed 7 Oct 19:55) members can read the draw and every entered five before
 round 1, and the Compete tab's `Live` badge reads `evening_live`. F3 and F5,
 which waited for this, can now ship.
+
+## Release gate without the launcher (ADR-108) — 2026-10-02
+
+`chore/remove-production-launcher` (no migration). The production gate no
+longer needs a separate launcher session: the launchers, the session receipt
+and its module, and the Claude and Codex session hooks are gone, with their
+tests. Every data-guarding gate check is unchanged. The next migration release
+runs its gate in the working session.

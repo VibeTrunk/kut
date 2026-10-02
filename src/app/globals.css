@@ -994,6 +994,23 @@ body {
 }
 
 /* ---- keyframes ----------------------------------------------------------- */
+/* Midweek live (ADR-115): the newest chance slides in, unless reduced motion. */
+@keyframes mw-chance-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .mw-chance-in {
+    animation: mw-chance-in 0.45s ease-out both;
+  }
+}
+
 @keyframes card-sweep {
   0% {
     opacity: 0;

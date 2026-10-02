@@ -6278,3 +6278,79 @@ expects as many messages as entrants.
 
 Tier: data-changing (docs/OPERATIONS.md): it changes what the worker writes
 when it pays a week. Fresh cold-verified backup before the push.
+
+## ADR-115 — The evening live: your match and the final chance by chance, every other match at full time
+
+Date: 2026-10-02
+
+Status: Accepted (amends ADR-111's match page, ADR-113's evening and bracket,
+and ADR-114's Home card; MM 2.0 frontend F6, the page half of live matches,
+built to the DR2-approved `Evening-YourMatch`, `Evening-FinalLive`,
+`Match-Yours-Live`, `Match-Other-InPlay`, `Match-Final-Live` and
+`Bracket-Evening` mockups. ADR-106 is the data half, PR 4's migration)
+
+Context: since ADR-104 every event's moment and every match's end are stored at
+the lock, and the evening's pages (ADR-113) show kick-off and full-time states.
+HANDOFF ("Midweek: the evening", "Matches") asks for a member's own match and
+the final to unfold chance by chance, every other match to show only `In play
+· result at full time`, and nothing anywhere that gives a result away before
+its full time. The plan asked whether these pages must wait for ADR-106's views
+or can work against today's.
+
+Decision (no migration):
+
+- **Rendered on the server from the stored match.** The report renderer picks
+  a match's timeline moments and phrases from the whole match, so text rendered
+  from the events seen so far would change as the match goes on. A match in
+  play is therefore read whole through the service role on the server
+  (`loadLiveMatch`), rendered once, and only what is due by now leaves the
+  server (`liveView`): the moments up to now, each at its stored moment
+  (kick-off + minute × 280 s / 90), the kicks taken (one every 5 seconds after
+  full time), the score they add up to, and the Why with no goals or assists.
+  Never the headline, facts or later moments. `LiveMatch` carries only those
+  pieces, so a page cannot pass more by mistake.
+- **In play is read from each match's stored end** (`loadMatchEnds`,
+  `maskInPlay`): every visible match whose end is still ahead has its goals,
+  penalties and winner withheld before any page logic sees it. ADR-106's view
+  does the same from its push; a row the view already withholds stays in play.
+  So the pages read the same before and after that push, and the order is F6
+  first, then PR 4 (ADR-106). A failed read of the ends shows matches whole, as
+  before.
+- **Rows** (`MidweekMatchRow`): `Live` with a link to watch it for the
+  member's own match and the final, `In play · result at full time` with no
+  score for every other match, in the list and the `lg` tree. `Your night`
+  gains `Playing Eline now.` with what a win pays. The jump link reads
+  `Your match · Live`. The clock needed no change: a round is `Live` until
+  every pairing shows a result.
+- **The evening page:** while your match plays, `Your match` leads with the
+  live scoreboard (`Live · 64′`, the running match clock, Q10) and the latest
+  chance, then your night, then `This round`. From the final's kick-off the
+  final for everyone, with the shoot-out kick by kick
+  (`MidweekShootoutLive`). The out card's copy is restored: `Everyone
+  watches it live` / `Chance by chance, on this page.`
+- **The match page:** your match or the final live, `How it went` with every
+  chance so far, the newest outlined in brass, and the Why with `Goals and
+  assists are added at full time.` Any other match in play: `In play · result
+  at full time`, why it isn't shown chance by chance, both line-ups and the
+  Why's pre-match side. The line-ups are named "X's line-up" there, because the
+  Why already names each side's five.
+- **Polling** (`MidweekLivePoller`): the evening, the bracket and a match page
+  in play ask the server for themselves every 20 seconds while a match is in
+  play, and otherwise once at the next kick-off, so a round never starts
+  unseen; a hidden tab waits until it is shown. `Updated 20:18:20` sits under
+  the clock, or at a match page's foot with "checks for new chances every 20
+  seconds". No Realtime. The newest chance slides in, unless reduced motion.
+- **Home's card in play** (Q11, static at page load): the score so far, the
+  minute, and the latest chance (or the last kick) as one line, with `Watch
+  your match`. On the card the board shows just `45′`, since its kicker
+  already carries `Live`, and leaves the auto-squad chip to the match page:
+  two long names and their chips do not fit a 320 px card.
+
+Consequences: on Wednesday a member watches their own match and the final
+unfold, and no page shows a result before its full time, before and after
+ADR-106's push. The authenticated E2E checks a match one minute in (your own
+live, every other in play, no report link, no final score) and the final one
+minute in, at 320 and 412 px and the final page at 1440 px. It passed against
+both the current views and ADR-106's.
+
+Tier: no migration.

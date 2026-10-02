@@ -14,9 +14,11 @@ import {
   type MyRewardRow,
   type MySquadRow,
 } from "./entry";
-import { championLeads, homeEvening, sideScore, type HomeEvening } from "./evening";
+import { championLeads, homeEvening, settledWinner, sideScore, type HomeEvening } from "./evening";
 import { reportInputFromRows, renderStoredReport } from "./report/from-db";
 import type { Segment } from "./report/types";
+import type { LiveScore } from "./live";
+import { loadLiveMatch } from "./live-load";
 import { loadWeekResults } from "./results";
 import type { EntryCardRow, EventRow, MatchRow } from "./rows";
 
@@ -71,15 +73,20 @@ export async function loadMidweekEntryState(
   return { current, squad: (squadResponse.data ?? []) as MySquadRow[] };
 }
 
-/** A match on Home's evening card (Home-Now-Live): a mini scoreboard and its headline. */
+/**
+ * A match on Home's evening card (Home-Now-Live): a mini scoreboard and one
+ * line, the report's headline at full time, or while it plays the latest
+ * chance ("39′ Gijs H. finishes…"), as it stood at page load (Q11).
+ */
 export type HomeMatch = {
   managers: readonly [string, string];
   goals: readonly [number, number];
   penalties: readonly [number, number] | null;
-  winnerSide: 0 | 1;
+  winnerSide: 0 | 1 | null;
   youSide: 0 | 1 | null;
   auto: readonly [boolean, boolean];
-  headline: Segment[];
+  live: LiveScore | null;
+  line: Segment[];
 };
 
 /** A saved card as the entry points draw it: a `MidweekMiniCard`. */
@@ -176,7 +183,7 @@ async function liveEntryPoint(
 
   let results: Awaited<ReturnType<typeof loadWeekResults>>;
   try {
-    results = await loadWeekResults(supabase, current.tournament_id as string);
+    results = await loadWeekResults(supabase, current.tournament_id as string, now);
   } catch (error) {
     console.error("home midweek evening read failed", error);
     return null;
@@ -196,7 +203,7 @@ async function liveEntryPoint(
     kind: "live",
     ...rest,
     match: focus
-      ? await homeMatch(supabase, current, rounds, focus, results.entries, userId)
+      ? await homeMatch(supabase, current, rounds, focus, results.entries, userId, now)
       : null,
   };
 }
@@ -209,6 +216,7 @@ async function homeMatch(
   match: MatchRow,
   entries: EntryCardRow[],
   userId: string,
+  now: Date,
 ): Promise<HomeMatch | null> {
   const { data, error } = await supabase
     .schema("kut")
@@ -217,6 +225,38 @@ async function homeMatch(
     .eq("match_id", match.match_id)
     .order("seq");
   if (error) return null;
+  const autoOf = (id: string | null) => entries.some((row) => row.user_id === id && row.auto);
+  const youSide = match.side_0_user_id === userId ? 0 : match.side_1_user_id === userId ? 1 : null;
+  if (match.in_play) {
+    const inPlay = await loadLiveMatch(supabase, {
+      tournament: { tournament_id: match.tournament_id, seed_hash: current.seed_hash, rounds },
+      scheduleVersion: scheduleVersionOf(current),
+      match,
+      now,
+    });
+    if (!inPlay) return null;
+    const { live } = inPlay;
+    const latest = live.timeline.at(-1);
+    const lastKick = live.kicks.at(-1);
+    return {
+      managers: [match.side_0_name, match.side_1_name ?? ""],
+      goals: live.score,
+      penalties: null,
+      winnerSide: null,
+      youSide,
+      auto: [autoOf(match.side_0_user_id), autoOf(match.side_1_user_id)],
+      live: { minute: live.minute, penalties: live.penalties },
+      line: lastKick
+        ? [
+            { text: "Last kick: " },
+            { text: lastKick.kicker, side: lastKick.side },
+            { text: ` ${lastKick.outcome === "goal" ? "scores" : "misses"}.` },
+          ]
+        : latest
+          ? [{ text: `${latest.minute}′ ` }, ...latest.parts]
+          : [{ text: "Kicked off. No chance yet." }],
+    };
+  }
   const input = reportInputFromRows({
     seedHash: current.seed_hash ?? "",
     rounds,
@@ -232,10 +272,11 @@ async function homeMatch(
     managers: [input.sides[0].manager, input.sides[1].manager],
     goals: [a.goals, b.goals],
     penalties: a.penalties !== null && b.penalties !== null ? [a.penalties, b.penalties] : null,
-    winnerSide: match.winner_side,
-    youSide: match.side_0_user_id === userId ? 0 : match.side_1_user_id === userId ? 1 : null,
+    winnerSide: settledWinner(match),
+    youSide,
     auto: [input.sides[0].auto, input.sides[1].auto],
-    headline: renderStoredReport(input).headlineParts,
+    live: null,
+    line: renderStoredReport(input).headlineParts,
   };
 }
 

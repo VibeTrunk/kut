@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { formatClock } from "@/lib/midweek/entry";
 import { pairSentence, sideScore, type BracketPair, type BracketSlot } from "@/lib/midweek/evening";
-import { Chip } from "./chip";
+import { Chip, LiveMarker } from "./chip";
 
 function Side({
   slot,
@@ -48,12 +48,13 @@ function Side({
 
 /**
  * `MidweekMatchRow` (HANDOFF "Bracket"), neutral, never in team colours
- * (DR2-1). Three states: `Kick-off 20:15` before a pairing starts, naming who
- * meet or where they come from (`Winner of Mila v Eline`); `Full time` with
- * both scores, the winner ticked and a link to the report; a bye as one dashed
- * row that counts as a win. Matches are revealed whole at kick-off until
- * ADR-106, so there is no in-play state yet (F6). Each row is a group with one
- * full sentence as its name; `dense` is the desktop tree's box.
+ * (DR2-1). Four states: `Kick-off 20:15` before a pairing starts, naming who
+ * meet or where they come from (`Winner of Mila v Eline`); in play, as `Live`
+ * with a link to watch it for the member's own match and the final, and as
+ * `In play · result at full time` for every other match, with no score
+ * (ADR-115); `Full time` with both scores, the winner ticked and a link to the
+ * report; a bye as one dashed row that counts as a win. Each row is a group
+ * with one full sentence as its name; `dense` is the desktop tree's box.
  */
 export function MidweekMatchRow({
   pair,
@@ -102,6 +103,34 @@ export function MidweekMatchRow({
           ›
         </b>
       </Link>
+    );
+  } else if (pair.kind === "inplay" && (isYou || pair.final)) {
+    state = (
+      <Link
+        aria-label={`Watch it: ${sentence}`}
+        className={`flex items-center gap-2 border-l border-line/40 hover:bg-brass/10 ${dense ? "px-1.5" : "px-3"}`}
+        href={`/midweek/${weekStart}/match/${pair.match.match_id}`}
+      >
+        <LiveMarker />
+        {!dense && (
+          <b aria-hidden="true" className="text-lg leading-none font-black text-brass">
+            ›
+          </b>
+        )}
+      </Link>
+    );
+  } else if (pair.kind === "inplay") {
+    state = (
+      <span
+        className={`grid content-center justify-items-end gap-1 text-[11px] font-bold text-ink-faint ${dense ? "pr-1.5" : "pr-3"}`}
+      >
+        <span className="rounded-full border border-dashed border-steel-line px-2 py-px text-[10px] font-black tracking-[0.1em] whitespace-nowrap text-steel uppercase">
+          In play
+        </span>
+        {!dense && (
+          <span className="whitespace-nowrap max-[359px]:hidden">result at full time</span>
+        )}
+      </span>
     );
   } else if (pair.kind === "upcoming") {
     const time = formatClock(pair.kickoffAt);

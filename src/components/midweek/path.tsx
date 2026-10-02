@@ -9,8 +9,9 @@ const ROW =
 
 /**
  * `MidweekPath`, "Your night": a row per round you played (a bye, a win with
- * its report and coins, the round you went out in), then a dashed "Next" row
- * with the time and what a win would pay.
+ * its report and coins, the round you went out in), then a dashed row for the
+ * match in play ("Playing Eline now.", ADR-115) or the next one, with what a
+ * win would pay.
  */
 export function MidweekPath({
   rows,
@@ -27,7 +28,7 @@ export function MidweekPath({
     <ol aria-label="Your night" className="grid gap-2">
       {rows.map((row) => {
         const tone =
-          row.kind === "next"
+          row.kind === "next" || row.kind === "live"
             ? "border-dashed border-brass-line bg-brass-bg/25"
             : row.kind === "out"
               ? "border-brick-line bg-brick-bg/35"
@@ -71,6 +72,7 @@ export function MidweekPath({
                   {report}
                 </>
               )}
+              {row.kind === "live" && <b className="text-ink">Playing {row.opponent} now.</b>}
               {row.kind === "next" && (
                 <>
                   <b className="text-ink">Next{row.opponent ? `: ${row.opponent}` : ""}.</b>{" "}
@@ -82,7 +84,7 @@ export function MidweekPath({
             <p className="text-right text-sm font-black text-brass tabular-nums">
               {row.kind === "out" ? (
                 <Chip tone="out">Out</Chip>
-              ) : row.kind === "next" ? (
+              ) : row.kind === "next" || row.kind === "live" ? (
                 <>
                   <small className="block text-[10px] font-extrabold text-ink-faint">win</small>+
                   {row.coins}

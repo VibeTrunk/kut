@@ -1,6 +1,12 @@
 import type { Side } from "@/game/midweek/match";
-import type { MomentKind, ShootoutReport, TimelineItem } from "@/lib/midweek/report/types";
-import { Chip } from "./chip";
+import type { LiveScore } from "@/lib/midweek/live";
+import type {
+  MomentKind,
+  ShootoutKick,
+  ShootoutReport,
+  TimelineItem,
+} from "@/lib/midweek/report/types";
+import { Chip, LiveMarker } from "./chip";
 import { PlayerName, ReportText, TEAM_TEXT } from "./player-name";
 
 /**
@@ -14,9 +20,11 @@ import { PlayerName, ReportText, TEAM_TEXT } from "./player-name";
 export type Managers = readonly [string, string];
 
 /**
- * `MidweekScoreboard` at full time: always side 0 on the left and side 1 on
- * the right, from the per-side goals, never the renderer's winner-first
- * `score`; names and digits in team colour, no chance counter (DR1-5).
+ * `MidweekScoreboard`: always side 0 on the left and side 1 on the right, from
+ * the per-side goals, never the renderer's winner-first `score`; names and
+ * digits in team colour, no chance counter (DR1-5). At full time Through and
+ * Out chips; live (ADR-115) the score so far and `Live · 64′` or `Live · pens
+ * 3–3`, with no chips until it ends.
  */
 export function MidweekScoreboard({
   managers,
@@ -26,21 +34,26 @@ export function MidweekScoreboard({
   youSide,
   auto,
   compact = false,
+  live = null,
 }: {
   managers: Managers;
   goals: readonly [number, number];
   penalties: readonly [number, number] | null;
-  winnerSide: Side;
+  /** Ignored while `live`. */
+  winnerSide: Side | null;
   youSide: Side | null;
   auto: readonly [boolean, boolean];
-  /** Home's card (Home-Now-Live): smaller type, no panel of its own. */
+  /** Home's card (Home-Now-Live): smaller type, no panel, no auto-squad chip. */
   compact?: boolean;
+  live?: LiveScore | null;
 }) {
-  const label =
-    `Final score: ${managers[0]} ${goals[0]}, ${managers[1]} ${goals[1]}` +
-    (penalties
-      ? `; ${managers[winnerSide]} won ${Math.max(...penalties)}–${Math.min(...penalties)} on penalties.`
-      : ".");
+  const label = live
+    ? `Live, ${live.penalties ? "penalties" : `${ordinal(live.minute)} minute`}: ${managers[0]} ${goals[0]}, ${managers[1]} ${goals[1]}` +
+      (live.penalties ? `, penalties ${live.penalties[0]}–${live.penalties[1]}.` : ".")
+    : `Final score: ${managers[0]} ${goals[0]}, ${managers[1]} ${goals[1]}` +
+      (penalties && winnerSide !== null
+        ? `; ${managers[winnerSide]} won ${Math.max(...penalties)}–${Math.min(...penalties)} on penalties.`
+        : ".");
   const side = (s: Side) => (
     <div className={`grid min-w-0 gap-1.5 ${s === 1 ? "justify-items-end text-right" : ""}`}>
       <p
@@ -49,9 +62,12 @@ export function MidweekScoreboard({
         <PlayerName side={s}>{managers[s]}</PlayerName>
       </p>
       <p className={`flex flex-wrap gap-1 ${s === 1 ? "justify-end" : ""}`}>
-        {s === winnerSide ? <Chip tone="won">✓ Through</Chip> : <Chip tone="out">Out</Chip>}
+        {!live &&
+          (s === winnerSide ? <Chip tone="won">✓ Through</Chip> : <Chip tone="out">Out</Chip>)}
         {youSide === s && <Chip tone="you">You</Chip>}
-        {auto[s] && <Chip tone="auto">Auto squad</Chip>}
+        {/* Home's card leaves the auto squad to the match page: two long names
+            and their chips would not fit a 320 px card. */}
+        {auto[s] && !compact && <Chip tone="auto">Auto squad</Chip>}
       </p>
     </div>
   );
@@ -73,9 +89,21 @@ export function MidweekScoreboard({
           <span className="text-team-blue">{goals[0]}</span>–
           <span className="text-team-red">{goals[1]}</span>
         </p>
-        <p className="text-[11.5px] font-bold whitespace-nowrap text-ink-faint tabular-nums">
-          {penalties ? `${penalties[0]}–${penalties[1]} on pens` : "full time"}
-        </p>
+        {live && compact ? (
+          // The card's kicker already carries the Live marker.
+          <p className="text-[11.5px] font-bold whitespace-nowrap text-live tabular-nums">
+            {live.penalties ? `pens ${live.penalties[0]}–${live.penalties[1]}` : `${live.minute}′`}
+          </p>
+        ) : live ? (
+          <LiveMarker>
+            Live &middot;{" "}
+            {live.penalties ? `pens ${live.penalties[0]}–${live.penalties[1]}` : `${live.minute}′`}
+          </LiveMarker>
+        ) : (
+          <p className="text-[11.5px] font-bold whitespace-nowrap text-ink-faint tabular-nums">
+            {penalties ? `${penalties[0]}–${penalties[1]} on pens` : "full time"}
+          </p>
+        )}
       </div>
       {side(1)}
     </div>
@@ -123,21 +151,29 @@ function Score({ item }: { item: TimelineItem }) {
  * with a blue rail on the left and room on the right, a side-1 chance
  * mirrored. From 600 px of its own width (a container query, not the page):
  * two lanes either side of a minute-and-score spine. Each item says whose
- * chance it is in words for screen readers.
+ * chance it is in words for screen readers. On a live page (ADR-115) the
+ * newest moment has a brass outline and slides in, unless the member asked for
+ * reduced motion.
  */
 export function MidweekLaneTimeline({
   timeline,
   managers,
+  live = false,
 }: {
   timeline: readonly TimelineItem[];
   managers: Managers;
+  live?: boolean;
 }) {
+  if (live && timeline.length === 0) {
+    return <p className="text-sm text-ink-faint">No chance yet.</p>;
+  }
   return (
     <div className="@container">
       <ol aria-label="Key moments" className="grid gap-2 @min-[600px]:gap-1.5">
         {timeline.map((item, index) => {
           const goal = item.kind === "goal";
           const left = item.side === 0;
+          const newest = live && index === timeline.length - 1;
           const whose = goal
             ? `Goal for ${managers[item.side]}`
             : `${managers[item.side]}’s chance`;
@@ -147,7 +183,7 @@ export function MidweekLaneTimeline({
               key={index}
             >
               <div
-                className={`grid gap-1 rounded-xl px-3 py-2.5 text-sm leading-normal @min-[600px]:row-start-1 @min-[600px]:m-0 ${
+                className={`grid gap-1 rounded-xl px-3 py-2.5 text-sm leading-normal @min-[600px]:row-start-1 @min-[600px]:m-0 ${newest ? "mw-chance-in outline-1 outline-brass" : ""} ${
                   left
                     ? "mr-8 border-l-[3px] border-team-blue bg-team-blue-bg/55 @min-[600px]:col-start-1"
                     : "ml-8 border-r-[3px] border-team-red bg-team-red-bg/55 @min-[600px]:col-start-3"
@@ -290,6 +326,83 @@ export function MidweekShootout({
           );
         })}
       </ol>
+    </section>
+  );
+}
+
+/**
+ * `MidweekShootoutLive` (HANDOFF "Shoot-out, live"): per side the manager, the
+ * running total (DR2-5), then the kicks so far, filled in team colour (✓) or
+ * ringed (✕), with dashed rings for the first five still to come. Grows in
+ * place; a long sudden death wraps. The last kick is read out politely.
+ */
+export function MidweekShootoutLive({
+  kicks,
+  penalties,
+  managers,
+}: {
+  kicks: readonly ShootoutKick[];
+  penalties: readonly [number, number];
+  managers: Managers;
+}) {
+  const last = kicks.at(-1) ?? null;
+  return (
+    <section aria-labelledby="shootout-h" className="grid gap-2">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2">
+        <h2 className="display text-3xl" id="shootout-h">
+          Penalties
+        </h2>
+        <p className="text-[13px] text-ink-faint">
+          {kicks.length} {kicks.length === 1 ? "kick" : "kicks"} so far &middot; one every 5 seconds
+        </p>
+      </div>
+      <div className="grid gap-2">
+        {([0, 1] as const).map((s) => {
+          const taken = kicks.filter((kick) => kick.side === s);
+          return (
+            <div
+              aria-label={`${managers[s]}: ${penalties[s]} scored from ${taken.length}`}
+              className="grid grid-cols-[minmax(0,6.5rem)_1.75rem_minmax(0,1fr)] items-center gap-2.5"
+              key={s}
+              role="group"
+            >
+              <span aria-hidden="true" className="truncate text-sm">
+                <PlayerName side={s}>{managers[s]}</PlayerName>
+              </span>
+              <span
+                aria-hidden="true"
+                className={`text-center text-xl font-black tabular-nums ${TEAM_TEXT[s]}`}
+              >
+                {penalties[s]}
+              </span>
+              <span aria-hidden="true" className="flex flex-wrap gap-1">
+                {taken.map((kick, index) => (
+                  <span
+                    className={`${KICK} ${kick.outcome === "goal" ? SCORED[s] : MISSED}`}
+                    key={index}
+                  >
+                    {kick.outcome === "goal" ? "✓" : "✕"}
+                  </span>
+                ))}
+                {Array.from({ length: Math.max(0, 5 - taken.length) }, (_, index) => (
+                  <span
+                    className={`${KICK} border-[1.5px] border-dashed border-line`}
+                    key={`to-come-${index}`}
+                  />
+                ))}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+      <p aria-live="polite" className="text-sm text-ink">
+        {last && (
+          <>
+            Last kick: <PlayerName side={last.side}>{last.kicker}</PlayerName>{" "}
+            {last.outcome === "goal" ? "scores" : "misses"}.
+          </>
+        )}
+      </p>
     </section>
   );
 }

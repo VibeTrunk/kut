@@ -4391,3 +4391,26 @@ Verification: every pgTAP suite through `docker exec` (the payouts suite
 updated: one message per entrant, the wording per finish, the auto-squad line,
 none for an opted-out or disabled member, still idempotent);
 `midweek-race` and `midweek-switch` integration tests; `npm run verify:fast`.
+
+## MM 2.0 F6: the evening live (ADR-115) — 2026-10-02
+
+`feat/midweek-live` (no migration). The evening follows the DR2-approved
+live mockups.
+
+- Your own match and the final unfold chance by chance: the score so far,
+  `Live · 64′`, every chance as it comes, and the shoot-out kick by kick.
+- Every other match reads `In play · result at full time` until it ends, in
+  the evening, the bracket and its own page, which shows both line-ups and the
+  chances before kick-off.
+- The evening, the bracket and a live match page update every 20 seconds while
+  a match is in play, and at the next kick-off otherwise, with `Updated …`.
+- Your night says `Playing Eline now.`; the out card says the final is
+  watched live again; Home's card shows your match as it stood at page load.
+- The pages work the same before and after ADR-106's push, which follows this.
+
+Verification: `npm run verify:fast`; authenticated E2E at 320 px and 412 px
+(Pixel 7) plus 1440 px, run twice: against today's views and with ADR-106's
+applied. New tests cover a match one minute in and the final one minute in.
+The live evening, a live and an in-play match page, the final, the bracket and
+Home were checked visually at 320, 412 and 1440 px against the mockups. Found
+and fixed on the way: Home's card overlapped at 320 px with long names.

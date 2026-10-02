@@ -24,18 +24,25 @@ export type MatchRow = {
   /** Set only when a draw went to penalties. */
   side_0_penalties: number | null;
   side_1_penalties: number | null;
-  winner_side: 0 | 1;
-  winner_user_id: string;
+  /**
+   * Null while the match is in play: from ADR-106 the view withholds the result
+   * until the match ends, and `maskInPlay` does the same before it (ADR-115).
+   * Goals and penalties are null then too.
+   */
+  winner_side: 0 | 1 | null;
+  winner_user_id: string | null;
   /** Side 0's pre-match win chance. */
   win_chance_ppm: number | null;
   side_0_day_rolls_ppm: number[] | null;
   side_1_day_rolls_ppm: number[] | null;
   reveal_at: string;
   /**
-   * When the match ends (ADR-104): null on weeks simulated before it. Absent
-   * once ADR-106 hides it until it has passed.
+   * When the match ends: absent before ADR-106, which appends it, and null
+   * until it has passed (a late end gives a shoot-out away).
    */
   ends_at?: string | null;
+  /** Kicked off and not ended (ADR-106's view, or `maskInPlay` before it). */
+  in_play?: boolean;
 };
 
 /**

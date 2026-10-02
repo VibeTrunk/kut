@@ -2102,6 +2102,16 @@ Everything is gated by time in definer projections on
   decided reads `Winner of A v B` in round 2 and `Winner, Quarters 1` beyond.
   `/midweek/past` lists every complete, skipped or void week, newest first.
 
+- **Live (ADR-115, with ADR-106):** a member watches their own match and the
+  final chance by chance: each chance at its stored moment, the score so far,
+  `Live · 64′` (the running match clock), then the shoot-out kick by kick.
+  Every other match reads `In play · result at full time` until it ends. No
+  page shows a result, a headline, facts, goals or assists before full time;
+  the page renders the whole stored match on the server and sends only what is
+  due. The evening, the bracket and a match page poll every 20 seconds while a
+  match is in play, and once at the next kick-off otherwise; Home's card shows
+  the match as it stood at page load and does not poll.
+
 ### 44.11 Running without admin
 
 KUT has no scheduler; like ADR-061, one idempotent, service-role-only worker

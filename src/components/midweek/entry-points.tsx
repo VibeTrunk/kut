@@ -110,12 +110,13 @@ export function MidweekLiveCard({
             compact
             goals={match.goals}
             managers={match.managers}
+            live={match.live}
             penalties={match.penalties}
             winnerSide={match.winnerSide}
             youSide={match.youSide}
           />
           <span className="text-sm leading-relaxed text-ink-dim">
-            <ReportText parts={match.headline} />
+            <ReportText parts={match.line} />
           </span>
         </>
       ) : (

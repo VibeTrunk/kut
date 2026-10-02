@@ -12,13 +12,21 @@ import {
 import { MidweekWhyList } from "@/components/midweek/why-list";
 import { MIDWEEK } from "@/game/midweek/config";
 import { requireUser } from "@/lib/auth/user";
-import { formatClock, formatDayDate, skipOrVoidNotice } from "@/lib/midweek/entry";
-import { capitalise, isWeekStart, matchName } from "@/lib/midweek/evening";
+import {
+  formatClock,
+  formatDayDate,
+  scheduleVersionOf,
+  skipOrVoidNotice,
+} from "@/lib/midweek/entry";
+import { capitalise, fiveOf, isWeekStart, matchName, roundName } from "@/lib/midweek/evening";
+import { maskInPlay } from "@/lib/midweek/live";
+import { loadLiveMatch, loadMatchEnds } from "@/lib/midweek/live-load";
 import { reportInputFromRows, renderStoredReport } from "@/lib/midweek/report/from-db";
 import { loadTournamentByWeek } from "@/lib/midweek/results";
 import type { EntryCardRow, EventRow, MatchRow } from "@/lib/midweek/rows";
 import { runDueMidweek } from "@/lib/midweek/run-due";
 import { createClient } from "@/lib/supabase/server";
+import { InPlayMatch } from "./in-play";
 import { isUuid } from "@/lib/uuid";
 
 export const metadata = { title: "Midweek Madness match report" };
@@ -28,8 +36,8 @@ export const metadata = { title: "Midweek Madness match report" };
  * (design/ux-review `Match-Other-FullTime`, ADR-111), rendered on the server
  * from the stored match, its events and both sides' lock-time entries, every
  * name in its side's colour. A match that isn't revealed yet, a bye or a void
- * week has no report. Matches are still revealed whole, so this is always the
- * full-time state; the live states come with ADR-106.
+ * week has no report. A match in play shows live, or as in play, without its
+ * result (`InPlayMatch`, ADR-115).
  */
 export default async function MidweekReportPage({
   params,
@@ -95,6 +103,58 @@ export default async function MidweekReportPage({
     .eq("tournament_id", tournament.tournament_id)
     .in("user_id", [match.side_0_user_id, match.side_1_user_id]);
   if (entriesResponse.error) throw new Error("Could not load this match's squads.");
+
+  // A match in play shows no result before its full time (ADR-106, ADR-115):
+  // live, chance by chance, for the member's own match and the final; any
+  // other match as "in play".
+  const now = new Date();
+  const ends =
+    tournament.status === "simulated"
+      ? await loadMatchEnds(tournament.tournament_id)
+      : new Map<string, string | null>();
+  const [shown] = maskInPlay([match], ends, now);
+  if (shown.in_play) {
+    const entries = (entriesResponse.data ?? []) as EntryCardRow[];
+    const rounds = tournament.rounds;
+    const isFinal = shown.round === rounds;
+    const yours =
+      shown.side_0_user_id === user.id ? 0 : shown.side_1_user_id === user.id ? 1 : null;
+    const watched = isFinal || yours !== null;
+    const live = await loadLiveMatch(supabase, {
+      tournament: {
+        tournament_id: tournament.tournament_id,
+        seed_hash: tournament.seed_hash,
+        rounds,
+      },
+      scheduleVersion: scheduleVersionOf(tournament),
+      match: shown,
+      now,
+    });
+    const name = roundName(shown.round, rounds);
+    const autoOf = (id: string | null) => entries.some((row) => row.user_id === id && row.auto);
+    return (
+      <InPlayMatch
+        auto={[autoOf(shown.side_0_user_id), autoOf(shown.side_1_user_id)]}
+        back={back}
+        fives={[shown.side_0_user_id, shown.side_1_user_id].flatMap((id) => {
+          const five = id ? fiveOf(entries, id) : null;
+          return five ? [five] : [];
+        })}
+        kicker={
+          isFinal
+            ? "The final · live"
+            : watched
+              ? `${name} · your match · live`
+              : `${name} · in play`
+        }
+        live={live}
+        managers={[shown.side_0_name, shown.side_1_name ?? ""]}
+        now={now.toISOString()}
+        watched={watched}
+        youSide={yours}
+      />
+    );
+  }
 
   const input = reportInputFromRows({
     seedHash: tournament.seed_hash ?? "",

@@ -130,11 +130,17 @@ export const winnerName = (match: MatchRow) =>
 
 /**
  * Whether a revealed pairing is at full time: a bye always is, and a match once
- * its result shows. Matches are revealed whole at kick-off until ADR-106, so
- * today every visible match is; from then a row without a result is still
- * being played.
+ * its result shows and it is not in play (`maskInPlay` withholds the result
+ * of a match still being played, ADR-115).
  */
-export const atFullTime = (match: MatchRow) => match.bye || match.winner_side != null;
+/** A match at full time's winner; code that reaches a match in play here is wrong. */
+export function settledWinner(match: MatchRow): 0 | 1 {
+  if (match.winner_side === null) throw new Error("This match is still in play.");
+  return match.winner_side;
+}
+
+export const atFullTime = (match: MatchRow) =>
+  match.bye || (match.winner_side != null && match.in_play !== true);
 
 export type BracketSlot = {
   userId: string | null;
@@ -153,6 +159,16 @@ export type BracketPair =
       sides: [BracketSlot, BracketSlot];
     }
   | { kind: "bye"; round: number; pairing: number; sides: [BracketSlot] }
+  /** Kicked off, not at full time: no score until it ends (ADR-106). */
+  | {
+      kind: "inplay";
+      round: number;
+      pairing: number;
+      match: MatchRow;
+      /** The final: everyone watches it live (HANDOFF "Bracket"). */
+      final: boolean;
+      sides: [BracketSlot, BracketSlot];
+    }
   /** Not kicked off yet: the two who meet, or where they come from. */
   | {
       kind: "upcoming";
@@ -238,6 +254,20 @@ export function assembleBracket(input: {
         });
         continue;
       }
+      if (match && match.side_1_user_id !== null && !atFullTime(match)) {
+        pairs.push({
+          kind: "inplay",
+          round,
+          pairing,
+          match,
+          final: round === rounds,
+          sides: [
+            slot(match.side_0_user_id, match.side_0_name),
+            slot(match.side_1_user_id, match.side_1_name ?? ""),
+          ],
+        });
+        continue;
+      }
       if (match && match.side_1_user_id !== null && atFullTime(match)) {
         pairs.push({
           kind: "played",
@@ -269,7 +299,7 @@ export function assembleBracket(input: {
       round,
       name: roundName(round, rounds),
       kickoffAt,
-      played: pairs.every((pair) => pair.kind !== "upcoming"),
+      played: pairs.every((pair) => pair.kind === "played" || pair.kind === "bye"),
       pairs,
     });
   }
@@ -277,15 +307,16 @@ export function assembleBracket(input: {
 }
 
 /**
- * The round of the member's next match still to kick off, for the jump link
- * "Your match · R2 20:15"; null once they are out or have no match left.
+ * The round of the member's match in play, or else of their next match still
+ * to kick off, for the jump link "Your match · Live" or "Your match · R2 20:15";
+ * null once they are out or have no match left.
  */
 export function yourNextRound(bracket: readonly BracketRound[], you: string): BracketRound | null {
   return (
     bracket.find((round) =>
       round.pairs.some(
         (pair) =>
-          pair.kind === "upcoming" &&
+          (pair.kind === "upcoming" || pair.kind === "inplay") &&
           pair.sides.some((side) => !side.placeholder && side.userId === you),
       ),
     ) ?? null
@@ -336,6 +367,9 @@ export function matchSentence(match: MatchRow): string {
 export function pairSentence(pair: BracketPair): string {
   if (pair.kind === "played") return matchSentence(pair.match);
   if (pair.kind === "bye") return `${pair.sides[0].name} has a bye, which counts as a win.`;
+  if (pair.kind === "inplay") {
+    return `${pair.sides[0].name} v ${pair.sides[1].name}, in play. The result shows at full time.`;
+  }
   return `${pair.sides[0].name} v ${pair.sides[1].name}, kick-off ${formatClock(pair.kickoffAt)}.`;
 }
 
@@ -354,7 +388,16 @@ export type PathRow =
       matchId: string;
       coins: number;
     }
-  | { kind: "next"; round: number; revealAt: string; opponent: string | null; coins: number };
+  | { kind: "next"; round: number; revealAt: string; opponent: string | null; coins: number }
+  /** Your match is in play (ADR-106): "Playing Eline now.", and what a win pays. */
+  | {
+      kind: "live";
+      round: number;
+      revealAt: string;
+      opponent: string;
+      matchId: string;
+      coins: number;
+    };
 
 export type MyNight = {
   rows: PathRow[];
@@ -398,6 +441,17 @@ export function myNight(input: {
     }
     const mine: 0 | 1 = match.side_0_user_id === userId ? 0 : 1;
     const theirs: 0 | 1 = mine === 0 ? 1 : 0;
+    if (!atFullTime(match)) {
+      rows.push({
+        kind: "live",
+        round,
+        revealAt: at,
+        opponent: (theirs === 0 ? match.side_0_name : match.side_1_name) ?? "",
+        matchId: match.match_id,
+        coins: pays[round - 1],
+      });
+      break;
+    }
     const me = sideScore(match, mine);
     const them = sideScore(match, theirs);
     const penalties = me.penalties !== null && them.penalties !== null;
@@ -420,14 +474,16 @@ export function myNight(input: {
   }
   const entered = rows.length > 0;
   const last = rows.at(-1);
-  if (entered && alive && last && last.round < rounds) {
+  if (entered && alive && last && last.kind !== "live" && last.round < rounds) {
     const round = last.round + 1;
     const lastMatch = input.matches.find(
       (m) => m.round === last.round && (m.side_0_user_id === userId || m.side_1_user_id === userId),
     );
     // Your next opponent won the neighbouring pairing (§44.6), revealed with yours.
     const sibling = lastMatch
-      ? input.matches.find((m) => m.round === last.round && m.pairing === (lastMatch.pairing ^ 1))
+      ? input.matches.find(
+          (m) => m.round === last.round && m.pairing === (lastMatch.pairing ^ 1) && atFullTime(m),
+        )
       : undefined;
     rows.push({
       kind: "next",
@@ -476,6 +532,7 @@ export function liveLine(
   );
   const played = night.rows.filter((row) => row.kind !== "next");
   const last = played.at(-1);
+  if (last?.kind === "live") return `Playing ${last.opponent} now.`;
   const next = night.rows.find((row) => row.kind === "next");
   const nextText =
     next && next.kind === "next"
@@ -501,7 +558,7 @@ export function liveLine(
  * final, 2–2 and 7–6 from the spot." The champion's numbers come first.
  */
 export function finalLine(final: MatchRow): string {
-  const winner = final.winner_side;
+  const winner = settledWinner(final);
   const loser: 0 | 1 = winner === 0 ? 1 : 0;
   const opponent = (loser === 0 ? final.side_0_name : final.side_1_name) ?? "";
   const w = sideScore(final, winner);
@@ -892,9 +949,9 @@ export type HomeEvening = {
   title: string;
   line: string;
   /**
-   * The match the card shows as a scoreboard with its headline: your match in
-   * the round now playing, or the final from its kick-off. Only at full time:
-   * until ADR-106 every visible match is, and a match in play is F6's.
+   * The match the card shows as a scoreboard: your match in the round now
+   * playing, or the final from its kick-off. At full time with its headline;
+   * in play (`in_play`) as it stands at page load, with the latest chance.
    */
   match: MatchRow | null;
   button: { label: string; href: string };
@@ -907,7 +964,8 @@ export type HomeEvening = {
  *
  * - the draw: who you meet, and `See the draw`;
  * - your match this round: the scoreboard and headline at full time, with
- *   `See the report`, or `Watch your match` while it plays;
+ *   `See the report`, or while it plays the score so far and the latest
+ *   chance, with `Watch your match` (ADR-115);
  * - out, or not in the final: `Follow the final` (HANDOFF);
  * - a bye, or between rounds: the evening's title and your night in a line.
  */
@@ -962,14 +1020,11 @@ export function homeEvening(input: {
     };
   }
   if (playing) {
-    const kickoff = formatClock(
-      roundStartAt(new Date(lockAt), phase.round, scheduleVersion).toISOString(),
-    );
     return {
       kicker,
       title: phase.title,
-      line: `${yours(playing) ? "Your match" : "The final"} kicked off at ${kickoff}.`,
-      match: null,
+      line,
+      match: playing,
       button: yours(playing) ? { label: "Watch your match", href: report(playing) } : followFinal,
     };
   }

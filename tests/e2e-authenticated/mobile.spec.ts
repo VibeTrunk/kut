@@ -566,6 +566,143 @@ test.describe("Midweek Madness evening from the lock (F5, ADR-113)", () => {
   });
 });
 
+test.describe("Home and Messages (F4, ADR-114)", () => {
+  test.afterEach(async () => {
+    await withDatabase(endFixtureEvening);
+  });
+
+  test("Home leads with what's due: a short header, the now stack, two tiles", async ({ page }) => {
+    await resetMidweek("release_member");
+    await signIn(page, "release_member");
+    await expect(page.getByRole("heading", { level: 1, name: "This week in KUT" })).toBeVisible();
+    const now = page.getByRole("region", { name: "Now" });
+    await expect(
+      now.getByRole("link", { name: /^Midweek Madness · .*Pick your five/ }),
+    ).toBeVisible();
+    // The KUT Coins tile went: the coin pill shows the balance.
+    await expect(page.getByText("Wallet balance")).toHaveCount(0);
+    await expect(page.getByRole("link", { name: /^Club Value .* See the maths →$/ })).toBeVisible();
+    await expect(page.getByRole("link", { name: /^Rank .* Standings →$/ })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 2, name: "Top risers" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "This week’s Chronicle →" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "New here? How KUT works →" })).toBeVisible();
+    await expectNoHorizontalOverflow(page);
+
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.reload();
+    await expect(now.getByRole("link", { name: /Pick your five/ })).toBeVisible();
+    const tile = await page.getByRole("link", { name: /^Club Value/ }).boundingBox();
+    const pack = await page.getByRole("link", { name: "Open a pack" }).boundingBox();
+    // From `sm` the two tiles and the pack button share one row.
+    expect(Math.abs(tile!.y - pack!.y)).toBeLessThan(2);
+    await expectNoHorizontalOverflow(page);
+  });
+
+  test("during the evening the live card leads Home, as it stood at page load", async ({
+    page,
+  }) => {
+    await resetMidweek("release_member");
+    await withDatabase(async (database) => {
+      await startFixtureEvening(database);
+    });
+    await signIn(page, "release_member");
+    const now = page.getByRole("region", { name: "Now" });
+    const live = now.getByRole("link").first();
+    await expect(live).toContainText("Live");
+    await expect(live).toContainText("The draw is out");
+    await expect(live).toContainText("See the draw");
+    await expect(live).toHaveAttribute("href", "/midweek");
+    await expectNoHorizontalOverflow(page);
+
+    await withDatabase(async (database) => {
+      // Round 2 kicked off a minute ago: release_member's round-1 match (or bye) is played.
+      await advanceFixtureEvening(database, 20);
+    });
+    await page.reload();
+    await expect(live).toContainText("Live");
+    await expect(live).toContainText(
+      /See the report|Follow the final|Follow the bracket|Watch your match/,
+    );
+    await expect(live).toHaveAttribute("href", /^\/midweek/);
+    await expectNoHorizontalOverflow(page);
+  });
+
+  test("every message opens its subject and is marked read on the way", async ({ page }) => {
+    const inserted: string[] = [];
+    let resultId = "";
+    let noticeId = "";
+    await withDatabase(async (database) => {
+      const member = await database.query<{ id: string }>(
+        "select id from kut.profiles where username = 'release_member'",
+      );
+      const week = await database.query<{ id: string }>(
+        "select id from kut.midweek_tournaments where week_start = $1",
+        [COMPLETED_WEEK],
+      );
+      const userId = member.rows[0].id;
+      // The completed week may already have messaged its result: reuse it, unread.
+      const result = await database.query<{ id: string }>(
+        `insert into kut.user_notifications(user_id, event_type, title, body, reference_type, reference_id)
+         values ($1, 'midweek_result', 'You went out in round 1', 'E2E result.', 'midweek_tournament', $2)
+         on conflict (user_id, event_type, reference_type, reference_id)
+           where reference_type is not null and reference_id is not null do nothing
+         returning id`,
+        [userId, week.rows[0].id],
+      );
+      if (result.rows[0]) inserted.push(result.rows[0].id);
+      resultId = (
+        await database.query<{ id: string }>(
+          `update kut.user_notifications set read_at = null
+           where user_id = $1 and event_type = 'midweek_result' and reference_id = $2 returning id`,
+          [userId, week.rows[0].id],
+        )
+      ).rows[0].id;
+      noticeId = (
+        await database.query<{ id: string }>(
+          `insert into kut.user_notifications(user_id, event_type, title, body)
+           values ($1, 'admin_notice', 'E2E club notice', 'Nothing to open.') returning id`,
+          [userId],
+        )
+      ).rows[0].id;
+      inserted.push(noticeId);
+    });
+    try {
+      await signIn(page, "release_member");
+      await page.goto("/messages");
+      await expect(page.getByRole("heading", { level: 1, name: "Messages" })).toBeVisible();
+      await expect(page.getByText(/^\d+ new · opening one marks it read$/)).toBeVisible();
+      const today = page.getByRole("region", { name: "Today" });
+      const result = today.locator(`a[href="/messages/${resultId}/open"]`);
+      await expect(result).toContainText("New");
+      await expect(result).toContainText("Bracket →");
+      // A club notice has nowhere to go: no arrow, and opening it only marks it read.
+      const notice = today.locator(`a[href="/messages/${noticeId}/open"]`);
+      await expect(notice).toContainText("New");
+      await expect(notice).not.toContainText("→");
+      await expectNoHorizontalOverflow(page);
+
+      await result.click();
+      await expect(page).toHaveURL(new RegExp(`/midweek/${COMPLETED_WEEK}$`));
+      await page.goto("/messages");
+      await expect(result).not.toContainText("New");
+      await expect(result).toContainText("Bracket →");
+
+      await notice.click();
+      await expect(page).toHaveURL(/\/messages$/);
+      // Read and without a subject, it is no link at all.
+      await expect(notice).toHaveCount(0);
+      await expect(page.getByText("E2E club notice")).toBeVisible();
+      await expectNoHorizontalOverflow(page);
+    } finally {
+      await withDatabase(async (database) => {
+        await database.query("delete from kut.user_notifications where id = any($1::uuid[])", [
+          inserted,
+        ]);
+      });
+    }
+  });
+});
+
 test("admin can reach the Midweek controls", async ({ page }) => {
   await signIn(page, "release_admin");
   await page.goto("/admin/midweek");
@@ -585,4 +722,43 @@ test("admin can reach the mobile attendance finalization surface", async ({ page
   await page.goto("/admin/attendance");
   await expect(page.getByRole("heading", { name: "Record attendance" })).toBeVisible();
   await expectNoHorizontalOverflow(page);
+});
+
+// Last in the file, and only in the last project, so it is the run's last
+// test: it spends 175 of the member's 500 coins and adds three cards, which
+// the picker tests count.
+test("a pack's summary names the slots it fills and the copies it adds (ADR-114)", async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== "authenticated-320", "runs once, last");
+  await signIn(page, "release_member");
+  await page.goto("/club/packs");
+  await page.getByRole("button", { name: /^Open for \d+ KUT Coins$/ }).click();
+  await page.getByRole("button", { name: /^Pay \d+$/ }).click();
+  await expect(page).toHaveURL(/\/club\/packs\/[0-9a-f-]{36}$/);
+  const openingId = page.url().split("/").pop()!;
+  try {
+    await page.getByRole("button", { name: "Skip all" }).click();
+    await expect(page.getByRole("heading", { name: "Your new Live Cards" })).toBeVisible();
+    await expect(
+      page.getByText(/^(No new Players|\d+ new Players?)\. Album \d+ \/ \d+\.$/),
+    ).toBeVisible();
+    await expect(
+      page.getByText(/^(New · fills slot \d+|×\d+ · discards for \d+)$/).first(),
+    ).toBeVisible();
+    await expectNoHorizontalOverflow(page);
+  } finally {
+    // An opening restricts deleting its member, and a card it drew of a
+    // fixture Player restricts deleting the fixture: the teardown needs both gone.
+    await withDatabase(async (database) => {
+      const cards = await database.query<{ card_id: string }>(
+        "delete from kut.pack_opening_cards where opening_id = $1 returning card_id",
+        [openingId],
+      );
+      await database.query("delete from kut.pack_openings where id = $1", [openingId]);
+      await database.query("delete from kut.user_cards where id = any($1::uuid[])", [
+        cards.rows.map((row) => row.card_id),
+      ]);
+    });
+  }
 });

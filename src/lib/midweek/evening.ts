@@ -123,53 +123,6 @@ export function championLeads(tournament: { status: string; lock_at: string }, n
   );
 }
 
-// ---- the reveal clock -------------------------------------------------------------
-
-export type ClockStop = {
-  time: string;
-  name: string;
-  state: "lock" | "done" | "next" | "hidden";
-  /** Set on a round the member won (a bye included): a halo on the stop. */
-  you: boolean;
-  /** The round this stop reveals; null for the lock. */
-  round: number | null;
-};
-
-/** `MidweekRevealClock`'s stops: the lock, then one per round, out, next or hidden. */
-export function revealStops(input: {
-  lockAt: string;
-  /** The week's schedule version (ADR-104), from `scheduleVersionOf`. */
-  scheduleVersion: number;
-  rounds: number;
-  now: Date;
-  wonRounds: ReadonlySet<number>;
-}): ClockStop[] {
-  const lock = new Date(input.lockAt);
-  const stops: ClockStop[] = [
-    { time: formatClock(input.lockAt), name: "Lock", state: "lock", you: false, round: null },
-  ];
-  let nextGiven = false;
-  for (let round = 1; round <= input.rounds; round += 1) {
-    const at = roundStartAt(lock, round, input.scheduleVersion);
-    const out = at.getTime() <= input.now.getTime();
-    const state = out ? "done" : nextGiven ? "hidden" : "next";
-    if (!out) nextGiven = true;
-    stops.push({
-      time: formatClock(at.toISOString()),
-      name: roundShort(round, input.rounds),
-      state,
-      you: input.wonRounds.has(round),
-      round,
-    });
-  }
-  return stops;
-}
-
-/** How many rounds are out: every round at least one of whose pairings is visible. */
-export function revealedRounds(matches: readonly Pick<MatchRow, "round">[]): number {
-  return matches.reduce((most, match) => Math.max(most, match.round), 0);
-}
-
 // ---- the bracket ---------------------------------------------------------------------
 
 export const winnerName = (match: MatchRow) =>
@@ -928,4 +881,103 @@ export function pastWeeks(input: {
         text: `${week.champion_name ?? "Somebody"} won it · ${field.length} entrants. ${you}`,
       };
     });
+}
+
+// ---- Home's evening card (MM 2.0 F4, ADR-114) ------------------------------------
+
+export type HomeEvening = {
+  /** "Midweek Madness · Quarter-finals". */
+  kicker: string;
+  /** Shown when there is no match to put on the card. */
+  title: string;
+  line: string;
+  /**
+   * The match the card shows as a scoreboard with its headline: your match in
+   * the round now playing, or the final from its kick-off. Only at full time:
+   * until ADR-106 every visible match is, and a match in play is F6's.
+   */
+  match: MatchRow | null;
+  button: { label: string; href: string };
+};
+
+/**
+ * Home's live card during the evening (design/ux-review `Home-Now-Live`,
+ * HANDOFF "Home"): what is happening for the member at page load. Home doesn't
+ * poll (Q11), so this is the evening as it stood when the page loaded.
+ *
+ * - the draw: who you meet, and `See the draw`;
+ * - your match this round: the scoreboard and headline at full time, with
+ *   `See the report`, or `Watch your match` while it plays;
+ * - out, or not in the final: `Follow the final` (HANDOFF);
+ * - a bye, or between rounds: the evening's title and your night in a line.
+ */
+export function homeEvening(input: {
+  userId: string;
+  weekStart: string;
+  rounds: number;
+  lockAt: string;
+  scheduleVersion: number;
+  now: Date;
+  draw: readonly DrawRow[];
+  matches: readonly MatchRow[];
+}): HomeEvening {
+  const { userId, rounds, lockAt, scheduleVersion, weekStart } = input;
+  const night = myNight({ userId, rounds, lockAt, scheduleVersion, matches: input.matches });
+  const phase = eveningPhase({ rounds, lockAt, scheduleVersion, now: input.now, night });
+  const evening = { label: "Follow the bracket", href: "/midweek" };
+  const followFinal = { label: "Follow the final", href: "/midweek" };
+  const report = (match: MatchRow) => `/midweek/${weekStart}/match/${match.match_id}`;
+  const yours = (match: MatchRow) =>
+    match.side_0_user_id === userId || match.side_1_user_id === userId;
+
+  if (phase.kind === "draw") {
+    const first = firstMatch({ userId, draw: input.draw, rounds, lockAt, scheduleVersion });
+    const roundOne = formatClock(roundStartAt(new Date(lockAt), 1, scheduleVersion).toISOString());
+    return {
+      kicker: "Midweek Madness · The draw",
+      title: phase.title,
+      line: first?.text ?? `Round 1 kicks off at ${roundOne}.`,
+      match: null,
+      button: { label: "See the draw", href: "/midweek" },
+    };
+  }
+
+  const kicker = `Midweek Madness · ${phase.kind === "final" ? "The final" : roundName(phase.round, rounds)}`;
+  const playing = input.matches.find(
+    (match) =>
+      match.round === phase.round && !match.bye && (phase.kind === "final" || yours(match)),
+  );
+  const line = liveLine(night, rounds, lockAt, scheduleVersion);
+  if (playing && atFullTime(playing)) {
+    return {
+      kicker,
+      title: phase.title,
+      line,
+      match: playing,
+      // Out is out: from the moment you lose, the card points at the final (HANDOFF).
+      button:
+        yours(playing) && phase.kind !== "out"
+          ? { label: "See the report", href: report(playing) }
+          : followFinal,
+    };
+  }
+  if (playing) {
+    const kickoff = formatClock(
+      roundStartAt(new Date(lockAt), phase.round, scheduleVersion).toISOString(),
+    );
+    return {
+      kicker,
+      title: phase.title,
+      line: `${yours(playing) ? "Your match" : "The final"} kicked off at ${kickoff}.`,
+      match: null,
+      button: yours(playing) ? { label: "Watch your match", href: report(playing) } : followFinal,
+    };
+  }
+  return {
+    kicker,
+    title: phase.title,
+    line,
+    match: null,
+    button: phase.kind === "out" || phase.kind === "final" ? followFinal : evening,
+  };
 }

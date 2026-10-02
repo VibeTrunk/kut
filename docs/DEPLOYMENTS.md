@@ -18,6 +18,51 @@ dated "Hosted deployment…" entries in `PROGRESS.md`.
 then bump the "Latest hosted migration" line in `CLAUDE.md`. Record the tier,
 backup id, pre/post `migration list` counts, the smoke row, and the rollback.
 
+## 2026-10-02 — `20261012000000` Midweek draw from the lock (ADR-105)
+
+Deployed 2026-10-02 from `VibeTrunk/supabase` (catalogue PR #66 there), on its
+own additive `db push`:
+
+- `20261012000000_midweek_draw_from_lock.sql` (BUILD_SPEC §44.9, §44.14,
+  ADR-105, KUT PR #152, tier additive) &mdash; MM 2.0 B2: what members may read
+  of a Midweek week from the lock. Views only.
+  - **What changed.** New `kut.midweek_draw_public` (round 1's pairings and
+    byes, both managers and `kickoff_at`, from the lock, no result column).
+    `kut.midweek_entries_public` shows from the lock instead of round 1, with
+    `form_roll_ppm`, `pick_factor_ppm` and `power_ppm` null until round 1 kicks
+    off. `kut.midweek_current` and `kut.midweek_tournaments_public` show
+    `final_reveal_at` only once it has passed (since ADR-104 it is the end of
+    the final, which at the lock told an API reader whether the final goes to
+    penalties). `kut.midweek_current` appends `evening_live`, which the Compete
+    badge (KUT PR #153, ADR-107) reads.
+  - **No DML.**
+  - **Before the push.** Fresh backup `20261002-110621`, cold-verified, no
+    cards in escrow. `migration list --linked` showed 82 entries with
+    `20261012000000` the only local-only one and no remote-only drift; the dry
+    run named exactly that file; the catalogue check reported 82 approved
+    source migrations (81 of them KUT's). The production gate **passed** for
+    `2f3a94a` (#153 on top of #152; 2026-10-02 12:52 Amsterdam: CI checks,
+    catalogue parity, the backup re-verified, authenticated E2E, a
+    hook-attested Opus session). The post-push `migration list` was not
+    re-run; the smoke row's first column confirms the version is recorded.
+  - **Smoke-tested on hosted.** In the SQL editor, one row,
+    `true | security_invoker=false,security_barrier=true | true | 10 | 26 | true | evening_live | true`,
+    matched the local run exactly and confirmed:
+    - `20261012000000` is recorded in the migration history;
+    - the draw view is a definer view with a barrier, readable by members and
+      not by anon, with its 10 columns;
+    - the entries view keeps its 26 columns and withholds the dice until
+      kick-off;
+    - `evening_live` is `midweek_current`'s last column;
+    - `final_reveal_at` is gated in both tournament views.
+  - **Deploy ordering** was safe: KUT PRs #152 and #153 deployed first; they
+    read every view with `select("*")`, and the badge falls back to
+    `final_reveal_at` while `evening_live` is absent.
+  - Rollback: in the migration's header. Drop the draw view, re-create the
+    entries view from `20261005000000`, drop and re-create `midweek_current`
+    and `midweek_tournaments_public` from `20261011000000` (re-applying their
+    grants from `20261003000000`).
+
 ## 2026-10-02 — `20261011000000` Midweek evening timing (ADR-104)
 
 Deployed 2026-10-02 from `VibeTrunk/supabase` (catalogue PR #64 there), on its

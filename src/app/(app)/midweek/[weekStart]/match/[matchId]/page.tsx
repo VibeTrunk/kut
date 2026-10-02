@@ -2,13 +2,14 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { MidweekNotice } from "@/components/midweek/bits";
 import { MIDWEEK_PAGE, MidweekPageHead } from "@/components/midweek/page-head";
+import { ReportText } from "@/components/midweek/player-name";
 import {
+  MidweekLaneTimeline,
   MidweekScoreboard,
   MidweekShootout,
-  MidweekTimeline,
-  MidweekWhyPanel,
   type Managers,
 } from "@/components/midweek/report";
+import { MidweekWhyList } from "@/components/midweek/why-list";
 import { MIDWEEK } from "@/game/midweek/config";
 import { requireUser } from "@/lib/auth/user";
 import { formatClock, formatDayDate, skipOrVoidNotice } from "@/lib/midweek/entry";
@@ -24,9 +25,11 @@ export const metadata = { title: "Midweek Madness match report" };
 
 /**
  * `/midweek/[weekStart]/match/[matchId]`: one match's report
- * (Report-Thrashing, Report-Shootout, Report-Injured), rendered on the server
- * from the stored match, its events and both sides' lock-time entries. A match
- * that isn't revealed yet, a bye or a void week has no report.
+ * (design/ux-review `Match-Other-FullTime`, ADR-111), rendered on the server
+ * from the stored match, its events and both sides' lock-time entries, every
+ * name in its side's colour. A match that isn't revealed yet, a bye or a void
+ * week has no report. Matches are still revealed whole, so this is always the
+ * full-time state; the live states come with ADR-106.
  */
 export default async function MidweekReportPage({
   params,
@@ -110,55 +113,57 @@ export default async function MidweekReportPage({
 
   return (
     <main className={MIDWEEK_PAGE}>
-      <div className="mx-auto grid max-w-6xl gap-8 py-4 sm:gap-11 sm:py-8">
-        <Link
-          className="justify-self-start text-sm font-bold text-brass hover:underline"
-          href={back.href}
-        >
-          &larr; {back.label}
-        </Link>
-        <article className="grid gap-8 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:items-start lg:gap-14">
+      <article className="mx-auto grid max-w-6xl gap-5 py-4 sm:gap-6 sm:py-8">
+        <header className="grid gap-3">
+          <Link
+            className="justify-self-start text-sm font-bold text-brass hover:underline"
+            href={back.href}
+          >
+            &larr; {back.label}
+          </Link>
+          <p className="text-[0.7rem] font-extrabold tracking-[0.26em] text-brass uppercase">
+            {capitalise(matchName(match.round, match.pairing, tournament.rounds))} &middot; out at{" "}
+            {formatClock(match.reveal_at)}
+          </p>
+          <h1 className="display text-[30px] text-pretty sm:text-[46px]">
+            <ReportText parts={report.headlineParts} />
+          </h1>
+        </header>
+        <MidweekScoreboard
+          auto={[input.sides[0].auto, input.sides[1].auto]}
+          goals={input.outcome.goals}
+          managers={managers}
+          penalties={input.outcome.penalties}
+          winnerSide={input.outcome.winnerSide}
+          youSide={youSide}
+        />
+        <div className="grid gap-7 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:items-start lg:gap-10">
           <div className="grid min-w-0 content-start gap-7">
-            <header className="grid gap-3.5 border-t-4 border-brass pt-4">
-              <p className="text-[0.7rem] font-extrabold tracking-[0.26em] text-brass uppercase">
-                {capitalise(matchName(match.round, match.pairing, tournament.rounds))} &middot; out
-                at {formatClock(match.reveal_at)}
-              </p>
-              <h1 className="display text-[34px] text-pretty sm:text-[52px]">{report.headline}</h1>
-              <MidweekScoreboard
-                auto={[input.sides[0].auto, input.sides[1].auto]}
-                goals={input.outcome.goals}
-                managers={managers}
-                penalties={input.outcome.penalties}
-                winnerSide={input.outcome.winnerSide}
-                youSide={youSide}
-              />
-              {report.facts.length > 0 && (
-                <ul className="grid gap-2">
-                  {report.facts.map((fact, index) => (
-                    <li
-                      className="border-l-2 border-brass-line pl-4 font-serif text-xl leading-tight text-pretty text-ink"
-                      key={index}
-                    >
-                      {fact.text}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </header>
+            {report.facts.length > 0 && (
+              <ul className="grid gap-1.5">
+                {report.facts.map((fact, index) => (
+                  <li
+                    className="border-l-2 border-brass-line pl-3 font-serif text-lg leading-[1.35] text-pretty text-ink"
+                    key={index}
+                  >
+                    <ReportText parts={fact.parts} />
+                  </li>
+                ))}
+              </ul>
+            )}
             <section aria-labelledby="timeline-h" className="grid gap-4">
               <h2 className="display text-3xl" id="timeline-h">
                 How it went
               </h2>
-              <MidweekTimeline managers={managers} timeline={report.timeline} />
+              <MidweekLaneTimeline managers={managers} timeline={report.timeline} />
             </section>
             {report.shootout && <MidweekShootout managers={managers} shootout={report.shootout} />}
           </div>
-          <aside className="grid min-w-0 content-start gap-7">
-            <MidweekWhyPanel why={report.why} />
+          <aside className="min-w-0">
+            <MidweekWhyList why={report.why} />
           </aside>
-        </article>
-      </div>
+        </div>
+      </article>
     </main>
   );
 }

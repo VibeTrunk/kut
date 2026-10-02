@@ -9,8 +9,13 @@ import {
 import { FACT_KINDS } from "@/lib/midweek/report/facts";
 import { reportInput, type Directory } from "@/lib/midweek/report/from-engine";
 import { PHRASE_POOLS } from "@/lib/midweek/report/phrasebook";
-import { renderMatchReport, TIMELINE_MAX, TIMELINE_MIN } from "@/lib/midweek/report/render";
-import type { MatchReport, ReportInput } from "@/lib/midweek/report/types";
+import {
+  compose,
+  renderMatchReport,
+  TIMELINE_MAX,
+  TIMELINE_MIN,
+} from "@/lib/midweek/report/render";
+import type { MatchReport, ReportInput, Segment } from "@/lib/midweek/report/types";
 import { fastRng, generateWorld } from "../sim/midweek-world";
 
 const SEED_HASH = "5".repeat(64);
@@ -180,7 +185,57 @@ describe("midweek match reports", () => {
     );
     expect(shared).toBeDefined();
   });
+
+  it("gives every line as segments that read as its text, names tagged with their side", () => {
+    let owned = 0;
+    for (const report of [...rendered.map((r) => r.report), ...crafted()]) {
+      const managers = report.why.map((side) => side.manager);
+      // On screen a name shows without its "(manager)"; nothing else differs.
+      const suffix = new RegExp(` \\((${managers.map(escape).join("|")})\\)`, "g");
+      const lines: [string, Segment[]][] = [
+        [report.headline, report.headlineParts],
+        ...report.facts.map((f): [string, Segment[]] => [f.text, f.parts]),
+        ...report.timeline.map((t): [string, Segment[]] => [t.text, t.parts]),
+        ...(report.shootout?.lines ?? []).map((line, i): [string, Segment[]] => [
+          line,
+          report.shootout!.lineParts[i],
+        ]),
+      ];
+      for (const [text, parts] of lines) {
+        const expected = text.replace(suffix, "").replace(/\.\./g, ".");
+        expect(parts.map((p) => p.text).join(""), text).toBe(expected);
+        for (const part of parts.filter((p) => p.side !== undefined)) {
+          const side = report.why[part.side!];
+          const names = [side.manager, ...side.cards.map((c) => c.label.text)];
+          expect(names, text).toContain(part.text);
+          if (part.owner !== undefined) {
+            expect(part.owner).toBe(side.manager);
+            owned += 1;
+          }
+        }
+      }
+      report.why.forEach((side, s) => {
+        for (const card of side.cards) expect(card.label.side).toBe(s);
+      });
+    }
+    expect(owned).toBeGreaterThan(0);
+  });
+
+  it("drops a sentence's full stop after a name ending in an initial, never the name's", () => {
+    const kees: Segment = { text: "Kees R.", side: 1, owner: "Bart" };
+    expect(compose("a shot from {name}.", { name: kees })).toEqual({
+      text: "A shot from Kees R. (Bart).",
+      parts: [{ text: "A shot from " }, kees],
+    });
+    expect(compose("{name}. Again.", { name: { text: "Kees R.", side: 0 } })).toEqual({
+      text: "Kees R. Again.",
+      parts: [{ text: "Kees R.", side: 0 }, { text: " Again." }],
+    });
+    expect(compose("{name}'s shot", { name: kees }).parts).toEqual([kees, { text: "'s shot" }]);
+  });
 });
+
+const escape = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 /** Hand-made squads for the rare facts: three keepers, no keeper, hat tricks, injured and cheap stars. */
 function crafted(): MatchReport[] {

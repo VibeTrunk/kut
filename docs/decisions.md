@@ -5932,3 +5932,72 @@ the owner.
 Consequences: the whole release, gate included, runs from one session. Gate
 evidence written before this change still carries `agent_session`; nothing
 reads it.
+
+## ADR-111 — The match page in team colours: names as segments, a lane timeline, and a Why list with Power
+
+Date: 2026-10-02
+
+Status: Accepted (amends ADR-093's renderer output and ADR-098's report page;
+MM 2.0 frontend F2, built to the mockups the owner approved in DR2. ADR-109 and
+ADR-110 stay reserved for PR 5 and C1)
+
+Context: the UX review's DR1-5 and DR2-1..3 and DR2-5..8
+(`design/ux-review/HANDOFF.md` "Matches") redesign the match report. With two
+clubmates often fielding the same Player, a report needs every name in its
+team's colour. The old "why" panel was a dense grid of factors that the owner
+found hard to read, and HANDOFF asks for a list that never scrolls sideways.
+Matches are still revealed whole at kick-off (the per-event views are ADR-106),
+so this slice builds the full-time state only. The live states come with F6.
+
+Decision (no migration, no phrasebook change):
+
+- **The renderer returns segments as well as text.** `renderMatchReport` keeps
+  every text field byte for byte (the stored-rows test and the design sample
+  confirm it) and adds `headlineParts`, `parts` on each fact and timeline
+  moment, `lineParts` on the shoot-out and `label` on each "why" card. A
+  segment is plain text or a name with its side. A Player both sides fielded
+  carries its manager as `owner`, which the text spells out as
+  "Iris W. (Sanne)". Pages colour names from the segments and never re-parse
+  text (HANDOFF question 1). Because the page drops the suffix on screen,
+  "Kees R. (Bart)." would show as "Kees R..": the segments drop the sentence's
+  full stop after a name that ends in an initial. Unit tests pin that every
+  line's segments read as its text with the suffixes removed.
+- **Team colours** (`--color-team-blue` and `--color-team-red`, each with `-bg`,
+  `-line` and an on-colour) go only on the match page (DR2-1). Side 0 is blue
+  and on the left for every viewer. `PlayerName` colours a name and keeps
+  "(Sanne's)" for screen readers (DR2-2).
+- **`MidweekScoreboard`:** names and digits in team colour, Through/Out chips,
+  no chance counter.
+- **`MidweekLaneTimeline`:** one lane per chance, leaning to its side, with
+  the head mirrored for side 1. It switches to two lanes either side of a
+  minute-and-score spine at 600 px of its own width (a container query). The
+  desktop report's left column is narrower than that, so it keeps one lane.
+  Screen readers hear "39th minute. Goal for Sanne." and the score after it.
+- **Shoot-out rows:** the manager, the total (DR2-5), then the kicks filled in
+  team colour or ringed. Then the renderer's lines with coloured names. The
+  sudden-death ring goes, as in the mockup; the count of kicks stays.
+- **`MidweekWhyList`** replaces `MidweekWhyPanel`. Each card shows **Power in
+  this match**, `power_ppm × day_roll_ppm`, so the factor boxes multiply out to
+  the number on screen; the old panel showed the week's power. Cards are listed
+  strongest first, one compact row each: a pill tinted by strength band (heat
+  colours, never team colours; the band word for screen readers) and a bar from
+  0.50 to 1.50 with a tick at 1.00 (DR2-8). `Show every factor` opens five
+  boxes per card: Rating, Form, Pick, Fitness, Day, always all five (DR2-6).
+  Each label explains itself on hover, tap or focus and closes on blur or
+  Escape (DR2-7, WCAG 1.4.13); every figure in that copy comes from `MIDWEEK`.
+  The bars are SVG `width` attributes, because the CSP blocks inline styles.
+- **Owner counts leave the report** (HANDOFF): the list shows no pick labels,
+  and an auto squad is a chip on its side's heading. The bracket's pick shares
+  keep the counts after the final (D3 unchanged). `renderStoredReport` still
+  computes the labels; no page shows them now.
+- A score in report text keeps to one line (word joiners around its dash), so a
+  320 px headline never ends a line on "3–".
+
+Consequences: one way to read a match: the colour says whose, the lane says
+which side, and the Power pill says how strong each card was. The live
+scoreboard, `MidweekShootoutLive`, the in-play page and polling remain F6, on
+top of these components. The design sample (`design/midweek/sample-tournament.json`)
+predates ADR-104's clock and #142's "fewer than 3 owners" label. It was left
+as it is because its text is unchanged.
+
+Tier: no migration.

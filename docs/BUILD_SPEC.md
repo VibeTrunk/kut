@@ -2012,6 +2012,18 @@ Everything is gated by time in definer projections on
   holds every goal, topped up with the biggest other chances to 4–8 moments.
   A shoot-out narrates its misses and the deciding kick; scored kicks show as
   a tally.
+- **Team colours and the Why list (ADR-111):** on a match page every Player
+  and manager name is in its side's colour, side 0 blue on the left and side 1
+  red on the right for every viewer; lists of matches stay neutral. The
+  renderer returns each line as text and as segments (plain text, or a name
+  with its side and, for a Player both sides fielded, its manager), so pages
+  never re-parse names. On screen such a Player shows its base name, and the
+  manager is read out to screen readers only. The timeline puts each chance in
+  its side's lane. The "why" is a list, never a table: per card its **Power in
+  this match** (`power × day_roll`) in a pill tinted by strength band (≥ 1.10,
+  1.00–1.09, 0.90–0.99, < 0.90) with a bar from 0.50 to 1.50, strongest first.
+  Five factor boxes (Rating, Form, Pick, Fitness, Day) open on request, each
+  explained from `MIDWEEK`. Owner counts are not in the report.
 - **Colour comes from engine events, never invented.** Every phrase is chosen
   from the stored creator, shooter, chance type, outcome and probability.
   Quality follows the odds: a goal from a chance below 15% is "sensational",
@@ -2061,8 +2073,9 @@ Everything is gated by time in definer projections on
   contrarian-hero fact uses a count-free line. Reports appear from round 1 and
   owner counts only at `complete` (§44.9, owner decision D3), so the pages
   render every report's text with the flag false: a report reads the same all
-  night and afterwards, and only the "why" panel's pick labels appear once the
-  week is complete.
+  night and afterwards. The "why" panel's pick labels used to appear once the
+  week was complete; since ADR-111 the report shows no owner counts, and they
+  stay on the bracket's pick shares.
 - **The pages (PR 8, ADR-098):** the report at
   `/midweek/[weekStart]/match/[matchId]`, the bracket at
   `/midweek/[weekStart]` (rounds as they are revealed, byes, the

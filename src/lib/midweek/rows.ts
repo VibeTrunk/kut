@@ -31,6 +31,28 @@ export type MatchRow = {
   side_0_day_rolls_ppm: number[] | null;
   side_1_day_rolls_ppm: number[] | null;
   reveal_at: string;
+  /**
+   * When the match ends (ADR-104): null on weeks simulated before it. Absent
+   * once ADR-106 hides it until it has passed.
+   */
+  ends_at?: string | null;
+};
+
+/**
+ * A `kut.midweek_draw_public` row (ADR-105): round 1 as drawn at the lock,
+ * with no result. A bye has one entrant, on side 0.
+ */
+export type DrawRow = {
+  match_id: string;
+  tournament_id: string;
+  week_start: string;
+  pairing: number;
+  bye: boolean;
+  side_0_user_id: string;
+  side_0_name: string;
+  side_1_user_id: string | null;
+  side_1_name: string | null;
+  kickoff_at: string;
 };
 
 /** A `kut.midweek_events_public` row, in engine order (`seq`). */

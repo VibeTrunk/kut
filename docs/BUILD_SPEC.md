@@ -2088,6 +2088,18 @@ Everything is gated by time in definer projections on
   injury cast included. Last Wednesday's champion leads `/midweek` and the
   Home card until Thursday 23:59 Europe/Amsterdam
   (owner decision D4); a void week's URLs show only its notice.
+- **The evening from the lock (ADR-113):** the evening and the bracket of a
+  running week carry a sticky clock (the lock and every round; `Locked`,
+  `Played` once every pairing of the round shows its result, `Live` from its
+  kick-off until then, `Next`, `Later`). From the lock `/midweek` shows the
+  draw: the member's first match, their five and their opponent's (both
+  possible opponents after a bye) with lock-time OVR, archetype, tier and
+  keeper only, and round 1's kick-offs. Then the member's night, the next
+  round's kick-offs and the round just played; once out, a placeholder and the
+  final; from the final's kick-off, the final for everyone. Rows of matches are
+  neutral, in three states: kick-off, full time, or a bye. A pairing not yet
+  decided reads `Winner of A v B` in round 2 and `Winner, Quarters 1` beyond.
+  `/midweek/past` lists every complete, skipped or void week, newest first.
 
 ### 44.11 Running without admin
 

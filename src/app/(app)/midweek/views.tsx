@@ -2,12 +2,15 @@ import Link from "next/link";
 import { CompeteTabs } from "@/components/app-shell/compete-tabs";
 import { LiveCard, type LiveCardPlayer } from "@/components/live-card";
 import { MidweekNotice, MidweekSaveStatus, MidweekTrialistCard } from "@/components/midweek/bits";
-import { MidweekRevealClock } from "@/components/midweek/clock";
+import { MidweekClock } from "@/components/midweek/clock";
 import { MidweekCountdown } from "@/components/midweek/countdown";
+import { MidweekFiveList } from "@/components/midweek/five-list";
 import { MidweekMatchRow } from "@/components/midweek/match-row";
 import { MidweekMiniCard } from "@/components/midweek/mini-card";
 import { MIDWEEK_PAGE, MidweekPageHead, MidweekSectionHead } from "@/components/midweek/page-head";
 import { MidweekPath } from "@/components/midweek/path";
+import { MidweekPlaceholder } from "@/components/midweek/placeholder";
+import { MidweekScoreboard } from "@/components/midweek/report";
 import { MidweekSeed } from "@/components/midweek/seed";
 import { MIDWEEK } from "@/game/midweek/config";
 import { seedHash } from "@/game/midweek/rng";
@@ -31,16 +34,22 @@ import {
 import {
   assembleBracket,
   entryCardFace,
+  eveningPhase,
+  eveningStops,
   fieldCounts,
   finalLine,
   finishStat,
+  firstMatch,
+  fiveOf,
   myNight,
   nightTotals,
-  revealedRounds,
-  revealStops,
-  wonRounds,
+  roundName,
+  roundsYouAreIn,
+  sideScore,
+  type BracketRound,
 } from "@/lib/midweek/evening";
 import { loadMyRewards, loadWeekResults } from "@/lib/midweek/results";
+import type { MatchRow } from "@/lib/midweek/rows";
 import { resolvePhotoUrls } from "@/lib/player-photos";
 import type { createClient } from "@/lib/supabase/server";
 
@@ -149,10 +158,58 @@ export function LastWeek({ view }: { view: LastWeekView }) {
 
 // ---- Wednesday evening ---------------------------------------------------------
 
+/** One round's pairings: a kick-off time on the right before it starts, the bracket link once played. */
+function RoundSection({
+  round,
+  weekStart,
+  userId,
+  link,
+}: {
+  round: BracketRound;
+  weekStart: string;
+  userId: string;
+  link: boolean;
+}) {
+  const id = `evening-round-${round.round}-h`;
+  return (
+    <section aria-labelledby={id} className="grid gap-3.5">
+      <MidweekSectionHead id={id} title={round.name}>
+        {link ? (
+          <Link
+            className="text-sm font-bold text-brass hover:underline"
+            href={`/midweek/${weekStart}`}
+          >
+            Full bracket &rarr;
+          </Link>
+        ) : (
+          <p className="text-[13px] text-ink-faint tabular-nums">
+            Kick-off {formatClock(round.kickoffAt)}
+          </p>
+        )}
+      </MidweekSectionHead>
+      <div className="grid gap-2 sm:grid-cols-2">
+        {round.pairs.map((pair) => (
+          <MidweekMatchRow key={pair.pairing} pair={pair} weekStart={weekStart} you={userId} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
 /**
- * Between the lock and the final (Week-Locked, Week-Revealing): the member's
- * own night first, then the round that just came out. Coins are shown as won
- * but not yet paid, because payment happens after the final (§44.7).
+ * The evening from the lock (MM 2.0 F5, ADR-113), under the sticky
+ * `MidweekClock`:
+ *
+ * - `draw` (Evening-Draw), lock to round 1: your first match with your five and
+ *   your opponent's, or both possible opponents' after a bye, then round 1's
+ *   pairings with their kick-off;
+ * - `round` while you're in, and `out` (Evening-Out) once you've lost: your
+ *   night, the next round's kick-offs, the round just played;
+ * - `final`, for everyone: the final, and that coins and the champion follow
+ *   its end.
+ *
+ * Matches are revealed whole at kick-off until ADR-106, so a round shows its
+ * kick-off times and then its results; the live states are F6.
  */
 export async function WeekEvening({
   supabase,
@@ -170,91 +227,207 @@ export async function WeekEvening({
   const lockAt = current.lock_at as string;
   const weekStart = current.week_start as string;
   const rounds = current.status === "simulated" ? current.rounds : null;
-  const results = rounds
-    ? await loadWeekResults(supabase, current.tournament_id as string)
-    : { matches: [], entries: [] };
-  const out = revealedRounds(results.matches);
-  const nowIso = now.toISOString();
-
-  if (!rounds || out === 0) {
-    return (
-      <WeekLocked current={current} now={now} rounds={rounds} squad={squad} supabase={supabase} />
-    );
+  if (!rounds) {
+    return <WeekLocked current={current} now={now} squad={squad} supabase={supabase} />;
   }
 
+  const results = await loadWeekResults(supabase, current.tournament_id as string);
   const scheduleVersion = scheduleVersionOf(current);
+  const nowIso = now.toISOString();
   const night = myNight({ userId, rounds, lockAt, scheduleVersion, matches: results.matches });
-  const stops = revealStops({ lockAt, scheduleVersion, rounds, now, wonRounds: wonRounds(night) });
+  const entered =
+    night.entered ||
+    results.draw.some((row) => row.side_0_user_id === userId || row.side_1_user_id === userId);
+  const phase = eveningPhase({ rounds, lockAt, scheduleVersion, now, night });
+  const stops = eveningStops({
+    lockAt,
+    scheduleVersion,
+    rounds,
+    now,
+    matches: results.matches,
+    youThrough: roundsYouAreIn(night, entered, rounds),
+  });
+  const autoUserIds = new Set(results.entries.filter((row) => row.auto).map((row) => row.user_id));
   const bracket = assembleBracket({
     rounds,
     lockAt,
     scheduleVersion,
+    draw: results.draw,
     matches: results.matches,
-    autoUserIds: new Set(results.entries.filter((row) => row.auto).map((row) => row.user_id)),
+    autoUserIds,
   });
-  const latest = bracket[out - 1];
+  const roundOne = formatClock(bracket[0].kickoffAt);
+  const finalAt = formatClock(bracket[rounds - 1].kickoffAt);
+
+  const yourNight = night.entered && (
+    <section aria-labelledby="night-h" className="grid content-start gap-4">
+      <MidweekSectionHead id="night-h" title="Your night">
+        <p className="text-[13px] text-ink-faint">
+          +{night.coins}
+          {night.alive ? " so far" : ""} &middot; paid after the final
+        </p>
+      </MidweekSectionHead>
+      <MidweekPath now={nowIso} rounds={rounds} rows={night.rows} weekStart={weekStart} />
+    </section>
+  );
+
+  let body;
+  if (phase.kind === "draw") {
+    const first = firstMatch({ userId, draw: results.draw, rounds, lockAt, scheduleVersion });
+    const mine = fiveOf(results.entries, userId);
+    const theirs = (first?.opponentIds ?? []).flatMap((id) => {
+      const five = fiveOf(results.entries, id);
+      return five ? [five] : [];
+    });
+    body = (
+      <>
+        {first && mine ? (
+          <section aria-labelledby="first-h" className="grid gap-3.5">
+            <MidweekSectionHead id="first-h" title="Your first match">
+              <p className="text-[13px] text-ink-faint tabular-nums">
+                {roundName(first.round, rounds)} &middot; kick-off {formatClock(first.kickoffAt)}
+              </p>
+            </MidweekSectionHead>
+            <p className="text-ink-dim">{first.text}</p>
+            <div className="grid items-start gap-3.5 sm:grid-cols-2">
+              <MidweekFiveList five={mine} you />
+              <div className="grid content-start gap-3.5">
+                {theirs.map((five) => (
+                  <MidweekFiveList five={five} key={five.userId} you={false} />
+                ))}
+              </div>
+            </div>
+          </section>
+        ) : current.opted_out ? (
+          <p className={`${PANEL} text-sm text-ink-dim`}>
+            You opted out, so you aren&rsquo;t in tonight.
+          </p>
+        ) : null}
+        <p className="text-[13px] text-ink-faint">
+          Form, pick boost and the chances before kick-off appear when round 1 starts at {roundOne}.
+        </p>
+        <RoundSection link round={bracket[0]} userId={userId} weekStart={weekStart} />
+      </>
+    );
+  } else if (phase.kind === "final") {
+    const pair = bracket[rounds - 1].pairs[0];
+    body = (
+      <>
+        <section aria-labelledby="final-h" className="grid gap-3.5">
+          <MidweekSectionHead id="final-h" title="The final">
+            {pair.kind === "played" && (
+              <Link
+                className="text-sm font-bold text-brass hover:underline"
+                href={`/midweek/${weekStart}/match/${pair.match.match_id}`}
+              >
+                Report &rarr;
+              </Link>
+            )}
+          </MidweekSectionHead>
+          {pair.kind === "played" ? (
+            <FinalScoreboard autoUserIds={autoUserIds} match={pair.match} userId={userId} />
+          ) : (
+            <MidweekMatchRow pair={pair} weekStart={weekStart} you={userId} />
+          )}
+        </section>
+        <p className={`${PANEL} text-sm text-ink-dim`}>
+          The champion is named and coins are paid when the final ends.
+          {night.entered ? ` You: +${night.coins} so far.` : ""}
+        </p>
+        {rounds > 1 && (
+          <RoundSection link round={bracket[rounds - 2]} userId={userId} weekStart={weekStart} />
+        )}
+      </>
+    );
+  } else {
+    const next = bracket[phase.round];
+    body = (
+      <>
+        {phase.kind === "out" ? (
+          <div className="grid gap-7 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)] lg:items-start lg:gap-10">
+            {yourNight}
+            <div className="grid content-start gap-3.5">
+              <MidweekPlaceholder
+                name="Something to follow after a knockout"
+                note="A prediction, a consolation bracket or a season table. Its card goes here once you choose one."
+              />
+              <section
+                aria-labelledby="final-card-h"
+                className="grid gap-2 rounded-2xl border border-brass/50 bg-brass-bg/30 p-4 sm:px-6 sm:py-5"
+              >
+                <p className="text-[0.7rem] font-extrabold tracking-[0.26em] text-brass uppercase">
+                  The final &middot; {finalAt}
+                </p>
+                <h2 className="display text-2xl sm:text-3xl" id="final-card-h">
+                  Come back for the final
+                </h2>
+                <p className="text-sm text-ink-dim">Its result shows on this page at {finalAt}.</p>
+              </section>
+            </div>
+          </div>
+        ) : (
+          yourNight
+        )}
+        {next && <RoundSection link={false} round={next} userId={userId} weekStart={weekStart} />}
+        <RoundSection link round={bracket[phase.round - 1]} userId={userId} weekStart={weekStart} />
+      </>
+    );
+  }
 
   return (
     <main className={MIDWEEK_PAGE}>
-      <section className="mx-auto grid max-w-6xl gap-8 py-4 sm:gap-11 sm:py-8">
+      <MidweekClock stops={stops} />
+      <section className="mx-auto grid max-w-6xl gap-8 pb-4 sm:gap-11 sm:pb-8">
         <CompeteTabs />
         <MidweekPageHead
           kicker={`Midweek Madness · ${formatDayDate(lockAt)}`}
-          title={out === rounds ? "The final is out" : `Round ${out} is out`}
+          title={phase.title}
         />
-        <section aria-label="Tonight" className={PANEL}>
-          <MidweekRevealClock label="Wednesday's schedule" stops={stops} />
-        </section>
-        {night.entered && (
-          <section aria-labelledby="night-h" className="grid gap-4">
-            <MidweekSectionHead id="night-h" title="Your night">
-              <p className="text-[13px] text-ink-faint">
-                +{night.coins}
-                {night.alive ? " so far" : ""} &middot; paid after the final
-              </p>
-            </MidweekSectionHead>
-            <MidweekPath now={nowIso} rounds={rounds} rows={night.rows} weekStart={weekStart} />
-          </section>
-        )}
-        <section aria-labelledby="latest-h" className="grid gap-4">
-          <MidweekSectionHead id="latest-h" title={latest.name}>
-            <Link
-              className="text-sm font-bold text-brass hover:underline"
-              href={`/midweek/${weekStart}`}
-            >
-              Full bracket &rarr;
-            </Link>
-          </MidweekSectionHead>
-          <div className="grid gap-2 sm:grid-cols-2 sm:gap-x-4 sm:gap-y-2.5">
-            {latest.pairs.map((pair) => (
-              <MidweekMatchRow
-                key={pair.pairing}
-                pair={pair}
-                revealAt={latest.revealAt}
-                weekStart={weekStart}
-                you={userId}
-              />
-            ))}
-          </div>
-        </section>
-        <MidweekSeed seedHash={current.seed_hash as string} />
+        {body}
       </section>
     </main>
   );
 }
 
-/** Week-Locked: the lock has passed, round 1 isn't out. Only the member's own five. */
+/** The final at full time, in team colours: a single-match block (DR2-1). */
+function FinalScoreboard({
+  match,
+  userId,
+  autoUserIds,
+}: {
+  match: MatchRow;
+  userId: string;
+  autoUserIds: ReadonlySet<string>;
+}) {
+  const a = sideScore(match, 0);
+  const b = sideScore(match, 1);
+  const side1 = match.side_1_user_id ?? "";
+  return (
+    <MidweekScoreboard
+      auto={[autoUserIds.has(match.side_0_user_id), autoUserIds.has(side1)]}
+      goals={[a.goals, b.goals]}
+      managers={[match.side_0_name, match.side_1_name ?? ""]}
+      penalties={a.penalties !== null && b.penalties !== null ? [a.penalties, b.penalties] : null}
+      winnerSide={match.winner_side}
+      youSide={match.side_0_user_id === userId ? 0 : side1 === userId ? 1 : null}
+    />
+  );
+}
+
+/**
+ * The lock has passed but the worker hasn't drawn the week yet: a moment at
+ * most, since every Midweek page runs it first (ADR-098). Only the member's
+ * own five.
+ */
 async function WeekLocked({
   supabase,
   current,
   now,
-  rounds,
   squad,
 }: {
   supabase: SupabaseServerClient;
   current: MidweekCurrent;
   now: Date;
-  rounds: number | null;
   squad: MySquadRow[] | null;
 }) {
   const lockAt = current.lock_at as string;
@@ -262,10 +435,6 @@ async function WeekLocked({
   const scheduleVersion = scheduleVersionOf(current);
   const roundOneAt = roundStartAt(lock, 1, scheduleVersion).toISOString();
   const roundOne = formatClock(roundOneAt);
-  const stops = rounds
-    ? revealStops({ lockAt, scheduleVersion, rounds, now, wonRounds: new Set() })
-    : null;
-
   let five: { cards: (LiveCardPlayer | null)[]; lost: string[] } | null = null;
   if (!current.opted_out && squad && squad.length > 0) {
     const [collection, injuredPlayerIds] = await Promise.all([
@@ -311,7 +480,7 @@ async function WeekLocked({
     };
   }
 
-  const lede = `The bracket is drawn and every match is already decided. Round 1 comes out at ${roundOne}, then a round ${roundIntervalText(scheduleVersion)}.`;
+  const lede = `The draw comes out in a moment. Round 1 kicks off at ${roundOne}, then a round ${roundIntervalText(scheduleVersion)}.`;
   return (
     <main className={MIDWEEK_PAGE}>
       <section className="mx-auto grid max-w-6xl gap-8 py-4 sm:gap-11 sm:py-8">
@@ -321,20 +490,10 @@ async function WeekLocked({
           lede={lede}
           title="Squads are locked"
         />
-        <section aria-label="Tonight" className={`${PANEL} grid gap-[18px]`}>
-          {stops && <MidweekRevealClock label="Wednesday's schedule" stops={stops} />}
-          <p className="text-center text-[13px] text-ink-dim">
-            <b className="text-ink">Round 1 at {roundOne}</b>,{" "}
-            <MidweekCountdown now={now.toISOString()} target={roundOneAt} />.
-            {rounds && (
-              <>
-                {" "}
-                The final at{" "}
-                {formatClock(roundStartAt(lock, rounds, scheduleVersion).toISOString())}.
-              </>
-            )}
-          </p>
-        </section>
+        <p className={`${PANEL} text-center text-[13px] text-ink-dim`}>
+          <b className="text-ink">Round 1 at {roundOne}</b>,{" "}
+          <MidweekCountdown now={now.toISOString()} target={roundOneAt} />.
+        </p>
         {current.opted_out ? (
           <p className={`${PANEL} text-sm text-ink-dim`}>
             You opted out, so you aren&rsquo;t in tonight.
@@ -353,13 +512,13 @@ async function WeekLocked({
             </MidweekSectionHead>
             <FiveCards cards={five.cards} label="Your five" />
             <p className="flex items-start gap-2.5 text-[13px] leading-normal text-ink-dim">
-              Members see these five from {roundOne}, with their numbers for the week. Your cards
-              are never at stake: a result only ever pays coins.
+              Members see every five once the draw is out. Your cards are never at stake: a result
+              only ever pays coins.
             </p>
           </section>
         ) : squad !== null ? (
           <p className={`${PANEL} text-sm text-ink-dim`}>
-            You didn&rsquo;t pick, so an auto squad plays for you. See it at {roundOne}.
+            You didn&rsquo;t pick, so an auto squad plays for you. See it once the draw is out.
           </p>
         ) : null}
         <MidweekSeed seedHash={current.seed_hash as string} />
@@ -495,6 +654,15 @@ export async function WeekComplete({
           )}
         </section>
 
+        <MidweekPlaceholder
+          name="Your five’s ratings"
+          note="Each card’s 1–10 rating for the night, with a short line. Shape decided with the ratings ADR."
+        />
+        <MidweekPlaceholder
+          name="Share your night"
+          note="An image for the group chat. It must say what it shows beyond the members-only pages (ADR-079)."
+        />
+
         {next && next.lock_at && next.status === "open" && (
           <Link
             className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-[14px] border border-brass/40 bg-brass-bg/28 px-3 py-2.5 hover:border-brass"
@@ -511,6 +679,12 @@ export async function WeekComplete({
             </span>
           </Link>
         )}
+
+        <p>
+          <Link className="text-sm font-bold text-brass hover:underline" href="/midweek/past">
+            Past weeks &rarr;
+          </Link>
+        </p>
 
         {seal && (
           <MidweekSeed

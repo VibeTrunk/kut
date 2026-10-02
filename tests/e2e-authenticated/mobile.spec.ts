@@ -1,7 +1,14 @@
 import { expect, test, type Page } from "@playwright/test";
 import { Client } from "pg";
 import { assertLocalTarget } from "../support/local-target";
-import { COMPLETED_WEEK, resetMidweekMember, setWeekArchetype } from "./midweek-fixture";
+import {
+  advanceFixtureEvening,
+  COMPLETED_WEEK,
+  endFixtureEvening,
+  resetMidweekMember,
+  setWeekArchetype,
+  startFixtureEvening,
+} from "./midweek-fixture";
 
 async function signIn(page: Page, username: string) {
   await page.goto("/login");
@@ -304,7 +311,7 @@ test.describe("Midweek Madness results (PR 8)", () => {
     await expect(page).toHaveURL(new RegExp(`/midweek/${COMPLETED_WEEK}$`));
 
     await expect(page.getByRole("heading", { level: 1, name: /won it$/ })).toBeVisible();
-    await expect(page.getByRole("list", { name: "Jump to a round" })).toBeVisible();
+    await expect(page.getByRole("navigation", { name: "Jump to" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Final", exact: true })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Who picked whom" })).toBeVisible();
     await expect(page.getByText("✓ Matches the seal.")).toBeAttached();
@@ -381,6 +388,20 @@ test.describe("Midweek Madness results (PR 8)", () => {
     await expectNoHorizontalOverflow(page);
   });
 
+  test("past weeks list every finished week, each opening its bracket", async ({ page }) => {
+    await signIn(page, "release_member");
+    await page.goto("/midweek/past");
+    await expect(page.getByRole("heading", { level: 1, name: "Past weeks" })).toBeVisible();
+    const week = page
+      .getByRole("list", { name: "Past weeks" })
+      .getByRole("link", { name: / won it · \d+ entrants\. You/ })
+      .last();
+    await expect(week).toBeVisible();
+    await expectNoHorizontalOverflow(page);
+    await week.click();
+    await expect(page).toHaveURL(new RegExp(`/midweek/${COMPLETED_WEEK}$`));
+  });
+
   test("a bracket URL that isn't a week, or a match that isn't a uuid, is not found", async ({
     page,
   }) => {
@@ -394,6 +415,154 @@ test.describe("Midweek Madness results (PR 8)", () => {
       await page.goto(url);
       await expect(page.getByRole("heading", { name: "Page not found" }), url).toBeVisible();
     }
+  });
+});
+
+/** The sticky `MidweekClock`, named by its one-sentence label. */
+const eveningClock = (page: Page) =>
+  page.getByRole("list", { name: /^Wednesday evening: Lock \d\d:\d\d, locked; / });
+
+/** The clock stays under the app header however far the page scrolls. */
+async function expectClockPinned(page: Page) {
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+  const box = await page.getByTestId("midweek-clock").boundingBox();
+  expect(box).not.toBeNull();
+  expect(box!.y).toBeGreaterThanOrEqual(0);
+  expect(box!.y).toBeLessThanOrEqual(80);
+  await page.evaluate(() => window.scrollTo(0, 0));
+}
+
+test.describe("Midweek Madness evening from the lock (F5, ADR-113)", () => {
+  test.afterEach(async () => {
+    await withDatabase(endFixtureEvening);
+  });
+
+  test("from the lock: the draw, every five, kick-off times and the bracket", async ({ page }) => {
+    await resetMidweek("release_member");
+    let weekStart = "";
+    await withDatabase(async (database) => {
+      ({ weekStart } = await startFixtureEvening(database));
+    });
+    await signIn(page, "release_member");
+    await page.goto("/midweek");
+
+    await expect(page.getByRole("heading", { level: 1, name: "The draw is out" })).toBeVisible();
+    await expect(eveningClock(page)).toHaveAccessibleName(
+      // The first round after the lock, named from the end ("Quarters" with 5–8 entrants).
+      /locked; [\w ]+ \d\d:\d\d, next, you're in;/,
+    );
+    await expect(page.getByRole("heading", { name: "Your first match" })).toBeVisible();
+    // release_member's auto squad, and one or two opponents' fives, from the lock.
+    const fives = page.getByRole("region", { name: /’s five$/ });
+    expect(await fives.count()).toBeGreaterThanOrEqual(2);
+    await expect(fives.first().getByText("Auto squad")).toBeVisible();
+    await expect(page.getByText(/^Form, pick boost and the chances before kick-off/)).toBeVisible();
+    await expect(
+      page.getByRole("heading", { level: 2, name: /^(Round 1|Quarter-finals|Semi-finals)$/ }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("group", { name: /, kick-off \d\d:\d\d\.$|has a bye, which counts/ }).first(),
+    ).toBeVisible();
+    // Nothing is played yet: no full-time row, no report link.
+    await expect(page.getByRole("link", { name: /^Match report: / })).toHaveCount(0);
+    await expectNoHorizontalOverflow(page);
+    // KB-034: with `Live` on Midweek, Compete's tabs stay inside the page's
+    // 20 px gutter, which the page-width check alone can't see.
+    const tabs = await page.getByRole("navigation", { name: "Compete" }).boundingBox();
+    expect(tabs!.x + tabs!.width).toBeLessThanOrEqual(page.viewportSize()!.width - 19);
+    await expectClockPinned(page);
+
+    await page.getByRole("link", { name: "Full bracket →" }).click();
+    await expect(page).toHaveURL(new RegExp(`/midweek/${weekStart}$`));
+    await expect(page.getByRole("heading", { level: 1, name: "The bracket" })).toBeVisible();
+    await expect(eveningClock(page)).toBeVisible();
+    const jump = page.getByRole("navigation", { name: "Jump to" });
+    await expect(jump.getByRole("link", { name: /^Your match · R\d \d\d:\d\d$/ })).toBeVisible();
+    await expect(page.getByText(/^Kick-off \d\d:\d\d$/).first()).toBeVisible();
+    await expect(page.getByText(/^Winner(,| of) /).first()).toBeVisible();
+    await expectNoHorizontalOverflow(page);
+  });
+
+  test("mid-evening: results at full time, the next kick-offs and your night", async ({ page }) => {
+    await resetMidweek("release_member");
+    let weekStart = "";
+    await withDatabase(async (database) => {
+      ({ weekStart } = await startFixtureEvening(database));
+      // Round 2 kicked off a minute ago: lock + 5 + 15 minutes.
+      await advanceFixtureEvening(database, 20);
+    });
+    await signIn(page, "release_member");
+    await page.goto("/midweek");
+
+    await expect(
+      page.getByRole("heading", {
+        level: 1,
+        name: /^(Round 2 is live|(Quarter|Semi)-finals are live|You’re out|The final is live)$/,
+      }),
+    ).toBeVisible();
+    await expect(eveningClock(page)).toHaveAccessibleName(/locked; [\w ]+ \d\d:\d\d, played/);
+    await expect(page.getByRole("heading", { name: "Your night" })).toBeVisible();
+    await expect(page.getByRole("list", { name: "Your night" })).toBeVisible();
+    await expect(page.getByRole("group", { name: / won\.$/ }).first()).toBeVisible();
+    await expectNoHorizontalOverflow(page);
+    await expectClockPinned(page);
+
+    await page.goto(`/midweek/${weekStart}`);
+    await expect(page.getByRole("link", { name: /^Match report: / }).first()).toBeVisible();
+    await expectNoHorizontalOverflow(page);
+    await page
+      .getByRole("link", { name: /^Match report: / })
+      .first()
+      .click();
+    await expect(page.getByRole("heading", { name: "How it went" })).toBeVisible();
+  });
+
+  test("after the final: the champion, the placeholders and the way to past weeks", async ({
+    page,
+  }) => {
+    await resetMidweek("release_member");
+    await withDatabase(async (database) => {
+      await startFixtureEvening(database);
+      // Long past the end of any final: the worker pays and completes the week.
+      await advanceFixtureEvening(database, 120, { runWorker: true });
+    });
+    await signIn(page, "release_member");
+    await page.goto("/midweek");
+
+    await expect(page.getByText(/· Champion$/)).toBeVisible();
+    await expect(page.getByTestId("midweek-clock")).toHaveCount(0);
+    await expect(page.getByRole("note").filter({ hasText: "Your five’s ratings" })).toBeVisible();
+    await expect(page.getByRole("note").filter({ hasText: "Share your night" })).toBeVisible();
+    await expectNoHorizontalOverflow(page);
+    await page.getByRole("link", { name: "Past weeks →" }).click();
+    await expect(page).toHaveURL(/\/midweek\/past$/);
+    await expect(page.getByRole("heading", { level: 1, name: "Past weeks" })).toBeVisible();
+  });
+
+  test("on a 1440 px desktop the fives sit side by side and the tree shows kick-offs", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await resetMidweek("release_member");
+    let weekStart = "";
+    await withDatabase(async (database) => {
+      ({ weekStart } = await startFixtureEvening(database));
+    });
+    await signIn(page, "release_member");
+    await page.goto("/midweek");
+    await expect(page.getByRole("heading", { level: 1, name: "The draw is out" })).toBeVisible();
+    const fives = page.getByRole("region", { name: /’s five$/ });
+    const mine = await fives.first().boundingBox();
+    const theirs = await fives.nth(1).boundingBox();
+    expect(theirs!.x).toBeGreaterThan(mine!.x + mine!.width);
+    await expectNoHorizontalOverflow(page);
+
+    await page.goto(`/midweek/${weekStart}`);
+    const tree = page.getByTestId("bracket-tree");
+    await expect(tree).toBeVisible();
+    await expect(tree.getByText(/^Kick-off \d\d:\d\d$/).first()).toBeVisible();
+    await expect(page.getByRole("navigation", { name: "Jump to" })).toBeHidden();
+    await expectNoHorizontalOverflow(page);
   });
 });
 

@@ -73,8 +73,8 @@ export function MidweekPath({
               )}
               {row.kind === "next" && (
                 <>
-                  <b className="text-ink">Next{row.opponent ? `: ${row.opponent}` : ""}.</b> Result
-                  at {formatClock(row.revealAt)},{" "}
+                  <b className="text-ink">Next{row.opponent ? `: ${row.opponent}` : ""}.</b>{" "}
+                  Kick-off {formatClock(row.revealAt)},{" "}
                   <MidweekCountdown now={now} target={row.revealAt} />.
                 </>
               )}

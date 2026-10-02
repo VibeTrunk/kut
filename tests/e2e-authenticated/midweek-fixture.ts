@@ -53,17 +53,12 @@ const MEMBERS = [
   ["04", "Fixture Manager D", "04"],
 ] as const;
 
-export async function removeMidweekFixture(database: Client) {
-  const fixtureWeeks = [seedHash(FIXTURE_SEED), seedHash(COMPLETED_SEED)];
-  const weeks = (
-    await database.query<{ id: string }>(
-      "select id from kut.midweek_tournaments where seed_hash = any($1::text[])",
-      [fixtureWeeks],
-    )
-  ).rows.map((row) => row.id);
-  // The completed week paid its winners, members already on the stack
-  // included: take back exactly what it paid before its rewards and ledger
-  // rows go (a paid reward restricts deleting its week, match or member).
+/**
+ * Takes back exactly what these weeks paid, members already on the stack
+ * included, and removes their rewards, ledger rows and result messages (a paid
+ * reward restricts deleting its week, match or member).
+ */
+async function takeBackPayouts(database: Client, weeks: string[]) {
   await database.query(
     `update kut.wallets wallet set balance = wallet.balance - paid.total, updated_at = now()
      from (select user_id, sum(amount) as total from kut.midweek_rewards
@@ -82,6 +77,18 @@ export async function removeMidweekFixture(database: Client) {
   await database.query("delete from kut.wallet_ledger where id = any($1::uuid[])", [
     paid.rows.map((row) => row.ledger_id),
   ]);
+}
+
+export async function removeMidweekFixture(database: Client) {
+  const fixtureWeeks = [seedHash(FIXTURE_SEED), seedHash(COMPLETED_SEED)];
+  const weeks = (
+    await database.query<{ id: string }>(
+      "select id from kut.midweek_tournaments where seed_hash = any($1::text[])",
+      [fixtureWeeks],
+    )
+  ).rows.map((row) => row.id);
+  // The completed week paid its winners: take that back first.
+  await takeBackPayouts(database, weeks);
   // Cascades to secrets, squads, entries, cards, pick shares, matches and events.
   await database.query("delete from kut.midweek_tournaments where id = any($1::uuid[])", [weeks]);
   await database.query("delete from kut.match_sessions where id::text like $1", [`${PREFIX}%`]);
@@ -136,6 +143,11 @@ export async function seedMidweekFixture(database: Client, memberId: string) {
   await seedCompletedWeek(database, memberId);
 
   await database.query("update kut.midweek_config set enabled = true");
+  await openFixtureWeek(database, weekStart);
+}
+
+/** Next week's tournament, open with its lock ahead: what the picker tests use. */
+async function openFixtureWeek(database: Client, weekStart: string) {
   const tournament = await database.query<{ id: string }>(
     "insert into kut.midweek_tournaments(week_start, lock_at, seed_hash) values ($1, $2, $3) returning id",
     [weekStart, lockAt(weekStart).toISOString(), seedHash(FIXTURE_SEED)],
@@ -144,6 +156,20 @@ export async function seedMidweekFixture(database: Client, memberId: string) {
     "insert into kut.midweek_tournament_secrets(tournament_id, seed) values ($1, $2)",
     [tournament.rows[0].id, FIXTURE_SEED],
   );
+}
+
+/** One worker call as the service role, as the lazy trigger makes it (ADR-098). */
+async function runWorker(database: Client) {
+  await database.query("begin");
+  try {
+    await database.query("set local role service_role");
+    await database.query("set local request.jwt.claim.role = 'service_role'");
+    await database.query("select kut.run_midweek_due(5)");
+    await database.query("commit");
+  } catch (error) {
+    await database.query("rollback");
+    throw error;
+  }
 }
 
 async function seedCompletedWeek(database: Client, memberId: string) {
@@ -202,16 +228,7 @@ async function seedCompletedWeek(database: Client, memberId: string) {
 
   // Lock (simulate), then complete (pay and publish the seed).
   for (let attempt = 0; attempt < 3; attempt += 1) {
-    await database.query("begin");
-    try {
-      await database.query("set local role service_role");
-      await database.query("set local request.jwt.claim.role = 'service_role'");
-      await database.query("select kut.run_midweek_due(5)");
-      await database.query("commit");
-    } catch (error) {
-      await database.query("rollback");
-      throw error;
-    }
+    await runWorker(database);
     const status = await database.query<{ status: string }>(
       "select status from kut.midweek_tournaments where id = $1",
       [tournamentId],
@@ -261,4 +278,114 @@ export async function setWeekArchetype(database: Client, displayName: string, ar
     [seedHash(FIXTURE_SEED), displayName, archetype],
   );
   if (result.rowCount !== 1) throw new Error(`No open-week snapshot for ${displayName}.`);
+}
+
+// ---- tonight's evening (F5, ADR-113) ---------------------------------------------
+
+async function fixtureWeek(database: Client) {
+  const week = await database.query<{ id: string; week_start: string; status: string }>(
+    "select id, week_start::text, status from kut.midweek_tournaments where seed_hash = $1",
+    [seedHash(FIXTURE_SEED)],
+  );
+  if (week.rowCount !== 1) throw new Error("The open Midweek fixture week is missing.");
+  return week.rows[0];
+}
+
+/**
+ * Turns the open fixture week into tonight's evening, its lock a minute ago:
+ * a published session in the football week before it (the club-break gate),
+ * the lock moved back (allowed while the week is open), and the worker run to
+ * draw it. Everyone who owns a card is entered, release_member with an auto
+ * squad unless they saved one. `endFixtureEvening` puts the open week back.
+ */
+export async function startFixtureEvening(
+  database: Client,
+): Promise<{ weekStart: string; rounds: number }> {
+  const week = await fixtureWeek(database);
+  await database.query(
+    `insert into kut.match_sessions (id, season_id, session_date, session_type, status, published_at)
+     values ($1, $2, $3::date - 5, 'other', 'published', now())`,
+    [id("6", "03"), id("6", "01"), week.week_start],
+  );
+  await database.query(
+    "update kut.midweek_tournaments set lock_at = now() - interval '1 minute' where id = $1",
+    [week.id],
+  );
+  await runWorker(database);
+  const drawn = await database.query<{ status: string; rounds: number | null }>(
+    "select status, rounds from kut.midweek_tournaments where id = $1",
+    [week.id],
+  );
+  if (drawn.rows[0].status !== "simulated" || !drawn.rows[0].rounds) {
+    throw new Error(`The fixture evening did not draw: ${drawn.rows[0].status}.`);
+  }
+  return { weekStart: week.week_start, rounds: drawn.rows[0].rounds };
+}
+
+/**
+ * Moves tonight's evening `minutes` into the past, so the pages read it as
+ * that much later: the lock, the end of the final, and every stored match and
+ * event time. A stored result never changes (Part L #25), so this bypasses the
+ * guards with `session_replication_role = replica` for one transaction, which
+ * only the local stack allows. With `runWorker`, the worker runs after, as a
+ * page visit would (it pays and completes a week whose final has ended).
+ */
+export async function advanceFixtureEvening(
+  database: Client,
+  minutes: number,
+  options: { runWorker?: boolean } = {},
+) {
+  const week = await fixtureWeek(database);
+  const shift = `${minutes} minutes`;
+  await database.query("begin");
+  try {
+    await database.query("set local session_replication_role = replica");
+    await database.query(
+      `update kut.midweek_tournaments
+       set lock_at = lock_at - $2::interval, final_reveal_at = final_reveal_at - $2::interval
+       where id = $1`,
+      [week.id, shift],
+    );
+    await database.query(
+      `update kut.midweek_matches
+       set reveal_at = reveal_at - $2::interval, ends_at = ends_at - $2::interval
+       where tournament_id = $1`,
+      [week.id, shift],
+    );
+    await database.query(
+      `update kut.midweek_match_events event set reveal_at = event.reveal_at - $2::interval
+       from kut.midweek_matches played
+       where played.id = event.match_id and played.tournament_id = $1`,
+      [week.id, shift],
+    );
+    await database.query("commit");
+  } catch (error) {
+    await database.query("rollback");
+    throw error;
+  }
+  if (options.runWorker) await runWorker(database);
+}
+
+/**
+ * Ends tonight's evening and leaves the open week as `seedMidweekFixture` did:
+ * takes back anything it paid, deletes it with every row it stored, deletes the
+ * week the worker opened after it, if any, and opens the fixture week again.
+ */
+export async function endFixtureEvening(database: Client) {
+  const week = await fixtureWeek(database);
+  await database.query("delete from kut.match_sessions where id = $1", [id("6", "03")]);
+  if (week.status === "open") {
+    // A start that failed before the draw: only the lock moved.
+    await database.query("update kut.midweek_tournaments set lock_at = $2 where id = $1", [
+      week.id,
+      lockAt(week.week_start).toISOString(),
+    ]);
+    return;
+  }
+  await takeBackPayouts(database, [week.id]);
+  await database.query(
+    "delete from kut.midweek_tournaments where id = $1 or week_start > $2::date",
+    [week.id, week.week_start],
+  );
+  await openFixtureWeek(database, week.week_start);
 }

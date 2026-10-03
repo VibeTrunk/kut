@@ -49,10 +49,10 @@ own data-changing `db push`:
     re-verified, finalizer readiness, authenticated E2E 49 passed, 1 expected
     skip). No evening was running (Saturday). After the push
     `migration list --linked` showed 86 local and 86 remote, no drift.
-  - **Smoke test on hosted.** The one-row query below, for the SQL editor. The
-    local run returned
+  - **Smoke-tested on hosted.** The owner ran the one-row query below in the
+    SQL editor and confirmed it matched: the local run returned
     `t | 3 | [0, 2, 2] | 1120000 | 681472 | [2000000, 1000000, 200000] | balance_ppm | f | 0 |`,
-    and hosted should end in the open week, `2026-10-05` (recorded; the rule's
+    and hosted ends in the open week, `2026-10-05` (recorded; the rule's
     threshold; the Tank's plusses; the OVR factor; a one-line Finisher stack
     at 0.88³ = 0.681472; a Finisher's lines; the view's new last column; no
     member execute grant on the rule; no balanced entries yet):

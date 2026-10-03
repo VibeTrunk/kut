@@ -55,12 +55,12 @@ own data-changing `db push`:
     minutes later and the rerun passed with no such error. No evening was
     running (Saturday). After the push `migration list --linked` showed 87
     local and 87 remote, no drift.
-  - **Smoke test on hosted:** _awaiting the owner's run._ The one-row query
-    below returned `t | t | {30,10,4,2} | t | f | 2 | t | 0 |` locally (no
-    week open there); hosted should match and end in the open week,
-    `2026-10-05` (recorded; the ledger reason; the coin rates for 2 to 5
-    rounds; members may call the save; members can't read the table; both
-    guard triggers; the payout pays picks; no picks yet):
+  - **Smoke test on hosted:** passed (the owner's run, 2026-10-03):
+    `true | true | {30,10,4,2} | true | false | 2 | true | 0 | 2026-10-05`,
+    matching the local run (`t | t | {30,10,4,2} | t | f | 2 | t | 0 |`, no
+    week open there) plus the open week (recorded; the ledger reason; the coin
+    rates for 2 to 5 rounds; members may call the save; members can't read the
+    table; both guard triggers; the payout pays picks; no picks yet):
 
     ```sql
     select

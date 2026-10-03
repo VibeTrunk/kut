@@ -4625,3 +4625,24 @@ from the lock); the midweek integration suites (race, switch, rotation: 7);
 `npm run sim:midweek` at 5,000 seasons (every target passes; rewrites
 `MIDWEEK_TUNING.md`); the authenticated E2E (49 passed, 1 expected skip),
 including a new how-it-works check at 320 px and on a Pixel 7.
+
+## MM 2.0 D (backend): predictions for members who are out — 2026-10-03
+
+`feat/midweek-predictions`, ADR-118 (amends ADR-096). Migration
+`20261017000000_midweek_predictions.sql`, data-changing tier; adds Part L #28.
+Decided in the owner's Q2 interview; the pages follow the Claude Design mock.
+
+- **The rule:** a member whose own match has ended in defeat picks the winner
+  of each later match before its kick-off, once both its feeders have ended;
+  changeable until kick-off. `kut.save_midweek_prediction(week, round,
+  pairing, winner)`; the rules live in a trigger on `kut.midweek_predictions`,
+  checked in an order that never gives a result away.
+- **Coins:** 30 split over the matches a round-1 loser could predict (2 a
+  correct pick at 17–32 entrants), paid at the payout with the wins, one
+  guarded row per (week, member) in `kut.midweek_prediction_rewards`, ledger
+  reason `midweek_prediction`. `predictionCoins` is the TypeScript twin.
+- **The result message** gains "You called 2 of 3 right: +20 KUT Coins."
+- **Views:** the caller's picks and coins, and each match's split (counts
+  only) from its kick-off.
+
+Verification: see the PR.

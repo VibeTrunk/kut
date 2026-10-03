@@ -1989,6 +1989,15 @@ pay_R = 250 − Σ pay_r (r < R)                the final absorbs the rounding
 - **The faucet** (ADR-096): about 43 coins per member a week at a roster of 22,
   and never more than one attendance reward to any member, so showing up stays
   the dominant coin source.
+- **Predictions (ADR-118).** A member whose own match has ended in defeat may
+  pick the winner of each later match they are not in, before its kick-off,
+  once both matches that feed it have ended; a pick can change until kick-off.
+  Each correct pick pays `MIDWEEK_PREDICTION_COINS_CAP` (30) divided by the
+  matches after round 1 (`2^(R−1) − 1`), rounded down: 30, 10, 4 and 2 for 2
+  to 5 rounds, so a night's predictions pay at most 30. They are paid with the
+  wins, once per (week, member), and the result message adds "You called 2 of
+  3 right: +20 KUT Coins." At 22 entrants that adds about 9 coins per member a
+  week, and no member's night ever passes the champion's total.
 
 ### 44.8 Determinism, fairness and controls
 
@@ -2046,6 +2055,8 @@ Everything is gated by time in definer projections on
 - **Only the entered cards are ever shown,** never the rest of a collection.
   Entry is the default; the rules page says plainly that your five are shown,
   and the opt-out takes you out entirely (ADR-091).
+- **Predictions (ADR-118)** are the member's own. From a match's kick-off
+  every member sees how many picks each side drew, never who made them.
 - **A void tournament** shows no results.
 
 ### 44.10 Match reports
@@ -2237,6 +2248,11 @@ Added to Part L by the PR that makes each hold:
   member or an admin, and only an unclaimed, active, collectible Player's.
   **Added to Part L by `20261015000000_midweek_archetype_rotation.sql`
   (ADR-110).**
+- **#28 (predictions PR):** a prediction is made only by a member already out,
+  only before the match's kick-off and once both its feeders have ended, and
+  only for one of its two managers; correct picks pay once per (week, member),
+  at the week's rate, at most 30, at the payout. **Added to Part L by
+  `20261017000000_midweek_predictions.sql` (ADR-118).**
 
 ### 44.14 Data and functions
 
@@ -2382,6 +2398,22 @@ Views only.
 | `kut.midweek_entries.balance_ppm` | The squad's balance as played, written by the lock step; null for every week locked before ADR-116. |
 | `kut._mm_lock_tournament` | Re-created: stores `balance_ppm`. |
 | `kut.midweek_entries_public` | Appends `balance_ppm`, from the lock like the archetypes it follows from. |
+
+**Predictions (`20261017000000_midweek_predictions.sql`, ADR-118).** Adds Part L #28.
+
+| Object | What it holds or does |
+|---|---|
+| `kut.wallet_ledger` reason `midweek_prediction` | The constraint re-created with one value appended. A ledger row references `midweek_tournament` and carries the key `midweek-prediction:<tournament>:<member>`. |
+| `kut._mm_prediction_coins(integer)` | Coins a correct pick for a bracket of `R` rounds: `30 / (2^(R−1) − 1)`, rounded down; 0 below 2 rounds. Twin of `predictionCoins` in `src/game/midweek/rewards.ts`. Internal. |
+| `kut.midweek_predictions` | One pick per (match, member): the week, the predicted manager and when it was saved. Service role reads it. A trigger holds Part L #28 for every write: the week `simulated`, the member out (a lost match that has ended), the match not a bye and not kicked off, both feeders ended, the member not in it, the pick one of its two managers; the match and member never change; a delete only before kick-off, or by cascade. |
+| `kut.save_midweek_prediction(uuid, integer, integer, uuid)` | The caller's pick for (week, round, pairing), or with a null pick its removal. Refuses: no active account (`42501`); no such week or match (`P0002`); not out, kicked off, feeders still playing, own match (`P0001`); a manager not in the match (`22023`). |
+| `kut.midweek_prediction_rewards` | One row per (week, member) paid: picks, correct, amount, the deferred `ledger_id`. Service role reads it. A trigger accepts a row only while the week is `simulated` with the final ended, for exactly the member's stored picks and the ones that came true, at the week's rate, at most 30, and within the champion's total with the member's wins; a paid row never changes. |
+| `kut._mm_pay_tournament(uuid)` | Re-created: wins as before, then each member's correct picks (none when the rate is 0), then one message per entrant, with "You called {n} of {m} right[: +{coins} KUT Coins]." for a member who predicted. |
+| `kut.my_midweek_predictions` | The caller's picks: week, round, pairing, the predicted manager and name, when saved, and `correct` once the match has ended. Not for a void week. |
+| `kut.my_midweek_prediction_rewards` | The caller's prediction coins per week: picks, correct, amount, when paid. |
+| `kut.midweek_prediction_splits_public` | Per match from its kick-off, the picks on each side. Counts only. |
+
+All three views are definer views gated on `kut.is_active_member()` (ADR-079).
 
 ---
 
@@ -5044,6 +5076,7 @@ STARTER_CARD_COUNT = 3
 # Midweek Madness, §44 (ADR-089). Tuned values, signed off 2026-09-25 (ADR-092);
 # the code is src/game/midweek/config.ts.
 MIDWEEK_CHAMPION_TOTAL = 250  # a champion's total over all rounds; its own constant (ECONOMY.midweekChampionTotal, ADR-096)
+MIDWEEK_PREDICTION_COINS_CAP = 30  # a night's correct predictions pay at most this, split over the matches after round 1 (PREDICTION_COINS_CAP in src/game/midweek/rewards.ts, kut._mm_prediction_coins, ADR-118)
 MIDWEEK_SQUAD_SIZE = 5
 MIDWEEK_LOCK = Wednesday 19:55 Europe/Amsterdam  # schedule version 2 (ADR-104); version 1 was 20:00
 MIDWEEK_ROUND_OFFSET_MINUTES = 5  # round 1 starts 5 minutes after the lock; version 1: 30
@@ -5383,6 +5416,7 @@ Tasks:
 25. A Midweek Madness tournament is simulated at most once and its stored result never changes: a void hides it, never recomputes it. A tournament only moves forward (`open` → `skipped`, `simulated` or `void`; `simulated` → `complete` or `void`), and squads are immutable after the lock (§44.8, ADR-095). Its lock and its clock (`schedule_version`) may move only while it is open, and the times stored at the lock (each match's start and end, each event's time) never change (ADR-104).
 26. A Midweek Madness win pays at most once per (tournament, round, member), only for a win in the stored bracket at its round's amount, and one tournament pays any member at most `MIDWEEK_CHAMPION_TOTAL`. A week is paid exactly when it completes, so a paid week cannot be voided (§44.7, ADR-096).
 27. Only the Midweek open step changes a Player's archetype without the member or an admin, and only an active, collectible Player with no linked account, once per opened week, drawn from that week's seed and logged. A rotation never changes OVR and never stamps the archetype cooldown (§44.2, ADR-110).
+28. A Midweek prediction is made only by a member already out of that week, only before the match's kick-off and once both matches that feed it have ended, and only for one of its two managers; no refusal gives away a result before its match has ended. Correct predictions pay once per (week, member), at the week's rate, at most 30 coins a night, at the payout, and never take a member's night past `MIDWEEK_CHAMPION_TOTAL` (§44.7, ADR-118).
 
 Every coding agent should treat this section as a regression checklist.
 

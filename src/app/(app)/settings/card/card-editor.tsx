@@ -260,6 +260,10 @@ export function CardEditor({
             {ARCHETYPE_CHANGE_COOLDOWN_DAYS} days. In Midweek Madness a change counts from the next
             week: the week already open plays the archetype you had when it opened.
           </p>
+          <p className="mt-2 text-sm text-ink-faint">
+            Players with no linked account get a new archetype every week. Yours is linked, so it
+            stays as you set it.
+          </p>
         </div>
         {nextArchetypeChange && (
           <p className="rounded-xl border border-line bg-board-deep/60 p-3 text-sm text-ink-dim">

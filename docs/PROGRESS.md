@@ -4528,3 +4528,51 @@ Verification: `npm run verify:fast` (422 tests, including the new
 is drawn, deterministic, the deal and quota are exact, off changes nothing);
 `npm run sim:midweek` passes and reproduces `MIDWEEK_TUNING.md`;
 `node scripts/midweek/rotation.mjs` at 5,000 seasons.
+
+## MM 2.0 PR 7 (C1): unclaimed Players' archetypes rotate weekly — 2026-10-03
+
+`feat/midweek-archetype-rotation`, ADR-110 (amends ADR-027 and ADR-099).
+Migration `20261015000000_midweek_archetype_rotation.sql`, data-changing tier;
+new Part L #27. Built to the owner's decisions in the ROADMAP row
+(2026-09-30) and after C0 (2026-10-03): no smoothing (Q8), the visibility
+accepted (Q9).
+
+- **The open step rotates first.** `kut._mm_open_next` takes a transaction
+  advisory lock, checks again for a running week, generates the week's seed,
+  then `kut._mm_rotate_archetypes(seed)` sets every active, collectible Player
+  with no linked account to `kut._mm_rotation_archetype(seed, player)` (rng.ts
+  `uniform` over the seven, tag `rotation:<player id>`), rebuilds the active
+  season once if anything changed, and returns the changes. The insert follows,
+  so the ADR-099 snapshot freezes the rotated archetypes, and the changes are
+  logged against the new week in `kut.midweek_archetype_rotations`.
+- **The seed is the week's own secret one** (ADR-110): no draw can be known
+  before the week opens; once the seed is published at payout, every draw can
+  be checked against it.
+- **Racing worker calls rotate once**: the advisory lock and the second check.
+  A clash on `week_start` now raises (the old `on conflict do nothing` would
+  have left a rotation without its week); the worker records it as `open: …`.
+- **Copy:** how-it-works §6 and the Midweek section, and `/settings/card`,
+  say that a Player with no linked account gets a new archetype every week
+  (Q9). No page reads anything new, so they work before the push.
+- **E2E fixture:** `endFixtureEvening` puts back, from the log, the archetypes
+  rotated when the worker opened the week after the fixture's evening, and
+  rebuilds the season, before it deletes that week.
+- The C0 harness is unchanged; its `uniform` variant is this model. Switching
+  its default to rotation belongs to PR 8's retune.
+
+Locally an open with rotation and rebuild takes about 75 ms (25 eligible
+Players, 24 changed); 7,000 draws for one seed land 973–1,051 per archetype.
+
+Verification: `npm run verify:fast` (422); every pgTAP suite through
+`docker exec` (35 files, 1,496 assertions), including the new
+`midweek_archetype_rotation.test.sql` (34: only eligible Players rotate;
+claimed by an enabled or a disabled account, inactive and non-collectible
+never do; deterministic for a seed and uniform over the seven; every change
+reported and logged against the new week; OVR unchanged and the stats
+rebuilt; the cooldown not stamped; the snapshot freezes the draw; switch off
+rotates nothing; a rerun opens, rotates and logs nothing);
+`npm run test:integration` (7 files, 16 tests), including the new
+`midweek-rotation` suite (three worker calls racing through `authenticator`
+with safeupdate loaded: one week opens, every eligible Player has their draw,
+one log row per change, the snapshot matches; a later call changes nothing);
+`npm run sim:midweek` unchanged.

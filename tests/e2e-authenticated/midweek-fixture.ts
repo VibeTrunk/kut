@@ -368,8 +368,9 @@ export async function advanceFixtureEvening(
 
 /**
  * Ends tonight's evening and leaves the open week as `seedMidweekFixture` did:
- * takes back anything it paid, deletes it with every row it stored, deletes the
- * week the worker opened after it, if any, and opens the fixture week again.
+ * takes back anything it paid, deletes it with every row it stored, undoes the
+ * rotation of the week the worker opened after it and deletes that week, if
+ * any, and opens the fixture week again.
  */
 export async function endFixtureEvening(database: Client) {
   const week = await fixtureWeek(database);
@@ -383,6 +384,21 @@ export async function endFixtureEvening(database: Client) {
     return;
   }
   await takeBackPayouts(database, [week.id]);
+  // Opening the week after it rotated every unclaimed Player, the fixture's
+  // included (ADR-110). Put each archetype back from that week's log before the
+  // delete takes the log with it, and the card faces with them.
+  const rotated = await database.query(
+    `update kut.players player set archetype = rotation.from_archetype
+     from kut.midweek_archetype_rotations rotation
+     join kut.midweek_tournaments tournament on tournament.id = rotation.tournament_id
+     where rotation.player_id = player.id and tournament.week_start > $1::date`,
+    [week.week_start],
+  );
+  if (rotated.rowCount) {
+    await database.query(
+      "select kut._rebuild_season_core(id) from kut.seasons where is_active limit 1",
+    );
+  }
   await database.query(
     "delete from kut.midweek_tournaments where id = $1 or week_start > $2::date",
     [week.id, week.week_start],

@@ -727,7 +727,8 @@ projections). Still out of scope: rename, archetype edit, `photo_path`,
 
 Date: 2026-08-29
 
-Status: Accepted
+Status: Accepted (amended by ADR-110: an unclaimed Player's archetype also
+rotates weekly, at the Midweek open)
 
 Decision: A signed-in member can now edit their own linked player's card from
 `/settings/card`:
@@ -5384,7 +5385,9 @@ Tier: no migration.
 
 Date: 2026-09-26
 
-Status: Accepted (supersedes the "frozen at the lock" part of ADR-089 and §44.2)
+Status: Accepted (supersedes the "frozen at the lock" part of ADR-089 and §44.2;
+amended by ADR-110: the open step now rotates unclaimed Players' archetypes
+right before the insert, so the snapshot freezes the rotated ones)
 
 Context: the lock read each card's archetype live from `kut.players`. The
 14-day cooldown (ADR-094) limits how often a member changes their own
@@ -6417,3 +6420,94 @@ final in play, complete, and a pre-ADR-104 week); the evening-timing suite now
 expects no champion while the final plays.
 
 Tier: additive (docs/OPERATIONS.md): views only, columns appended.
+
+## ADR-110 — Unclaimed Players' archetypes rotate weekly, drawn from the new week's seed
+
+Date: 2026-10-03
+
+Status: Accepted (amends ADR-027's "only the member or an admin changes an
+archetype" and ADR-099's "a trigger rather than a change to `_mm_open_next`";
+MM 2.0 PR 7, C1. The number was reserved since ADR-104)
+
+Context: `kut.players.archetype` defaults to `all_rounder` and only the
+claiming member or an admin changes it (ADR-027), so every Player with no
+linked account, about 80% of the roster, is an All-rounder for good. That
+flattens squad shape (§44.4) and is the prerequisite for the balance change
+(C2), which would otherwise weaken most squads overnight. The roadmap row
+"Rotate unclaimed Players' archetypes weekly" carries the owner's decisions
+(2026-09-30): every archetype in the pool, only active and collectible
+Players, claiming ends the rotation, rotate just before the Midweek week opens
+so the ADR-099 snapshot freezes it, seeded and logged, OVR unchanged. The C0
+harness (#168, `archive/MIDWEEK_ROTATION.md`) informed the rest, decided
+2026-10-03: no smoothing (Q8), each rotating Player draws independently; the
+dip in "thought-through vs random" to about 55% is accepted while C1 is live
+alone, and C2 is tuned with rotation on to restore 58%; the visibility is
+accepted (Q9) and how-it-works says so.
+
+Decision (migration `20261015000000_midweek_archetype_rotation.sql`):
+
+- **Who rotates.** A Player with `is_active and is_collectible` and no
+  `kut.profiles` row naming them in `player_id`. A disabled account still
+  claims its Player. Unlinking a Player starts the rotation again from the
+  next open.
+- **When.** In the worker's open step (`kut._mm_open_next`), after the switch
+  and running-week checks and right before the tournament insert, so the
+  `after insert` snapshot trigger (ADR-099) freezes the rotated archetypes and
+  nothing changes between the open and the lock. With the switch off no week
+  opens and nothing rotates. A change made after the open still applies from
+  the next week, as before.
+- **The draw.** `kut._mm_rotation_archetype(seed, player)`: rng.ts `uniform`
+  over the seven archetypes in `src/game/archetypes.ts` order, tag
+  `rotation:<player uuid>`, which no other draw uses. Each Player draws
+  independently and uniformly, All-rounder and Goalkeeper included: the C0
+  harness's `uniform` variant, which stays as it is (switching the harness
+  default to rotation belongs to C2's retune).
+- **The seed: the new week's own secret seed, not a public hash.** A hash of
+  the week and the Player would be deterministic and checkable, but anyone
+  with the formula could compute every future week's archetypes and, say, buy
+  next month's Goalkeepers on the market. The week's seed does not exist until
+  the week opens, so nobody (an admin included) can know a draw in advance; its
+  `seed_hash` is published at the open and the seed itself once the week is
+  paid (§44.8), so anyone can then check every draw. A week that is skipped or
+  voided never publishes its seed, so its rotation stays uncheckable; the log
+  still records it. The tag keeps the rotation independent of the week's
+  match draws.
+- **Logged.** `kut.midweek_archetype_rotations` (tournament, Player, from, to,
+  when) holds each change; a Player who draws the archetype they already have
+  is not a change. Service role only, like the snapshots. Members see the
+  result on every card face and in `kut.midweek_archetypes`.
+- **Card faces follow at once.** `kut._mm_rotate_archetypes` calls
+  `kut._rebuild_season_core` once per open that changed anything, as
+  `set_own_player_archetype` does. OVR is unchanged: the offsets sum to zero.
+- **Claiming keeps the archetype of the moment, and the first change stays
+  free.** The rotation never stamps `archetype_changed_at`, so the cooldown
+  (ADR-094) still lets a newly linked member change at once.
+- **One opener at a time.** Page visits call the worker concurrently. The open
+  step now takes a transaction advisory lock and checks again for a running
+  week once it holds it, so racing calls rotate once and open one week. The
+  `on conflict do nothing` on `week_start` is gone: a clash now raises, which
+  rolls the rotation back with the open, and the worker records the error
+  (`open: …`) and leaves it for the next call.
+- **Running it again changes nothing.** For the same seed the rotation is a
+  no-op; a second worker call finds the week open and does not rotate.
+
+New Part L invariant #27: only the open step changes an archetype without a
+member or an admin, and only an unclaimed, active, collectible Player's, once
+per week, logged.
+
+How-it-works (§6 and the Midweek section) and `/settings/card` now say that a
+Player with no linked account gets a new archetype every week. Vercel deploys
+that copy on merge, before the hosted push; until the push the first rotation
+is simply still to come. The week already open at the push keeps its
+archetypes; the first rotation runs when the worker opens the following week.
+
+Consequences: unclaimed Players' card faces reshuffle every week, so an
+attentive member can tell a rotating Player is unlinked within two to three
+weeks (C0); `player_directory` still hides which member is which Player. The
+roster holds about five Goalkeepers in an average week instead of two. The
+E2E fixture puts back the archetypes its evening's open rotated, from the
+log, before it deletes that week.
+
+Tier: data-changing (ADR-032). The push rewrites no row, but from the next
+open the worker rewrites `kut.players.archetype` and the season's stats every
+week. Fresh cold-verified backup first.

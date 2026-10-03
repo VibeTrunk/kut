@@ -260,6 +260,15 @@ export default async function HowItWorksPage() {
             </Link>
             .
           </p>
+          <p>
+            <strong className="text-ink">
+              A Player with no linked account gets a new archetype every week.
+            </strong>{" "}
+            It is drawn at random from all seven, All-rounder and Goalkeeper included, when each
+            Midweek Madness week opens, so cards of that Player show different stats from week to
+            week. OVR stays the same. Once an account is linked, the archetype stays as it is until
+            that member changes it.
+          </p>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[26rem] text-left text-sm">
               <thead className="text-ink-faint">
@@ -452,9 +461,10 @@ export default async function HowItWorksPage() {
             Archetypes set your shape: attackers make chances, playmakers create them, defenders
             stop them. <strong className="text-ink">Take a Goalkeeper</strong>: without one, your
             best defender goes in goal and keeps goal much worse. A week plays each card&rsquo;s
-            archetype as it was when that week opened, so the picker never changes under you. You
-            can change your own archetype once every {ARCHETYPE_CHANGE_COOLDOWN_DAYS} days; in
-            Midweek Madness it counts from the next week.
+            archetype as it was when that week opened, so the picker never changes under you.
+            Players with no linked account draw a new archetype just before each week opens, so look
+            again each week. You can change your own archetype once every{" "}
+            {ARCHETYPE_CHANGE_COOLDOWN_DAYS} days; in Midweek Madness it counts from the next week.
           </p>
           <h3 className="pt-2 font-black text-ink">Coins</h3>
           <p>

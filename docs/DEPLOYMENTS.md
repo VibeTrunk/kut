@@ -18,6 +18,74 @@ dated "Hosted deployment…" entries in `PROGRESS.md`.
 then bump the "Latest hosted migration" line in `CLAUDE.md`. Record the tier,
 backup id, pre/post `migration list` counts, the smoke row, and the rollback.
 
+## 2026-10-03 — `20261017000000` predictions for members who are out (ADR-118)
+
+Deployed 2026-10-03 from `VibeTrunk/supabase` (catalogue PR #77 there), on its
+own data-changing `db push`:
+
+- `20261017000000_midweek_predictions.sql` (BUILD_SPEC §44.7, §44.9, §44.13,
+  §44.14, §145, Part L #28, ADR-118 amending ADR-096, owner Q2 interview, KUT
+  PR #175, tier data-changing) &mdash; MM 2.0 D, the backend.
+  - **What changed.** A member whose own match has ended in defeat can pick the
+    winner of each later match before its kick-off, once both its feeders have
+    ended (`kut.save_midweek_prediction`, `kut.midweek_predictions` with its
+    Part L #28 guard trigger). Correct picks pay at the payout, 30 split over
+    the matches after round 1 (`kut._mm_prediction_coins`: 2 a pick at 17–32
+    entrants), one guarded row per (week, member) in
+    `kut.midweek_prediction_rewards`, ledger reason `midweek_prediction` (the
+    ledger constraint re-created). `kut._mm_pay_tournament` is re-created with
+    the wins step unchanged, then the picks, then the result message with "You
+    called {n} of {m} right[: +{coins} KUT Coins]." for a member who predicted.
+    Three gated views: `my_midweek_predictions`,
+    `my_midweek_prediction_rewards`, `midweek_prediction_splits_public`.
+  - **No DML at the push.** Data-changing because it widens what the ledger
+    accepts, adds a faucet and changes what the worker writes when it pays a
+    week.
+  - **Before the push.** Fresh backup `20261003-134420`, cold-verified, no
+    cards in escrow. `migration list --linked` showed 87 entries, 86 remote,
+    with `20261017000000` the only local-only one and no remote-only drift; the
+    dry run named exactly that file, and again from the catalogue's merged main
+    (`aa52104`) just before the push; the catalogue check reported 87 approved
+    source migrations. The production gate **passed** for `9a029e6`
+    (2026-10-03 13:54 Amsterdam: CI checks, catalogue parity, the backup
+    re-verified, finalizer readiness, authenticated E2E 49 passed, 1 expected
+    skip). Its first run at 13:46 failed closed: 13 E2E tests saw PostgREST
+    refuse their tokens as "JWT issued at future" (`PGRST303`), a passing
+    clock skew between Windows and the Docker VM. The clocks agreed again
+    minutes later and the rerun passed with no such error. No evening was
+    running (Saturday). After the push `migration list --linked` showed 87
+    local and 87 remote, no drift.
+  - **Smoke test on hosted:** passed (the owner's run, 2026-10-03):
+    `true | true | {30,10,4,2} | true | false | 2 | true | 0 | 2026-10-05`,
+    matching the local run (`t | t | {30,10,4,2} | t | f | 2 | t | 0 |`, no
+    week open there) plus the open week (recorded; the ledger reason; the coin
+    rates for 2 to 5 rounds; members may call the save; members can't read the
+    table; both guard triggers; the payout pays picks; no picks yet):
+
+    ```sql
+    select
+      exists (select 1 from supabase_migrations.schema_migrations where version = '20261017000000') as recorded,
+      (select pg_get_constraintdef(oid) like '%''midweek_prediction''%' from pg_constraint
+        where conname = 'wallet_ledger_reason_check' and conrelid = 'kut.wallet_ledger'::regclass) as ledger,
+      (select array_agg(kut._mm_prediction_coins(r) order by r) from generate_series(2, 5) r)::text as coins,
+      has_function_privilege('authenticated', 'kut.save_midweek_prediction(uuid,integer,integer,uuid)', 'execute') as member_saves,
+      has_table_privilege('authenticated', 'kut.midweek_predictions', 'select') as member_reads_table,
+      (select count(*) from pg_trigger where tgname in ('midweek_predictions_guard', 'midweek_prediction_rewards_guard')) as guards,
+      position('midweek_prediction' in pg_get_functiondef('kut._mm_pay_tournament(uuid)'::regprocedure)) > 0 as pays_picks,
+      (select count(*) from kut.midweek_predictions) as picks,
+      (select week_start from kut.midweek_tournaments where status = 'open' order by week_start limit 1) as open_week;
+    ```
+  - **Deploy ordering** was safe: no page reads any of it yet (the pages
+    follow the DR3 design mock), so nobody can save a pick and the Wed 7 Oct
+    payout runs the new function with no picks, its messages unchanged.
+  - Rollback: in the migration's header. Re-create `kut._mm_pay_tournament`
+    from `20261013000000_midweek_result_for_everyone.sql`; drop the three
+    views, `kut.midweek_prediction_rewards`, `kut.midweek_predictions`,
+    `kut.save_midweek_prediction`, both guard functions and
+    `kut._mm_prediction_coins`; re-create the ledger constraint from
+    `20261006000000_midweek_payouts.sql` once no ledger row has reason
+    `midweek_prediction`.
+
 ## 2026-10-03 — `20261016000000` balanced squads beat All-rounders (ADR-116)
 
 Deployed 2026-10-03 from `VibeTrunk/supabase` (catalogue PR #75 there), on its

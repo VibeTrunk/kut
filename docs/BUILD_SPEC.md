@@ -2176,7 +2176,12 @@ Everything is gated by time in definer projections on
   layer, picked by the card's biggest contribution and keyed on the seed hash,
   never the same line twice in a five. Like the renderer, a pure TypeScript
   function of the stored events and the seed hash; it decides and pays
-  nothing. The pages that show it follow from a design mock.
+  nothing. **The pages (DR3):** once the week is complete, the champion view
+  and the week's bracket show `Your five's ratings`, best first, each night
+  rating in a neutral disc (never tinted) with its line, and a chip per match
+  linking to its report; every report of that week adds each card's rating
+  for that match to the Why list, for both sides. Nothing shows before the
+  week is complete.
 
 ### 44.11 Running without admin
 

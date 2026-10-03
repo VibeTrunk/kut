@@ -13,6 +13,7 @@ import {
   calculateLiveDiscardValue,
 } from "@/game/rating-engine";
 import { requireUser } from "@/lib/auth/user";
+import { RATING } from "@/lib/midweek/report/rating-rule";
 import {
   lockClock,
   roundIntervalText,
@@ -552,6 +553,36 @@ export default async function HowItWorksPage() {
               ))}
             </tbody>
           </table>
+          <h3 className="scroll-mt-6 pt-2 font-black text-ink" id="midweek-ratings">
+            Ratings
+          </h3>
+          <p>
+            Once the week is paid, every card you entered gets a rating out of 10 for each match it
+            played, and one for the night: the mean of its matches. A bye isn&rsquo;t a match.
+          </p>
+          <ul className="ml-5 list-disc space-y-1">
+            <li>
+              Every card starts at {RATING.base}. Goals, assists, saves and blocks add to it, more
+              for the harder ones: a goal from a half-chance counts for more than a tap-in, and a
+              save for more the bigger the chance it stopped.
+            </li>
+            <li>
+              A win adds {RATING.result} and a defeat takes {RATING.result} off. Each goal your side
+              concedes takes a little off, most off the keeper.
+            </li>
+            <li>
+              <strong className="text-ink">A miss never costs the shooter.</strong>
+            </li>
+            <li>
+              Ratings run from {RATING.floor} to {RATING.cap}, with a line about each card&rsquo;s
+              night. They&rsquo;re for fun: they pay nothing and change no result.
+            </li>
+          </ul>
+          <p>
+            Your five&rsquo;s ratings are on the champion page until Thursday night and on that
+            week&rsquo;s bracket for good. Every match report shows each card&rsquo;s rating for
+            that match.
+          </p>
           <h3 className="pt-2 font-black text-ink">What other members see</h3>
           <p className="rounded-xl bg-steel-bg/60 p-3 text-sm font-semibold text-steel">
             From {roundOneAt} on the Wednesday, members see the five cards you entered (or your auto

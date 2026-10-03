@@ -8,6 +8,7 @@ import { MidweekJumpLinks } from "@/components/midweek/jump-links";
 import { MidweekLivePoller } from "@/components/midweek/live-poller";
 import { MIDWEEK_PAGE, MidweekPageHead } from "@/components/midweek/page-head";
 import { MidweekPickShares, type PickShareView } from "@/components/midweek/pick-shares";
+import { MidweekRatingList } from "@/components/midweek/rating-list";
 import { MidweekSeed } from "@/components/midweek/seed";
 import { MIDWEEK } from "@/game/midweek/config";
 import { seedHash } from "@/game/midweek/rng";
@@ -29,7 +30,12 @@ import {
   roundsYouAreIn,
   yourNextRound,
 } from "@/lib/midweek/evening";
-import { loadPickShares, loadTournamentByWeek, loadWeekResults } from "@/lib/midweek/results";
+import {
+  loadNightRatings,
+  loadPickShares,
+  loadTournamentByWeek,
+  loadWeekResults,
+} from "@/lib/midweek/results";
 import { runDueMidweek } from "@/lib/midweek/run-due";
 import { createClient } from "@/lib/supabase/server";
 
@@ -42,7 +48,8 @@ const BACK = { href: "/midweek", label: "Midweek Madness" };
  * Bracket-Evening, Bracket-Complete). From the lock round 1 shows as drawn,
  * with every kick-off (ADR-105, ADR-113); while the evening runs the sticky
  * clock leads and jump links take you to your match. After the week is
- * complete, the pick shares and the seed follow. Past weeks stay readable when
+ * complete, the member's ratings lead (Bracket-Complete, DR3, ADR-117; this is
+ * how they outlive Thursday), and the pick shares and the seed follow. Past weeks stay readable when
  * Midweek Madness is switched off, as history (HANDOFF question 6, ADR-097),
  * and a void week shows only its notice (§44.9).
  */
@@ -138,7 +145,12 @@ export default async function MidweekBracketPage({
     );
   }
   const complete = tournament.status === "complete";
-  const shares = complete ? await loadPickShares(supabase, tournament.tournament_id) : [];
+  const [shares, ratings] = complete
+    ? await Promise.all([
+        loadPickShares(supabase, tournament.tournament_id),
+        loadNightRatings(supabase, tournament, results, user.id),
+      ])
+    : [[], null];
   // The chip's tier comes from the locked OVR of an entered copy, never today's rating.
   const lockedOvr = new Map(
     results.entries.flatMap((row) => (row.player_id ? [[row.player_id, row.ovr] as const] : [])),
@@ -159,7 +171,12 @@ export default async function MidweekBracketPage({
 
   return shell(
     <>
-      <MidweekJumpLinks rounds={bracket} yours={evening ? yourNextRound(bracket, user.id) : null} />
+      <MidweekJumpLinks
+        blocks={ratings ? [{ href: "#ratings", label: "Your ratings" }] : []}
+        rounds={bracket}
+        yours={evening ? yourNextRound(bracket, user.id) : null}
+      />
+      {ratings && <MidweekRatingList defaultOpen ratings={ratings} />}
       <MidweekBracket rounds={bracket} weekStart={weekStart} you={user.id} />
       {complete && shareRows.length > 0 && (
         <MidweekPickShares ownerCountMin={MIDWEEK.ownerCountMin} rows={shareRows} />

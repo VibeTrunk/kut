@@ -6686,3 +6686,74 @@ after a knockout" and not chosen (Q2): Midweek has no season, and a card's
 rating is final once its manager is out.
 
 Tier: no migration.
+
+## ADR-118 — Predictions for members who are out: pick the later matches, coins for the right ones
+
+Date: 2026-10-03
+
+Status: Accepted (amends ADR-096's faucet; adds Part L #28; MM 2.0 D, the
+backend. Decided in the owner's Q2 interview, 2026-10-03. The pages follow
+from a Claude Design mock and amend this ADR)
+
+Context: the roadmap row "Something to follow after being knocked out". With
+22 entrants about 6 members are out after round 1 (by about 20:05) and 14 after
+round 2 (by about 20:20), so most of the club has nothing of its own to watch
+before the evening is half over. Measured on 150 simulated seasons, the
+pre-match favourite wins 74% in round 1, then 73%, 67%, 63% and 61% in the
+final: calling the obvious winner pays early, judgement later.
+
+Decision (migration `20261017000000_midweek_predictions.sql`):
+
+- **Predictions, only for members who are out** (owner: not everyone). Once a
+  member's own match has ended in defeat, they may pick the winner of each
+  later match they are not in, before its kick-off, as soon as both matches
+  that feed it have ended (round 2 opens as round 1 finishes, between 6 and 10
+  minutes before its kick-off). A pick can be changed or cleared until
+  kick-off and never after. Rejected: a consolation bracket for round-1
+  losers (an engine change with new golden vectors, a second bracket, and it
+  covers 6 of the 14 out by round 2), and a season table built on the ratings
+  (a card's rating is final once its manager is out, and Midweek has no
+  season).
+- **Coins for correct picks, about 30 a night at most** (owner). 30 split over
+  the matches a round-1 loser could predict, `2^(R−1) − 1` of them:
+  `kut._mm_prediction_coins(R)` and `predictionCoins` are 30, 10, 4 and 2 a
+  correct pick for 2 to 5 rounds (4, 5–8, 9–16, 17–32 entrants), so a perfect
+  night pays 30, 30, 28 or 30. Past 32 entrants it rounds to 0 and the picks
+  are only counted. Paid at the payout, in the same transaction as the wins,
+  as one row per (week, member) in `kut.midweek_prediction_rewards` (ledger
+  reason `midweek_prediction`, key `midweek-prediction:<week>:<member>`). A
+  member disabled since the lock is not paid.
+- **The faucet (amends ADR-096).** At 22 entrants, if every member who is out
+  predicts every match and backs the favourite, the week pays about 200 coins
+  more than the 953 of the bracket: about 9 a member. Nobody still in can
+  predict, so the most a night pays any member stays far under the 250
+  champion total (a semi-finalist who calls the final: 102), and the guard
+  holds that bound anyway. Showing up stays the dominant coin source.
+- **No table** (owner): Midweek has no season (`kut.seasons` is the rating
+  season, created by hand and never reset), so the result message gains one
+  sentence instead: "You called 2 of 3 right: +20 KUT Coins." or "You called 0
+  of 2 right."
+- **Part L #28, in the tables.** A trigger on `kut.midweek_predictions` holds
+  every rule whoever writes the row, and checks them in an order that never
+  gives a result away: the member's own defeat (theirs to know), the match and
+  its kick-off (public), both feeders ended (public), and only then the pick
+  against the stored pairing, which by then is public too. So a refusal never
+  says who won a match still in play. `kut.save_midweek_prediction(week, round,
+  pairing, winner)` names a match by round and pairing, because a later
+  round's match is not shown to members before its kick-off. A second trigger
+  accepts a reward only from the complete step, for exactly the member's
+  stored picks and the ones that came true, at the week's rate, at most 30,
+  and never past the champion's total with the member's wins.
+- **Privacy.** A member reads their own picks (`kut.my_midweek_predictions`,
+  with `correct` once the match has ended) and their own coins
+  (`kut.my_midweek_prediction_rewards`). Everyone reads how the club split on
+  a match from its kick-off (`kut.midweek_prediction_splits_public`): counts,
+  never who.
+
+Consequences: the payout function is re-created with the wins step word for
+word (Part L #26 untouched) and its message step extended. No page reads any
+of this until the mock's pages ship, so nobody can predict before then and
+nothing pays. The pages will read the views tolerantly.
+
+Tier: data-changing (docs/OPERATIONS.md): it widens what the ledger accepts,
+adds a faucet and changes what the worker writes when it pays a week.

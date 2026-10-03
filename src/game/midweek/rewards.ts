@@ -18,3 +18,17 @@ export function roundPayouts(rounds: number, cfg: MidweekConfig = MIDWEEK): numb
   pays.push(total - pays.reduce((sum, pay) => sum + pay, 0));
   return pays;
 }
+
+/** The most correct predictions pay in one night (ADR-118). */
+export const PREDICTION_COINS_CAP = 30;
+
+/**
+ * Coins per correct prediction (BUILD_SPEC §44.7, ADR-118): the cap split over
+ * the matches after round 1, which a member out in round 1 can predict, so 2
+ * with 17–32 entrants, 4 with 9–16, 10 with 5–8 and 30 with 4. The twin of
+ * `kut._mm_prediction_coins`; the database pays, this only displays.
+ */
+export function predictionCoins(rounds: number): number {
+  if (!Number.isInteger(rounds) || rounds < 2) return 0;
+  return idiv(PREDICTION_COINS_CAP, 2 ** (rounds - 1) - 1);
+}

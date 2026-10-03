@@ -87,7 +87,9 @@ async function expectTeamColours(page: Page) {
   expect(seen.strip?.height).toBe(3);
   expect(seen.strip?.top).toBeLessThanOrEqual(1);
   expect(seen.strip?.width).toBeGreaterThan(seen.board - 4);
+}
 
+/**
  * The ratings block (F7, ADR-117): five night ratings in neutral discs, one
  * best chip, `Show each match` opening a chip per match, all inside the screen.
  */

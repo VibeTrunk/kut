@@ -4644,5 +4644,30 @@ Decided in the owner's Q2 interview; the pages follow the Claude Design mock.
 - **The result message** gains "You called 2 of 3 right: +20 KUT Coins."
 - **Views:** the caller's picks and coins, and each match's split (counts
   only) from its kick-off.
+## MM 2.0 interviews (Q1, Q4, Q2) and F7 core: card ratings — 2026-10-03
+
+`feat/midweek-ratings`, ADR-117. No migration. The owner decided Q1 (ratings),
+Q4 (the shareable result), Q2 (something to follow after a knockout) and the
+picker's plusses count in one interview; the ROADMAP's MM 2.0 rows record each
+answer.
+
+- **Q1 → F7, measured first:** 150 simulated seasons compared a counterfactual
+  replay (mostly noise: 60% of goalscorers neutral or negative), the §44.10
+  standout points (coarse) and events weighted by each chance's goal
+  probability. The owner chose the weighted events, a rating per match and per
+  night, a floor of 4, and a Claude Design mock before the pages.
+- **The rule:** `matchRatings` and `rateNight` in
+  `src/lib/midweek/report/ratings.ts`, pure functions of the stored events and
+  the seed hash; 70 description lines in a new phrasebook layer
+  (`phrasebook/ratings.ts`, 14 stories), for the owner's read-through.
+- **Design input:** `design/midweek/sample-ratings.json`, every member's five
+  with ratings and lines from the sample world on today's engine.
+- **Q4 → F8:** names and Player photos on the image (the owner's decision,
+  recorded against §53 in F8's ADR), a champion poster and "my night", from
+  payout; UI from the same mock round.
+- **Q2 → D:** predictions for members who are out, coins capped at about 30
+  a night (30 split over the matches a round-1 loser could predict), no table;
+  the backend ships first as its own migration PR (ADR-118), the UI after the
+  mock.
 
 Verification: see the PR.

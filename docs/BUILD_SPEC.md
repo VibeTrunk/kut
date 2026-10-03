@@ -2163,6 +2163,21 @@ Everything is gated by time in definer projections on
   match is in play, and once at the next kick-off otherwise; Home's card shows
   the match as it stood at page load and does not poll.
 
+- **Ratings (ADR-117):** once the week is complete, each card a member
+  entered has a rating per match and a night rating, the mean of its matches
+  (a bye is not a match), to one decimal from 4 to 10. A card starts at 6 and
+  gains, times 0.75, `1 + 1.5 × (1 − p)` per goal and `0.6 + 0.6 × (1 − p)` per
+  assist (`p` the engine's goal chance), `0.3 + 1.5 × p` per save, `0.3 + 1.2 ×
+  p` per block, `0.15 + 0.5 × p` per shot forced wide, 0.15 per chance made
+  that didn't go in, 0.3 per penalty scored and 0.8 per penalty saved; a win
+  adds 0.4 and a loss takes 0.4 off; each goal conceded in open play takes 0.3
+  off the keeper and 0.1 off each outfielder. A miss costs the shooter
+  nothing. Each night rating carries one line from the phrasebook's `rating`
+  layer, picked by the card's biggest contribution and keyed on the seed hash,
+  never the same line twice in a five. Like the renderer, a pure TypeScript
+  function of the stored events and the seed hash; it decides and pays
+  nothing. The pages that show it follow from a design mock.
+
 ### 44.11 Running without admin
 
 KUT has no scheduler; like ADR-061, one idempotent, service-role-only worker

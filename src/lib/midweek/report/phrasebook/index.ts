@@ -21,6 +21,7 @@ import {
   SHOOTOUT_INTRO,
   SHOOTOUT_TOSS,
 } from "./penalties";
+import { RATING_LINES } from "./ratings";
 
 /**
  * Every phrasebook pool with the placeholders it may use, so the rules in
@@ -85,6 +86,9 @@ export const PHRASE_POOLS: PhrasePool[] = [
       lines,
       { injured: kind === "injured_hero" },
     ),
+  ),
+  ...Object.entries(RATING_LINES).map(([story, lines]) =>
+    pool(`rating:${story}`, ["name", "goals", "assists", "saves"], lines),
   ),
 ];
 

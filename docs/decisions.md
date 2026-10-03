@@ -6686,3 +6686,73 @@ nothing pays. The pages will read the views tolerantly.
 
 Tier: data-changing (docs/OPERATIONS.md): it widens what the ledger accepts,
 adds a faucet and changes what the worker writes when it pays a week.
+## ADR-117 — Card ratings after a Midweek night: weighted events, per match and per night, floor 4
+
+Date: 2026-10-03
+
+Status: Accepted (the rule and the description lines; MM 2.0 F7, core. The
+pages that show the ratings follow from a Claude Design mock, owner decision
+2026-10-03, and amend this ADR. The lines await the owner's read-through in
+review)
+
+Context: the roadmap row "Player ratings after the tournament" asks that once
+the tournament is complete, each card in a member's squad gets a published
+rating from 1 to 10, reflecting how much it contributed to winning, with a
+short description. DR2 left a placeholder for it on the champion view ("Your
+five's ratings: 1–10 per card with a line"). The owner decided the open
+questions in the Q1 interview (2026-10-03), after the candidates were measured
+on 150 simulated seasons (3,000 tournaments, about 236,000 card-matches, the
+rotation and the ADR-116 balance on).
+
+Decision:
+
+- **Event-based, weighted by the chance.** Every card starts at 6. Event
+  points, times 0.75, are added: a goal `1 + 1.5 × (1 − p)` and its assist
+  `0.6 + 0.6 × (1 − p)`, where `p` is the engine's goal chance, so a goal from
+  nothing counts for more than a tap-in; a save `0.3 + 1.5 × p`, a block
+  `0.3 + 1.2 × p` and a shot forced wide `0.15 + 0.5 × p`, so stopping a big
+  chance counts for more; 0.15 for making a chance that didn't go in; 0.3 for
+  a penalty scored and 0.8 for a penalty saved. The result adds 0.4 for a win
+  and takes 0.4 off for a loss, shoot-outs included; each goal conceded in open
+  play takes 0.3 off the keeper and 0.1 off each outfielder. **A miss costs the
+  shooter nothing,** as the phrasebook never blames a shooter. The constants
+  are `RATING` in `src/lib/midweek/report/ratings.ts`.
+- **Rejected: a counterfactual replay** (re-run the match with the card
+  swapped for a trialist, same seed, possible once the seed is published).
+  Measured, it is mostly noise: swapping one card shifts the midfield share and
+  every weighted draw, so the match plays out differently. 60% of goalscorers
+  came out neutral or negative, 8% of cards that did nothing flipped the
+  result, and it correlated 0.19 with what the cards did. Averaging many
+  replays measures pre-match strength instead, which the Why list already
+  shows as Power. The plain standout points of §44.10 were the third
+  candidate: traceable but coarse (63% of ratings on 6 or 7, and a tap-in worth
+  a screamer).
+- **Per match and per night.** Each card has a rating per match; its night
+  rating is the mean of its matches (a bye is not a match). Both to one
+  decimal, from **4** (the floor) to 10. Measured: per match a mean of 6.8 (sd
+  1.2), winners 7.6 and losers 6.0, a 10 in 2% of card-matches, the floor in
+  0.05% (a keeper conceding four in a defeat); per night a mean of 6.5. The
+  top-rated card of a match is Common or Bronze in 43% of matches.
+- **The line under a night rating** comes from a new phrasebook layer,
+  `rating:<story>`: the card's biggest contribution over the night picks a
+  story (`nightStory`, from a hat trick down to a quiet night in a side that
+  went through), and the seed hash and the member pick a line, so it never
+  changes and no two cards of a five share one. Every pool holds at least five
+  lines. The phrasebook rules apply unchanged (ADR-093: names only, nothing
+  medical, no ridicule), and counts appear only where they are at least two.
+- **Presentation only.** `matchRatings` and `rateNight` are pure functions of
+  the stored events, the lock-time keeper and the published seed hash, like
+  the renderer (ADR-093): no migration, no SQL twin, and any past week can be
+  rated again. They decide nothing and pay nothing.
+- **Shown once the week is complete** (the row's intent). The pages, and
+  whether a match report shows its ratings before payout, come with the mock.
+
+Consequences: `design/midweek/sample-ratings.json` (written by
+`tests/sim/midweek-ratings-sample.sim.ts`) gives the mock real ratings and
+lines. `sample-tournament.json` is not regenerated, because it carries the
+DR2 story; the ratings sample replays the same world on today's engine. A
+season table built on the ratings was considered for "Something to follow
+after a knockout" and not chosen (Q2): Midweek has no season, and a card's
+rating is final once its manager is out.
+
+Tier: no migration.

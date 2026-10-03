@@ -13,6 +13,7 @@ import {
   saveStatus,
 } from "@/lib/midweek/entry";
 import { saveMidweekSquad, type MidweekActionState } from "@/app/(app)/midweek/actions";
+import { lineCount, lineCountShort, plussesLine } from "@/lib/midweek/plusses";
 import {
   MidweekKeeperCheck,
   MidweekNotice,
@@ -21,6 +22,7 @@ import {
   MidweekTrialistCard,
   Segments,
 } from "./bits";
+import { MidweekLineCount } from "./line-count";
 import { MidweekMiniCard } from "./mini-card";
 
 /** One pick tile: a Player, and the strongest copy a save sends for them. */
@@ -146,6 +148,13 @@ export function MidweekPicker({
     ),
   );
   const inSquad = new Set(slots.filter((id): id is string => id !== null));
+  // The weakest-line rule on the five as picked (ADR-116, DR3 HANDOFF §4).
+  const count = lineCount(
+    picked.map((card) =>
+      card ? { archetype: card.archetype, displayName: card.displayName } : null,
+    ),
+  );
+  const countShort = lineCountShort(count);
   const full = firstEmpty(slots) === null;
   const filters = archetypeFilters(cards);
   const shown = filter === "all" ? cards : cards.filter((card) => card.archetype === filter);
@@ -401,6 +410,7 @@ export function MidweekPicker({
           </ol>
 
           {inSquad.size > 0 && <MidweekKeeperCheck segments={keeper.segments} tone={keeper.tone} />}
+          {inSquad.size > 0 && <MidweekLineCount count={count} />}
         </section>
 
         {/* `MidweekSaveBar` (KB-029): the status and one note on the left, the
@@ -411,7 +421,7 @@ export function MidweekPicker({
         <form
           className={`flex flex-wrap items-center justify-between gap-x-4 gap-y-2.5 rounded-[14px] border bg-panel/80 px-3.5 py-3 ${
             status === "dirty"
-              ? "border-brass/50 max-sm:sticky max-sm:bottom-[calc(4.5rem_+_env(safe-area-inset-bottom,0px))] max-sm:z-20 max-sm:order-last max-sm:flex-nowrap max-sm:bg-panel max-sm:py-2 max-sm:pr-2 max-sm:shadow-[0_-12px_24px_-10px_rgb(0_0_0/70%)]"
+              ? "border-brass/50 max-sm:sticky max-sm:bottom-[calc(4.5rem_+_env(safe-area-inset-bottom,0px))] max-sm:z-20 max-sm:order-last max-sm:gap-y-1.5 max-sm:bg-panel max-sm:py-2 max-sm:pr-2 max-sm:shadow-[0_-12px_24px_-10px_rgb(0_0_0/70%)]"
               : "border-line/60"
           }`}
           onSubmit={submit}
@@ -419,7 +429,7 @@ export function MidweekPicker({
           {sendCardIds.map((id) => (
             <input key={id} name="card_id" type="hidden" value={id} />
           ))}
-          <div className="grid min-w-0 gap-0.5">
+          <div className="grid min-w-0 gap-0.5 max-sm:grow max-sm:basis-0">
             <MidweekSaveStatus kind={status} text={statusText} />
             <p
               className={`text-xs text-ink-faint ${status === "dirty" && state?.ok !== false ? "max-sm:hidden" : ""}`}
@@ -460,6 +470,21 @@ export function MidweekPicker({
               </>
             )}
           </div>
+          {/* On a phone with unsaved changes, the lines' verdict rides in the
+              sticky bar, so the cost shows at the moment of saving (DR3). */}
+          {status === "dirty" && inSquad.size > 0 && (
+            <p
+              className={`basis-full text-xs font-extrabold sm:hidden ${
+                countShort.tone === "short"
+                  ? "text-warning"
+                  : countShort.tone === "ok"
+                    ? "text-moss"
+                    : "text-ink-faint"
+              }`}
+            >
+              {countShort.text}
+            </p>
+          )}
         </form>
 
         <MidweekPrivacyLine lock={formatClock(lockAt)} />
@@ -532,6 +557,12 @@ export function MidweekPicker({
                       {card.card.injured && " · injured"}
                       {card.copies > 1 && <> &middot; &times;{card.copies} copies</>}
                     </p>
+                    {plussesLine(card.archetype) && (
+                      <p className="text-[12px] font-extrabold tracking-[0.06em] text-ink-faint">
+                        <span aria-hidden="true">{plussesLine(card.archetype)!.text}</span>
+                        <span className="sr-only">{plussesLine(card.archetype)!.label}</span>
+                      </p>
+                    )}
                     {card.change && <ChangeNote text={card.change} />}
                   </div>
                   {isIn ? (

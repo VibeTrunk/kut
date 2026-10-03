@@ -4771,3 +4771,27 @@ image` downloads "my night"; on a desktop context `Download` saves a PNG whose
 header reads 1080 × 1350; the champion view shows the block; every
 no-overflow check, and the bracket's KB-031 line test, which caught a
 layout shift from the drawing before it was fixed.
+
+## MM 2.0: the picker's plusses count — 2026-10-03
+
+`feat/midweek-plusses`, ADR-116 amended. No migration. Built to the DR3
+mockups `Picker-Lines-*` (`design/mm2-dr3/HANDOFF.md` §4).
+
+- **`MidweekLineCount`:** each line's plusses against the 3 it needs, the
+  verdict with the factor, who goes in goal and the rule; no count without a
+  Goalkeeper (DR3-8). It calls the engine's `squadBalance`, so it can't
+  disagree with the match.
+- **The sticky save bar** on a phone with unsaved changes gains the verdict
+  as a second row; **the phone list rows** show each card's plusses.
+- **Model:** `src/lib/midweek/plusses.ts`, unit-tested on DR3's cases
+  (balanced, one short, the three-keeper gamble at ×0.77, trialists, no
+  keeper).
+- **E2E fixture:** the calls test (D) now signs in as whichever fixture
+  account goes out first before the final, giving a fixture member the test
+  password when neither release account does, so it never skips silently.
+
+Verification: `npm run verify:fast` (474 tests, 6 new for the count); the
+authenticated E2E (61 passed, 1 expected skip): the count with no Goalkeeper,
+a short defence at ×0.77 with the sticky row, then balanced, at 320 and 412 px
+and at 1440 (the sticky row hidden); each phone row's plusses; every
+no-overflow check.

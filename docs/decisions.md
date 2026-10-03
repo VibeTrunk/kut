@@ -6613,6 +6613,32 @@ Consequences:
   `midweek_entries_public` with `select("*")` and treat a missing or null
   `balance_ppm` as no balance factor, so they work on the old schema.
 
+**Amended 2026-10-03 (the picker's plusses count, Q13's later slice, built to
+the owner-approved DR3 mockups, `design/mm2-dr3/HANDOFF.md` §4, DR3-8):**
+
+- **`MidweekLineCount`** in `Your five`, after the keeper check, on every
+  width: `Plusses per line`, three rows (attack, midfield, defence) with three
+  pips each, filled for a plus and dashed where one is missing (more than three
+  as `+4`), `{n} of 3` from 412 px, and `✓ enough` or `! 1 short`; then the
+  verdict with the factor (`Defence 1 short: one plus short, so your whole five
+  plays at ×0.88 this week.`), who goes in goal, and the rule.
+- **The engine's own rule:** the count calls `squadBalance` with the five as
+  picked, so it can never disagree with the match. Empty slots count as
+  trialists (All-rounder 1/1/1); one Goalkeeper is in goal; with several, any
+  one is, and all are 0/0/3, so the count is the same.
+- **No count without a Goalkeeper (DR3-8):** the stand-in is chosen by power,
+  and power includes the form rolled at the lock, so the picker can't say
+  which four count. It says so instead.
+- **On a phone with unsaved changes** the sticky save bar gains a second row,
+  `! Defence 1 short · ×0.88`, `✓ Lines balanced` or `No Goalkeeper yet, so
+  no line count`, so the cost shows at the moment of saving. From `sm` the bar
+  is inline and the row hidden.
+- **The phone list rows** show each card's plusses, `A ++ · M ++ · D –`
+  (screen readers: `Plusses: attack 2, midfield 2, defence 0`).
+- Without colour, the filled and dashed pips, the ✓ and `!` marks and the
+  words carry it. `How plusses work →` opens how-it-works at its table
+  (`#midweek-shape`).
+
 Tier: data-changing (docs/OPERATIONS.md): it changes what the lock step
 computes and so who is paid. Fresh cold-verified backup first.
 

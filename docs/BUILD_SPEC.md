@@ -1908,6 +1908,11 @@ that tournament.
 - **Balance helps by rule:** four specialists who cover every line beat four
   All-rounders at equal power about 63% of the time, and a one-line stack loses
   to four All-rounders (§44.12).
+- **The picker counts it (ADR-116, DR3):** with a Goalkeeper picked, the
+  picker shows each line's plusses against the 3 it needs and the factor the
+  five would play at, from the same `squadBalance`; empty slots count as
+  trialists. Without a Goalkeeper it shows no count, since the stand-in is
+  only settled at the lock.
 
 ### 44.5 A match
 

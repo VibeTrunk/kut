@@ -465,7 +465,9 @@ export default async function HowItWorksPage() {
               <strong className="text-ink">Day</strong>: a fresh roll every match, so upsets happen.
             </li>
           </ul>
-          <h3 className="pt-2 font-black text-ink">Your squad&rsquo;s shape</h3>
+          <h3 className="scroll-mt-6 pt-2 font-black text-ink" id="midweek-shape">
+            Your squad&rsquo;s shape
+          </h3>
           <p>
             Every archetype brings plusses to three lines: attack, midfield and defence. An
             All-rounder brings one to each; every other archetype brings four, strong in one or two

@@ -2190,6 +2190,15 @@ Everything is gated by time in definer projections on
   for that match to the Why list, for both sides. Nothing shows before the
   week is complete.
 
+- **Share images (ADR-120):** once the week is complete, the champion view
+  and the week's bracket offer two 1080 × 1350 PNGs for the club's group
+  chat, drawn on a canvas in the member's browser from what the page already
+  shows: the champion poster (the champion, the final, their five with night
+  ratings, the path, the field) and "my night" (the member's finish, coins,
+  path, five with night ratings, best card and calls). They carry names and
+  photos by owner decision (§53's exception); a phone shares through the system
+  share sheet, a desktop downloads.
+
 ### 44.11 Running without admin
 
 KUT has no scheduler; like ADR-061, one idempotent, service-role-only worker
@@ -2821,6 +2830,11 @@ Do not build complex offline state synchronization in early versions.
 ## 53. Default privacy stance
 
 Player photos and group information should be visible only to authenticated TFH members.
+
+**Exception (2026-10-03, ADR-120, owner decision Q4):** Midweek Madness's
+share images (§44.10) carry manager and Player names and Players' photos,
+drawn in the member's browser and sent only by a member who chooses to.
+Nothing is uploaded or hosted, and every KUT page stays members-only.
 
 Do not expose:
 

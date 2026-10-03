@@ -11,9 +11,9 @@ import { MidweekMiniCard } from "@/components/midweek/mini-card";
 import { MIDWEEK_PAGE, MidweekPageHead, MidweekSectionHead } from "@/components/midweek/page-head";
 import { MidweekPath } from "@/components/midweek/path";
 import { MidweekWeeklyCalls } from "@/components/midweek/calls-list";
-import { MidweekPlaceholder } from "@/components/midweek/placeholder";
 import { MidweekPredictions } from "@/components/midweek/predictions";
 import { MidweekRatingList } from "@/components/midweek/rating-list";
+import { MidweekShare } from "@/components/midweek/share";
 import {
   MidweekLaneTimeline,
   MidweekScoreboard,
@@ -60,7 +60,13 @@ import {
   type BracketRound,
 } from "@/lib/midweek/evening";
 import { loadLiveMatch, type LiveMatch } from "@/lib/midweek/live-load";
-import { loadCalls, loadMyRewards, loadNightRatings, loadWeekResults } from "@/lib/midweek/results";
+import {
+  loadCalls,
+  loadMyRewards,
+  loadNightRatingsFor,
+  loadWeekResults,
+} from "@/lib/midweek/results";
+import { shareImages } from "@/lib/midweek/share";
 import type { MatchRow } from "@/lib/midweek/rows";
 import { resolvePhotoUrls } from "@/lib/player-photos";
 import type { createClient } from "@/lib/supabase/server";
@@ -748,7 +754,25 @@ export async function WeekComplete({
   const seed = tournament.seed ?? null;
   const seal = tournament.seed_hash ?? "";
   const championName = tournament.champion_name ?? "The champion";
-  const ratings = await loadNightRatings(supabase, tournament, results, userId);
+  // The member's ratings for the block and their image, the champion's for the poster.
+  const rated = await loadNightRatingsFor(supabase, tournament, results, [
+    userId,
+    ...(championId ? [championId] : []),
+  ]);
+  const ratings = rated.get(userId) ?? null;
+  const share = shareImages({
+    lockAt: tournament.lock_at,
+    rounds,
+    scheduleVersion: scheduleVersionOf(tournament),
+    userId,
+    championId,
+    championName: tournament.champion_name ?? null,
+    matches: results.matches,
+    entries: results.entries,
+    ratings: rated,
+    coins: coins + callCoins,
+    calls: { right, picks },
+  });
 
   return (
     <main className={MIDWEEK_PAGE}>
@@ -840,10 +864,7 @@ export async function WeekComplete({
         </section>
 
         {ratings && <MidweekRatingList defaultOpen={false} ratings={ratings} />}
-        <MidweekPlaceholder
-          name="Share your night"
-          note="An image for the group chat. It must say what it shows beyond the members-only pages (ADR-079)."
-        />
+        <MidweekShare night={share.night} poster={share.poster} />
 
         {next && next.lock_at && next.status === "open" && (
           <Link

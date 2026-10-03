@@ -18,6 +18,66 @@ dated "Hosted deployment…" entries in `PROGRESS.md`.
 then bump the "Latest hosted migration" line in `CLAUDE.md`. Record the tier,
 backup id, pre/post `migration list` counts, the smoke row, and the rollback.
 
+## 2026-10-03 — `20261015000000` unclaimed Players' archetypes rotate weekly (ADR-110)
+
+Deployed 2026-10-03 from `VibeTrunk/supabase` (catalogue PR #73 there), on its
+own data-changing `db push`:
+
+- `20261015000000_midweek_archetype_rotation.sql` (BUILD_SPEC §44.2, §44.11,
+  §44.14, Part L #27, ADR-110 amending ADR-027 and ADR-099, owner decisions Q8
+  and Q9, KUT PR #170, tier data-changing) &mdash; MM 2.0 PR 7 (C1).
+  - **What changed.** `kut._mm_open_next` now takes a transaction advisory
+    lock, checks again for a running week, and before the tournament insert
+    runs `kut._mm_rotate_archetypes` with the new week's secret seed: every
+    active, collectible Player with no linked account takes
+    `kut._mm_rotation_archetype(seed, player)` (any of the seven, uniformly),
+    the active season is rebuilt once, and each change is logged in
+    `kut.midweek_archetype_rotations` (service role only). The ADR-099
+    snapshot freezes the rotated archetypes for the week. A clash on
+    `week_start` now raises instead of `on conflict do nothing`.
+  - **No DML at the push.** Data-changing because, from the next open, the
+    worker rewrites `kut.players.archetype` and the season's stats every week.
+  - **Before the push.** Fresh backup `20261003-020935`, cold-verified, no
+    cards in escrow. `migration list --linked` showed 84 remote entries with
+    `20261015000000` the only local-only one and no remote-only drift; the dry
+    run named exactly that file, and again from the catalogue's merged main
+    (`eba80ae`) just before the push; the catalogue check reported 85 approved
+    source migrations. The production gate **passed** for `d8d5739`
+    (2026-10-03 02:14 Amsterdam: CI checks, catalogue parity, the backup
+    re-verified, finalizer readiness, authenticated E2E 47 passed). No evening
+    was running (Saturday). After the push `migration list --linked` showed 85
+    local and 85 remote, no drift.
+  - **Smoke test handed to the owner.** The one-row query below, run locally
+    first, returned `t | t | f | t | tank | t | f | 0 |` (recorded; the log
+    has RLS, members can't read it and the service role can; a fixed seed and
+    Player draw `tank`; the open step locks, rotates and logs; nobody can
+    call the rotation directly; nothing logged yet; no week open locally).
+    On hosted the last column should be the open week, `2026-10-05`:
+
+    ```sql
+    select
+      exists (select 1 from supabase_migrations.schema_migrations where version = '20261015000000') as recorded,
+      (select relrowsecurity from pg_class where oid = 'kut.midweek_archetype_rotations'::regclass) as log_rls,
+      has_table_privilege('authenticated', 'kut.midweek_archetype_rotations', 'select') as members_read_log,
+      has_table_privilege('service_role', 'kut.midweek_archetype_rotations', 'select') as service_reads_log,
+      kut._mm_rotation_archetype(decode(repeat('ab', 32), 'hex'), '00000000-0000-4000-8000-000000000001') as draw,
+      pg_get_functiondef('kut._mm_open_next()'::regprocedure) like '%pg_advisory_xact_lock%_mm_rotate_archetypes%midweek_archetype_rotations%' as open_rotates,
+      has_function_privilege('authenticated', 'kut._mm_rotate_archetypes(bytea)', 'execute')
+        or has_function_privilege('service_role', 'kut._mm_rotate_archetypes(bytea)', 'execute') as rotate_callable,
+      (select count(*) from kut.midweek_archetype_rotations) as logged,
+      (select string_agg(week_start::text, ',') from kut.midweek_tournaments where status = 'open') as open_week;
+    ```
+  - **Deploy ordering** was safe: #170 changed only how-it-works and
+    `/settings/card` copy, which reads nothing new. The week open at the push
+    (Wed 7 Oct, `week_start` 2026-10-05) keeps its archetypes. **The first
+    rotation runs on Wed 7 Oct after that evening's payout, when the worker
+    opens the week of Wed 14 Oct.**
+  - Rollback: in the migration's header. Re-create `kut._mm_open_next` from
+    `20261011000000_midweek_evening_timing.sql` section 5, then drop
+    `kut._mm_rotate_archetypes(bytea)`, `kut._mm_rotation_archetype(bytea, uuid)`
+    and `kut.midweek_archetype_rotations`. Rotated archetypes stay; each log
+    row's `from_archetype` restores one.
+
 ## 2026-10-03 — `20261014000000` the Midweek evening unfolds event by event (ADR-106)
 
 Deployed 2026-10-03 from `VibeTrunk/supabase` (catalogue PR #70 there), on its

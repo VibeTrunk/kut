@@ -1,0 +1,1101 @@
+{
+  "pages": [
+    {
+      "id": "ratings",
+      "name": "Ratings"
+    },
+    {
+      "id": "predictions",
+      "name": "Predictions"
+    },
+    {
+      "id": "share",
+      "name": "The shareable result"
+    },
+    {
+      "id": "picker",
+      "name": "The picker's plusses count"
+    },
+    {
+      "id": "colours",
+      "name": "Deeper team colours"
+    },
+    {
+      "id": "pairs",
+      "name": "Colour pairs without the blue"
+    }
+  ],
+  "artboards": [
+    {
+      "file": "Share-Poster.dc.html",
+      "title": "image — the champion poster, 1080 × 1350",
+      "page": "share",
+      "x": 0,
+      "y": 0,
+      "w": 1080,
+      "h": 1350
+    },
+    {
+      "file": "Share-MyNight.dc.html",
+      "title": "image — my night, 1080 × 1350",
+      "page": "share",
+      "x": 0,
+      "y": 1510,
+      "w": 1080,
+      "h": 1350
+    },
+    {
+      "file": "Evening-Champion.dc.html",
+      "title": "/midweek — 21:08, the week complete · 320",
+      "page": "ratings",
+      "x": 0,
+      "y": 0,
+      "w": 320,
+      "h": 3353
+    },
+    {
+      "file": "Evening-Champion.dc.html",
+      "title": "/midweek — 21:08, the week complete · 412",
+      "page": "ratings",
+      "x": 440,
+      "y": 0,
+      "w": 412,
+      "h": 3239
+    },
+    {
+      "file": "Evening-Champion.dc.html",
+      "title": "/midweek — 21:08, the week complete · 1440",
+      "page": "ratings",
+      "x": 972,
+      "y": 0,
+      "w": 1440,
+      "h": 2735
+    },
+    {
+      "file": "Bracket-Complete.dc.html",
+      "title": "/midweek/2026-10-05 — the week's bracket once complete · 320",
+      "page": "ratings",
+      "x": 0,
+      "y": 3513,
+      "w": 320,
+      "h": 3233
+    },
+    {
+      "file": "Bracket-Complete.dc.html",
+      "title": "/midweek/2026-10-05 — the week's bracket once complete · 412",
+      "page": "ratings",
+      "x": 440,
+      "y": 3513,
+      "w": 412,
+      "h": 2871
+    },
+    {
+      "file": "Bracket-Complete.dc.html",
+      "title": "/midweek/2026-10-05 — the week's bracket once complete · 1440",
+      "page": "ratings",
+      "x": 972,
+      "y": 3513,
+      "w": 1440,
+      "h": 2490
+    },
+    {
+      "file": "Match-Rated.dc.html",
+      "title": "/midweek/2026-10-05/match/[id] — a report after the week is complete · 320",
+      "page": "ratings",
+      "x": 0,
+      "y": 6906,
+      "w": 320,
+      "h": 2646
+    },
+    {
+      "file": "Match-Rated.dc.html",
+      "title": "/midweek/2026-10-05/match/[id] — a report after the week is complete · 412",
+      "page": "ratings",
+      "x": 440,
+      "y": 6906,
+      "w": 412,
+      "h": 2339
+    },
+    {
+      "file": "Match-Rated.dc.html",
+      "title": "/midweek/2026-10-05/match/[id] — a report after the week is complete · 1440",
+      "page": "ratings",
+      "x": 972,
+      "y": 6906,
+      "w": 1440,
+      "h": 1509
+    },
+    {
+      "file": "Evening-Out.dc.html",
+      "title": "/midweek — 20:41, out, the semi-finals open · 320",
+      "page": "predictions",
+      "x": 0,
+      "y": 0,
+      "w": 320,
+      "h": 1933
+    },
+    {
+      "file": "Evening-Out.dc.html",
+      "title": "/midweek — 20:41, out, the semi-finals open · 412",
+      "page": "predictions",
+      "x": 440,
+      "y": 0,
+      "w": 412,
+      "h": 1827
+    },
+    {
+      "file": "Evening-Out.dc.html",
+      "title": "/midweek — 20:41, out, the semi-finals open · 1440",
+      "page": "predictions",
+      "x": 972,
+      "y": 0,
+      "w": 1440,
+      "h": 1397
+    },
+    {
+      "file": "Predict-States.dc.html",
+      "title": "/midweek — every state of a call · 320",
+      "page": "predictions",
+      "x": 0,
+      "y": 2093,
+      "w": 320,
+      "h": 4264
+    },
+    {
+      "file": "Predict-States.dc.html",
+      "title": "/midweek — every state of a call · 412",
+      "page": "predictions",
+      "x": 440,
+      "y": 2093,
+      "w": 412,
+      "h": 3854
+    },
+    {
+      "file": "Predict-States.dc.html",
+      "title": "/midweek — every state of a call · 1440",
+      "page": "predictions",
+      "x": 972,
+      "y": 2093,
+      "w": 1440,
+      "h": 3607
+    },
+    {
+      "file": "Evening-FinalLive.dc.html",
+      "title": "/midweek — 21:05, the final live, your calls · 320",
+      "page": "predictions",
+      "x": 0,
+      "y": 6517,
+      "w": 320,
+      "h": 1726
+    },
+    {
+      "file": "Evening-FinalLive.dc.html",
+      "title": "/midweek — 21:05, the final live, your calls · 412",
+      "page": "predictions",
+      "x": 440,
+      "y": 6517,
+      "w": 412,
+      "h": 1599
+    },
+    {
+      "file": "Evening-FinalLive.dc.html",
+      "title": "/midweek — 21:05, the final live, your calls · 1440",
+      "page": "predictions",
+      "x": 972,
+      "y": 6517,
+      "w": 1440,
+      "h": 1644
+    },
+    {
+      "file": "Bracket-Calls.dc.html",
+      "title": "/midweek/2026-10-05 — 20:41, your calls on the bracket · 320",
+      "page": "predictions",
+      "x": 0,
+      "y": 8403,
+      "w": 320,
+      "h": 1343
+    },
+    {
+      "file": "Bracket-Calls.dc.html",
+      "title": "/midweek/2026-10-05 — 20:41, your calls on the bracket · 412",
+      "page": "predictions",
+      "x": 440,
+      "y": 8403,
+      "w": 412,
+      "h": 1287
+    },
+    {
+      "file": "Bracket-Calls.dc.html",
+      "title": "/midweek/2026-10-05 — 20:41, your calls on the bracket · 1440",
+      "page": "predictions",
+      "x": 972,
+      "y": 8403,
+      "w": 1440,
+      "h": 1042
+    },
+    {
+      "file": "Share-Flow.dc.html",
+      "title": "/midweek — tapping Share (phone) or Download (desktop) · 320",
+      "page": "share",
+      "x": 0,
+      "y": 3020,
+      "w": 320,
+      "h": 3466
+    },
+    {
+      "file": "Share-Flow.dc.html",
+      "title": "/midweek — tapping Share (phone) or Download (desktop) · 412",
+      "page": "share",
+      "x": 440,
+      "y": 3020,
+      "w": 412,
+      "h": 3352
+    },
+    {
+      "file": "Share-Flow.dc.html",
+      "title": "/midweek — tapping Share (phone) or Download (desktop) · 1440",
+      "page": "share",
+      "x": 972,
+      "y": 3020,
+      "w": 1440,
+      "h": 2770
+    },
+    {
+      "file": "Picker-Lines-Balanced.dc.html",
+      "title": "/midweek — saved, a balanced five · 320",
+      "page": "picker",
+      "x": 0,
+      "y": 0,
+      "w": 320,
+      "h": 2465
+    },
+    {
+      "file": "Picker-Lines-Balanced.dc.html",
+      "title": "/midweek — saved, a balanced five · 412",
+      "page": "picker",
+      "x": 440,
+      "y": 0,
+      "w": 412,
+      "h": 2266
+    },
+    {
+      "file": "Picker-Lines-Balanced.dc.html",
+      "title": "/midweek — saved, a balanced five · 1440",
+      "page": "picker",
+      "x": 972,
+      "y": 0,
+      "w": 1440,
+      "h": 1311
+    },
+    {
+      "file": "Picker-Lines-OneShort.dc.html",
+      "title": "/midweek — unsaved, defence 1 short · 320",
+      "page": "picker",
+      "x": 0,
+      "y": 2625,
+      "w": 320,
+      "h": 2416
+    },
+    {
+      "file": "Picker-Lines-OneShort.dc.html",
+      "title": "/midweek — unsaved, defence 1 short · 412",
+      "page": "picker",
+      "x": 440,
+      "y": 2625,
+      "w": 412,
+      "h": 2254
+    },
+    {
+      "file": "Picker-Lines-OneShort.dc.html",
+      "title": "/midweek — unsaved, defence 1 short · 1440",
+      "page": "picker",
+      "x": 972,
+      "y": 2625,
+      "w": 1440,
+      "h": 1345
+    },
+    {
+      "file": "Picker-Lines-NoKeeper.dc.html",
+      "title": "/midweek — unsaved, no Goalkeeper: no count · 320",
+      "page": "picker",
+      "x": 0,
+      "y": 5201,
+      "w": 320,
+      "h": 2388
+    },
+    {
+      "file": "Picker-Lines-NoKeeper.dc.html",
+      "title": "/midweek — unsaved, no Goalkeeper: no count · 412",
+      "page": "picker",
+      "x": 440,
+      "y": 5201,
+      "w": 412,
+      "h": 2187
+    },
+    {
+      "file": "Picker-Lines-NoKeeper.dc.html",
+      "title": "/midweek — unsaved, no Goalkeeper: no count · 1440",
+      "page": "picker",
+      "x": 972,
+      "y": 5201,
+      "w": 1440,
+      "h": 1258
+    },
+    {
+      "file": "Picker-Lines-TwoShort.dc.html",
+      "title": "/midweek — unsaved, three keepers, two lines short · 320",
+      "page": "picker",
+      "x": 0,
+      "y": 7749,
+      "w": 320,
+      "h": 2484
+    },
+    {
+      "file": "Picker-Lines-TwoShort.dc.html",
+      "title": "/midweek — unsaved, three keepers, two lines short · 412",
+      "page": "picker",
+      "x": 440,
+      "y": 7749,
+      "w": 412,
+      "h": 2290
+    },
+    {
+      "file": "Picker-Lines-TwoShort.dc.html",
+      "title": "/midweek — unsaved, three keepers, two lines short · 1440",
+      "page": "picker",
+      "x": 972,
+      "y": 7749,
+      "w": 1440,
+      "h": 1345
+    },
+    {
+      "file": "Picker-Lines-NoColour.dc.html",
+      "title": "/midweek — the same, without colour · 320",
+      "page": "picker",
+      "x": 0,
+      "y": 10393,
+      "w": 320,
+      "h": 2484
+    },
+    {
+      "file": "Picker-Lines-NoColour.dc.html",
+      "title": "/midweek — the same, without colour · 412",
+      "page": "picker",
+      "x": 440,
+      "y": 10393,
+      "w": 412,
+      "h": 2290
+    },
+    {
+      "file": "Picker-Lines-NoColour.dc.html",
+      "title": "/midweek — the same, without colour · 1440",
+      "page": "picker",
+      "x": 972,
+      "y": 10393,
+      "w": 1440,
+      "h": 1345
+    },
+    {
+      "file": "Colours-Tokens.dc.html",
+      "title": "tokens — violet and teal, and the checks · 320",
+      "page": "colours",
+      "x": 0,
+      "y": 0,
+      "w": 320,
+      "h": 3634
+    },
+    {
+      "file": "Colours-Tokens.dc.html",
+      "title": "tokens — violet and teal, and the checks · 412",
+      "page": "colours",
+      "x": 440,
+      "y": 0,
+      "w": 412,
+      "h": 3237
+    },
+    {
+      "file": "Colours-Tokens.dc.html",
+      "title": "tokens — violet and teal, and the checks · 1440",
+      "page": "colours",
+      "x": 972,
+      "y": 0,
+      "w": 1440,
+      "h": 1775
+    },
+    {
+      "file": "Colours-Report-FullTime-Before.dc.html",
+      "title": "/midweek/2026-10-05/match/[id] — regular-time result, today's colours · 320",
+      "page": "colours",
+      "x": 0,
+      "y": 3794,
+      "w": 320,
+      "h": 2116
+    },
+    {
+      "file": "Colours-Report-FullTime-Before.dc.html",
+      "title": "/midweek/2026-10-05/match/[id] — regular-time result, today's colours · 412",
+      "page": "colours",
+      "x": 440,
+      "y": 3794,
+      "w": 412,
+      "h": 1964
+    },
+    {
+      "file": "Colours-Report-FullTime-Before.dc.html",
+      "title": "/midweek/2026-10-05/match/[id] — regular-time result, today's colours · 1440",
+      "page": "colours",
+      "x": 972,
+      "y": 3794,
+      "w": 1440,
+      "h": 1373
+    },
+    {
+      "file": "Colours-Report-FullTime-Violet.dc.html",
+      "title": "/midweek/2026-10-05/match/[id] — regular-time result, violet and teal (chosen) · 320",
+      "page": "colours",
+      "x": 2560,
+      "y": 3794,
+      "w": 320,
+      "h": 2116
+    },
+    {
+      "file": "Colours-Report-FullTime-Violet.dc.html",
+      "title": "/midweek/2026-10-05/match/[id] — regular-time result, violet and teal (chosen) · 412",
+      "page": "colours",
+      "x": 3000,
+      "y": 3794,
+      "w": 412,
+      "h": 1964
+    },
+    {
+      "file": "Colours-Report-FullTime-Violet.dc.html",
+      "title": "/midweek/2026-10-05/match/[id] — regular-time result, violet and teal (chosen) · 1440",
+      "page": "colours",
+      "x": 3532,
+      "y": 3794,
+      "w": 1440,
+      "h": 1373
+    },
+    {
+      "file": "Colours-Report-FullTime-Royal.dc.html",
+      "title": "/midweek/2026-10-05/match/[id] — regular-time result, royal blue and teal (round 2's choice) · 320",
+      "page": "colours",
+      "x": 5120,
+      "y": 3794,
+      "w": 320,
+      "h": 2116
+    },
+    {
+      "file": "Colours-Report-FullTime-Royal.dc.html",
+      "title": "/midweek/2026-10-05/match/[id] — regular-time result, royal blue and teal (round 2's choice) · 412",
+      "page": "colours",
+      "x": 5560,
+      "y": 3794,
+      "w": 412,
+      "h": 1964
+    },
+    {
+      "file": "Colours-Report-FullTime-Royal.dc.html",
+      "title": "/midweek/2026-10-05/match/[id] — regular-time result, royal blue and teal (round 2's choice) · 1440",
+      "page": "colours",
+      "x": 6092,
+      "y": 3794,
+      "w": 1440,
+      "h": 1373
+    },
+    {
+      "file": "Colours-Report-Shootout-Before.dc.html",
+      "title": "/midweek/2026-10-05/match/[id] — a penalty shoot-out, today's colours · 320",
+      "page": "colours",
+      "x": 0,
+      "y": 6070,
+      "w": 320,
+      "h": 2847
+    },
+    {
+      "file": "Colours-Report-Shootout-Before.dc.html",
+      "title": "/midweek/2026-10-05/match/[id] — a penalty shoot-out, today's colours · 412",
+      "page": "colours",
+      "x": 440,
+      "y": 6070,
+      "w": 412,
+      "h": 2560
+    },
+    {
+      "file": "Colours-Report-Shootout-Before.dc.html",
+      "title": "/midweek/2026-10-05/match/[id] — a penalty shoot-out, today's colours · 1440",
+      "page": "colours",
+      "x": 972,
+      "y": 6070,
+      "w": 1440,
+      "h": 1496
+    },
+    {
+      "file": "Colours-Report-Shootout-Violet.dc.html",
+      "title": "/midweek/2026-10-05/match/[id] — a penalty shoot-out, violet and teal (chosen) · 320",
+      "page": "colours",
+      "x": 2560,
+      "y": 6070,
+      "w": 320,
+      "h": 2847
+    },
+    {
+      "file": "Colours-Report-Shootout-Violet.dc.html",
+      "title": "/midweek/2026-10-05/match/[id] — a penalty shoot-out, violet and teal (chosen) · 412",
+      "page": "colours",
+      "x": 3000,
+      "y": 6070,
+      "w": 412,
+      "h": 2560
+    },
+    {
+      "file": "Colours-Report-Shootout-Violet.dc.html",
+      "title": "/midweek/2026-10-05/match/[id] — a penalty shoot-out, violet and teal (chosen) · 1440",
+      "page": "colours",
+      "x": 3532,
+      "y": 6070,
+      "w": 1440,
+      "h": 1496
+    },
+    {
+      "file": "Colours-Report-Shootout-Royal.dc.html",
+      "title": "/midweek/2026-10-05/match/[id] — a penalty shoot-out, royal blue and teal (round 2's choice) · 320",
+      "page": "colours",
+      "x": 5120,
+      "y": 6070,
+      "w": 320,
+      "h": 2847
+    },
+    {
+      "file": "Colours-Report-Shootout-Royal.dc.html",
+      "title": "/midweek/2026-10-05/match/[id] — a penalty shoot-out, royal blue and teal (round 2's choice) · 412",
+      "page": "colours",
+      "x": 5560,
+      "y": 6070,
+      "w": 412,
+      "h": 2560
+    },
+    {
+      "file": "Colours-Report-Shootout-Royal.dc.html",
+      "title": "/midweek/2026-10-05/match/[id] — a penalty shoot-out, royal blue and teal (round 2's choice) · 1440",
+      "page": "colours",
+      "x": 6092,
+      "y": 6070,
+      "w": 1440,
+      "h": 1496
+    },
+    {
+      "file": "Colours-Report-Live-Before.dc.html",
+      "title": "/midweek/2026-10-05/match/[id] — a match still being played, today's colours · 320",
+      "page": "colours",
+      "x": 0,
+      "y": 9077,
+      "w": 320,
+      "h": 1856
+    },
+    {
+      "file": "Colours-Report-Live-Before.dc.html",
+      "title": "/midweek/2026-10-05/match/[id] — a match still being played, today's colours · 412",
+      "page": "colours",
+      "x": 440,
+      "y": 9077,
+      "w": 412,
+      "h": 1726
+    },
+    {
+      "file": "Colours-Report-Live-Before.dc.html",
+      "title": "/midweek/2026-10-05/match/[id] — a match still being played, today's colours · 1440",
+      "page": "colours",
+      "x": 972,
+      "y": 9077,
+      "w": 1440,
+      "h": 1476
+    },
+    {
+      "file": "Colours-Report-Live-Violet.dc.html",
+      "title": "/midweek/2026-10-05/match/[id] — a match still being played, violet and teal (chosen) · 320",
+      "page": "colours",
+      "x": 2560,
+      "y": 9077,
+      "w": 320,
+      "h": 1856
+    },
+    {
+      "file": "Colours-Report-Live-Violet.dc.html",
+      "title": "/midweek/2026-10-05/match/[id] — a match still being played, violet and teal (chosen) · 412",
+      "page": "colours",
+      "x": 3000,
+      "y": 9077,
+      "w": 412,
+      "h": 1726
+    },
+    {
+      "file": "Colours-Report-Live-Violet.dc.html",
+      "title": "/midweek/2026-10-05/match/[id] — a match still being played, violet and teal (chosen) · 1440",
+      "page": "colours",
+      "x": 3532,
+      "y": 9077,
+      "w": 1440,
+      "h": 1476
+    },
+    {
+      "file": "Colours-Report-Live-Royal.dc.html",
+      "title": "/midweek/2026-10-05/match/[id] — a match still being played, royal blue and teal (round 2's choice) · 320",
+      "page": "colours",
+      "x": 5120,
+      "y": 9077,
+      "w": 320,
+      "h": 1856
+    },
+    {
+      "file": "Colours-Report-Live-Royal.dc.html",
+      "title": "/midweek/2026-10-05/match/[id] — a match still being played, royal blue and teal (round 2's choice) · 412",
+      "page": "colours",
+      "x": 5560,
+      "y": 9077,
+      "w": 412,
+      "h": 1726
+    },
+    {
+      "file": "Colours-Report-Live-Royal.dc.html",
+      "title": "/midweek/2026-10-05/match/[id] — a match still being played, royal blue and teal (round 2's choice) · 1440",
+      "page": "colours",
+      "x": 6092,
+      "y": 9077,
+      "w": 1440,
+      "h": 1476
+    },
+    {
+      "file": "Colours-Elsewhere-Before.dc.html",
+      "title": "/midweek and / — the other places, today's colours · 320",
+      "page": "colours",
+      "x": 0,
+      "y": 11093,
+      "w": 320,
+      "h": 1448
+    },
+    {
+      "file": "Colours-Elsewhere-Before.dc.html",
+      "title": "/midweek and / — the other places, today's colours · 412",
+      "page": "colours",
+      "x": 440,
+      "y": 11093,
+      "w": 412,
+      "h": 1371
+    },
+    {
+      "file": "Colours-Elsewhere-Before.dc.html",
+      "title": "/midweek and / — the other places, today's colours · 1440",
+      "page": "colours",
+      "x": 972,
+      "y": 11093,
+      "w": 1440,
+      "h": 1073
+    },
+    {
+      "file": "Colours-Elsewhere-Violet.dc.html",
+      "title": "/midweek and / — the other places, violet and teal (chosen) · 320",
+      "page": "colours",
+      "x": 2560,
+      "y": 11093,
+      "w": 320,
+      "h": 1448
+    },
+    {
+      "file": "Colours-Elsewhere-Violet.dc.html",
+      "title": "/midweek and / — the other places, violet and teal (chosen) · 412",
+      "page": "colours",
+      "x": 3000,
+      "y": 11093,
+      "w": 412,
+      "h": 1371
+    },
+    {
+      "file": "Colours-Elsewhere-Violet.dc.html",
+      "title": "/midweek and / — the other places, violet and teal (chosen) · 1440",
+      "page": "colours",
+      "x": 3532,
+      "y": 11093,
+      "w": 1440,
+      "h": 1073
+    },
+    {
+      "file": "Colours-Elsewhere-Royal.dc.html",
+      "title": "/midweek and / — the other places, royal blue and teal (round 2's choice) · 320",
+      "page": "colours",
+      "x": 5120,
+      "y": 11093,
+      "w": 320,
+      "h": 1448
+    },
+    {
+      "file": "Colours-Elsewhere-Royal.dc.html",
+      "title": "/midweek and / — the other places, royal blue and teal (round 2's choice) · 412",
+      "page": "colours",
+      "x": 5560,
+      "y": 11093,
+      "w": 412,
+      "h": 1371
+    },
+    {
+      "file": "Colours-Elsewhere-Royal.dc.html",
+      "title": "/midweek and / — the other places, royal blue and teal (round 2's choice) · 1440",
+      "page": "colours",
+      "x": 6092,
+      "y": 11093,
+      "w": 1440,
+      "h": 1073
+    },
+    {
+      "file": "Pairs-Board.dc.html",
+      "title": "tokens — four pairs and their checks · 1440",
+      "page": "pairs",
+      "x": 972,
+      "y": 0,
+      "w": 1440,
+      "h": 900
+    },
+    {
+      "file": "Pairs-royal-teal.dc.html",
+      "title": "/midweek/2026-10-05/match/[id] — royal blue and teal (round 2's choice) · 412",
+      "page": "pairs",
+      "x": 440,
+      "y": 1060,
+      "w": 412,
+      "h": 2560
+    },
+    {
+      "file": "Pairs-royal-teal.dc.html",
+      "title": "/midweek/2026-10-05/match/[id] — royal blue and teal (round 2's choice) · 1440",
+      "page": "pairs",
+      "x": 972,
+      "y": 1060,
+      "w": 1440,
+      "h": 1496
+    },
+    {
+      "file": "Pairs-indigo-olive.dc.html",
+      "title": "/midweek/2026-10-05/match/[id] — indigo and olive · 412",
+      "page": "pairs",
+      "x": 440,
+      "y": 3780,
+      "w": 412,
+      "h": 2560
+    },
+    {
+      "file": "Pairs-indigo-olive.dc.html",
+      "title": "/midweek/2026-10-05/match/[id] — indigo and olive · 1440",
+      "page": "pairs",
+      "x": 972,
+      "y": 3780,
+      "w": 1440,
+      "h": 1496
+    },
+    {
+      "file": "Pairs-plum-olive.dc.html",
+      "title": "/midweek/2026-10-05/match/[id] — plum and olive · 412",
+      "page": "pairs",
+      "x": 440,
+      "y": 6500,
+      "w": 412,
+      "h": 2560
+    },
+    {
+      "file": "Pairs-plum-olive.dc.html",
+      "title": "/midweek/2026-10-05/match/[id] — plum and olive · 1440",
+      "page": "pairs",
+      "x": 972,
+      "y": 6500,
+      "w": 1440,
+      "h": 1496
+    },
+    {
+      "file": "Pairs-violet-teal.dc.html",
+      "title": "/midweek/2026-10-05/match/[id] — violet and teal (chosen) · 412",
+      "page": "pairs",
+      "x": 440,
+      "y": 9220,
+      "w": 412,
+      "h": 2560
+    },
+    {
+      "file": "Pairs-violet-teal.dc.html",
+      "title": "/midweek/2026-10-05/match/[id] — violet and teal (chosen) · 1440",
+      "page": "pairs",
+      "x": 972,
+      "y": 9220,
+      "w": 1440,
+      "h": 1496
+    }
+  ],
+  "annotations": [
+    {
+      "id": "note-share-poster",
+      "page": "share",
+      "x": -380,
+      "y": 0,
+      "w": 300,
+      "text": "IMAGE — the champion poster, 1080 × 1350\n\nOwner Q4: a champion poster anyone may share; names and photos allowed (F8's ADR)\n\nDrawn on a <canvas> at 1080 x 1350 (4:5). Every size here is canvas px. Noor E. has a photo (an illustration stands in for a real one); the others show LiveCard's shirt back. The circle under each card is its night rating (ratings sample, so it replays the same world on today's engine; the path and final are the DR2 story)."
+    },
+    {
+      "id": "note-share-mynight",
+      "page": "share",
+      "x": -380,
+      "y": 1510,
+      "w": 300,
+      "text": "IMAGE — my night, 1080 × 1350\n\nOwner Q4: 'my night', your own five and path, with your five's night ratings\n\nSanne's path, her coins (wins + calls), her five with night ratings, and the best card's line exactly as the ratings function wrote it. Bas V. has a photo; the others the shirt back. A line never mocks a card, so a low night just shows its number."
+    },
+    {
+      "id": "note-evening-champion",
+      "page": "ratings",
+      "x": -380,
+      "y": 0,
+      "w": 300,
+      "text": "/MIDWEEK — 21:08, the week complete\n\nADR-117 ratings once complete; ADR-118 weekly line; Q4 share; DR2 champion view\n\nThe DR2 placeholders are filled: 'Your five's ratings' best first, each with its line and a neutral circle (never tinted, so it can't be read as Power); the weekly calls line under Your night; and the share block with both previews. 'You' now adds wins and calls. Below lg one row per card; from lg the five LiveCards."
+    },
+    {
+      "id": "note-bracket-complete",
+      "page": "ratings",
+      "x": -380,
+      "y": 3513,
+      "w": 300,
+      "text": "/MIDWEEK/2026-10-05 — the week's bracket once complete\n\nRatings outlive Thursday: the bracket keeps them; Show each match opened\n\nThe champion view leads only until Thursday 23:59 (D4); the week's bracket keeps your ratings for good. Here 'Show each match' is open: each card's match ratings, each a link to that match's report. Your calls and the share block sit here too."
+    },
+    {
+      "id": "note-match-rated",
+      "page": "ratings",
+      "x": -380,
+      "y": 6906,
+      "w": 300,
+      "text": "/MIDWEEK/2026-10-05/MATCH/[ID] — a report after the week is complete\n\nADR-117 per-match ratings in MidweekWhyList, apart from the Power pill\n\nMila v Eline, 0-3 in both samples. Each card's rating for this match sits on the right as the same neutral circle; Power keeps its tinted pill on the left. A key above the list names both. Until the week is complete the column isn't there (DR2's list unchanged)."
+    },
+    {
+      "id": "note-evening-out",
+      "page": "predictions",
+      "x": -380,
+      "y": 0,
+      "w": 300,
+      "text": "/MIDWEEK — 20:41, out, the semi-finals open\n\nADR-118: only members who are out; open once both feeders have ended; change until kick-off\n\nReplaces the DR2 placeholder. Semi-final 1 is called and saved; semi-final 2 is open with no pick; the final opens when both semi-finals have ended. A tap saves at once (no submit). Cards are neutral: they list matches (DR2-1)."
+    },
+    {
+      "id": "note-predict-states",
+      "page": "predictions",
+      "x": -380,
+      "y": 2093,
+      "w": 300,
+      "text": "/MIDWEEK — every state of a call\n\nADR-118 Part L #28: open, change, close at kick-off; split from kick-off; own picks only\n\nThe block in each state, top to bottom: nothing open yet (Laura at 20:35, out while both other quarter-finals are still in their shoot-outs), open, saving, saved, changed, a refused save, closed at kick-off with the club's split, the final open, resolving, and the weekly line once the week is complete. Blue-grey labels are design notes, not app copy."
+    },
+    {
+      "id": "note-evening-finallive",
+      "page": "predictions",
+      "x": -380,
+      "y": 6517,
+      "w": 300,
+      "text": "/MIDWEEK — 21:05, the final live, your calls\n\nADR-118: the split from kick-off; your picks resolve as matches end\n\nThe final leads for everyone (DR2). Below it, your calls: both semi-finals came true, the final is closed and shows how the club split (counts only). Coins for calls are paid with the rest after the final."
+    },
+    {
+      "id": "note-bracket-calls",
+      "page": "predictions",
+      "x": -380,
+      "y": 8403,
+      "w": 300,
+      "text": "/MIDWEEK/2026-10-05 — 20:41, your calls on the bracket\n\nWhere else picking goes: the bracket shows your calls and links to them; it doesn't take picks\n\nRecommendation: one place to pick (the evening page, where a member who is out already is), and the bracket shows each call on its row, with a jump link while one is open. Fewer places that save, one set of states to build and test."
+    },
+    {
+      "id": "note-share-flow",
+      "page": "share",
+      "x": -380,
+      "y": 3020,
+      "w": 300,
+      "text": "/MIDWEEK — tapping Share (phone) or Download (desktop)\n\nOwner Q4: Web Share on phones, a download on desktop; no server\n\nPhones (320, 412): Share opens the phone's own share sheet with the PNG attached; WhatsApp is one tap. 'Save image' downloads instead. Desktop (1440): Download saves the PNG and says where it went. The image is drawn when the button is tapped, from data the page already has."
+    },
+    {
+      "id": "note-picker-lines-balanced",
+      "page": "picker",
+      "x": -380,
+      "y": 0,
+      "w": 300,
+      "text": "/MIDWEEK — saved, a balanced five\n\nADR-116: 3 plusses per line from the four not in goal; ×0.88 per plus short\n\nA Goalkeeper, a Speedster, a Finisher, a Defender and an All-rounder: attack 6, midfield 5, defence 4. The count sits under the keeper check, above the save bar. Each list row shows the card's plusses as A/M/D."
+    },
+    {
+      "id": "note-picker-lines-oneshort",
+      "page": "picker",
+      "x": -380,
+      "y": 2625,
+      "w": 300,
+      "text": "/MIDWEEK — unsaved, defence 1 short\n\nADR-116; DR2's sticky save bar on phones\n\nA Goalkeeper, a Speedster, a Finisher and two All-rounders: defence has 2 of 3, so the five plays at ×0.88. On a phone the sticky save bar carries the one-line verdict, so the cost is visible at the moment of saving even when the count has scrolled away."
+    },
+    {
+      "id": "note-picker-lines-nokeeper",
+      "page": "picker",
+      "x": -380,
+      "y": 5201,
+      "w": 300,
+      "text": "/MIDWEEK — unsaved, no Goalkeeper: no count\n\nOwner Q8 (3 Oct): no count until a Goalkeeper is picked\n\nWithout a Goalkeeper the stand-in is only settled at the lock (it depends on form), so the picker can't say which four count. It shows no count and says why; the sticky bar says the same in one line. The keeper check above already warns."
+    },
+    {
+      "id": "note-picker-lines-twoshort",
+      "page": "picker",
+      "x": -380,
+      "y": 7749,
+      "w": 300,
+      "text": "/MIDWEEK — unsaved, three keepers, two lines short\n\nADR-116; with the table, two lines short needs two Goalkeepers outfield\n\nThree Goalkeepers and two All-rounders: one keeper in goal, two outfield at 0/0/3. Attack and midfield are each 1 short, 2 plusses in all: ×0.77. With today's table this is the only way to fall short in two lines."
+    },
+    {
+      "id": "note-picker-lines-nocolour",
+      "page": "picker",
+      "x": -380,
+      "y": 10393,
+      "w": 300,
+      "text": "/MIDWEEK — the same, without colour\n\nColour is never the only signal\n\nThe two-short five in greyscale: filled against dashed pips, the threshold tick after the third, the ✓ and ! marks and the words 'enough' and '1 short' all still say it."
+    },
+    {
+      "id": "note-colours-tokens",
+      "page": "colours",
+      "x": -380,
+      "y": 0,
+      "w": 300,
+      "text": "TOKENS — violet and teal, and the checks\n\nOwner, 3 Oct: 'deeper colours would be more classy'; round 2: 'an even darker / deeper red, or an alternative'\n\nChosen (owner, 3 Oct): violet and teal. Royal blue (round 2) kept for comparison. Text tones for names and numbers (AA on every surface), deep fills for everything drawn, Live on its own tokens. Ratios and colour-blind simulations are computed by the generator."
+    },
+    {
+      "id": "note-colours-report-fulltime-before",
+      "page": "colours",
+      "x": -380,
+      "y": 3794,
+      "w": 300,
+      "text": "/MIDWEEK/2026-10-05/MATCH/[ID] — regular-time result, today's colours\n\nToday: --color-team-blue #7cb0ff, --color-team-red #ff8091\n\nThe match report with today's tokens (regular-time result). Violet and teal (chosen), then royal blue and teal (round 2), sit to the right on the same row."
+    },
+    {
+      "id": "note-colours-report-fulltime-violet",
+      "page": "colours",
+      "x": 2180,
+      "y": 3794,
+      "w": 300,
+      "text": "/MIDWEEK/2026-10-05/MATCH/[ID] — regular-time result, violet and teal (chosen)\n\nChosen (owner, 3 Oct): violet and teal; text tones for names and digits, deep fills for rails, bar, dots, strip\n\nThe same report (regular-time result) with violet and teal (chosen). Names and the score keep AA; rails, the chance bar and penalty dots take the deep fills."
+    },
+    {
+      "id": "note-colours-report-fulltime-royal",
+      "page": "colours",
+      "x": 4740,
+      "y": 3794,
+      "w": 300,
+      "text": "/MIDWEEK/2026-10-05/MATCH/[ID] — regular-time result, royal blue and teal (round 2's choice)\n\nRound 2's choice, for comparison: royal blue and teal\n\nThe same report (regular-time result) with royal blue and teal (round 2's choice). Names and the score keep AA; rails, the chance bar and penalty dots take the deep fills."
+    },
+    {
+      "id": "note-colours-report-shootout-before",
+      "page": "colours",
+      "x": -380,
+      "y": 6070,
+      "w": 300,
+      "text": "/MIDWEEK/2026-10-05/MATCH/[ID] — a penalty shoot-out, today's colours\n\nToday: --color-team-blue #7cb0ff, --color-team-red #ff8091\n\nThe match report with today's tokens (a penalty shoot-out). Violet and teal (chosen), then royal blue and teal (round 2), sit to the right on the same row."
+    },
+    {
+      "id": "note-colours-report-shootout-violet",
+      "page": "colours",
+      "x": 2180,
+      "y": 6070,
+      "w": 300,
+      "text": "/MIDWEEK/2026-10-05/MATCH/[ID] — a penalty shoot-out, violet and teal (chosen)\n\nChosen (owner, 3 Oct): violet and teal; text tones for names and digits, deep fills for rails, bar, dots, strip\n\nThe same report (a penalty shoot-out) with violet and teal (chosen). Names and the score keep AA; rails, the chance bar and penalty dots take the deep fills."
+    },
+    {
+      "id": "note-colours-report-shootout-royal",
+      "page": "colours",
+      "x": 4740,
+      "y": 6070,
+      "w": 300,
+      "text": "/MIDWEEK/2026-10-05/MATCH/[ID] — a penalty shoot-out, royal blue and teal (round 2's choice)\n\nRound 2's choice, for comparison: royal blue and teal\n\nThe same report (a penalty shoot-out) with royal blue and teal (round 2's choice). Names and the score keep AA; rails, the chance bar and penalty dots take the deep fills."
+    },
+    {
+      "id": "note-colours-report-live-before",
+      "page": "colours",
+      "x": -380,
+      "y": 9077,
+      "w": 300,
+      "text": "/MIDWEEK/2026-10-05/MATCH/[ID] — a match still being played, today's colours\n\nToday: --color-team-blue #7cb0ff, --color-team-red #ff8091\n\nThe match report with today's tokens (a match still being played). Violet and teal (chosen), then royal blue and teal (round 2), sit to the right on the same row."
+    },
+    {
+      "id": "note-colours-report-live-violet",
+      "page": "colours",
+      "x": 2180,
+      "y": 9077,
+      "w": 300,
+      "text": "/MIDWEEK/2026-10-05/MATCH/[ID] — a match still being played, violet and teal (chosen)\n\nChosen (owner, 3 Oct): violet and teal; text tones for names and digits, deep fills for rails, bar, dots, strip\n\nThe same report (a match still being played) with violet and teal (chosen). Names and the score keep AA; rails, the chance bar and penalty dots take the deep fills."
+    },
+    {
+      "id": "note-colours-report-live-royal",
+      "page": "colours",
+      "x": 4740,
+      "y": 9077,
+      "w": 300,
+      "text": "/MIDWEEK/2026-10-05/MATCH/[ID] — a match still being played, royal blue and teal (round 2's choice)\n\nRound 2's choice, for comparison: royal blue and teal\n\nThe same report (a match still being played) with royal blue and teal (round 2's choice). Names and the score keep AA; rails, the chance bar and penalty dots take the deep fills."
+    },
+    {
+      "id": "note-colours-elsewhere-before",
+      "page": "colours",
+      "x": -380,
+      "y": 11093,
+      "w": 300,
+      "text": "/MIDWEEK AND / — the other places, today's colours\n\nEverything else that uses the tokens: Your match, The final, Home's live card, Live\n\nToday: Live and the red team share one pink."
+    },
+    {
+      "id": "note-colours-elsewhere-violet",
+      "page": "colours",
+      "x": 2180,
+      "y": 11093,
+      "w": 300,
+      "text": "/MIDWEEK AND / — the other places, violet and teal (chosen)\n\nEverything else that uses the tokens: Your match, The final, Home's live card, Live\n\nWith violet and teal (chosen): Live keeps its pink on its own tokens, so 'Live' never reads as 'side 1'."
+    },
+    {
+      "id": "note-colours-elsewhere-royal",
+      "page": "colours",
+      "x": 4740,
+      "y": 11093,
+      "w": 300,
+      "text": "/MIDWEEK AND / — the other places, royal blue and teal (round 2's choice)\n\nEverything else that uses the tokens: Your match, The final, Home's live card, Live\n\nWith royal blue and teal (round 2's choice): Live keeps its pink on its own tokens, so 'Live' never reads as 'side 1'."
+    },
+    {
+      "id": "note-pairs-board",
+      "page": "pairs",
+      "x": -380,
+      "y": 0,
+      "w": 300,
+      "text": "TOKENS — four pairs and their checks\n\nOwner, 3 Oct: 'What if you let go of the blue? Are there any two-colour combinations that could work?'\n\nViolet and teal (chosen), royal blue and teal (round 2's choice) and two more pairs without the blue. Each side is a text tone (AA) and a deep fill. Ratios and colour-blind separations are computed by the generator."
+    },
+    {
+      "id": "note-pairs-royal-teal",
+      "page": "pairs",
+      "x": -380,
+      "y": 1060,
+      "w": 300,
+      "text": "/MIDWEEK/2026-10-05/MATCH/[ID] — royal blue and teal (round 2's choice)\n\nRound 2's choice, for reference\n\nRoyal blue and teal (round 2's choice): the shoot-out report (Sophie v Sanne), with lanes, penalty dots, the chance bar and the Why list. Side 0 (left) is royal blue, side 1 (right) teal; which colour takes which side is free."
+    },
+    {
+      "id": "note-pairs-indigo-olive",
+      "page": "pairs",
+      "x": -380,
+      "y": 3780,
+      "w": 300,
+      "text": "/MIDWEEK/2026-10-05/MATCH/[ID] — indigo and olive\n\nA pair without the blue\n\nIndigo and olive: the shoot-out report (Sophie v Sanne), with lanes, penalty dots, the chance bar and the Why list. Side 0 (left) is indigo, side 1 (right) olive; which colour takes which side is free."
+    },
+    {
+      "id": "note-pairs-plum-olive",
+      "page": "pairs",
+      "x": -380,
+      "y": 6500,
+      "w": 300,
+      "text": "/MIDWEEK/2026-10-05/MATCH/[ID] — plum and olive\n\nA pair without the blue\n\nPlum and olive: the shoot-out report (Sophie v Sanne), with lanes, penalty dots, the chance bar and the Why list. Side 0 (left) is plum, side 1 (right) olive; which colour takes which side is free."
+    },
+    {
+      "id": "note-pairs-violet-teal",
+      "page": "pairs",
+      "x": -380,
+      "y": 9220,
+      "w": 300,
+      "text": "/MIDWEEK/2026-10-05/MATCH/[ID] — violet and teal (chosen)\n\nChosen (owner, 3 Oct)\n\nViolet and teal (chosen): the shoot-out report (Sophie v Sanne), with lanes, penalty dots, the chance bar and the Why list. Side 0 (left) is violet, side 1 (right) teal; which colour takes which side is free."
+    }
+  ],
+  "launch": {
+    "view": "canvas",
+    "page": "ratings"
+  }
+}

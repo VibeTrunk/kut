@@ -79,3 +79,38 @@ export async function setMidweekOptOut(
     message: optOut ? "You've opted out of Midweek Madness." : "You're taking part again.",
   };
 }
+
+export type CallSaveResult = { ok: true; savedAt: string } | { ok: false; message: string | null };
+
+/**
+ * A call (ADR-118): the caller's pick for one later match, or with a null
+ * winner its removal. Every rule lives in `kut.save_midweek_prediction` and
+ * its trigger; a refusal's message goes back for `callError` to word. Nothing
+ * is revalidated: the card keeps its own state, and the evening page asks
+ * for itself again while a match is in play.
+ */
+export async function saveMidweekCall(
+  tournamentId: string,
+  round: number,
+  pairing: number,
+  winnerUserId: string | null,
+): Promise<CallSaveResult> {
+  await requireUser();
+  if (
+    !isUuid(tournamentId) ||
+    !Number.isInteger(round) ||
+    !Number.isInteger(pairing) ||
+    (winnerUserId !== null && !isUuid(winnerUserId))
+  ) {
+    return { ok: false, message: null };
+  }
+  const supabase = await createClient();
+  const { error } = await supabase.schema("kut").rpc("save_midweek_prediction", {
+    p_tournament_id: tournamentId,
+    p_round: round,
+    p_pairing: pairing,
+    p_winner_user_id: winnerUserId,
+  });
+  if (error) return { ok: false, message: error.message ?? null };
+  return { ok: true, savedAt: new Date().toISOString() };
+}

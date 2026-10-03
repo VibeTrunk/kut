@@ -5,7 +5,7 @@ import {
   type BracketPair,
   type BracketRound,
 } from "@/lib/midweek/evening";
-import { MidweekMatchRow } from "./match-row";
+import { MidweekMatchRow, type RowCall } from "./match-row";
 
 /** Pairs 2k and 2k + 1, whose winners meet next (§44.6). */
 function groups(pairs: readonly BracketPair[]): BracketPair[][] {
@@ -82,18 +82,22 @@ function RoundTime({ round }: { round: BracketRound }) {
  *
  * HANDOFF drew the tree `aria-hidden` beside a list that is `display: none`
  * from `lg`, which leaves a screen reader nothing at that width. So the tree
- * keeps round headings and the same labelled match rows (ADR-098).
+ * keeps round headings and the same labelled match rows (ADR-098). `calls`
+ * puts a member's calls on their rows, keyed `round/pairing` (ADR-118).
  */
 export function MidweekBracket({
   rounds,
   you,
   weekStart,
+  calls,
 }: {
   rounds: readonly BracketRound[];
   you: string | null;
   weekStart: string;
+  calls?: ReadonlyMap<string, RowCall>;
 }) {
   const total = rounds.length;
+  const callOf = (pair: BracketPair) => calls?.get(`${pair.round}/${pair.pairing}`) ?? null;
   return (
     <>
       <div className="grid gap-7 lg:hidden">
@@ -127,6 +131,7 @@ export function MidweekBracket({
                   >
                     {group.map((pair) => (
                       <MidweekMatchRow
+                        call={callOf(pair)}
                         key={pair.pairing}
                         pair={pair}
                         weekStart={weekStart}
@@ -192,7 +197,13 @@ export function MidweekBracket({
                       key={pair.pairing}
                     >
                       <div className="w-full">
-                        <MidweekMatchRow dense pair={pair} weekStart={weekStart} you={you} />
+                        <MidweekMatchRow
+                          call={callOf(pair)}
+                          dense
+                          pair={pair}
+                          weekStart={weekStart}
+                          you={you}
+                        />
                       </div>
                     </div>
                   ))}

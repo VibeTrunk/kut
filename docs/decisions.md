@@ -6791,6 +6791,44 @@ nothing pays. The pages will read the views tolerantly.
 Tier: data-changing (docs/OPERATIONS.md): it widens what the ledger accepts,
 adds a faucet and changes what the worker writes when it pays a week.
 
+**Amended 2026-10-03 (D pages, built to the owner-approved DR3 mockups,
+`design/mm2-dr3/HANDOFF.md` §2, DR3-5 and DR3-6):**
+
+- **The word on screen is "call"**: `Call the winners`, `Your calls`, `You
+  called it`, as the result message already says.
+- **One place to pick: `/midweek`,** from the moment the member is out, in
+  place of DR2's placeholder (beside `Your night` from `lg`), and under the
+  final while it is live. The bracket only shows calls: `✓ Your call: Sophie`
+  or `Open to call` with `Call it →` on each later row, in the list and the
+  tree, and a jump link `Call the semis · 1 open` while one is open. No
+  Compete badge for open calls (DR3-6), and Home's card says nothing about
+  them (not mocked).
+- **A card per later match the member is not in,** neutral (a list of
+  matches, DR2-1), the open and not-yet-open first by kick-off, then the
+  closed ones newest first, so a live final leads its semi-finals. Side 0 is
+  the winner of feeder `2k`, side 1 of `2k + 1`; a side not settled names its
+  feeder (`Winner of Sophie v Sanne`).
+- **Toggle buttons, not radios** (DR3-5): a tap saves at once through
+  `save_midweek_prediction`, the other name changes the pick, tapping the pick
+  again clears it. No submit. The states are DR3's: not yet open, open,
+  saving, saved, changed, cleared, refused (by the guard's message, the last
+  saved pick kept), closed at kick-off with the club's split, ended with `✓
+  You called it` or a neutral `Not this time`, never red.
+- **The split** (`MidweekPredictSplit`) from kick-off, steel against faint ink,
+  counts only. The view has no row for a match nobody called: the page reads
+  that as 0–0 and says `Nobody called this one.`
+- **Once paid:** the champion view's `You` stat counts wins and calls (`+54
+  KUT`, `50 for wins, 4 for calls`), a weekly line (`You called 2 of 3 right:
+  +4 KUT Coins.`) under `Your night` links to the bracket's `Your calls`, which
+  keeps every call for good with `✓ +2` or `Not this time`. Picks are counted
+  from `my_midweek_predictions`, since a member with none right has no reward
+  row.
+- **Reads are tolerant:** a failed read of the three views is no calls, never
+  a failed page. The card keeps its own state after a tap (no revalidation);
+  a newer server render, from the evening's polling, wins unless a save is on
+  its way.
+- **How-it-works** gains "Calls, once you're out" (`#midweek-calls`).
+
 ## ADR-119 — Deeper team colours: violet and teal, with a text tone and a fill per side, and Live on its own tokens
 
 Date: 2026-10-03

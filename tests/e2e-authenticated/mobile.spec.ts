@@ -814,6 +814,119 @@ test.describe("Midweek Madness live (F6, ADR-115)", () => {
   });
 });
 
+test.describe("Midweek Madness calls (D, ADR-118)", () => {
+  test.afterEach(async () => {
+    await withDatabase(endFixtureEvening);
+  });
+
+  test("once out, a member calls the later matches, sees them on the bracket, and is paid for the right ones", async ({
+    page,
+  }) => {
+    await resetMidweek("release_member");
+    let weekStart = "";
+    let rounds = 0;
+    let out = null as { username: string; round: number } | null;
+    await withDatabase(async (database) => {
+      ({ weekStart, rounds } = await startFixtureEvening(database));
+      // Whichever fixture account goes out first, before the final.
+      const lost = await database.query<{ username: string; round: number }>(
+        `select p.username, min(m.round)::int as round from kut.midweek_matches m
+         join kut.midweek_tournaments t on t.id = m.tournament_id
+         join kut.profiles p on p.id in (m.side_0_user_id, m.side_1_user_id)
+         where t.week_start = $1 and not m.bye and m.winner_user_id <> p.id
+           and p.username in ('release_member', 'release_admin')
+         group by p.username order by 2 limit 1`,
+        [weekStart],
+      );
+      out = lost.rows[0] ?? null;
+      // A minute before the next round kicks off: every match before it has ended.
+      if (out && out.round < rounds) await advanceFixtureEvening(database, 3 + 15 * out.round);
+    });
+    test.skip(!out || out.round >= rounds, "No fixture account goes out before the final.");
+    await signIn(page, out!.username);
+
+    await page.goto("/midweek");
+    const block = page.getByRole("region", { name: "Call the winners" });
+    await expect(block).toBeVisible();
+    await expect(
+      block.getByText(/^\+\d+ KUT Coins a correct pick · paid after the final$/),
+    ).toBeVisible();
+    await expectNoHorizontalOverflow(page);
+
+    // A tap saves at once; the other name changes it; tapping the pick again clears it.
+    const card = block
+      .getByRole("group", { name: /, kick-off \d\d:\d\d\. Who wins\?$/ })
+      .filter({ has: page.getByRole("button", { disabled: false }) })
+      .first();
+    const [first, second] = [card.getByRole("button").nth(0), card.getByRole("button").nth(1)];
+    const firstName = (await first.innerText())
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean)[0];
+    await first.click();
+    await expect(first).toHaveAttribute("aria-pressed", "true");
+    await expect(card.getByText(/^✓ Saved \d\d:\d\d\.$/)).toBeVisible();
+    await second.click();
+    await expect(second).toHaveAttribute("aria-pressed", "true");
+    await expect(card.getByText(/^✓ Changed to .+, \d\d:\d\d\.$/)).toBeVisible();
+    await second.click();
+    await expect(second).toHaveAttribute("aria-pressed", "false");
+    await expect(card.getByText(/^Pick cleared\./)).toBeVisible();
+    await first.click();
+    await expect(first).toHaveAttribute("aria-pressed", "true");
+    await expectNoHorizontalOverflow(page);
+
+    // Saved for real: a reload shows the pick.
+    await page.reload();
+    const saved = page
+      .getByRole("region", { name: /^(Call the winners|Your calls)$/ })
+      .getByRole("button", { name: new RegExp(`^${firstName}`) })
+      .first();
+    await expect(saved).toHaveAttribute("aria-pressed", "true");
+
+    // The bracket shows the call and never takes one.
+    await page.goto(`/midweek/${weekStart}`);
+    await expect(
+      page.getByText(`✓ Your call: ${firstName}`).filter({ visible: true }).first(),
+    ).toBeVisible();
+    await expect(page.getByRole("button", { name: new RegExp(`^${firstName}`) })).toHaveCount(0);
+    await expectNoHorizontalOverflow(page);
+
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/midweek");
+    await expect(page.getByRole("region", { name: "Call the winners" })).toBeVisible();
+    await expectNoHorizontalOverflow(page);
+    await page.goto(`/midweek/${weekStart}`);
+    await expect(
+      page.getByText(`✓ Your call: ${firstName}`).filter({ visible: true }).first(),
+    ).toBeVisible();
+    await expectNoHorizontalOverflow(page);
+
+    // Kick-off: the call closes and the club's split shows (counts only).
+    await withDatabase((database) => advanceFixtureEvening(database, 2));
+    await page.goto("/midweek");
+    await expect(page.getByText(`Closed at kick-off. You picked ${firstName}.`)).toBeVisible();
+    await expect(page.getByText("How the club called it").first()).toBeVisible();
+    await expectNoHorizontalOverflow(page);
+
+    // After the final the week is paid: the weekly line, and the calls kept on the bracket.
+    await withDatabase((database) => advanceFixtureEvening(database, 120, { runWorker: true }));
+    await page.goto("/midweek");
+    await expect(page.getByText(/^You called [01] of 1 right/)).toBeVisible();
+    await expect(page.getByText(/ for wins, \d+ for calls$/)).toBeVisible();
+    await page.getByRole("link", { name: "Your calls →" }).click();
+    await expect(page).toHaveURL(new RegExp(`/midweek/${weekStart}#calls$`));
+    await expect(page.getByRole("region", { name: "Your calls" })).toContainText(
+      `You picked ${firstName}.`,
+    );
+    await expectNoHorizontalOverflow(page);
+
+    await page.goto("/how-it-works#midweek-calls");
+    await expect(page.getByRole("heading", { name: "Calls, once you’re out" })).toBeVisible();
+    await expectNoHorizontalOverflow(page);
+  });
+});
+
 test.describe("Home and Messages (F4, ADR-114)", () => {
   test.afterEach(async () => {
     await withDatabase(endFixtureEvening);

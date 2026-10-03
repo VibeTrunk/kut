@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 import { MidweekNotice } from "@/components/midweek/bits";
 import { MidweekBracket } from "@/components/midweek/bracket";
+import { MidweekCalls } from "@/components/midweek/calls-list";
 import { MidweekClock } from "@/components/midweek/clock";
 import { MidweekJumpLinks } from "@/components/midweek/jump-links";
 import { MidweekLivePoller } from "@/components/midweek/live-poller";
@@ -11,10 +12,18 @@ import { MidweekPickShares, type PickShareView } from "@/components/midweek/pick
 import { MidweekRatingList } from "@/components/midweek/rating-list";
 import { MidweekSeed } from "@/components/midweek/seed";
 import { MIDWEEK } from "@/game/midweek/config";
+import { predictionCoins } from "@/game/midweek/rewards";
 import { seedHash } from "@/game/midweek/rng";
 import { roundStartAt } from "@/game/midweek/schedule";
 import { getRarityTier } from "@/game/rating-engine";
 import { requireUser } from "@/lib/auth/user";
+import {
+  callCards,
+  callJumpLink,
+  callRecords,
+  rowCalls,
+  weeklyCallsLine,
+} from "@/lib/midweek/calls";
 import {
   formatClock,
   formatDayDate,
@@ -31,6 +40,7 @@ import {
   yourNextRound,
 } from "@/lib/midweek/evening";
 import {
+  loadCalls,
   loadNightRatings,
   loadPickShares,
   loadTournamentByWeek,
@@ -113,15 +123,26 @@ export default async function MidweekBracketPage({
     autoUserIds: new Set(results.entries.filter((row) => row.auto).map((row) => row.user_id)),
   });
   const evening = tournament.status === "simulated";
+  const night = myNight({
+    userId: user.id,
+    rounds,
+    lockAt,
+    scheduleVersion,
+    matches: results.matches,
+  });
+  // Calls (ADR-118): read-only here. While the evening runs, a member who is out
+  // sees their call on each later row and a jump link to the first round still
+  // open; once complete, the list of their calls.
+  const calls = night.rows.some((row) => row.kind === "out")
+    ? await loadCalls(supabase, tournament.tournament_id)
+    : null;
+  const cards =
+    evening && calls
+      ? callCards({ bracket, night, predictions: calls.predictions, splits: calls.splits, now })
+      : null;
+  const callLink = cards ? callJumpLink(cards, rounds) : null;
   let clock: ReactNode = null;
   if (evening) {
-    const night = myNight({
-      userId: user.id,
-      rounds,
-      lockAt,
-      scheduleVersion,
-      matches: results.matches,
-    });
     const entered = bracket[0].pairs.some((pair) =>
       pair.sides.some((side) => side.userId === user.id),
     );
@@ -168,16 +189,35 @@ export default async function MidweekBracketPage({
   });
   const seed = tournament.seed ?? null;
   const seal = tournament.seed_hash ?? "";
+  const records = complete && calls ? callRecords(calls.predictions, results.matches, rounds) : [];
+  const right = records.filter((record) => record.correct === true).length;
+  const blocks = [
+    ...(callLink ? [{ href: `#round-${callLink.round}`, label: callLink.label }] : []),
+    ...(ratings ? [{ href: "#ratings", label: "Your ratings" }] : []),
+    ...(records.length > 0 ? [{ href: "#calls", label: "Your calls" }] : []),
+  ];
 
   return shell(
     <>
       <MidweekJumpLinks
-        blocks={ratings ? [{ href: "#ratings", label: "Your ratings" }] : []}
+        blocks={blocks}
         rounds={bracket}
         yours={evening ? yourNextRound(bracket, user.id) : null}
       />
       {ratings && <MidweekRatingList defaultOpen ratings={ratings} />}
-      <MidweekBracket rounds={bracket} weekStart={weekStart} you={user.id} />
+      {records.length > 0 && (
+        <MidweekCalls
+          coins={predictionCoins(rounds)}
+          line={weeklyCallsLine(right, records.length, predictionCoins(rounds))}
+          records={records}
+        />
+      )}
+      <MidweekBracket
+        calls={cards ? rowCalls(cards) : undefined}
+        rounds={bracket}
+        weekStart={weekStart}
+        you={user.id}
+      />
       {complete && shareRows.length > 0 && (
         <MidweekPickShares ownerCountMin={MIDWEEK.ownerCountMin} rows={shareRows} />
       )}

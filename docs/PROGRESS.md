@@ -4713,3 +4713,34 @@ authenticated E2E (53 passed, 1 expected skip): the complete bracket's ratings
 match) at 320 and 412 px and in a row of five at 1440, a chip opening its rated
 report (ten discs, the key, the foot sentence), the how-it-works anchor, and the
 champion view's block closed until `Show each match`; every no-overflow check.
+
+## MM 2.0 D pages: calls for members who are out — 2026-10-03
+
+`feat/midweek-calls`, ADR-118 amended. No migration; the backend has been on
+hosted since 2026-10-03. Built to the DR3 mockups `Evening-Out`,
+`Predict-States`, `Evening-FinalLive`, `Bracket-Calls`, `Bracket-Complete`
+and `Evening-Champion`.
+
+- **`MidweekPredictions`:** `Call the winners` on `/midweek` once out, and
+  under a live final: one neutral card per later match, toggle buttons that
+  save at once (`saveMidweekCall` → `save_midweek_prediction`), change or
+  clear, every DR3 state, refusals worded by the guard's message, and the
+  club's split from kick-off.
+- **The bracket:** each later row carries the call (list and tree), a jump
+  link while one is open, and once paid `Your calls` with `✓ +2` or `Not this
+  time`.
+- **The champion view:** `You` counts wins and calls; the weekly line links to
+  the bracket's calls.
+- **Model:** `src/lib/midweek/calls.ts` (pure, unit-tested on an 8-entrant
+  bracket); `loadCalls` reads the three views tolerantly.
+- **E2E fixture:** `takeBackPayouts` also takes back prediction coins.
+- **Copy:** how-it-works §12 "Calls, once you're out".
+
+Verification: `npm run verify:fast` (461 tests, 9 new for the call model); the
+authenticated E2E (58 passed, 1 expected skip). The new calls test finds the
+fixture account that goes out first, moves the evening to a minute before the
+next round, and at 320 and 412 px saves, changes, clears and re-saves a call,
+reloads, sees it on the bracket (and at 1440 on the tree), sees it close at
+kick-off with the club's split, then after the payout the weekly line, `You`
+counting calls, the bracket's `Your calls`, and the how-it-works anchor; every
+no-overflow check.

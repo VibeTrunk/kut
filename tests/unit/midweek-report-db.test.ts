@@ -37,6 +37,7 @@ function entryRows(result: SimulatedTournament, complete: boolean): EntryCardRow
         auto: entry.auto,
         keeper_slot: entry.keeperSlot,
         keeperless: entry.keeperless,
+        balance_ppm: entry.balancePpm,
         slot: card.slot,
         trialist: card.trialist,
         player_id: card.playerId,

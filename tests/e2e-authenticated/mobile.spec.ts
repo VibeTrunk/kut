@@ -836,6 +836,19 @@ test.describe("Home and Messages (F4, ADR-114)", () => {
   });
 });
 
+test("how-it-works shows the plusses table and the weakest-line rule (ADR-116)", async ({
+  page,
+}) => {
+  await signIn(page, "release_member");
+  await page.goto("/how-it-works#midweek");
+  await expect(page.getByRole("heading", { name: "Your squad’s shape" })).toBeVisible();
+  const plusses = page.getByRole("table").filter({ hasText: "Midfield" });
+  await expect(plusses.getByRole("row")).toHaveCount(8);
+  await expect(plusses.getByRole("row", { name: /^Tank/ })).toBeVisible();
+  await expect(page.getByText("Every line needs at least 3 plusses.")).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+});
+
 test("admin can reach the Midweek controls", async ({ page }) => {
   await signIn(page, "release_admin");
   await page.goto("/admin/midweek");

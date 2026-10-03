@@ -12,8 +12,16 @@ import { keeperStrengthPpm, type LineMults } from "./shape";
 
 export type MatchCard = { archetype: Archetype; weekPowerPpm: number; lines: LineMults };
 
-/** Five cards, one of which plays in goal. */
-export type MatchSide = { cards: readonly MatchCard[]; keeperSlot: number; keeperless: boolean };
+/**
+ * Five cards, one of which plays in goal. `balancePpm` is the weakest-line
+ * factor (§44.4), applied to every card's power before its lines.
+ */
+export type MatchSide = {
+  cards: readonly MatchCard[];
+  keeperSlot: number;
+  keeperless: boolean;
+  balancePpm: number;
+};
 
 export type Side = 0 | 1;
 export type ChanceOutcome = "goal" | "save" | "block" | "woodwork" | "wide";
@@ -76,12 +84,12 @@ function contributions(side: MatchSide, powers: readonly number[], cfg: MidweekC
     defTotal: 0,
   };
   side.cards.forEach((card, slot) => {
-    const power = powers[slot];
+    const power = mulPpm(powers[slot], side.balancePpm);
     result.att.push(mulPpm(power, card.lines.attPpm));
     result.mid.push(mulPpm(power, card.lines.midPpm));
     result.def.push(mulPpm(power, card.lines.defPpm));
     if (slot === side.keeperSlot) {
-      result.keeper = keeperStrengthPpm(power, card.lines, side.keeperless, cfg);
+      result.keeper = keeperStrengthPpm(power, side.keeperless, cfg);
     } else {
       result.midTotal += result.mid[slot];
       result.defTotal += result.def[slot];
@@ -197,7 +205,9 @@ export function playMatch(
       ];
 
     const outfieldCount = defending.cards.length - 1;
-    const resistance = idiv(idiv(c[opp].defTotal, outfieldCount) + c[opp].keeper, 2);
+    const resistance =
+      mulPpm(idiv(c[opp].defTotal, outfieldCount), m.defenceWeightPpm) +
+      mulPpm(c[opp].keeper, PPM - m.defenceWeightPpm);
     const finishing = 2 * powerSharePpm(c[side].att[shooter], resistance, m.finishingContrast);
     const base = mulPpm(m.goalBasePpm, cfg.chanceTypes.difficultyPpm[chanceType]);
     const pGoalPpm = clamp(mulPpm(base, finishing), m.goalMinPpm, m.goalMaxPpm);

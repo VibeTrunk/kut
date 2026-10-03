@@ -19,6 +19,7 @@ type Golden = {
   dayRolls: Array<{ seed: string; tag: string; ppm: number }>;
   pickShares: Array<{ picks: number; owners: number; sharePpm: number; pickFactorPpm: number }>;
   lineMults: Record<string, { attPpm: number; midPpm: number; defPpm: number }>;
+  balances: Array<{ archetypes: string[]; keeperSlot: number; balance: Json }>;
   powerShares: Array<{ a: number; b: number; k: number; ppm: number }>;
   payouts: Array<{ rounds: number; pays: number[] }>;
   schedule: Array<{ weekStart: string; version: number; lockAt: string; roundStarts: string[] }>;
@@ -91,6 +92,11 @@ export function buildParitySql(golden: Golden): string {
   for (const [archetype, lines] of Object.entries(golden.lineMults)) {
     add(
       `select is((select jsonb_build_object('attPpm', att_ppm, 'midPpm', mid_ppm, 'defPpm', def_ppm) from kut._mm_lines(${text(archetype)})), ${json(lines)}, ${text(`line multipliers of ${archetype}`)});`,
+    );
+  }
+  for (const b of golden.balances) {
+    add(
+      `select is(kut._mm_balance(array[${b.archetypes.map(text).join(",")}], ${b.keeperSlot}), ${json(b.balance)}, ${text(`balance of ${b.archetypes.join(", ")}, keeper in slot ${b.keeperSlot}`)});`,
     );
   }
   for (const s of golden.powerShares) {
@@ -169,7 +175,8 @@ export function buildParitySql(golden: Golden): string {
     "-- Midweek Madness engine parity (BUILD_SPEC §44.8, ADR-090): the SQL engine in",
     "-- 20261005000000_midweek_engine.sql reproduces every golden value the TypeScript",
     "-- twin in src/game/midweek/ produced, draw for draw, and the clock in",
-    "-- 20261011000000_midweek_evening_timing.sql every lock, round start and event time (ADR-104).",
+    "-- 20261011000000_midweek_evening_timing.sql every lock, round start and event time (ADR-104),",
+    "-- and 20261016000000_midweek_balance.sql the plusses and the weakest-line rule (ADR-116).",
     "begin;",
     "create extension if not exists pgtap with schema extensions;",
     "set local search_path to extensions,kut,public;",

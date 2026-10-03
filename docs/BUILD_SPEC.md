@@ -1742,7 +1742,8 @@ Design goals, which the targets in §44.12 put numbers on:
 
 The numbers below are the tuned values from the simulation harness (ADR-092),
 recorded with their evidence in `docs/archive/MIDWEEK_TUNING.md` and signed
-off by the owner on 2026-09-25. The
+off by the owner on 2026-09-25, then retuned with the plusses and the weakest-line
+rule and the weekly rotation on, signed off on 2026-10-03 (ADR-116). The
 executable definition of every rule in §44.3–§44.6 is the pure engine in
 `src/game/midweek/`, pinned by `tests/fixtures/midweek-golden.json`; the SQL
 engine must reproduce that file (ADR-090).
@@ -1799,7 +1800,7 @@ engine must reproduce that file (ADR-090).
 - **Members who did not pick get an auto squad:** up to five random distinct
   Players from their own collection, drawn from the tournament seed, one copy
   each, with trialists for the rest. Every card in an auto squad, trialists
-  included, has its power multiplied by `MIDWEEK_AUTO_FACTOR` (0.575) and gets
+  included, has its power multiplied by `MIDWEEK_AUTO_FACTOR` (0.55; 0.575 until ADR-116) and gets
   the neutral pick factor. **Auto squads are left out of pick shares.** An auto
   squad that wins is paid like any other.
 - **Opting out.** A member can opt out in settings and is then never entered,
@@ -1840,7 +1841,7 @@ million and floored after each step:
 
 | Factor | Rule | Value (ADR-092; started at) |
 |---|---|---|
-| `ovr_factor` | Linear in the locked OVR, clamped to 30–83: 1.00 at 30, `MIDWEEK_OVR_FACTOR_MAX` at 83. Flattening OVR is what stops the richest collection winning by default. | max 1.10 (1.35) |
+| `ovr_factor` | Linear in the locked OVR, clamped to 30–83: 1.00 at 30, `MIDWEEK_OVR_FACTOR_MAX` at 83. Flattening OVR is what stops the richest collection winning by default. | max 1.12 (1.35; 1.10 until ADR-116) |
 | `form_roll` | One roll per Player per tournament, shared by every squad that fields the Player: the mean of two uniform draws, its lower half mapped onto [min, 1.00) and its upper half onto [1.00, max), so most rolls land near 1.00. Trialists roll their own. | range 0.80–1.25, mode 1.00 (0.75–1.45) |
 | `pick_factor` | Decreasing in the Player's pick share (below). Neutral is 1.00. | through (0, 1.25), (0.40, 1.00), (1, 0.875), piecewise linear ((0, 1.30), (0.40, 1.00), (1, 0.85)) |
 | `fitness` | `MIDWEEK_INJURED_FITNESS` when the card is a Live card of a Player in injury mode at the lock (the ADR-085 cast rule), else 1.00. | 0.95 (0.95) |
@@ -1864,25 +1865,49 @@ that tournament.
 
 ### 44.4 Squad shape
 
-- **Archetypes set the shape, not the size.** A card contributes to three lines
-  according to its archetype's §15.1 offsets, averaged over the line's
-  attributes and scaled by `MIDWEEK_SHAPE_SCALE` (0.5 per 10 offset points),
-  times `card_power`: `line_mult = 1 + 0.5 × mean_offset / 10`, floored at 0.10. Absolute attributes are never used; they
-  would bring raw OVR back in at full weight.
-  - attack: SHO, PAC, DRI;
-  - midfield: PAS, DRI;
-  - defence: DEF, PHY.
+**Rewritten by ADR-116 (MM 2.0 C2).** Until then each card's lines followed its
+§15.1 offsets and there were no balance rules.
+
+- **Plusses set the shape, not the size.** Each archetype has 0 to 3 plusses in
+  each of three lines, and this table is the engine's input (`MIDWEEK.shape.plusses`):
+  the table members see is the table the engine reads. The §15.1 offsets shape
+  card faces, never a Midweek line.
+
+  | Archetype | Attack | Midfield | Defence |
+  |---|---:|---:|---:|
+  | All-rounder | 1 | 1 | 1 |
+  | Speedster | 2 | 2 | 0 |
+  | Finisher | 3 | 1 | 0 |
+  | Playmaker | 1 | 3 | 0 |
+  | Defender | 0 | 1 | 3 |
+  | Tank | 0 | 2 | 2 |
+  | Goalkeeper | 0 | 0 | 3 |
+
+  The All-rounder carries three plusses, average everywhere; every outfield
+  specialist carries four. A card's contribution to a line is `card_power`
+  times that line's value for its plusses (`MIDWEEK_LINE_VALUES`): attack and
+  midfield 0.5 / 1.0 / 1.5 / 2.0, defence 0.2 / 1.0 / 1.8 / 2.6 for 0 / 1 / 2 /
+  3 plusses. The values differ because the lines do different jobs (§44.5:
+  midfield wins chances, attack is the drawn shooter's own, defence is
+  averaged); they are set so one plus is worth about the same win chance in
+  every line. Absolute attributes are never used.
+- **The weakest-line rule.** The plusses of the four cards that don't play in
+  goal are added up per line. Every plus a line falls short of
+  `MIDWEEK_MIN_LINE_PLUSSES` (3) multiplies every card of the squad by
+  `MIDWEEK_SHORTFALL_FACTOR` (0.88), floored after each step, in every match of
+  the week: the squad's `balance`. Four All-rounders (4/4/4) meet it; four of a
+  kind never do.
 - **Exactly one card plays in goal;** the other four make up the lines.
   - The keeper is the Goalkeeper-archetype card with the highest `card_power`.
   - A squad without a Goalkeeper puts the outfielder with the highest defence
-    contribution in goal, at `MIDWEEK_KEEPERLESS_FACTOR` (0.45; started at
-    0.60). Keeper strength is the keeper's defence contribution, times that
-    factor when keeperless.
-  - A second or third Goalkeeper plays outfield with the Goalkeeper offsets,
-    including SHO −12.
-- **All-rounders are average everywhere,** so the default archetype stays
-  useful. There are no balance rules: "one keeper beats zero or three" and
-  "balance helps" follow from the numbers.
+    contribution in goal.
+  - Keeper strength is `MIDWEEK_KEEPER_STRENGTH` (1.65) times the keeper's
+    power, times `MIDWEEK_KEEPERLESS_FACTOR` (0.45) for a stand-in, whatever its
+    archetype. Until ADR-116 a stand-in kept 0.45 of its own defence line.
+  - A second or third Goalkeeper plays outfield with its plusses (0 / 0 / 3).
+- **Balance helps by rule:** four specialists who cover every line beat four
+  All-rounders at equal power about 63% of the time, and a one-line stack loses
+  to four All-rounders (§44.12).
 
 ### 44.5 A match
 
@@ -1896,22 +1921,26 @@ that tournament.
   - an **outcome**: goal, save, woodwork, block or wide. The goal
     probability is `0.30 × chance-type difficulty × 2 × S / (S + R)`, clamped
     to 0.02–0.85, where `S` is the shooter's attack contribution and `R` the
-    mean of the defending side's average outfield defence and its keeper. A
+    defending side's average outfield defence weighted `MIDWEEK_DEFENCE_WEIGHT`
+    (0.8) plus its keeper's strength weighted the rest (half and half until
+    ADR-116). A
     miss is a save (45), block (25), woodwork (8) or shot forced wide (22),
     credited to the keeper or a defender;
   - a **minute** in 1–90, so a report reads as a timeline.
 - **The chance model reproduces the intended goals:** about 2.5 per match
-  between two equal balanced sides, 2.85 across a simulated bracket. The keeper
-  starts a chance occasionally (long throws) and scores about once a season
-  club-wide.
+  between two equal All-rounder sides, 2.96 across a simulated bracket;
+  specialists who concentrate attack in one shooter score more. The keeper
+  starts a chance occasionally (long throws) and scores about once every two
+  seasons club-wide.
 - **A draw goes to penalties:** five kicks each, then sudden death, each kick
   an event decided by kicker against keeper. After
   `MIDWEEK_SHOOTOUT_MAX_ROUNDS` (20) sudden-death rounds a
   seeded draw decides, so every match has a winner.
 - **Odds.** Each match stores a pre-match win chance in ppm, a closed-form
-  estimate from both squads' week-long factors (before `day_roll`): each side's
-  rating is its outfield attack, midfield and defence plus its keeper, and the
-  chance is `a³ / (a³ + b³)`. It is published with its result.
+  estimate from both squads' week-long factors (before `day_roll`, after the
+  squad's `balance`): each side's rating is its outfield attack, midfield and
+  defence plus its keeper, and the chance is `a³ / (a³ + b³)`. It is published
+  with its result.
 
 ### 44.6 Bracket
 
@@ -2161,21 +2190,25 @@ KUT keeps no history to read an earlier moment from.
 The harness simulates at least 5,000 seasons against a mix of manager
 strategies; a fast smoke version runs in the unit suite.
 
-| Target | Starting value | Simulated, 5,000 seasons (ADR-092) |
-|---|---|---|
-| Strongest collection beats the weakest in a single match | about 65% | 70.6% |
-| Strongest collection wins the whole tournament (8 entrants) | about 25–30% | 28.2% |
-| A thought-through five beats a random five from the same collection | at least 60% | **58.7%** |
-| No fixed habit wins over a 20-week season (highest OVR, least popular, last week's winners, random) | none ahead by more than a few percent | 4.5% lead |
-| A Common or Bronze card is a match's standout | most weeks, at least once | every week |
-| An empty slot is never the best choice | always | yes |
-| An auto squad beats a typical picked squad | at most about 20% | 12.0% |
-| An auto squad reaches the last four | about 2% or less | 1.9% |
-| The squad that looks strongest after round 1 reaches the final | at most about 35% | 31.8% |
+| Target | Starting value | ADR-092 | ADR-116 (rotation on) |
+|---|---|---|---|
+| Strongest collection beats the weakest in a single match | about 65% | 70.6% | 71.2% |
+| Strongest collection wins the whole tournament (8 entrants) | about 25–30% | 28.2% | 28.3% |
+| A thought-through five beats a random five from the same collection | at least 60% | **58.7%** | 61.6% |
+| No fixed habit wins over a 20-week season (highest OVR, least popular, last week's winners, random) | none ahead by more than a few percent | 4.5% lead | 2.1% lead |
+| A Common or Bronze card is a match's standout | most weeks, at least once | every week | every week |
+| An empty slot is never the best choice | always | yes | yes |
+| An auto squad beats a typical picked squad | at most about 20% | 12.0% | 12.2% |
+| An auto squad reaches the last four | about 2% or less | 1.9% | 2.0% |
+| Four balanced specialists beat four All-rounders of equal power | 60–65% (ADR-116) | — | 63.1% |
+| A one-line stack beats four All-rounders of equal power | below 50% (ADR-116) | — | 32.7% |
+| The squad that looks strongest after round 1 reaches the final | at most about 35% | 31.8% | 31.2% |
 
 The first and third rows pull against each other, and no tuning the harness
 found meets both. The owner accepted both as they are (ADR-092); the harness
-fails if either drifts past 72% or below 58%.
+fails if either drifts past 72% or below 58%. Since ADR-116 the harness plays
+the weekly rotation (`uniform`, ADR-110) and its thought-through manager
+picks for the plusses and the weakest-line rule.
 
 **The archetype rotation (MM 2.0 C0).** The harness can also rotate unclaimed
 Players' archetypes each week, as the ROADMAP's "Rotate unclaimed Players'
@@ -2185,8 +2218,8 @@ seeded and deterministic. `node scripts/midweek/rotation.mjs` runs every
 rotation variant over the same seasons and rewrites
 `docs/archive/MIDWEEK_ROTATION.md`: the targets above, Goalkeepers per roster and
 per squad, and how visibly rotation marks a Player as unclaimed. It is the
-evidence for checkpoints Q8 and Q9 and changes no rule; `npm run sim:midweek`
-still plays today's fixed archetypes.
+evidence for checkpoints Q8 and Q9 and changes no rule. Since ADR-116,
+`npm run sim:midweek` plays the `uniform` rotation too.
 
 ### 44.13 Invariants to come
 
@@ -2337,6 +2370,18 @@ Views only.
 | `kut._mm_rotation_archetype(bytea, uuid)` | A Player's draw for a seed: rng.ts `uniform` over the seven archetypes (`src/game/archetypes.ts` order), tag `rotation:<player id>`. Internal. |
 | `kut._mm_rotate_archetypes(bytea)` | Sets every active, collectible Player with no linked account to their draw, returns the changes as `[{playerId, from, to}]`, and rebuilds the active season once if anything changed. The same seed again changes nothing. Internal. |
 | `kut._mm_open_next()` | Re-created: one opener at a time (a transaction advisory lock, then the running-week check again); rotates with the new week's seed right before the insert, so the snapshot freezes the rotation; logs each change against the new week. A clash on `week_start` now raises, rolling the rotation back with the open. |
+
+**Balanced squads (`20261016000000_midweek_balance.sql`, ADR-116).** No new invariant.
+
+| Object | What it holds or does |
+|---|---|
+| `kut._mm_config()` | Re-created: `shape` becomes the plusses table and the line values; new `balance`, `keeperPpm` and `match.defenceWeightPpm`; the retuned values. |
+| `kut._mm_lines(text)` | Re-created: reads the archetype's plusses, not the offsets. |
+| `kut._mm_balance(text[], integer)` | The weakest-line rule over a squad's archetypes, the keeper's slot skipped: `{lines, short, balancePpm}`. Internal. |
+| `kut._mm_play_match`, `kut._mm_simulate` | Re-created: every card's power times its side's `balancePpm`, the keeper's own strength, the defence weight; each entry carries `balancePpm`. |
+| `kut.midweek_entries.balance_ppm` | The squad's balance as played, written by the lock step; null for every week locked before ADR-116. |
+| `kut._mm_lock_tournament` | Re-created: stores `balance_ppm`. |
+| `kut.midweek_entries_public` | Appends `balance_ppm`, from the lock like the archetypes it follows from. |
 
 ---
 
@@ -5007,17 +5052,22 @@ MIDWEEK_SLOT_SECONDS = 20  # per chance slot: a match's 14 slots take 4:40; vers
 MIDWEEK_KICK_SECONDS = 5  # per shoot-out kick or settling draw after full time; version 1: 0
 MIDWEEK_MIN_ENTRANTS = 4
 MIDWEEK_OWNER_COUNT_MIN = 3  # owner counts below this are never shown, ADR-091
-MIDWEEK_OVR_FACTOR_MAX = 1.10  # 1.00 at OVR 30; started at 1.35
+MIDWEEK_OVR_FACTOR_MAX = 1.12  # 1.00 at OVR 30; started at 1.35, 1.10 until ADR-116
 MIDWEEK_FORM_ROLL = 0.80 .. 1.25, mode 1.00  # started at 0.75 .. 1.45
 MIDWEEK_PICK_FACTOR = (0, 1.25) (0.40, 1.00) (1, 0.875)  # piecewise linear in share
 MIDWEEK_PICK_SHARE_SMOOTHING = +1 / +3
 MIDWEEK_DAY_ROLL = ±0.12  # started at ±0.10
 MIDWEEK_INJURED_FITNESS = 0.95
-MIDWEEK_AUTO_FACTOR = 0.575  # started at 0.65
+MIDWEEK_AUTO_FACTOR = 0.55  # started at 0.65, 0.575 until ADR-116
 MIDWEEK_TRIALIST_OVR = 30
 MIDWEEK_TRIALIST_FACTOR = 0.825  # new at tuning: keeps a trialist below the worst real card
-MIDWEEK_SHAPE_SCALE = 0.5  # per 10 offset points
-MIDWEEK_KEEPERLESS_FACTOR = 0.45  # started at 0.60
+MIDWEEK_PLUSSES = §44.4 table  # attack / midfield / defence, 0-3; All-rounder 1/1/1, specialists 4 in all (ADR-116)
+MIDWEEK_LINE_VALUES = attack, midfield 0.5 / 1.0 / 1.5 / 2.0; defence 0.2 / 1.0 / 1.8 / 2.6  # for 0-3 plusses
+MIDWEEK_MIN_LINE_PLUSSES = 3  # per outfield line (the weakest-line rule)
+MIDWEEK_SHORTFALL_FACTOR = 0.88  # per plus a line falls short, on the whole squad
+MIDWEEK_KEEPER_STRENGTH = 1.65  # a Goalkeeper in goal, times its power
+MIDWEEK_KEEPERLESS_FACTOR = 0.45  # a stand-in's share of MIDWEEK_KEEPER_STRENGTH; started at 0.60 of its own defence line
+MIDWEEK_DEFENCE_WEIGHT = 0.8  # outfield defence's share of a shot's resistance, the keeper the rest; 0.5 until ADR-116
 MIDWEEK_CHANCE_SLOTS = 14  # each holds a chance with probability 0.686
 MIDWEEK_GOAL_BASE = 0.30  # before chance-type difficulty and finishing
 MIDWEEK_WIN_CHANCE_CONTRAST = 3

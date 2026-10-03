@@ -6511,3 +6511,107 @@ log, before it deletes that week.
 Tier: data-changing (ADR-032). The push rewrites no row, but from the next
 open the worker rewrites `kut.players.archetype` and the season's stats every
 week. Fresh cold-verified backup first.
+
+## ADR-116 — Balanced squads beat All-rounders: the plusses are the engine's input, with a weakest-line rule
+
+Date: 2026-10-03
+
+Status: Accepted (amends ADR-089's squad shape and "no balance rules", and
+ADR-092's tuned values; MM 2.0 PR 8, C2. Decided in the owner's Q13 interview
+and tuning sign-off, 2026-10-03)
+
+Context: the roadmap row "Balanced squads beat All-rounders" asks that four
+well-balanced outfield archetypes be markedly better than four All-rounders,
+with a table that shows each archetype's contribution to each line as 0 to 3
+plusses. Until now §44.4 had no balance rules: each card's lines followed its
+§15.1 offsets, and every archetype's three line multipliers added up to about
+3.0, so four All-rounders (perfectly even) and a balanced set of specialists
+(about the same total) were level. Measured with the match engine (60,000
+matches a row, equal power, both sides with a Goalkeeper): Finisher, Playmaker,
+Defender and Tank beat four All-rounders 49.5% of the time, while four
+Speedsters or Playmakers won about 56% and four Tanks about 40%. The lines are
+not worth the same: midfield decides who gets each chance (and takes it from
+the other side), attack is the drawn shooter's own, and outfield defence is
+averaged and shared half and half with the keeper, so one card at 1.40 added
+about 3 points of win chance in attack or midfield and under 1 in defence.
+The captain and the own-card bonus are out of scope (Q3). The rotation (C1,
+ADR-110) is live, so the retune runs with it on, and its sign-off had to bring
+"thought-through vs random" back to at least 58% (Q8).
+
+Decision (migration `20261016000000_midweek_balance.sql`):
+
+- **The plusses are the engine's input**, in the TypeScript engine and the SQL
+  twin alike (`MIDWEEK.shape.plusses`, `kut._mm_config()`), so the table members
+  see can never disagree with the maths. Card faces and OVR keep the §15.1
+  offsets; Midweek no longer reads them. Considered and not chosen: the table
+  as a rounded label over the offset maths (it can disagree at the edges), and
+  offsets for the lines with plusses only for a balance bonus (members would
+  see the bonus exactly but not the lines, and the offsets' attack bias stays).
+- **The table.** All-rounder 1/1/1, still average everywhere; every outfield
+  specialist four plusses: Speedster 2/2/0, Finisher 3/1/0, Playmaker 1/3/0,
+  Defender 0/1/3, Tank 0/2/2, and the Goalkeeper 0/0/3 when it plays outfield.
+  The table follows the offsets except the Tank, which the owner moved from
+  0/1/3 to 0/2/2 at the sign-off so it no longer plays the Defender's role.
+  Specialists carrying more in total than an All-rounder is what makes
+  balanced squads markedly better; with equal totals they would only tie.
+- **Line values per plus count**, attack and midfield 0.5 / 1.0 / 1.5 / 2.0,
+  defence 0.2 / 1.0 / 1.8 / 2.6, set so one plus is worth about the same win
+  chance in every line: +3.4, +3.3 and +2.3 points in attack, midfield and
+  defence. Getting defence that close needed **outfield defence to count 0.8 of
+  a shot's resistance** (`match.defenceWeightPpm`; the keeper the other 0.2,
+  half and half before). The keeper still matters: four outfielders without a
+  Goalkeeper win 39.1% against the same four with one.
+- **The weakest-line rule.** The plusses of the four cards not in goal are
+  added up per line; every plus a line falls short of 3 multiplies every card
+  of the squad by 0.88, floored after each step, for the whole week
+  (`kut._mm_balance`, stored as `kut.midweek_entries.balance_ppm`). Chosen over
+  a penalty on the gap between lines (no clear target to aim for) and
+  diminishing returns per line (it fights the individual attack and has no
+  single factor to show). The threshold started at 4 and was signed off at 3:
+  with 4, trialist-heavy starter squads fell short so often that the
+  strongest-vs-weakest row could not take more OVR effect, and only 12 sets of
+  four specialists met it (29 at 3).
+- **The keeper's own strength.** A Goalkeeper in goal plays at 1.65 times its
+  power (the value its offsets gave), a stand-in at 0.45 of that whatever its
+  archetype. With the new defence values a stand-in's own defence line would
+  have made a Tank in goal nearly a real keeper. The keeper's plusses don't
+  count in the lines.
+- **The retune** (`archive/MIDWEEK_TUNING.md`, signed off as option R2): OVR
+  factor at 83 1.10 → 1.12 (the owner asked for more OVR effect, and the
+  threshold of 3 made room for it), auto factor 0.575 → 0.55; form, pick
+  curve, day roll and trialists unchanged. With rotation on every target
+  passes at 5,000 seasons: strongest vs weakest 71.2%, thought-through vs
+  random 61.6%, no habit ahead by more than 2.1%, auto squads to the last four
+  2.0%, and two new rows, four balanced specialists against four All-rounders
+  at equal power 63.1% (target 60–65%) and the best one-line stack 32.7%
+  (target below 50%). Goals per bracket match 2.96 (2.85), and the published
+  odds are better calibrated (Brier 0.188, from 0.195).
+- **The harness** now plays the `uniform` rotation by default, and its
+  thought-through manager fields a Goalkeeper if it owns one, then the four of
+  its seven strongest other cards with the most power weighted by plusses
+  under the rule, valuing a plus at about what it is worth in a match.
+- **Switch at the push** (owner): one engine, no rules version per week. The
+  week open when the push lands locks on the new rules, even if that is the
+  7 Oct week before the first rotation. Weeks already simulated keep their
+  stored results (Part L #25); their entries' `balance_ppm` stays null.
+- **What members see**: how-it-works shows the plusses table and the rule, and
+  the Why list a chip per line that fell short ("Defence 3 short") beside "No
+  keeper", only when the stored balance is below 1. A live plusses count in the
+  picker is a later frontend slice, mocked first. The chip recomputes the short
+  lines from the stored archetypes and today's table; a future change to the
+  table should version it rather than re-label past weeks.
+
+Consequences:
+
+- Golden vectors and the parity pgTAP are regenerated (ADR-090), with a
+  one-line-stack match and a set of balance vectors; 199 parity assertions
+  pass. `midweek_live_reveal.test.sql` re-picks its mid-shoot-out seed (fb),
+  because the same seed now plays out differently.
+- No Part L invariant changes: the engine stays a pure function of the locked
+  squads and the seed.
+- Deploy ordering: Vercel deploys on merge, before the push. The pages read
+  `midweek_entries_public` with `select("*")` and treat a missing or null
+  `balance_ppm` as no balance factor, so they work on the old schema.
+
+Tier: data-changing (docs/OPERATIONS.md): it changes what the lock step
+computes and so who is paid. Fresh cold-verified backup first.

@@ -1,6 +1,7 @@
 import { MIDWEEK, PPM } from "@/game/midweek/config";
 import type { ChanceEvent, PenaltyEvent, Side } from "@/game/midweek/match";
 import { shaRng, uniform, type Rng } from "@/game/midweek/rng";
+import { squadBalance } from "@/game/midweek/shape";
 import { cardStats, detectFacts, type Fact } from "./facts";
 import { BUILDUP, SOLO_BUILDUP } from "./phrasebook/buildup";
 import { FINISHES, type Tier } from "./phrasebook/finishes";
@@ -36,8 +37,10 @@ import type {
   ReportCard,
   ReportFact,
   ReportInput,
+  ReportSide,
   Segment,
   ShootoutReport,
+  ShortLine,
   TimelineItem,
   WhySide,
 } from "./types";
@@ -239,6 +242,22 @@ function selectMoments(events: readonly ChanceEvent[]): ChanceEvent[] {
   return [...goals, ...others].sort((a, b) => a.minute - b.minute);
 }
 
+const LINE_NAMES = ["Attack", "Midfield", "Defence"] as const;
+
+/**
+ * The lines a squad fell short in (ADR-116), from its archetypes and keeper,
+ * only when the stored balance says the rule cost it something: a week from
+ * before the rule (null) shows none.
+ */
+export function shortLines(side: ReportSide): ShortLine[] {
+  if (side.balancePpm === null || side.balancePpm >= PPM) return [];
+  const { short } = squadBalance(
+    side.cards.map((card) => card.archetype),
+    side.keeperSlot,
+  );
+  return LINE_NAMES.flatMap((line, i) => (short[i] > 0 ? [{ line, short: short[i] }] : []));
+}
+
 export function renderMatchReport(input: ReportInput): MatchReport {
   const { outcome, sides } = input;
   const picker = new Picker(input.seedHash, `report:${input.round}:${input.pairing}`);
@@ -333,6 +352,7 @@ export function renderMatchReport(input: ReportInput): MatchReport {
     manager: side.manager,
     auto: side.auto,
     keeperless: side.keeperless,
+    shortLines: shortLines(side),
     winChancePpm: s === 0 ? outcome.winChancePpm : PPM - outcome.winChancePpm,
     cards: side.cards.map((card, slot) => ({
       name: nameText(names[s][slot]),

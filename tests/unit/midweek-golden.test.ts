@@ -15,7 +15,7 @@ import {
 import { roundPayouts } from "@/game/midweek/rewards";
 import { seedHash, shaRng } from "@/game/midweek/rng";
 import { lockAt, matchTiming, roundStartAt } from "@/game/midweek/schedule";
-import { lineMultsPpm } from "@/game/midweek/shape";
+import { lineMultsPpm, squadBalance } from "@/game/midweek/shape";
 import { simulateTournament, type EntrantInput } from "@/game/midweek/tournament";
 
 /**
@@ -43,6 +43,9 @@ describe("midweek golden vectors", () => {
     }
     for (const [archetype, lines] of Object.entries(golden.lineMults)) {
       expect(lineMultsPpm(archetype as Archetype)).toEqual(lines);
+    }
+    for (const b of golden.balances) {
+      expect(squadBalance(b.archetypes as Archetype[], b.keeperSlot)).toEqual(b.balance);
     }
     for (const s of golden.powerShares) expect(powerSharePpm(s.a, s.b, s.k)).toBe(s.ppm);
     for (const p of golden.payouts) expect(roundPayouts(p.rounds)).toEqual(p.pays);

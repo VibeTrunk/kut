@@ -82,7 +82,7 @@ export const MIDWEEK = {
     } as Record<string, ScheduleVersionConfig>,
   },
 
-  ovr: { min: 30, max: 83, factorMaxPpm: 1_100_000 },
+  ovr: { min: 30, max: 83, factorMaxPpm: 1_120_000 },
 
   /**
    * Weekly form roll: the mean of `dice` uniform draws, mapped piecewise so the
@@ -105,15 +105,40 @@ export const MIDWEEK = {
   /** `day_roll` is uniform in [PPM − spread, PPM + spread]. */
   dayRollSpreadPpm: 120_000,
   injuredFitnessPpm: 950_000,
-  autoFactorPpm: 575_000,
+  autoFactorPpm: 550_000,
 
   trialist: { ovr: 30, factorPpm: 825_000 },
 
+  /**
+   * Squad shape (§44.4, ADR-116). Each archetype's plusses per line, as
+   * [attack, midfield, defence] from 0 to 3, are the engine's input: the table
+   * members see is the table the engine reads. A specialist carries 4 plusses,
+   * the All-rounder 3. A line's multiplier is its value for that many plusses,
+   * tuned per line so a plus is worth about the same in each.
+   */
   shape: {
-    /** Line multiplier gained per 10 points of mean archetype offset. */
-    scalePpm: 500_000,
-    minMultPpm: 100_000,
+    plusses: {
+      all_rounder: [1, 1, 1],
+      speedster: [2, 2, 0],
+      finisher: [3, 1, 0],
+      playmaker: [1, 3, 0],
+      defender: [0, 1, 3],
+      tank: [0, 2, 2],
+      goalkeeper: [0, 0, 3],
+    } as Record<string, readonly [number, number, number]>,
+    attPpm: [500_000, 1_000_000, 1_500_000, 2_000_000] as readonly number[],
+    midPpm: [500_000, 1_000_000, 1_500_000, 2_000_000] as readonly number[],
+    defPpm: [200_000, 1_000_000, 1_800_000, 2_600_000] as readonly number[],
   },
+  /**
+   * The weakest-line rule (ADR-116): each line of the four outfielders needs at
+   * least `minPlusses`; every plus a line falls short multiplies the whole
+   * squad by `shortfallPpm`.
+   */
+  balance: { minPlusses: 3, shortfallPpm: 880_000 },
+  /** A Goalkeeper's strength in goal, relative to its power. */
+  keeperPpm: 1_650_000,
+  /** A stand-in keeper's share of a Goalkeeper's strength (§44.4). */
   keeperlessFactorPpm: 450_000,
   /** The keeper's weight in the creator and shooter draws, relative to an outfielder. */
   keeperCreatorWeightPpm: 150_000,
@@ -127,6 +152,8 @@ export const MIDWEEK = {
     /** Exponent sharpening the midfield battle for chances. */
     midfieldContrast: 1,
     goalBasePpm: 300_000,
+    /** Outfield defence's weight in a shot's resistance; the keeper has the rest. */
+    defenceWeightPpm: 800_000,
     /** Exponent sharpening shooter against defence and keeper. */
     finishingContrast: 1,
     goalMinPpm: 20_000,

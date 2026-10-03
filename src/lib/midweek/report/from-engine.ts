@@ -19,6 +19,7 @@ function toSide(entry: Entry, tournament: SimulatedTournament, directory: Direct
     auto: entry.auto,
     keeperSlot: entry.keeperSlot,
     keeperless: entry.keeperless,
+    balancePpm: entry.balancePpm,
     cards: entry.cards.map((card) => {
       const share = card.playerId === null ? null : shares.get(card.playerId);
       return {

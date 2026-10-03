@@ -38,7 +38,9 @@ select is((select array_agg(attname::text order by attnum) from pg_attribute
   where attrelid='kut.midweek_entries_public'::regclass and attnum>0 and not attisdropped),
   array['tournament_id','week_start','user_id','manager_name','auto','keeper_slot','keeperless','slot','trialist',
     'player_id','player_name','photo_path','ovr','archetype','injured','ovr_factor_ppm','form_roll_ppm',
-    'pick_factor_ppm','fitness_ppm','handicap_ppm','power_ppm','att_ppm','mid_ppm','def_ppm','picks','owners'],
+    'pick_factor_ppm','fitness_ppm','handicap_ppm','power_ppm','att_ppm','mid_ppm','def_ppm','picks','owners',
+    -- appended by ADR-116
+    'balance_ppm'],
   'the entries keep their columns');
 select is((select array_agg(attname::text order by attnum) from pg_attribute
   where attrelid='kut.midweek_tournaments_public'::regclass and attnum>0 and not attisdropped),

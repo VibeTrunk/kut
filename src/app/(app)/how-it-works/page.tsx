@@ -3,7 +3,7 @@ import { ARCHETYPES, ARCHETYPE_CHANGE_COOLDOWN_DAYS, ARCHETYPE_LABELS } from "@/
 import { GAME_CONFIG } from "@/game/config";
 import { ECONOMY } from "@/game/economy";
 import { bracketShape } from "@/game/midweek/bracket";
-import { MIDWEEK } from "@/game/midweek/config";
+import { MIDWEEK, PPM } from "@/game/midweek/config";
 import { roundPayouts } from "@/game/midweek/rewards";
 import { GOALS_ASSISTS_CUTOVER } from "@/game/reported-count";
 import {
@@ -269,6 +269,13 @@ export default async function HowItWorksPage() {
             week. OVR stays the same. Once an account is linked, the archetype stays as it is until
             that member changes it.
           </p>
+          <p>
+            In Midweek Madness archetypes count as plusses per line instead of these numbers; see{" "}
+            <Link className="font-semibold text-brass underline" href="#midweek">
+              Your squad&rsquo;s shape
+            </Link>
+            .
+          </p>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[26rem] text-left text-sm">
               <thead className="text-ink-faint">
@@ -457,13 +464,67 @@ export default async function HowItWorksPage() {
               <strong className="text-ink">Day</strong>: a fresh roll every match, so upsets happen.
             </li>
           </ul>
+          <h3 className="pt-2 font-black text-ink">Your squad&rsquo;s shape</h3>
           <p>
-            Archetypes set your shape: attackers make chances, playmakers create them, defenders
-            stop them. <strong className="text-ink">Take a Goalkeeper</strong>: without one, your
-            best defender goes in goal and keeps goal much worse. A week plays each card&rsquo;s
-            archetype as it was when that week opened, so the picker never changes under you.
-            Players with no linked account draw a new archetype just before each week opens, so look
-            again each week. You can change your own archetype once every{" "}
+            Every archetype brings plusses to three lines: attack, midfield and defence. An
+            All-rounder brings one to each; every other archetype brings four, strong in one or two
+            lines and empty in another. Add up the plusses of your four cards that don&rsquo;t play
+            in goal.
+          </p>
+          <div className="overflow-x-auto">
+            <table className="w-full max-w-md text-left text-sm">
+              <thead className="text-ink-faint">
+                <tr>
+                  <th className="py-1 pr-2 text-xs font-bold uppercase tracking-wide">Archetype</th>
+                  <th className="py-1 pr-2 text-xs font-bold uppercase tracking-wide">Attack</th>
+                  <th className="py-1 pr-2 text-xs font-bold uppercase tracking-wide">Midfield</th>
+                  <th className="py-1 text-xs font-bold uppercase tracking-wide">Defence</th>
+                </tr>
+              </thead>
+              <tbody>
+                {ARCHETYPES.map((archetype) => (
+                  <tr key={archetype} className="border-t border-line/60">
+                    <td className="py-1 pr-2 font-black">{ARCHETYPE_LABELS[archetype]}</td>
+                    {MIDWEEK.shape.plusses[archetype].map((plusses, line) => (
+                      <td
+                        key={line}
+                        aria-label={`${plusses} ${plusses === 1 ? "plus" : "plusses"}`}
+                        className="py-1 pr-2 font-black tracking-widest text-brass"
+                      >
+                        {plusses === 0 ? (
+                          <span className="text-ink-faint">&ndash;</span>
+                        ) : (
+                          "+".repeat(plusses)
+                        )}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <ul className="ml-5 list-disc space-y-1">
+            <li>
+              <strong className="text-ink">
+                Every line needs at least {MIDWEEK.balance.minPlusses} plusses.
+              </strong>{" "}
+              Each plus a line falls short costs your whole squad{" "}
+              {Math.round((1 - MIDWEEK.balance.shortfallPpm / PPM) * 100)}%.
+            </li>
+            <li>
+              A plus counts about the same in every line, so four specialists who cover all three
+              beat four All-rounders, and four of a kind lose to both.
+            </li>
+            <li>
+              <strong className="text-ink">Take a Goalkeeper</strong>: without one, the card with
+              the most defence goes in goal and keeps goal much worse. Whoever is in goal adds no
+              plusses to the lines.
+            </li>
+          </ul>
+          <p>
+            A week plays each card&rsquo;s archetype as it was when that week opened, so the picker
+            never changes under you. Players with no linked account draw a new archetype just before
+            each week opens, so look again each week. You can change your own archetype once every{" "}
             {ARCHETYPE_CHANGE_COOLDOWN_DAYS} days; in Midweek Madness it counts from the next week.
           </p>
           <h3 className="pt-2 font-black text-ink">Coins</h3>

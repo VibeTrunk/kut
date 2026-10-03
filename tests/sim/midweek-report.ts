@@ -1,3 +1,4 @@
+import { ARCHETYPES, ARCHETYPE_LABELS } from "@/game/archetypes";
 import { MIDWEEK, PPM } from "@/game/midweek/config";
 import { HABITS, type SimStats, type Target } from "./midweek-world";
 
@@ -27,8 +28,30 @@ const STARTING: Array<[string, string, () => string]> = [
   ["Auto-squad factor", "0.65", () => x(MIDWEEK.autoFactorPpm)],
   ["Trialist OVR", "30", () => String(MIDWEEK.trialist.ovr)],
   ["Trialist factor (new)", "—", () => x(MIDWEEK.trialist.factorPpm)],
-  ["Line-shape scale per 10 offset points", "0.50", () => x(MIDWEEK.shape.scalePpm)],
-  ["Keeperless keeper factor", "0.60", () => x(MIDWEEK.keeperlessFactorPpm)],
+  [
+    "Line values for 0 / 1 / 2 / 3 plusses: attack (new, ADR-116)",
+    "—",
+    () => MIDWEEK.shape.attPpm.map(x).join(" / "),
+  ],
+  ["… midfield (new, ADR-116)", "—", () => MIDWEEK.shape.midPpm.map(x).join(" / ")],
+  ["… defence (new, ADR-116)", "—", () => MIDWEEK.shape.defPpm.map(x).join(" / ")],
+  [
+    "Weakest-line rule (new, ADR-116)",
+    "—",
+    () =>
+      `${MIDWEEK.balance.minPlusses} plusses per line, ×${x(MIDWEEK.balance.shortfallPpm)} per plus short`,
+  ],
+  ["Goalkeeper in goal (new, ADR-116)", "1.650 (from the offsets)", () => x(MIDWEEK.keeperPpm)],
+  [
+    "Keeperless: the stand-in's share of a Goalkeeper's strength",
+    "0.60 of its own defence line",
+    () => x(MIDWEEK.keeperlessFactorPpm),
+  ],
+  [
+    "Outfield defence's weight in a shot's resistance (new, ADR-116)",
+    "0.50 (the keeper had the other half)",
+    () => x(MIDWEEK.match.defenceWeightPpm),
+  ],
   ["Shoot-out sudden-death cap", "20", () => String(MIDWEEK.penalties.maxSuddenDeathRounds)],
   [
     "Chance slots × chance rate (new)",
@@ -46,23 +69,30 @@ const STARTING: Array<[string, string, () => string]> = [
 
 const NOTES = `## Trade-offs for the sign-off
 
-**Signed off 2026-09-25 (ADR-092):** the owner accepted both rows that pull
-against each other as they are, so their bands now pass at the tuned values.
+**ADR-092 (signed off 2026-09-25):** the owner accepted the first and third
+rows as they were (70.6% and 58.7%), so their bands pass up to 72% and from
+58%. **ADR-116 (MM 2.0 C2)** retunes with the weekly rotation on, the plusses
+as the engine's input and the weakest-line rule, against the same bands plus
+the two shape rows.
 
-- **Wealth against thinking.** The first and third rows pull against each other. Every
-  lever that makes the strongest collection win less often against the weakest
-  (flatter OVR, a bigger day roll, fewer or softer contrasts) also shrinks the
-  edge a thought-through five has over a random five from the same collection.
-  The weakest collection in a KUT-shaped club is almost always a starter pack:
-  three cards and two trialists. Trialists cannot be made stronger, because an
-  empty slot must never beat the worst real card. Along the frontier the
-  simulation found, one point off the first row costs about one point of the
-  third.
+- **Wealth against thinking.** The first and third rows still pull against
+  each other. The weakest collection in a KUT-shaped club is almost always a
+  starter pack: three cards and two trialists, and trialists are All-rounders,
+  so it often falls short in a line. Balance is now the main edge of thinking,
+  and it also helps the strongest collection, which has the most to choose
+  from. The flatter OVR factor and the stand-in keeper pay for that.
 - **What a "thought-through" pick is.** The simulated thinker fields a
-  Goalkeeper if it owns one, then its best OVR, avoiding injured Players. A
-  thinker that also tried to predict this week's pick shares from last week's
-  did *worse*: the pick factor is hard to game, which is the "no pick stays
-  best" goal at work.
+  Goalkeeper if it owns one, then, out of its seven strongest other cards, the
+  four with the most power weighted by plusses under the weakest-line rule,
+  avoiding injured Players. It values a plus at about what one is worth in a
+  match. A thinker that also tried to predict this week's pick shares from
+  last week's did *worse* (ADR-092): the pick factor is hard to game, which is
+  the "no pick stays best" goal at work.
+- **A plus in each line.** Midfield decides who gets each chance and attack is
+  individual (the drawn shooter's own attack sets the goal chance), while
+  outfield defence is averaged and shares a shot's resistance with the keeper.
+  The line values and the defence weight are set so one plus is worth about
+  the same win chance in every line; the shape table above shows how close.
 - **The per-match odds** are a closed-form estimate. The calibration table shows
   how well it matches what actually happens.
 - **Auto squads** are sized to lose early but not every time; the auto-factor
@@ -96,6 +126,39 @@ export function renderTuningReport(stats: SimStats, targets: Target[], seconds: 
   lines.push(
     "For information: the strongest collection beats the weakest collection that fields five real " +
       `cards (no trialists) ${pct(stats.strongBeatsWeakFull)} of the time.`,
+  );
+  lines.push("");
+  lines.push("## Squad shape (ADR-116)");
+  lines.push("");
+  lines.push(
+    "Each archetype's plusses per line are the engine's input; a line's value for 0 / 1 / 2 / 3 plusses " +
+      "and the weakest-line rule are in the tuned values below.",
+  );
+  lines.push("");
+  lines.push("| Archetype | Attack | Midfield | Defence |");
+  lines.push("|---|---:|---:|---:|");
+  for (const archetype of ARCHETYPES) {
+    const [att, mid, def] = MIDWEEK.shape.plusses[archetype];
+    lines.push(`| ${ARCHETYPE_LABELS[archetype]} | ${att} | ${mid} | ${def} |`);
+  }
+  lines.push("");
+  lines.push(
+    "At equal power, both sides with a Goalkeeper in goal, against four All-rounders " +
+      `(${stats.shape.matches.toLocaleString("en-GB")} matches each):`,
+  );
+  lines.push("");
+  lines.push("| Outfield four | Wins |");
+  lines.push("|---|---:|");
+  for (const b of stats.shape.balanced) lines.push(`| ${b.squad} (balanced) | ${pct(b.rate)} |`);
+  for (const b of stats.shape.stacks) lines.push(`| four × ${b.squad} (stack) | ${pct(b.rate)} |`);
+  lines.push("");
+  lines.push(
+    "One extra plus on one All-rounder adds, in win chance: " +
+      (["attack", "midfield", "defence"] as const)
+        .map((line, i) => `${line} ${(stats.shape.onePlus[i] * 100).toFixed(1)} points`)
+        .join(", ") +
+      ". Without a Goalkeeper (an All-rounder standing in) the same four win " +
+      `${pct(stats.shape.keeperlessVsKeeper)} against the side with one.`,
   );
   lines.push("");
   lines.push("## Tuned values");
@@ -139,7 +202,12 @@ export function renderTuningReport(stats: SimStats, targets: Target[], seconds: 
   lines.push("");
   lines.push(
     `- ${o.world.rosterSize} Players, most of them low-rated (tier weights 8 / 7 / 6 / 5 / 3 / 1 from ` +
-      "Common to Elite), about 80% All-rounders, two Goalkeepers and one of each other specialist.",
+      "Common to Elite). Seven are claimed and keep the archetype their member chose: two Goalkeepers and " +
+      "one of each other specialist.",
+  );
+  lines.push(
+    `- ${o.rotation.mode === "off" ? "No rotation" : `The other ${o.world.rosterSize - 7} rotate (\`${o.rotation.mode}\`, ADR-110)`}: ` +
+      "before each week opens, each draws one of the seven archetypes, and the week plays what it drew.",
   );
   lines.push(
     `- ${o.world.members} members. Each holds a 3-card starter pack plus 0–${o.world.maxPacks - 1} packs ` +

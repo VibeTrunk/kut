@@ -75,47 +75,70 @@ export async function loadWeekResults(
 }
 
 /**
- * A member's night ratings once the week is complete (DR3 HANDOFF §1): the
- * events of their own matches in one query, never one call per match, and the
- * photos of their five. Null when they weren't entered, or before the week is
- * complete, when a rating can't be known yet (ADR-117).
+ * Night ratings once the week is complete (DR3 HANDOFF §1): the events of
+ * every listed member's matches in one query, never one call per match, and
+ * the photos of their fives. The ratings block wants the member's; the share
+ * images the champion's too. A member who wasn't entered has no entry, and
+ * nothing is rated before the week is complete (ADR-117).
  */
+export async function loadNightRatingsFor(
+  supabase: SupabaseServerClient,
+  tournament: Pick<MidweekTournament, "status" | "rounds" | "seed_hash" | "week_start">,
+  results: { matches: readonly MatchRow[]; entries: readonly EntryCardRow[] },
+  userIds: readonly string[],
+): Promise<Map<string, NightRatings>> {
+  const rated = new Map<string, NightRatings>();
+  if (tournament.status !== "complete" || !tournament.rounds) return rated;
+  const members = [...new Set(userIds)].filter(
+    (id) =>
+      results.entries.some((row) => row.user_id === id) &&
+      playedMatches(results.matches, id).length > 0,
+  );
+  if (members.length === 0) return rated;
+  const matchIds = [
+    ...new Set(
+      members.flatMap((id) =>
+        playedMatches(results.matches, id).map(({ match }) => match.match_id),
+      ),
+    ),
+  ];
+  const [events, photoUrls] = await Promise.all([
+    supabase
+      .schema("kut")
+      .from("midweek_events_public")
+      .select("*")
+      .in("match_id", matchIds)
+      .order("seq"),
+    resolvePhotoUrls(
+      supabase,
+      results.entries.filter((row) => members.includes(row.user_id)).map((row) => row.photo_path),
+    ),
+  ]);
+  if (events.error) throw new Error("Could not load the night's ratings.");
+  for (const userId of members) {
+    const night = nightRatings({
+      seedHash: tournament.seed_hash ?? "",
+      userId,
+      rounds: tournament.rounds,
+      weekStart: tournament.week_start,
+      matches: results.matches,
+      events: (events.data ?? []) as EventRow[],
+      entries: results.entries,
+      photoUrls,
+    });
+    if (night) rated.set(userId, night);
+  }
+  return rated;
+}
+
+/** One member's night ratings (`loadNightRatingsFor`), or null. */
 export async function loadNightRatings(
   supabase: SupabaseServerClient,
   tournament: Pick<MidweekTournament, "status" | "rounds" | "seed_hash" | "week_start">,
   results: { matches: readonly MatchRow[]; entries: readonly EntryCardRow[] },
   userId: string,
 ): Promise<NightRatings | null> {
-  if (tournament.status !== "complete" || !tournament.rounds) return null;
-  const own = results.entries.filter((row) => row.user_id === userId);
-  const played = playedMatches(results.matches, userId);
-  if (own.length === 0 || played.length === 0) return null;
-  const [events, photoUrls] = await Promise.all([
-    supabase
-      .schema("kut")
-      .from("midweek_events_public")
-      .select("*")
-      .in(
-        "match_id",
-        played.map(({ match }) => match.match_id),
-      )
-      .order("seq"),
-    resolvePhotoUrls(
-      supabase,
-      own.map((row) => row.photo_path),
-    ),
-  ]);
-  if (events.error) throw new Error("Could not load your five's ratings.");
-  return nightRatings({
-    seedHash: tournament.seed_hash ?? "",
-    userId,
-    rounds: tournament.rounds,
-    weekStart: tournament.week_start,
-    matches: results.matches,
-    events: (events.data ?? []) as EventRow[],
-    entries: results.entries,
-    photoUrls,
-  });
+  return (await loadNightRatingsFor(supabase, tournament, results, [userId])).get(userId) ?? null;
 }
 
 /**

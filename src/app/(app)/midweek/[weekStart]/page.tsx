@@ -11,6 +11,7 @@ import { MIDWEEK_PAGE, MidweekPageHead } from "@/components/midweek/page-head";
 import { MidweekPickShares, type PickShareView } from "@/components/midweek/pick-shares";
 import { MidweekRatingList } from "@/components/midweek/rating-list";
 import { MidweekSeed } from "@/components/midweek/seed";
+import { MidweekShare } from "@/components/midweek/share";
 import { MIDWEEK } from "@/game/midweek/config";
 import { predictionCoins } from "@/game/midweek/rewards";
 import { seedHash } from "@/game/midweek/rng";
@@ -41,12 +42,14 @@ import {
 } from "@/lib/midweek/evening";
 import {
   loadCalls,
-  loadNightRatings,
+  loadMyRewards,
+  loadNightRatingsFor,
   loadPickShares,
   loadTournamentByWeek,
   loadWeekResults,
 } from "@/lib/midweek/results";
 import { runDueMidweek } from "@/lib/midweek/run-due";
+import { shareImages } from "@/lib/midweek/share";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata = { title: "Midweek Madness bracket" };
@@ -166,12 +169,19 @@ export default async function MidweekBracketPage({
     );
   }
   const complete = tournament.status === "complete";
-  const [shares, ratings] = complete
+  const championId = tournament.champion_user_id ?? null;
+  const [shares, rated, rewards] = complete
     ? await Promise.all([
         loadPickShares(supabase, tournament.tournament_id),
-        loadNightRatings(supabase, tournament, results, user.id),
+        // The member's ratings, and the champion's for the poster, in one read.
+        loadNightRatingsFor(supabase, tournament, results, [
+          user.id,
+          ...(championId ? [championId] : []),
+        ]),
+        loadMyRewards(supabase, tournament.tournament_id),
       ])
-    : [[], null];
+    : [[], new Map(), []];
+  const ratings = rated.get(user.id) ?? null;
   // The chip's tier comes from the locked OVR of an entered copy, never today's rating.
   const lockedOvr = new Map(
     results.entries.flatMap((row) => (row.player_id ? [[row.player_id, row.ovr] as const] : [])),
@@ -191,6 +201,23 @@ export default async function MidweekBracketPage({
   const seal = tournament.seed_hash ?? "";
   const records = complete && calls ? callRecords(calls.predictions, results.matches, rounds) : [];
   const right = records.filter((record) => record.correct === true).length;
+  const share = complete
+    ? shareImages({
+        lockAt,
+        rounds,
+        scheduleVersion,
+        userId: user.id,
+        championId,
+        championName: tournament.champion_name ?? null,
+        matches: results.matches,
+        entries: results.entries,
+        ratings: rated,
+        coins:
+          rewards.reduce((sum, row) => sum + Number(row.amount), 0) +
+          (calls?.reward ? Number(calls.reward.amount) : right * predictionCoins(rounds)),
+        calls: { right, picks: records.length },
+      })
+    : null;
   const blocks = [
     ...(callLink ? [{ href: `#round-${callLink.round}`, label: callLink.label }] : []),
     ...(ratings ? [{ href: "#ratings", label: "Your ratings" }] : []),
@@ -212,6 +239,7 @@ export default async function MidweekBracketPage({
           records={records}
         />
       )}
+      {share && <MidweekShare night={share.night} poster={share.poster} />}
       <MidweekBracket
         calls={cards ? rowCalls(cards) : undefined}
         rounds={bracket}

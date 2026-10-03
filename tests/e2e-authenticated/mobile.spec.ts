@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
 import { Client } from "pg";
 import { assertLocalTarget } from "../support/local-target";
@@ -647,7 +648,7 @@ test.describe("Midweek Madness evening from the lock (F5, ADR-113)", () => {
     // The ratings replace their placeholder (F7, ADR-117), closed by default here.
     await expect(page.getByRole("note").filter({ hasText: "Your five’s ratings" })).toHaveCount(0);
     await expectRatings(page, { open: false });
-    await expect(page.getByRole("note").filter({ hasText: "Share your night" })).toBeVisible();
+    await expect(page.getByRole("region", { name: "Share the night" })).toBeVisible();
     await expectNoHorizontalOverflow(page);
     await page.getByRole("link", { name: "Past weeks →" }).click();
     await expect(page).toHaveURL(/\/midweek\/past$/);
@@ -924,6 +925,103 @@ test.describe("Midweek Madness calls (D, ADR-118)", () => {
     await page.goto("/how-it-works#midweek-calls");
     await expect(page.getByRole("heading", { name: "Calls, once you’re out" })).toBeVisible();
     await expectNoHorizontalOverflow(page);
+  });
+});
+
+test.describe("Midweek Madness share images (F8, ADR-120)", () => {
+  // One fixture Player of the champion's five gets a real local photo, so the
+  // canvas draws a photo fetched from Storage; a tainted canvas couldn't export.
+  const PHOTO = "players/920069c8-43ac-4278-ae15-0373604696cb/profile.webp";
+  test.beforeEach(async () => {
+    await withDatabase(async (database) => {
+      await database.query(
+        "update kut.players set photo_path = $1 where display_name = 'Engine Fixture'",
+        [PHOTO],
+      );
+    });
+  });
+  test.afterEach(async () => {
+    await withDatabase(async (database) => {
+      await database.query(
+        "update kut.players set photo_path = null where display_name = 'Engine Fixture'",
+      );
+    });
+  });
+
+  /** A PNG's width and height, from its IHDR chunk. */
+  const pngSize = (bytes: Buffer) => [bytes.readUInt32BE(16), bytes.readUInt32BE(20)];
+
+  test("on a phone, both images draw at 1080 × 1350 and Share hands the PNG to the share sheet", async ({
+    page,
+  }) => {
+    await page.addInitScript(() => {
+      const record = window as unknown as { __shared?: string[] };
+      record.__shared = [];
+      Object.defineProperty(navigator, "canShare", { value: () => true, configurable: true });
+      Object.defineProperty(navigator, "share", {
+        value: async (data: { files: File[] }) => {
+          record.__shared!.push(
+            `${data.files[0].name} ${data.files[0].type} ${data.files[0].size}`,
+          );
+        },
+        configurable: true,
+      });
+    });
+    await signIn(page, "release_member");
+    await page.goto(`/midweek/${COMPLETED_WEEK}`);
+    const block = page.getByRole("region", { name: "Share the night" });
+    await expect(block).toBeVisible();
+    for (const name of ["Preview: The champion poster", "Preview: Your night"]) {
+      const preview = block.getByRole("img", { name });
+      await expect(preview).toBeVisible({ timeout: 15_000 });
+      expect(
+        await preview.evaluate((img: HTMLImageElement) => [img.naturalWidth, img.naturalHeight]),
+      ).toEqual([1080, 1350]);
+    }
+    await expect(block.getByText(/^Both show managers’ and Players’ names/)).toBeVisible();
+    await expectNoHorizontalOverflow(page);
+
+    await block.getByRole("button", { name: "Share" }).first().click();
+    await expect
+      .poll(() => page.evaluate(() => (window as unknown as { __shared: string[] }).__shared))
+      .toEqual([expect.stringMatching(/^kut-midweek-17-jan-champion\.png image\/png \d+$/)]);
+
+    const download = page.waitForEvent("download");
+    await block.getByRole("button", { name: "Save image" }).nth(1).click();
+    expect((await download).suggestedFilename()).toBe("kut-midweek-17-jan-release-member.png");
+    await expect(
+      block.getByText(/is in your downloads\. Drop it into the group chat\.$/),
+    ).toBeVisible();
+  });
+
+  test("on a desktop, Download saves the PNG", async ({ browser }) => {
+    // Playwright passes the project's phone options on; a desktop has a mouse.
+    const context = await browser.newContext({
+      viewport: { width: 1440, height: 900 },
+      hasTouch: false,
+      isMobile: false,
+    });
+    const page = await context.newPage();
+    try {
+      await signIn(page, "release_member");
+      await page.goto(`/midweek/${COMPLETED_WEEK}`);
+      const block = page.getByRole("region", { name: "Share the night" });
+      await expect(block.getByRole("img", { name: "Preview: The champion poster" })).toBeVisible({
+        timeout: 15_000,
+      });
+      await expect(block.getByRole("button", { name: "Share" })).toHaveCount(0);
+      const download = page.waitForEvent("download");
+      await block.getByRole("button", { name: "Download" }).first().click();
+      const saved = await download;
+      expect(saved.suggestedFilename()).toBe("kut-midweek-17-jan-champion.png");
+      const bytes = readFileSync(await saved.path());
+      expect(bytes.subarray(1, 4).toString()).toBe("PNG");
+      expect(pngSize(bytes)).toEqual([1080, 1350]);
+      await expect(block.getByRole("button", { name: "Downloaded" })).toBeVisible();
+      await expectNoHorizontalOverflow(page);
+    } finally {
+      await context.close();
+    }
   });
 });
 

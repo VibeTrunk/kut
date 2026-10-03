@@ -610,6 +610,12 @@ export default async function HowItWorksPage() {
             </Link>{" "}
             and you&rsquo;re never entered or shown.
           </p>
+          <p>
+            After the final, the Midweek page can make two images for the club&rsquo;s group chat:
+            the champion poster and your night. They show managers&rsquo; and Players&rsquo; names
+            and Players&rsquo; photos, so they travel beyond KUT once you send them. They&rsquo;re
+            made on your phone; nothing is uploaded.
+          </p>
           <h3 className="pt-2 font-black text-ink">Fair draws</h3>
           <p>
             Every draw comes from a secret seed fixed before anyone picks. Its fingerprint, the{" "}

@@ -4744,3 +4744,30 @@ reloads, sees it on the bracket (and at 1440 on the tree), sees it close at
 kick-off with the club's split, then after the payout the weekly line, `You`
 counting calls, the bracket's `Your calls`, and the how-it-works anchor; every
 no-overflow check.
+
+## MM 2.0 F8: share images, the champion poster and "my night" — 2026-10-03
+
+`feat/midweek-share`, ADR-120 (new; records the §53 exception the owner
+chose in Q4). No migration. Built to the DR3 mockups `Share-Poster`,
+`Share-MyNight`, `Share-Flow`, `Evening-Champion` and `Bracket-Complete`.
+
+- **CORS checked first:** Supabase Storage answers signed photo URLs with
+  `Access-Control-Allow-Origin: *`, locally and on hosted (a credential-less
+  request with a bogus token), so photos are fetched, made into bitmaps and
+  drawn without tainting the canvas.
+- **`share.ts`** (pure): every word and number on both images; **`share-draw.ts`**:
+  the canvas, the LiveCard face drawn from its own shirt path and fonts.
+- **`MidweekShare`:** previews on mount; `Share` (system share sheet) and
+  `Save image` on a phone, `Download` on a desktop; on the champion view and
+  the complete bracket. The last `MidweekPlaceholder` and the component retire.
+- **Data:** the champion's ratings come with the member's in one events query.
+- **Copy:** how-it-works §12 gains one line on the images.
+
+Verification: `npm run verify:fast` (468 tests, 7 new for the share model); the authenticated E2E
+(59 passed, 1 expected skip). On a phone both previews draw at 1080 × 1350
+(one card with a real Storage photo, so a tainted canvas would fail),
+`Share` hands `kut-midweek-17-jan-champion.png` to the share sheet and `Save
+image` downloads "my night"; on a desktop context `Download` saves a PNG whose
+header reads 1080 × 1350; the champion view shows the block; every
+no-overflow check, and the bracket's KB-031 line test, which caught a
+layout shift from the drawing before it was fixed.

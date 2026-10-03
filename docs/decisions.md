@@ -6878,3 +6878,75 @@ generator (`design/ux-review/build/ux.css`) still names the old tokens and is
 left as the record of DR2; DR3's generator sets its own values.
 
 Tier: no migration.
+
+## ADR-120 — Share images: a champion poster and "my night", drawn in the browser, with Players' photos by owner decision
+
+Date: 2026-10-03
+
+Status: Accepted (MM 2.0 F8; decided in the owner's Q4 interview, 2026-10-03,
+and built to the owner-approved DR3 mockups, `design/mm2-dr3/HANDOFF.md` §3,
+DR3-7. Records an exception to BUILD_SPEC §53)
+
+Context: the roadmap row "A shareable result" asks for something members can
+post in the club's group chat, where the club actually lives: a champion
+poster, or "my night" as an image. Until now every KUT page has been
+members-only (ADR-079, §53: "Player photos and group information should be
+visible only to authenticated TFH members"). An image sent to a chat leaves
+that boundary for good.
+
+Decision (no migration):
+
+- **Two images, 1080 × 1350 PNG (4:5).** A 4:5 portrait shows large in a chat
+  bubble and fills most of a phone screen. At 1,350 px on the long side it sits
+  under the size WhatsApp scales down to at standard quality (about 1,600 px,
+  from experience, not a published spec), so the text isn't resampled. Type
+  sizes in canvas px: body 36, labels 20 or more, ratings 34 in an 84 px disc,
+  the champion's name 184 in the serif.
+  - **The champion poster,** which anyone may share: the date, the champion,
+    the final in one line, the champion's five with their night ratings
+    (DR3-7), the path round by round, and `{22} entrants · {64} goals`.
+  - **"My night,"** the member's own: the finish, the coins (wins plus calls),
+    the path with the defeat dashed, the five with night ratings (the best one
+    ringed brighter), its line, and the calls (`Called 2 of 3 · Joris won it`,
+    DR3-7). A member who didn't enter gets the poster only.
+  - Neither carries the club's name or the site address (DR3-7).
+- **The exception to §53 (owner, Q4):** the images show manager and Player
+  names and Players' photos (the LiveCard face: the photo where the Player has
+  one, otherwise the shirt back). That is the owner's decision; the block says
+  so every time, beside the buttons: `Both show managers' and Players' names
+  and Players' photos. Send them to the club; they're made on your phone,
+  nothing is uploaded.` Nothing else changes: KUT itself stays members-only,
+  no image is stored or hosted, and only a member who chooses to send one
+  takes it out.
+- **Drawn in the browser** (`share-draw.ts`), from data the page already has
+  (`share.ts`, pure and unit-tested): the canvas can't render React, so the
+  LiveCard face is drawn from its own shapes (the shirt's SVG path through
+  `Path2D`, the surname on the same arc) and the app's own fonts, awaited
+  through `document.fonts.load`. **Photos** are fetched with CORS and turned
+  into an `ImageBitmap`, so the canvas is never tainted and `toBlob` works.
+  Checked before building: Supabase Storage answers signed URLs with
+  `Access-Control-Allow-Origin: *`, locally and on hosted, and the CSP already
+  allows the Supabase URL in `connect-src` and `blob:` in `img-src`. A photo
+  that can't be read falls back to the shirt.
+- **Sharing:** previews are drawn when the block mounts. On a coarse pointer
+  `Share` hands the PNG to the system share sheet (`navigator.share({ files
+  })`) where the browser can share files, and downloads it where it can't;
+  `Save image` downloads. On a fine pointer (a desktop) `Download`, then
+  `Downloaded` and `✓ {file} is in your downloads.` Chosen by capability and
+  pointer, not width: desktop Chrome can share too, but the owner chose a
+  download there. File names: `kut-midweek-7-oct-champion.png`,
+  `kut-midweek-7-oct-sanne.png`. A failed drawing says `Couldn't make the
+  image. Try again.` and shares nothing.
+- **Where:** `Share the night` on the champion view and on the complete
+  week's bracket, after the ratings and calls. It retires the last
+  `MidweekPlaceholder`, and the component with it.
+- **One read:** the champion's night ratings come with the member's in the
+  same events query (`loadNightRatingsFor`).
+
+Consequences: the first KUT content meant to leave the app. It carries only
+what members already see after the final, plus the photos the owner allowed.
+If a Player asks not to appear, the photo consent work in §54 (a silhouette
+instead of a photo) covers the image too, since the image draws whatever the
+card shows. The 1,600 px WhatsApp figure should be checked on a real phone.
+
+Tier: no migration.

@@ -57,6 +57,37 @@ async function expectMatchPageWhy(page: Page) {
 }
 
 /**
+ * The deeper team colours (ADR-119): violet names on the left, teal on the
+ * right, and both fills as a 3 px strip across the top of the scoreboard.
+ */
+async function expectTeamColours(page: Page) {
+  const board = page.getByRole("group", { name: /^Final score:/ });
+  const seen = await board.evaluate((el) => {
+    const colour = (selector: string, property: "color" | "backgroundColor") => {
+      const node = el.querySelector(selector);
+      return node ? getComputedStyle(node)[property] : null;
+    };
+    const strip = el.querySelector(".bg-team-0-fill")?.parentElement?.getBoundingClientRect();
+    return {
+      names: [colour(".text-team-0", "color"), colour(".text-team-1", "color")],
+      fills: [
+        colour(".bg-team-0-fill", "backgroundColor"),
+        colour(".bg-team-1-fill", "backgroundColor"),
+      ],
+      strip: strip && {
+        height: strip.height,
+        width: strip.width,
+        top: strip.top - el.getBoundingClientRect().top,
+      },
+      board: el.getBoundingClientRect().width,
+    };
+  });
+  expect(seen.names).toEqual(["rgb(158, 128, 209)", "rgb(79, 179, 160)"]);
+  expect(seen.fills).toEqual(["rgb(111, 79, 161)", "rgb(31, 122, 108)"]);
+  expect(seen.strip?.height).toBe(3);
+  expect(seen.strip?.top).toBeLessThanOrEqual(1);
+  expect(seen.strip?.width).toBeGreaterThan(seen.board - 4);
+
  * The ratings block (F7, ADR-117): five night ratings in neutral discs, one
  * best chip, `Show each match` opening a chip per match, all inside the screen.
  */
@@ -354,6 +385,7 @@ test.describe("Midweek Madness results (PR 8)", () => {
     await expect(page.getByRole("heading", { name: "Why" })).toBeVisible();
     await expect(page.getByRole("img", { name: /^Before kick-off: / })).toBeVisible();
     await expectNoHorizontalOverflow(page);
+    await expectTeamColours(page);
 
     await expectMatchPageWhy(page);
   });
@@ -371,6 +403,7 @@ test.describe("Midweek Madness results (PR 8)", () => {
     const why = await page.getByRole("heading", { name: "Why" }).boundingBox();
     expect(why!.x).toBeGreaterThan(story!.x + story!.width);
     await expectNoHorizontalOverflow(page);
+    await expectTeamColours(page);
     await expectMatchPageWhy(page);
   });
 
@@ -696,6 +729,9 @@ test.describe("Midweek Madness live (F6, ADR-115)", () => {
 
     const home = page.getByRole("region", { name: "Now" }).getByRole("link").first();
     await expect(home).toContainText("Live");
+    // Live has its own tint now, never a side's (ADR-119).
+    await expect(home).toHaveCSS("border-top-color", "rgb(122, 45, 59)");
+    await expect(home).toHaveCSS("background-image", /linear-gradient/);
     await expectNoHorizontalOverflow(page);
 
     await page.goto("/midweek");

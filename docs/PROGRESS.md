@@ -4673,6 +4673,23 @@ Decided in the owner's Q2 interview; the pages follow the Claude Design mock.
 - **Views:** the caller's picks and coins, and each match's split (counts
   only) from its kick-off.
 
+## MM 2.0: deeper team colours, violet and teal — 2026-10-03
+
+`feat/midweek-team-colours`, ADR-119 (amends ADR-111, ADR-107). No migration.
+Built to DR3's drop-in values (`design/mm2-dr3/HANDOFF.md` §5).
+
+- **Tokens:** side 0 violet, side 1 teal, each with a text tone (AA) and a
+  deeper `-fill` for rails, the odds bar, scored kicks and the new 3 px
+  scoreboard strip; renamed side-neutral (`team-0`, `team-1`).
+- **Live** gets `--color-live-bg` / `-line` and no longer borrows the red
+  side's tint (chip, clock, Home's live card).
+- **Contrast** pinned in `tests/unit/team-colours.test.ts` from `globals.css`.
+
+Verification: `npm run verify:fast` (446 tests); the authenticated E2E (49 passed, 1
+expected skip), whose match-report checks now read the computed violet and
+teal names and fills and the strip at 320, 412 and 1440 px, and Home's live
+card on the Live tokens.
+
 ## MM 2.0 F7 pages: card ratings on the champion view, the bracket and each report — 2026-10-03
 
 `feat/midweek-ratings-pages`, ADR-117 amended. No migration. Built to the

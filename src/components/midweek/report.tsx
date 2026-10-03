@@ -14,7 +14,7 @@ import { PlayerName, ReportText, TEAM_TEXT } from "./player-name";
  * "Matches"): the scoreboard, the lane timeline and the shoot-out; the "why"
  * is `MidweekWhyList`. Presentational: the page renders the report on the
  * server and hands these its pieces. Team colours only here, where one match
- * is open (DR2-1): side 0 blue on the left, side 1 red on the right.
+ * is open (DR2-1): side 0 violet on the left, side 1 teal on the right (DR3-10).
  */
 
 export type Managers = readonly [string, string];
@@ -22,7 +22,8 @@ export type Managers = readonly [string, string];
 /**
  * `MidweekScoreboard`: always side 0 on the left and side 1 on the right, from
  * the per-side goals, never the renderer's winner-first `score`; names and
- * digits in team colour, no chance counter (DR1-5). At full time Through and
+ * digits in team colour, no chance counter (DR1-5), and both sides' fills as
+ * a strip across the top (DR3-2). At full time Through and
  * Out chips; live (ADR-115) the score so far and `Live · 64′` or `Live · pens
  * 3–3`, with no chips until it ends.
  */
@@ -74,20 +75,26 @@ export function MidweekScoreboard({
   return (
     <div
       aria-label={label}
-      className={`grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2.5 border border-line/60 ${
+      className={`relative grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2.5 overflow-hidden border border-line/60 ${
         compact
           ? "rounded-xl bg-board/50 px-3 py-2.5 sm:px-4"
           : "rounded-2xl bg-panel/60 p-3.5 sm:px-6 sm:py-5"
       }`}
       role="group"
     >
+      {/* The two club colours as a 3 px strip across the top (DR3-2);
+          decorative, the names and sides carry it. */}
+      <div aria-hidden="true" className="absolute inset-x-0 top-0 grid h-[3px] grid-cols-2">
+        <span className="bg-team-0-fill" />
+        <span className="bg-team-1-fill" />
+      </div>
       {side(0)}
       <div aria-hidden="true" className="grid justify-items-center gap-1.5">
         <p
           className={`leading-none font-black tracking-[0.02em] whitespace-nowrap tabular-nums ${compact ? "text-[28px] sm:text-[32px]" : "text-[38px] sm:text-[54px]"}`}
         >
-          <span className="text-team-blue">{goals[0]}</span>–
-          <span className="text-team-red">{goals[1]}</span>
+          <span className="text-team-0">{goals[0]}</span>–
+          <span className="text-team-1">{goals[1]}</span>
         </p>
         {live && compact ? (
           // The card's kicker already carries the Live marker.
@@ -148,7 +155,7 @@ function Score({ item }: { item: TimelineItem }) {
 /**
  * `MidweekLaneTimeline` (HANDOFF "Matches"): the key moments in order, each
  * leaning to its side. In a column under 600 px: one lane, a side-0 chance
- * with a blue rail on the left and room on the right, a side-1 chance
+ * with a violet rail on the left and room on the right, a side-1 chance
  * mirrored. From 600 px of its own width (a container query, not the page):
  * two lanes either side of a minute-and-score spine. Each item says whose
  * chance it is in words for screen readers. On a live page (ADR-115) the
@@ -185,8 +192,8 @@ export function MidweekLaneTimeline({
               <div
                 className={`grid gap-1 rounded-xl px-3 py-2.5 text-sm leading-normal @min-[600px]:row-start-1 @min-[600px]:m-0 ${newest ? "mw-chance-in outline-1 outline-brass" : ""} ${
                   left
-                    ? "mr-8 border-l-[3px] border-team-blue bg-team-blue-bg/55 @min-[600px]:col-start-1"
-                    : "ml-8 border-r-[3px] border-team-red bg-team-red-bg/55 @min-[600px]:col-start-3"
+                    ? "mr-8 border-l-[3px] border-team-0-fill bg-team-0-bg/55 @min-[600px]:col-start-1"
+                    : "ml-8 border-r-[3px] border-team-1-fill bg-team-1-bg/55 @min-[600px]:col-start-3"
                 }`}
               >
                 <p
@@ -236,7 +243,7 @@ export function MidweekLaneTimeline({
 }
 
 const KICK = "grid h-5 w-5 place-items-center rounded-full text-[11px] font-black";
-const SCORED = ["bg-team-blue text-ink-on-team-blue", "bg-team-red text-ink-on-team-red"] as const;
+const SCORED = ["bg-team-0-fill text-ink-on-team-0", "bg-team-1-fill text-ink-on-team-1"] as const;
 const MISSED = "border-[1.5px] border-ink-faint text-ink-faint";
 
 /**

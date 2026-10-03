@@ -2068,8 +2068,11 @@ Everything is gated by time in definer projections on
   A shoot-out narrates its misses and the deciding kick; scored kicks show as
   a tally.
 - **Team colours and the Why list (ADR-111):** on a match page every Player
-  and manager name is in its side's colour, side 0 blue on the left and side 1
-  red on the right for every viewer; lists of matches stay neutral. The
+  and manager name is in its side's colour, side 0 violet on the left and side 1
+  teal on the right for every viewer (blue and red until ADR-119); lists of
+  matches stay neutral. Each side has a text tone for names and digits and a
+  deeper fill for what is drawn; the scoreboard carries both fills as a strip,
+  and `Live` has its own pink, never a side's. The
   renderer returns each line as text and as segments (plain text, or a name
   with its side and, for a Player both sides fielded, its manager), so pages
   never re-parse names. On screen such a Player shows its base name, and the

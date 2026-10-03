@@ -312,13 +312,8 @@ export function MidweekWhyList({
           role="img"
           viewBox="0 0 100 10"
         >
-          <rect className="fill-team-blue" height="10" width={chances[0]} />
-          <rect
-            className="fill-team-red opacity-80"
-            height="10"
-            width={chances[1]}
-            x={chances[0]}
-          />
+          <rect className="fill-team-0-fill" height="10" width={chances[0]} />
+          <rect className="fill-team-1-fill" height="10" width={chances[1]} x={chances[0]} />
         </svg>
         <p aria-hidden="true" className="flex justify-between gap-3 text-[13px]">
           <span>

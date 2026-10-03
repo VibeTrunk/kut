@@ -224,6 +224,10 @@ describe("midweek phrasebook", () => {
       if (pool.layer.startsWith("headline:") || pool.layer.startsWith("fact:")) {
         expect(pool.lines.length, pool.layer).toBeGreaterThanOrEqual(3);
       }
+      // Five cards often share a story (five quiet ones), and no two may share a line (ADR-117).
+      if (pool.layer.startsWith("rating:")) {
+        expect(pool.lines.length, pool.layer).toBeGreaterThanOrEqual(5);
+      }
     }
   });
 });

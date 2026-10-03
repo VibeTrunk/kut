@@ -1,0 +1,2290 @@
+{
+  "note": "Ratings for the ratings mock (ADR-117): the sample world of sample-tournament.json replayed on today's engine, so its results differ from that file. Invented names; no real members or Players.",
+  "seedHash": "a511a3f095f2d3146f7c6916a2a4ac02d55a198b4385e998057b4e3b5dfa4abc",
+  "rounds": 5,
+  "champion": "Joris",
+  "members": [
+    {
+      "manager": "Sanne",
+      "auto": false,
+      "finish": "out in the quarter-finals",
+      "matches": [
+        {
+          "round": 2,
+          "opponent": "Eline",
+          "goals": [
+            2,
+            0
+          ],
+          "penalties": null,
+          "won": true
+        },
+        {
+          "round": 3,
+          "opponent": "Sophie",
+          "goals": [
+            1,
+            3
+          ],
+          "penalties": null,
+          "won": false
+        }
+      ],
+      "five": [
+        {
+          "name": "Dirk S.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "All-rounder",
+          "ovr": 40,
+          "rarity": "bronze",
+          "rating": 6.9,
+          "matchRatings": [
+            8,
+            5.8
+          ],
+          "story": "goal",
+          "line": "One goal for Dirk S., and a good one to have."
+        },
+        {
+          "name": "Mo A.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "All-rounder",
+          "ovr": 40,
+          "rarity": "bronze",
+          "rating": 6.8,
+          "matchRatings": [
+            6.5,
+            7
+          ],
+          "story": "goal",
+          "line": "Mo A. got on the scoresheet."
+        },
+        {
+          "name": "Gijs H.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "All-rounder",
+          "ovr": 39,
+          "rarity": "common",
+          "rating": 6.2,
+          "matchRatings": [
+            6.6,
+            5.7
+          ],
+          "story": "block",
+          "line": "A crucial block from Gijs H."
+        },
+        {
+          "name": "Iris W.",
+          "trialist": false,
+          "inGoal": true,
+          "archetype": "All-rounder",
+          "ovr": 39,
+          "rarity": "common",
+          "rating": 6.7,
+          "matchRatings": [
+            7,
+            6.3
+          ],
+          "story": "keeper_wall",
+          "line": "Iris W. made 4 saves and kept the side in it."
+        },
+        {
+          "name": "Bas V.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "All-rounder",
+          "ovr": 35,
+          "rarity": "common",
+          "rating": 7.5,
+          "matchRatings": [
+            8.8,
+            6.2
+          ],
+          "story": "goal_and_assist",
+          "line": "Bas V. scored and created. Hard to ask more of one card."
+        }
+      ]
+    },
+    {
+      "manager": "Joris",
+      "auto": false,
+      "finish": "champion",
+      "matches": [
+        {
+          "round": 2,
+          "opponent": "Emma",
+          "goals": [
+            4,
+            0
+          ],
+          "penalties": null,
+          "won": true
+        },
+        {
+          "round": 3,
+          "opponent": "Wessel",
+          "goals": [
+            3,
+            0
+          ],
+          "penalties": null,
+          "won": true
+        },
+        {
+          "round": 4,
+          "opponent": "Stijn",
+          "goals": [
+            1,
+            0
+          ],
+          "penalties": null,
+          "won": true
+        },
+        {
+          "round": 5,
+          "opponent": "Niels",
+          "goals": [
+            3,
+            0
+          ],
+          "penalties": null,
+          "won": true
+        }
+      ],
+      "five": [
+        {
+          "name": "Olaf G.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "Speedster",
+          "ovr": 62,
+          "rarity": "gold",
+          "rating": 8.4,
+          "matchRatings": [
+            9.8,
+            7.2,
+            6.7,
+            10
+          ],
+          "story": "hat_trick",
+          "line": "Olaf G. kept finding the net: 4 goals in one evening."
+        },
+        {
+          "name": "Bram K.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "All-rounder",
+          "ovr": 60,
+          "rarity": "gold",
+          "rating": 7.3,
+          "matchRatings": [
+            7.1,
+            6.6,
+            8.3,
+            7
+          ],
+          "story": "goal_and_assist",
+          "line": "Goal and assist for Bram K. A complete night's work."
+        },
+        {
+          "name": "Noor E.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "All-rounder",
+          "ovr": 54,
+          "rarity": "silver",
+          "rating": 8.6,
+          "matchRatings": [
+            9.9,
+            10,
+            7.3,
+            7.1
+          ],
+          "story": "hat_trick",
+          "line": "Noor E. scored 5 on the night. Nobody else came close."
+        },
+        {
+          "name": "Yara Q.",
+          "trialist": false,
+          "inGoal": true,
+          "archetype": "Goalkeeper",
+          "ovr": 54,
+          "rarity": "silver",
+          "rating": 6.9,
+          "matchRatings": [
+            7.7,
+            7.1,
+            6.4,
+            6.4
+          ],
+          "story": "keeper_wall",
+          "line": "Yara Q. made 4 saves and kept the side in it."
+        },
+        {
+          "name": "Jesse T.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "All-rounder",
+          "ovr": 49,
+          "rarity": "bronze",
+          "rating": 7.3,
+          "matchRatings": [
+            7.1,
+            7.7,
+            6.5,
+            8
+          ],
+          "story": "goal_and_assist",
+          "line": "Jesse T. was in the middle of everything: a goal and an assist."
+        }
+      ]
+    },
+    {
+      "manager": "Mila",
+      "auto": true,
+      "finish": "out in round 1",
+      "matches": [
+        {
+          "round": 1,
+          "opponent": "Eline",
+          "goals": [
+            0,
+            3
+          ],
+          "penalties": null,
+          "won": false
+        }
+      ],
+      "five": [
+        {
+          "name": "Carmen P.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "All-rounder",
+          "ovr": 35,
+          "rarity": "common",
+          "rating": 5.6,
+          "matchRatings": [
+            5.6
+          ],
+          "story": "block",
+          "line": "One timely block from Carmen P."
+        },
+        {
+          "name": "Iris W.",
+          "trialist": false,
+          "inGoal": true,
+          "archetype": "All-rounder",
+          "ovr": 39,
+          "rarity": "common",
+          "rating": 5.2,
+          "matchRatings": [
+            5.2
+          ],
+          "story": "keeper",
+          "line": "Iris W. kept things calm at the back."
+        },
+        {
+          "name": "Floor J.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "All-rounder",
+          "ovr": 32,
+          "rarity": "common",
+          "rating": 5.8,
+          "matchRatings": [
+            5.8
+          ],
+          "story": "block",
+          "line": "Floor J. snuffed out a chance with a well-timed block."
+        },
+        {
+          "name": "Hidde P.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "All-rounder",
+          "ovr": 44,
+          "rarity": "bronze",
+          "rating": 5.4,
+          "matchRatings": [
+            5.4
+          ],
+          "story": "quiet",
+          "line": "Hidde P. stayed patient all night."
+        },
+        {
+          "name": "Lotte S.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "All-rounder",
+          "ovr": 44,
+          "rarity": "bronze",
+          "rating": 5.4,
+          "matchRatings": [
+            5.4
+          ],
+          "story": "quiet",
+          "line": "Next week could be Lotte S.'s week."
+        }
+      ]
+    },
+    {
+      "manager": "Thijs",
+      "auto": false,
+      "finish": "out in round 1",
+      "matches": [
+        {
+          "round": 1,
+          "opponent": "Julia",
+          "goals": [
+            0,
+            2
+          ],
+          "penalties": null,
+          "won": false
+        }
+      ],
+      "five": [
+        {
+          "name": "Wout Y.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "All-rounder",
+          "ovr": 63,
+          "rarity": "gold",
+          "rating": 5.9,
+          "matchRatings": [
+            5.9
+          ],
+          "story": "creator",
+          "line": "Wout Y. kept making chances. The goals will come."
+        },
+        {
+          "name": "Olaf G.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "Speedster",
+          "ovr": 62,
+          "rarity": "gold",
+          "rating": 5.4,
+          "matchRatings": [
+            5.4
+          ],
+          "story": "quiet",
+          "line": "Next week could be Olaf G.'s week."
+        },
+        {
+          "name": "Ayla D.",
+          "trialist": false,
+          "inGoal": true,
+          "archetype": "Tank",
+          "ovr": 58,
+          "rarity": "silver",
+          "rating": 5.6,
+          "matchRatings": [
+            5.6
+          ],
+          "story": "keeper",
+          "line": "A steady night in goal for Ayla D."
+        },
+        {
+          "name": "Noor E.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "All-rounder",
+          "ovr": 54,
+          "rarity": "silver",
+          "rating": 5.4,
+          "matchRatings": [
+            5.4
+          ],
+          "story": "quiet",
+          "line": "Noor E. waited for a chance that never arrived."
+        },
+        {
+          "name": "Vera I.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "All-rounder",
+          "ovr": 48,
+          "rarity": "bronze",
+          "rating": 5.5,
+          "matchRatings": [
+            5.5
+          ],
+          "story": "quiet",
+          "line": "Few chances came near Vera I. this time."
+        }
+      ]
+    },
+    {
+      "manager": "Lieke",
+      "auto": false,
+      "finish": "out in round 1",
+      "matches": [
+        {
+          "round": 1,
+          "opponent": "Sophie",
+          "goals": [
+            0,
+            3
+          ],
+          "penalties": null,
+          "won": false
+        }
+      ],
+      "five": [
+        {
+          "name": "Anouk B.",
+          "trialist": false,
+          "inGoal": true,
+          "archetype": "Goalkeeper",
+          "ovr": 74,
+          "rarity": "holo",
+          "rating": 6.1,
+          "matchRatings": [
+            6.1
+          ],
+          "story": "keeper",
+          "line": "Anouk B. dealt with whatever came through."
+        },
+        {
+          "name": "Tess F.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "Playmaker",
+          "ovr": 66,
+          "rarity": "gold",
+          "rating": 5.6,
+          "matchRatings": [
+            5.6
+          ],
+          "story": "creator",
+          "line": "Tess F. kept the ball moving forward all night."
+        },
+        {
+          "name": "Vera I.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "All-rounder",
+          "ovr": 48,
+          "rarity": "bronze",
+          "rating": 5.9,
+          "matchRatings": [
+            5.9
+          ],
+          "story": "block",
+          "line": "One timely block from Vera I."
+        },
+        {
+          "name": "Kees R.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "Finisher",
+          "ovr": 47,
+          "rarity": "bronze",
+          "rating": 5.3,
+          "matchRatings": [
+            5.3
+          ],
+          "story": "quiet",
+          "line": "Kees R. waited for a chance that never arrived."
+        },
+        {
+          "name": "Lieke's trialist",
+          "trialist": true,
+          "inGoal": false,
+          "archetype": "All-rounder",
+          "ovr": 30,
+          "rarity": null,
+          "rating": 5.5,
+          "matchRatings": [
+            5.5
+          ],
+          "story": "block",
+          "line": "Lieke's trialist snuffed out a chance with a well-timed block."
+        }
+      ]
+    },
+    {
+      "manager": "Ruben",
+      "auto": true,
+      "finish": "out in round 2",
+      "matches": [
+        {
+          "round": 2,
+          "opponent": "Wessel",
+          "goals": [
+            0,
+            4
+          ],
+          "penalties": null,
+          "won": false
+        }
+      ],
+      "five": [
+        {
+          "name": "Iris W.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "All-rounder",
+          "ovr": 39,
+          "rarity": "common",
+          "rating": 5.2,
+          "matchRatings": [
+            5.2
+          ],
+          "story": "quiet",
+          "line": "A quiet night for Iris W. The ball just didn't come that way."
+        },
+        {
+          "name": "Umut C.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "All-rounder",
+          "ovr": 30,
+          "rarity": "common",
+          "rating": 5.2,
+          "matchRatings": [
+            5.2
+          ],
+          "story": "quiet",
+          "line": "Umut C. stayed patient all night."
+        },
+        {
+          "name": "Floor J.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "All-rounder",
+          "ovr": 32,
+          "rarity": "common",
+          "rating": 5.9,
+          "matchRatings": [
+            5.9
+          ],
+          "story": "block",
+          "line": "One timely block from Floor J."
+        },
+        {
+          "name": "Vera I.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "All-rounder",
+          "ovr": 48,
+          "rarity": "bronze",
+          "rating": 5.2,
+          "matchRatings": [
+            5.2
+          ],
+          "story": "quiet",
+          "line": "Next week could be Vera I.'s week."
+        },
+        {
+          "name": "Noor E.",
+          "trialist": false,
+          "inGoal": true,
+          "archetype": "All-rounder",
+          "ovr": 54,
+          "rarity": "silver",
+          "rating": 6.3,
+          "matchRatings": [
+            6.3
+          ],
+          "story": "keeper_wall",
+          "line": "Noor E. made 3 saves and kept the side in it."
+        }
+      ]
+    },
+    {
+      "manager": "Fleur",
+      "auto": false,
+      "finish": "out in round 2",
+      "matches": [
+        {
+          "round": 2,
+          "opponent": "Bart",
+          "goals": [
+            1,
+            1
+          ],
+          "penalties": [
+            2,
+            4
+          ],
+          "won": false
+        }
+      ],
+      "five": [
+        {
+          "name": "Olaf G.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "Speedster",
+          "ovr": 62,
+          "rarity": "gold",
+          "rating": 5.6,
+          "matchRatings": [
+            5.6
+          ],
+          "story": "quiet",
+          "line": "Olaf G. stayed patient all night."
+        },
+        {
+          "name": "Noor E.",
+          "trialist": false,
+          "inGoal": true,
+          "archetype": "All-rounder",
+          "ovr": 54,
+          "rarity": "silver",
+          "rating": 7.5,
+          "matchRatings": [
+            7.5
+          ],
+          "story": "keeper_wall",
+          "line": "Noor E. made 3 saves and kept the side in it."
+        },
+        {
+          "name": "Jesse T.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "All-rounder",
+          "ovr": 49,
+          "rarity": "bronze",
+          "rating": 6,
+          "matchRatings": [
+            6
+          ],
+          "story": "block",
+          "line": "Jesse T. snuffed out a chance with a well-timed block."
+        },
+        {
+          "name": "Vera I.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "All-rounder",
+          "ovr": 48,
+          "rarity": "bronze",
+          "rating": 7.6,
+          "matchRatings": [
+            7.6
+          ],
+          "story": "assist",
+          "line": "An assist for Vera I.: the pass before the celebration."
+        },
+        {
+          "name": "Kees R.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "Finisher",
+          "ovr": 47,
+          "rarity": "bronze",
+          "rating": 7,
+          "matchRatings": [
+            7
+          ],
+          "story": "goal",
+          "line": "A goal from Kees R. to show for the night."
+        }
+      ]
+    },
+    {
+      "manager": "Koen",
+      "auto": false,
+      "finish": "out in round 2",
+      "matches": [
+        {
+          "round": 2,
+          "opponent": "Niels",
+          "goals": [
+            0,
+            3
+          ],
+          "penalties": null,
+          "won": false
+        }
+      ],
+      "five": [
+        {
+          "name": "Noor E.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "All-rounder",
+          "ovr": 54,
+          "rarity": "silver",
+          "rating": 5.6,
+          "matchRatings": [
+            5.6
+          ],
+          "story": "creator",
+          "line": "Noor E. kept setting things up."
+        },
+        {
+          "name": "Lotte S.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "All-rounder",
+          "ovr": 44,
+          "rarity": "bronze",
+          "rating": 5.5,
+          "matchRatings": [
+            5.5
+          ],
+          "story": "creator",
+          "line": "Plenty of good work from Lotte S. going forward."
+        },
+        {
+          "name": "Zeger X.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "All-rounder",
+          "ovr": 43,
+          "rarity": "bronze",
+          "rating": 5.3,
+          "matchRatings": [
+            5.3
+          ],
+          "story": "quiet",
+          "line": "Zeger X. waited for a chance that never arrived."
+        },
+        {
+          "name": "Mo A.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "All-rounder",
+          "ovr": 40,
+          "rarity": "bronze",
+          "rating": 5.3,
+          "matchRatings": [
+            5.3
+          ],
+          "story": "quiet",
+          "line": "Next week could be Mo A.'s week."
+        },
+        {
+          "name": "Iris W.",
+          "trialist": false,
+          "inGoal": true,
+          "archetype": "All-rounder",
+          "ovr": 39,
+          "rarity": "common",
+          "rating": 5.7,
+          "matchRatings": [
+            5.7
+          ],
+          "story": "keeper",
+          "line": "Iris W. dealt with whatever came through."
+        }
+      ]
+    },
+    {
+      "manager": "Nina",
+      "auto": true,
+      "finish": "out in round 1",
+      "matches": [
+        {
+          "round": 1,
+          "opponent": "Niels",
+          "goals": [
+            0,
+            2
+          ],
+          "penalties": null,
+          "won": false
+        }
+      ],
+      "five": [
+        {
+          "name": "Iris W.",
+          "trialist": false,
+          "inGoal": true,
+          "archetype": "All-rounder",
+          "ovr": 39,
+          "rarity": "common",
+          "rating": 5.5,
+          "matchRatings": [
+            5.5
+          ],
+          "story": "keeper",
+          "line": "Iris W. dealt with whatever came through."
+        },
+        {
+          "name": "Gijs H.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "All-rounder",
+          "ovr": 39,
+          "rarity": "common",
+          "rating": 5.4,
+          "matchRatings": [
+            5.4
+          ],
+          "story": "quiet",
+          "line": "Gijs H. waited for a chance that never arrived."
+        },
+        {
+          "name": "Lotte S.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "All-rounder",
+          "ovr": 44,
+          "rarity": "bronze",
+          "rating": 5.4,
+          "matchRatings": [
+            5.4
+          ],
+          "story": "quiet",
+          "line": "Next week could be Lotte S.'s week."
+        },
+        {
+          "name": "Esther M.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "All-rounder",
+          "ovr": 36,
+          "rarity": "common",
+          "rating": 5.5,
+          "matchRatings": [
+            5.5
+          ],
+          "story": "quiet",
+          "line": "Few chances came near Esther M. this time."
+        },
+        {
+          "name": "Zeger X.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "All-rounder",
+          "ovr": 43,
+          "rarity": "bronze",
+          "rating": 5.4,
+          "matchRatings": [
+            5.4
+          ],
+          "story": "quiet",
+          "line": "Zeger X. stayed patient all night."
+        }
+      ]
+    },
+    {
+      "manager": "Stijn",
+      "auto": false,
+      "finish": "out in the semi-finals",
+      "matches": [
+        {
+          "round": 1,
+          "opponent": "Tim",
+          "goals": [
+            2,
+            0
+          ],
+          "penalties": null,
+          "won": true
+        },
+        {
+          "round": 2,
+          "opponent": "Julia",
+          "goals": [
+            1,
+            1
+          ],
+          "penalties": [
+            4,
+            3
+          ],
+          "won": true
+        },
+        {
+          "round": 3,
+          "opponent": "Bart",
+          "goals": [
+            2,
+            2
+          ],
+          "penalties": [
+            4,
+            3
+          ],
+          "won": true
+        },
+        {
+          "round": 4,
+          "opponent": "Joris",
+          "goals": [
+            0,
+            1
+          ],
+          "penalties": null,
+          "won": false
+        }
+      ],
+      "five": [
+        {
+          "name": "Gijs H.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "All-rounder",
+          "ovr": 39,
+          "rarity": "common",
+          "rating": 7,
+          "matchRatings": [
+            8.1,
+            6.5,
+            7.2,
+            6.1
+          ],
+          "story": "goal_and_assist",
+          "line": "Scorer and provider: Gijs H. did both jobs on the night."
+        },
+        {
+          "name": "Bas V.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "All-rounder",
+          "ovr": 35,
+          "rarity": "common",
+          "rating": 7.8,
+          "matchRatings": [
+            8.1,
+            8.6,
+            8.4,
+            6.1
+          ],
+          "story": "goal_and_assist",
+          "line": "Bas V. was in the middle of everything: a goal and an assist."
+        },
+        {
+          "name": "Pim L.",
+          "trialist": false,
+          "inGoal": true,
+          "archetype": "All-rounder",
+          "ovr": 34,
+          "rarity": "common",
+          "rating": 7.7,
+          "matchRatings": [
+            8,
+            8.5,
+            7.8,
+            6.4
+          ],
+          "story": "shootout_save",
+          "line": "Pim L. saved a penalty in the shoot-out. That's the moment people will talk about."
+        },
+        {
+          "name": "Stijn's first trialist",
+          "trialist": true,
+          "inGoal": false,
+          "archetype": "All-rounder",
+          "ovr": 30,
+          "rarity": null,
+          "rating": 6.9,
+          "matchRatings": [
+            8.1,
+            7.6,
+            6.4,
+            5.5
+          ],
+          "story": "assists",
+          "line": "Stijn's first trialist set up 2 goals without needing the credit."
+        },
+        {
+          "name": "Stijn's second trialist",
+          "trialist": true,
+          "inGoal": false,
+          "archetype": "All-rounder",
+          "ovr": 30,
+          "rarity": null,
+          "rating": 7.5,
+          "matchRatings": [
+            6.8,
+            7.9,
+            9.5,
+            5.7
+          ],
+          "story": "hat_trick",
+          "line": "Stijn's second trialist scored 3 on the night. Nobody else came close."
+        }
+      ]
+    },
+    {
+      "manager": "Eline",
+      "auto": false,
+      "finish": "out in round 2",
+      "matches": [
+        {
+          "round": 1,
+          "opponent": "Mila",
+          "goals": [
+            3,
+            0
+          ],
+          "penalties": null,
+          "won": true
+        },
+        {
+          "round": 2,
+          "opponent": "Sanne",
+          "goals": [
+            0,
+            2
+          ],
+          "penalties": null,
+          "won": false
+        }
+      ],
+      "five": [
+        {
+          "name": "Ayla D.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "Tank",
+          "ovr": 58,
+          "rarity": "silver",
+          "rating": 6.5,
+          "matchRatings": [
+            6.7,
+            6.2
+          ],
+          "story": "blocks",
+          "line": "Nothing got past Ayla D. without a fight."
+        },
+        {
+          "name": "Yara Q.",
+          "trialist": false,
+          "inGoal": true,
+          "archetype": "Goalkeeper",
+          "ovr": 54,
+          "rarity": "silver",
+          "rating": 5.7,
+          "matchRatings": [
+            6.4,
+            5
+          ],
+          "story": "quiet_win",
+          "line": "No headlines for Yara Q., but the side kept winning."
+        },
+        {
+          "name": "Roos N.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "All-rounder",
+          "ovr": 42,
+          "rarity": "bronze",
+          "rating": 6.4,
+          "matchRatings": [
+            7.2,
+            5.6
+          ],
+          "story": "assist",
+          "line": "Roos N. set up a goal."
+        },
+        {
+          "name": "Iris W.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "All-rounder",
+          "ovr": 39,
+          "rarity": "common",
+          "rating": 7.3,
+          "matchRatings": [
+            9,
+            5.5
+          ],
+          "story": "brace",
+          "line": "Two goals from Iris W., both taken with real confidence."
+        },
+        {
+          "name": "Esther M.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "All-rounder",
+          "ovr": 36,
+          "rarity": "common",
+          "rating": 6.8,
+          "matchRatings": [
+            8.2,
+            5.4
+          ],
+          "story": "goal",
+          "line": "Esther M. got on the scoresheet."
+        }
+      ]
+    },
+    {
+      "manager": "Maarten",
+      "auto": true,
+      "finish": "out in round 2",
+      "matches": [
+        {
+          "round": 2,
+          "opponent": "Laura",
+          "goals": [
+            1,
+            2
+          ],
+          "penalties": null,
+          "won": false
+        }
+      ],
+      "five": [
+        {
+          "name": "Bas V.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "All-rounder",
+          "ovr": 35,
+          "rarity": "common",
+          "rating": 5.8,
+          "matchRatings": [
+            5.8
+          ],
+          "story": "block",
+          "line": "Bas V. stepped in to stop a chance."
+        },
+        {
+          "name": "Tess F.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "Playmaker",
+          "ovr": 66,
+          "rarity": "gold",
+          "rating": 5.4,
+          "matchRatings": [
+            5.4
+          ],
+          "story": "quiet",
+          "line": "Tess F. waited for a chance that never arrived."
+        },
+        {
+          "name": "Chris D.",
+          "trialist": false,
+          "inGoal": true,
+          "archetype": "All-rounder",
+          "ovr": 32,
+          "rarity": "common",
+          "rating": 5.1,
+          "matchRatings": [
+            5.1
+          ],
+          "story": "quiet",
+          "line": "Chris D. stayed patient all night."
+        },
+        {
+          "name": "Lotte S.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "All-rounder",
+          "ovr": 44,
+          "rarity": "bronze",
+          "rating": 6.9,
+          "matchRatings": [
+            6.9
+          ],
+          "story": "goal",
+          "line": "Lotte S. got on the scoresheet."
+        },
+        {
+          "name": "Vera I.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "All-rounder",
+          "ovr": 48,
+          "rarity": "bronze",
+          "rating": 5.7,
+          "matchRatings": [
+            5.7
+          ],
+          "story": "block",
+          "line": "A crucial block from Vera I."
+        }
+      ]
+    },
+    {
+      "manager": "Julia",
+      "auto": false,
+      "finish": "out in round 2",
+      "matches": [
+        {
+          "round": 1,
+          "opponent": "Thijs",
+          "goals": [
+            2,
+            0
+          ],
+          "penalties": null,
+          "won": true
+        },
+        {
+          "round": 2,
+          "opponent": "Stijn",
+          "goals": [
+            1,
+            1
+          ],
+          "penalties": [
+            3,
+            4
+          ],
+          "won": false
+        }
+      ],
+      "five": [
+        {
+          "name": "Yara Q.",
+          "trialist": false,
+          "inGoal": true,
+          "archetype": "Goalkeeper",
+          "ovr": 54,
+          "rarity": "silver",
+          "rating": 6.8,
+          "matchRatings": [
+            7.6,
+            5.9
+          ],
+          "story": "shootout_save",
+          "line": "A shoot-out save from Yara Q., and the nerve to go with it."
+        },
+        {
+          "name": "Lotte S.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "All-rounder",
+          "ovr": 44,
+          "rarity": "bronze",
+          "rating": 6.7,
+          "matchRatings": [
+            6.6,
+            6.8
+          ],
+          "story": "assist",
+          "line": "Lotte S. made a goal for someone else and was happy to."
+        },
+        {
+          "name": "Iris W.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "All-rounder",
+          "ovr": 39,
+          "rarity": "common",
+          "rating": 7.7,
+          "matchRatings": [
+            7.9,
+            7.4
+          ],
+          "story": "brace",
+          "line": "A brace for Iris W.: two goals, two reasons to pick this card again."
+        },
+        {
+          "name": "Daan K.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "All-rounder",
+          "ovr": 38,
+          "rarity": "common",
+          "rating": 7.7,
+          "matchRatings": [
+            9.4,
+            6
+          ],
+          "story": "goal_and_assist",
+          "line": "Goal and assist for Daan K. A complete night's work."
+        },
+        {
+          "name": "Quinten Z.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "Defender",
+          "ovr": 37,
+          "rarity": "common",
+          "rating": 6.1,
+          "matchRatings": [
+            6.4,
+            5.7
+          ],
+          "story": "creator",
+          "line": "Quinten Z. created chance after chance."
+        }
+      ]
+    },
+    {
+      "manager": "Wessel",
+      "auto": false,
+      "finish": "out in the quarter-finals",
+      "matches": [
+        {
+          "round": 1,
+          "opponent": "Rick",
+          "goals": [
+            4,
+            0
+          ],
+          "penalties": null,
+          "won": true
+        },
+        {
+          "round": 2,
+          "opponent": "Ruben",
+          "goals": [
+            4,
+            0
+          ],
+          "penalties": null,
+          "won": true
+        },
+        {
+          "round": 3,
+          "opponent": "Joris",
+          "goals": [
+            0,
+            3
+          ],
+          "penalties": null,
+          "won": false
+        }
+      ],
+      "five": [
+        {
+          "name": "Tess F.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "Playmaker",
+          "ovr": 66,
+          "rarity": "gold",
+          "rating": 8.1,
+          "matchRatings": [
+            9.6,
+            9.3,
+            5.4
+          ],
+          "story": "hat_trick",
+          "line": "Tess F. kept finding the net: 4 goals in one evening."
+        },
+        {
+          "name": "Ayla D.",
+          "trialist": false,
+          "inGoal": true,
+          "archetype": "Tank",
+          "ovr": 58,
+          "rarity": "silver",
+          "rating": 6.4,
+          "matchRatings": [
+            7.6,
+            6.4,
+            5.3
+          ],
+          "story": "assist",
+          "line": "Ayla D. made a goal for someone else and was happy to."
+        },
+        {
+          "name": "Lotte S.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "All-rounder",
+          "ovr": 44,
+          "rarity": "bronze",
+          "rating": 7.7,
+          "matchRatings": [
+            8.1,
+            9.4,
+            5.5
+          ],
+          "story": "hat_trick",
+          "line": "A night to frame for Lotte S.: 3 goals."
+        },
+        {
+          "name": "Wessel's first trialist",
+          "trialist": true,
+          "inGoal": false,
+          "archetype": "All-rounder",
+          "ovr": 30,
+          "rarity": null,
+          "rating": 7.1,
+          "matchRatings": [
+            7.2,
+            8.5,
+            5.5
+          ],
+          "story": "assists",
+          "line": "Wessel's first trialist kept creating: 4 goals came from this card."
+        },
+        {
+          "name": "Wessel's second trialist",
+          "trialist": true,
+          "inGoal": false,
+          "archetype": "All-rounder",
+          "ovr": 30,
+          "rarity": null,
+          "rating": 6.9,
+          "matchRatings": [
+            8.8,
+            6.4,
+            5.4
+          ],
+          "story": "goal_and_assist",
+          "line": "Wessel's second trialist scored and created. Hard to ask more of one card."
+        }
+      ]
+    },
+    {
+      "manager": "Anna",
+      "auto": true,
+      "finish": "out in round 2",
+      "matches": [
+        {
+          "round": 2,
+          "opponent": "Sophie",
+          "goals": [
+            0,
+            4
+          ],
+          "penalties": null,
+          "won": false
+        }
+      ],
+      "five": [
+        {
+          "name": "Roos N.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "All-rounder",
+          "ovr": 42,
+          "rarity": "bronze",
+          "rating": 5.4,
+          "matchRatings": [
+            5.4
+          ],
+          "story": "block",
+          "line": "Roos N. snuffed out a chance with a well-timed block."
+        },
+        {
+          "name": "Quinten Z.",
+          "trialist": false,
+          "inGoal": true,
+          "archetype": "Defender",
+          "ovr": 37,
+          "rarity": "common",
+          "rating": 5.5,
+          "matchRatings": [
+            5.5
+          ],
+          "story": "keeper",
+          "line": "Quinten Z. was alert whenever the ball came near."
+        },
+        {
+          "name": "Bas V.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "All-rounder",
+          "ovr": 35,
+          "rarity": "common",
+          "rating": 5.6,
+          "matchRatings": [
+            5.6
+          ],
+          "story": "block",
+          "line": "One timely block from Bas V."
+        },
+        {
+          "name": "Vera I.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "All-rounder",
+          "ovr": 48,
+          "rarity": "bronze",
+          "rating": 5.2,
+          "matchRatings": [
+            5.2
+          ],
+          "story": "quiet",
+          "line": "A quiet night for Vera I. The ball just didn't come that way."
+        },
+        {
+          "name": "Floor J.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "All-rounder",
+          "ovr": 32,
+          "rarity": "common",
+          "rating": 5.2,
+          "matchRatings": [
+            5.2
+          ],
+          "story": "quiet",
+          "line": "Floor J. waited for a chance that never arrived."
+        }
+      ]
+    },
+    {
+      "manager": "Tim",
+      "auto": false,
+      "finish": "out in round 1",
+      "matches": [
+        {
+          "round": 1,
+          "opponent": "Stijn",
+          "goals": [
+            0,
+            2
+          ],
+          "penalties": null,
+          "won": false
+        }
+      ],
+      "five": [
+        {
+          "name": "Wout Y.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "All-rounder",
+          "ovr": 63,
+          "rarity": "gold",
+          "rating": 5.4,
+          "matchRatings": [
+            5.4
+          ],
+          "story": "quiet",
+          "line": "Wout Y. stayed patient all night."
+        },
+        {
+          "name": "Yara Q.",
+          "trialist": false,
+          "inGoal": true,
+          "archetype": "Goalkeeper",
+          "ovr": 54,
+          "rarity": "silver",
+          "rating": 5.6,
+          "matchRatings": [
+            5.6
+          ],
+          "story": "keeper",
+          "line": "Yara Q. dealt with whatever came through."
+        },
+        {
+          "name": "Jesse T.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "All-rounder",
+          "ovr": 49,
+          "rarity": "bronze",
+          "rating": 5.9,
+          "matchRatings": [
+            5.9
+          ],
+          "story": "block",
+          "line": "Jesse T. stepped in to stop a chance."
+        },
+        {
+          "name": "Vera I.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "All-rounder",
+          "ovr": 48,
+          "rarity": "bronze",
+          "rating": 5.4,
+          "matchRatings": [
+            5.4
+          ],
+          "story": "quiet",
+          "line": "A quiet night for Vera I. The ball just didn't come that way."
+        },
+        {
+          "name": "Zeger X.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "All-rounder",
+          "ovr": 43,
+          "rarity": "bronze",
+          "rating": 5.4,
+          "matchRatings": [
+            5.4
+          ],
+          "story": "quiet",
+          "line": "Few chances came near Zeger X. this time."
+        }
+      ]
+    },
+    {
+      "manager": "Sophie",
+      "auto": false,
+      "finish": "out in the semi-finals",
+      "matches": [
+        {
+          "round": 1,
+          "opponent": "Lieke",
+          "goals": [
+            3,
+            0
+          ],
+          "penalties": null,
+          "won": true
+        },
+        {
+          "round": 2,
+          "opponent": "Anna",
+          "goals": [
+            4,
+            0
+          ],
+          "penalties": null,
+          "won": true
+        },
+        {
+          "round": 3,
+          "opponent": "Sanne",
+          "goals": [
+            3,
+            1
+          ],
+          "penalties": null,
+          "won": true
+        },
+        {
+          "round": 4,
+          "opponent": "Niels",
+          "goals": [
+            1,
+            1
+          ],
+          "penalties": [
+            2,
+            4
+          ],
+          "won": false
+        }
+      ],
+      "five": [
+        {
+          "name": "Wout Y.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "All-rounder",
+          "ovr": 63,
+          "rarity": "gold",
+          "rating": 7.5,
+          "matchRatings": [
+            9.5,
+            6.5,
+            7.8,
+            6.1
+          ],
+          "story": "goal_and_assist",
+          "line": "Wout Y. made one and finished one."
+        },
+        {
+          "name": "Olaf G.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "Speedster",
+          "ovr": 62,
+          "rarity": "gold",
+          "rating": 8.8,
+          "matchRatings": [
+            9.2,
+            10,
+            10,
+            6
+          ],
+          "story": "hat_trick",
+          "line": "Olaf G. scored 8 on the night. Nobody else came close."
+        },
+        {
+          "name": "Ayla D.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "Tank",
+          "ovr": 58,
+          "rarity": "silver",
+          "rating": 7.1,
+          "matchRatings": [
+            7.1,
+            7.8,
+            6.8,
+            6.7
+          ],
+          "story": "assists",
+          "line": "Ayla D. kept creating: 4 goals came from this card."
+        },
+        {
+          "name": "Noor E.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "All-rounder",
+          "ovr": 54,
+          "rarity": "silver",
+          "rating": 7.4,
+          "matchRatings": [
+            7.4,
+            8.3,
+            7,
+            6.9
+          ],
+          "story": "brace",
+          "line": "Noor E. found the net twice."
+        },
+        {
+          "name": "Yara Q.",
+          "trialist": false,
+          "inGoal": true,
+          "archetype": "Goalkeeper",
+          "ovr": 54,
+          "rarity": "silver",
+          "rating": 6.4,
+          "matchRatings": [
+            6.4,
+            6.4,
+            6.5,
+            6.4
+          ],
+          "story": "keeper_wall",
+          "line": "Yara Q. said no 3 times."
+        }
+      ]
+    },
+    {
+      "manager": "Rick",
+      "auto": true,
+      "finish": "out in round 1",
+      "matches": [
+        {
+          "round": 1,
+          "opponent": "Wessel",
+          "goals": [
+            0,
+            4
+          ],
+          "penalties": null,
+          "won": false
+        }
+      ],
+      "five": [
+        {
+          "name": "Quinten Z.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "Defender",
+          "ovr": 37,
+          "rarity": "common",
+          "rating": 5.8,
+          "matchRatings": [
+            5.8
+          ],
+          "story": "block",
+          "line": "Quinten Z. stepped in to stop a chance."
+        },
+        {
+          "name": "Yara Q.",
+          "trialist": false,
+          "inGoal": true,
+          "archetype": "Goalkeeper",
+          "ovr": 54,
+          "rarity": "silver",
+          "rating": 4.8,
+          "matchRatings": [
+            4.8
+          ],
+          "story": "keeper",
+          "line": "Yara Q. dealt with whatever came through."
+        },
+        {
+          "name": "Vera I.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "All-rounder",
+          "ovr": 48,
+          "rarity": "bronze",
+          "rating": 5.2,
+          "matchRatings": [
+            5.2
+          ],
+          "story": "quiet",
+          "line": "Vera I. waited for a chance that never arrived."
+        },
+        {
+          "name": "Floor J.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "All-rounder",
+          "ovr": 32,
+          "rarity": "common",
+          "rating": 5.4,
+          "matchRatings": [
+            5.4
+          ],
+          "story": "block",
+          "line": "A crucial block from Floor J."
+        },
+        {
+          "name": "Bas V.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "All-rounder",
+          "ovr": 35,
+          "rarity": "common",
+          "rating": 5.2,
+          "matchRatings": [
+            5.2
+          ],
+          "story": "quiet",
+          "line": "Bas V. stayed patient all night."
+        }
+      ]
+    },
+    {
+      "manager": "Laura",
+      "auto": false,
+      "finish": "out in the quarter-finals",
+      "matches": [
+        {
+          "round": 2,
+          "opponent": "Maarten",
+          "goals": [
+            2,
+            1
+          ],
+          "penalties": null,
+          "won": true
+        },
+        {
+          "round": 3,
+          "opponent": "Niels",
+          "goals": [
+            1,
+            2
+          ],
+          "penalties": null,
+          "won": false
+        }
+      ],
+      "five": [
+        {
+          "name": "Sem O.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "All-rounder",
+          "ovr": 77,
+          "rarity": "holo",
+          "rating": 6.4,
+          "matchRatings": [
+            7.3,
+            5.4
+          ],
+          "story": "assist",
+          "line": "An assist for Sem O.: the pass before the celebration."
+        },
+        {
+          "name": "Tess F.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "Playmaker",
+          "ovr": 66,
+          "rarity": "gold",
+          "rating": 7.6,
+          "matchRatings": [
+            8.5,
+            6.6
+          ],
+          "story": "goal_and_assist",
+          "line": "Tess F. was in the middle of everything: a goal and an assist."
+        },
+        {
+          "name": "Olaf G.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "Speedster",
+          "ovr": 62,
+          "rarity": "gold",
+          "rating": 7.3,
+          "matchRatings": [
+            7.6,
+            6.9
+          ],
+          "story": "brace",
+          "line": "Two goals from Olaf G., both taken with real confidence."
+        },
+        {
+          "name": "Bram K.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "All-rounder",
+          "ovr": 60,
+          "rarity": "gold",
+          "rating": 6.1,
+          "matchRatings": [
+            6.3,
+            5.9
+          ],
+          "story": "block",
+          "line": "Bram K. stepped in to stop a chance."
+        },
+        {
+          "name": "Ayla D.",
+          "trialist": false,
+          "inGoal": true,
+          "archetype": "Tank",
+          "ovr": 58,
+          "rarity": "silver",
+          "rating": 5.8,
+          "matchRatings": [
+            6.5,
+            5
+          ],
+          "story": "keeper",
+          "line": "Ayla D. dealt with whatever came through."
+        }
+      ]
+    },
+    {
+      "manager": "Niels",
+      "auto": false,
+      "finish": "out in the final",
+      "matches": [
+        {
+          "round": 1,
+          "opponent": "Nina",
+          "goals": [
+            2,
+            0
+          ],
+          "penalties": null,
+          "won": true
+        },
+        {
+          "round": 2,
+          "opponent": "Koen",
+          "goals": [
+            3,
+            0
+          ],
+          "penalties": null,
+          "won": true
+        },
+        {
+          "round": 3,
+          "opponent": "Laura",
+          "goals": [
+            2,
+            1
+          ],
+          "penalties": null,
+          "won": true
+        },
+        {
+          "round": 4,
+          "opponent": "Sophie",
+          "goals": [
+            1,
+            1
+          ],
+          "penalties": [
+            4,
+            2
+          ],
+          "won": true
+        },
+        {
+          "round": 5,
+          "opponent": "Joris",
+          "goals": [
+            0,
+            3
+          ],
+          "penalties": null,
+          "won": false
+        }
+      ],
+      "five": [
+        {
+          "name": "Noor E.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "All-rounder",
+          "ovr": 54,
+          "rarity": "silver",
+          "rating": 7.2,
+          "matchRatings": [
+            7.3,
+            8.7,
+            7.1,
+            7.1,
+            5.9
+          ],
+          "story": "goal_and_assist",
+          "line": "Noor E. made one and finished one."
+        },
+        {
+          "name": "Jesse T.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "All-rounder",
+          "ovr": 49,
+          "rarity": "bronze",
+          "rating": 7.2,
+          "matchRatings": [
+            6.5,
+            8.1,
+            7.7,
+            8.4,
+            5.5
+          ],
+          "story": "assists",
+          "line": "Jesse T. kept creating: 5 goals came from this card."
+        },
+        {
+          "name": "Chris D.",
+          "trialist": false,
+          "inGoal": true,
+          "archetype": "All-rounder",
+          "ovr": 32,
+          "rarity": "common",
+          "rating": 7.1,
+          "matchRatings": [
+            6.5,
+            7.4,
+            7.8,
+            7.1,
+            6.7
+          ],
+          "story": "shootout_save",
+          "line": "Chris D. guessed right from the spot when it counted."
+        },
+        {
+          "name": "Niels's first trialist",
+          "trialist": true,
+          "inGoal": false,
+          "archetype": "All-rounder",
+          "ovr": 30,
+          "rarity": null,
+          "rating": 7.6,
+          "matchRatings": [
+            7.8,
+            9.9,
+            6.3,
+            8.8,
+            5.4
+          ],
+          "story": "hat_trick",
+          "line": "A night to frame for Niels's first trialist: 4 goals."
+        },
+        {
+          "name": "Niels's second trialist",
+          "trialist": true,
+          "inGoal": false,
+          "archetype": "All-rounder",
+          "ovr": 30,
+          "rarity": null,
+          "rating": 7.2,
+          "matchRatings": [
+            7.9,
+            6.7,
+            9.1,
+            6.8,
+            5.4
+          ],
+          "story": "hat_trick",
+          "line": "Niels's second trialist scored 3 on the night. Nobody else came close."
+        }
+      ]
+    },
+    {
+      "manager": "Emma",
+      "auto": true,
+      "finish": "out in round 2",
+      "matches": [
+        {
+          "round": 2,
+          "opponent": "Joris",
+          "goals": [
+            0,
+            4
+          ],
+          "penalties": null,
+          "won": false
+        }
+      ],
+      "five": [
+        {
+          "name": "Carmen P.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "All-rounder",
+          "ovr": 35,
+          "rarity": "common",
+          "rating": 5.3,
+          "matchRatings": [
+            5.3
+          ],
+          "story": "quiet",
+          "line": "Carmen P. stayed patient all night."
+        },
+        {
+          "name": "Lotte S.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "All-rounder",
+          "ovr": 44,
+          "rarity": "bronze",
+          "rating": 5.3,
+          "matchRatings": [
+            5.3
+          ],
+          "story": "quiet",
+          "line": "Next week could be Lotte S.'s week."
+        },
+        {
+          "name": "Mo A.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "All-rounder",
+          "ovr": 40,
+          "rarity": "bronze",
+          "rating": 5.7,
+          "matchRatings": [
+            5.7
+          ],
+          "story": "block",
+          "line": "One timely block from Mo A."
+        },
+        {
+          "name": "Quinten Z.",
+          "trialist": false,
+          "inGoal": true,
+          "archetype": "Defender",
+          "ovr": 37,
+          "rarity": "common",
+          "rating": 6.4,
+          "matchRatings": [
+            6.4
+          ],
+          "story": "keeper_wall",
+          "line": "Quinten Z. stood firm in goal with 3 saves."
+        },
+        {
+          "name": "Umut C.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "All-rounder",
+          "ovr": 30,
+          "rarity": "common",
+          "rating": 5.2,
+          "matchRatings": [
+            5.2
+          ],
+          "story": "quiet",
+          "line": "Few chances came near Umut C. this time."
+        }
+      ]
+    },
+    {
+      "manager": "Bart",
+      "auto": false,
+      "finish": "out in the quarter-finals",
+      "matches": [
+        {
+          "round": 2,
+          "opponent": "Fleur",
+          "goals": [
+            1,
+            1
+          ],
+          "penalties": [
+            4,
+            2
+          ],
+          "won": true
+        },
+        {
+          "round": 3,
+          "opponent": "Stijn",
+          "goals": [
+            2,
+            2
+          ],
+          "penalties": [
+            3,
+            4
+          ],
+          "won": false
+        }
+      ],
+      "five": [
+        {
+          "name": "Olaf G.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "Speedster",
+          "ovr": 62,
+          "rarity": "gold",
+          "rating": 7.3,
+          "matchRatings": [
+            7.2,
+            7.4
+          ],
+          "story": "goal",
+          "line": "Olaf G. scored. Job done."
+        },
+        {
+          "name": "Yara Q.",
+          "trialist": false,
+          "inGoal": true,
+          "archetype": "Goalkeeper",
+          "ovr": 54,
+          "rarity": "silver",
+          "rating": 7.5,
+          "matchRatings": [
+            7.3,
+            7.6
+          ],
+          "story": "shootout_save",
+          "line": "Penalties are a lottery, unless Yara Q. is in goal."
+        },
+        {
+          "name": "Kees R.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "Finisher",
+          "ovr": 47,
+          "rarity": "bronze",
+          "rating": 6.9,
+          "matchRatings": [
+            7.3,
+            6.5
+          ],
+          "story": "assists",
+          "line": "Provider in chief: Kees R. laid on 2 goals."
+        },
+        {
+          "name": "Zeger X.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "All-rounder",
+          "ovr": 43,
+          "rarity": "bronze",
+          "rating": 6.8,
+          "matchRatings": [
+            7.9,
+            5.6
+          ],
+          "story": "goal",
+          "line": "Zeger X. put one away."
+        },
+        {
+          "name": "Dirk S.",
+          "trialist": false,
+          "inGoal": false,
+          "archetype": "All-rounder",
+          "ovr": 40,
+          "rarity": "bronze",
+          "rating": 7.1,
+          "matchRatings": [
+            7,
+            7.2
+          ],
+          "story": "goal",
+          "line": "One goal for Dirk S., and a good one to have."
+        }
+      ]
+    }
+  ]
+}

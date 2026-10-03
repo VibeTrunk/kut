@@ -1997,7 +1997,11 @@ pay_R = 250 − Σ pay_r (r < R)                the final absorbs the rounding
   to 5 rounds, so a night's predictions pay at most 30. They are paid with the
   wins, once per (week, member), and the result message adds "You called 2 of
   3 right: +20 KUT Coins." At 22 entrants that adds about 9 coins per member a
-  week, and no member's night ever passes the champion's total.
+  week, and no member's night ever passes the champion's total. **On screen
+  a prediction is a call** (DR3): members who are out call the winners on
+  `/midweek`, a tap saving, changing or clearing a pick; the bracket only
+  shows calls; once paid, the champion view counts calls with wins and the
+  week's bracket keeps the member's calls.
 
 ### 44.8 Determinism, fairness and controls
 

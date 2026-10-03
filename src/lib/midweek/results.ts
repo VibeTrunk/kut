@@ -1,4 +1,5 @@
 import { resolvePhotoUrls } from "@/lib/player-photos";
+import type { MyPredictionRewardRow, MyPredictionRow, PredictionSplitRow } from "./calls";
 import type { createClient } from "@/lib/supabase/server";
 import type { MidweekTournament, MyRewardRow } from "./entry";
 import { maskInPlay } from "./live";
@@ -115,6 +116,44 @@ export async function loadNightRatings(
     entries: results.entries,
     photoUrls,
   });
+}
+
+/**
+ * Calls for one week (ADR-118): the caller's own picks, the club's splits from
+ * each kick-off, and the caller's prediction coins once paid. Tolerant: a
+ * failed read (or a database without the views) reads as no calls, so the
+ * evening never fails over them.
+ */
+export async function loadCalls(
+  supabase: SupabaseServerClient,
+  tournamentId: string,
+): Promise<{
+  predictions: MyPredictionRow[];
+  splits: PredictionSplitRow[];
+  reward: MyPredictionRewardRow | null;
+}> {
+  const [predictions, splits, rewards] = await Promise.all([
+    supabase
+      .schema("kut")
+      .from("my_midweek_predictions")
+      .select("*")
+      .eq("tournament_id", tournamentId),
+    supabase
+      .schema("kut")
+      .from("midweek_prediction_splits_public")
+      .select("*")
+      .eq("tournament_id", tournamentId),
+    supabase
+      .schema("kut")
+      .from("my_midweek_prediction_rewards")
+      .select("*")
+      .eq("tournament_id", tournamentId),
+  ]);
+  return {
+    predictions: predictions.error ? [] : ((predictions.data ?? []) as MyPredictionRow[]),
+    splits: splits.error ? [] : ((splits.data ?? []) as PredictionSplitRow[]),
+    reward: rewards.error ? null : (((rewards.data ?? [])[0] as MyPredictionRewardRow) ?? null),
+  };
 }
 
 export async function loadMyRewards(

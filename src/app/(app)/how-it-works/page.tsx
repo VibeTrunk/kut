@@ -4,7 +4,7 @@ import { GAME_CONFIG } from "@/game/config";
 import { ECONOMY } from "@/game/economy";
 import { bracketShape } from "@/game/midweek/bracket";
 import { MIDWEEK, PPM } from "@/game/midweek/config";
-import { roundPayouts } from "@/game/midweek/rewards";
+import { PREDICTION_COINS_CAP, predictionCoins, roundPayouts } from "@/game/midweek/rewards";
 import { GOALS_ASSISTS_CUTOVER } from "@/game/reported-count";
 import {
   ARCHETYPE_OFFSETS,
@@ -582,6 +582,22 @@ export default async function HowItWorksPage() {
             Your five&rsquo;s ratings are on the champion page until Thursday night and on that
             week&rsquo;s bracket for good. Every match report shows each card&rsquo;s rating for
             that match.
+          </p>
+          <h3 className="scroll-mt-6 pt-2 font-black text-ink" id="midweek-calls">
+            Calls, once you&rsquo;re out
+          </h3>
+          <p>
+            Once your own match is lost, you can call the winners of the matches still to come, on
+            the Midweek page. A match opens once both matches before it have ended and closes at its
+            kick-off. Until then, tap a name to call it, the other name to change it, or the same
+            name again to clear it.
+          </p>
+          <p>
+            Every call that comes true pays {predictionCoins(5)} KUT Coins with up to 32 entrants,{" "}
+            {predictionCoins(4)} with up to 16, {predictionCoins(3)} with up to 8 and{" "}
+            {predictionCoins(2)} with 4, so a night&rsquo;s calls pay at most {PREDICTION_COINS_CAP}
+            . They&rsquo;re paid with your wins after the final. From kick-off everyone sees how the
+            club split on a match, never who picked whom.
           </p>
           <h3 className="pt-2 font-black text-ink">What other members see</h3>
           <p className="rounded-xl bg-steel-bg/60 p-3 text-sm font-semibold text-steel">

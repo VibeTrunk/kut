@@ -77,6 +77,21 @@ async function takeBackPayouts(database: Client, weeks: string[]) {
   await database.query("delete from kut.wallet_ledger where id = any($1::uuid[])", [
     paid.rows.map((row) => row.ledger_id),
   ]);
+  // Calls that came true (ADR-118): one guarded row per (week, member).
+  await database.query(
+    `update kut.wallets wallet set balance = wallet.balance - paid.total, updated_at = now()
+     from (select user_id, sum(amount) as total from kut.midweek_prediction_rewards
+           where tournament_id = any($1::uuid[]) group by user_id) paid
+     where wallet.user_id = paid.user_id`,
+    [weeks],
+  );
+  const called = await database.query<{ ledger_id: string }>(
+    "delete from kut.midweek_prediction_rewards where tournament_id = any($1::uuid[]) returning ledger_id",
+    [weeks],
+  );
+  await database.query("delete from kut.wallet_ledger where id = any($1::uuid[])", [
+    called.rows.map((row) => row.ledger_id),
+  ]);
 }
 
 export async function removeMidweekFixture(database: Client) {

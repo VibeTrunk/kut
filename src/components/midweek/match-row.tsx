@@ -3,6 +3,35 @@ import { formatClock } from "@/lib/midweek/entry";
 import { pairSentence, sideScore, type BracketPair, type BracketSlot } from "@/lib/midweek/evening";
 import { Chip, LiveMarker } from "./chip";
 
+/** A call on a bracket row (DR3 HANDOFF §2): the bracket shows calls, it never takes them. */
+export type RowCall = { kind: "picked"; name: string } | { kind: "open" };
+
+function CallChip({ call, dense }: { call: RowCall; dense: boolean }) {
+  return (
+    <p
+      className={`flex flex-wrap items-center gap-x-2 gap-y-1 ${dense ? "pb-1 pl-2" : "pb-2.5 pl-3"}`}
+    >
+      <span
+        className={`inline-flex items-center rounded-full border px-2 py-px text-[10.5px] font-black tracking-[0.06em] whitespace-nowrap uppercase ${
+          call.kind === "picked"
+            ? "border-brass-line bg-brass-bg text-brass"
+            : "border-dashed border-line text-ink-dim"
+        }`}
+      >
+        {call.kind === "picked" ? `✓ Your call: ${call.name}` : "Open to call"}
+      </span>
+      {call.kind === "open" && (
+        <Link
+          className="text-xs font-bold whitespace-nowrap text-brass hover:underline"
+          href="/midweek#calls"
+        >
+          Call it &rarr;
+        </Link>
+      )}
+    </p>
+  );
+}
+
 function Side({
   slot,
   you,
@@ -54,18 +83,21 @@ function Side({
  * `In play · result at full time` for every other match, with no score
  * (ADR-115); `Full time` with both scores, the winner ticked and a link to the
  * report; a bye as one dashed row that counts as a win. Each row is a group
- * with one full sentence as its name; `dense` is the desktop tree's box.
+ * with one full sentence as its name; `dense` is the desktop tree's box. For a
+ * member who is out, a later match carries their call, read-only (ADR-118).
  */
 export function MidweekMatchRow({
   pair,
   you,
   weekStart,
   dense = false,
+  call = null,
 }: {
   pair: BracketPair;
   you: string | null;
   weekStart: string;
   dense?: boolean;
+  call?: RowCall | null;
 }) {
   const mine = (slot: BracketSlot) => !slot.placeholder && you !== null && slot.userId === you;
   const isYou = pair.sides.some(mine);
@@ -158,11 +190,14 @@ export function MidweekMatchRow({
       className={`grid grid-cols-[minmax(0,1fr)_auto] items-stretch gap-x-2 overflow-hidden rounded-xl border ${frame}`}
       role="group"
     >
-      <div
-        aria-hidden="true"
-        className={`grid min-w-0 content-center gap-1 ${dense ? "py-1 pl-2 text-[12.5px] leading-[1.45]" : "py-2.5 pl-3 text-sm"}`}
-      >
-        {sides}
+      <div className="grid min-w-0 content-center">
+        <div
+          aria-hidden="true"
+          className={`grid min-w-0 content-center gap-1 ${dense ? "py-1 pl-2 text-[12.5px] leading-[1.45]" : "py-2.5 pl-3 text-sm"}`}
+        >
+          {sides}
+        </div>
+        {call && <CallChip call={call} dense={dense} />}
       </div>
       {state}
     </div>

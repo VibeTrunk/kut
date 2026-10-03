@@ -10,7 +10,9 @@ import { MidweekMatchRow } from "@/components/midweek/match-row";
 import { MidweekMiniCard } from "@/components/midweek/mini-card";
 import { MIDWEEK_PAGE, MidweekPageHead, MidweekSectionHead } from "@/components/midweek/page-head";
 import { MidweekPath } from "@/components/midweek/path";
+import { MidweekWeeklyCalls } from "@/components/midweek/calls-list";
 import { MidweekPlaceholder } from "@/components/midweek/placeholder";
+import { MidweekPredictions } from "@/components/midweek/predictions";
 import { MidweekRatingList } from "@/components/midweek/rating-list";
 import {
   MidweekLaneTimeline,
@@ -19,9 +21,11 @@ import {
 } from "@/components/midweek/report";
 import { MidweekSeed } from "@/components/midweek/seed";
 import { MIDWEEK } from "@/game/midweek/config";
+import { predictionCoins } from "@/game/midweek/rewards";
 import { seedHash } from "@/game/midweek/rng";
 import { roundStartAt } from "@/game/midweek/schedule";
 import { fetchInjuredPlayerIds } from "@/lib/injuries";
+import { callCards, weeklyCallsLine } from "@/lib/midweek/calls";
 import { toLiveCardPlayer, type OwnedCardRow } from "@/lib/live-card-player";
 import {
   allStillOwned,
@@ -56,7 +60,7 @@ import {
   type BracketRound,
 } from "@/lib/midweek/evening";
 import { loadLiveMatch, type LiveMatch } from "@/lib/midweek/live-load";
-import { loadMyRewards, loadNightRatings, loadWeekResults } from "@/lib/midweek/results";
+import { loadCalls, loadMyRewards, loadNightRatings, loadWeekResults } from "@/lib/midweek/results";
 import type { MatchRow } from "@/lib/midweek/rows";
 import { resolvePhotoUrls } from "@/lib/player-photos";
 import type { createClient } from "@/lib/supabase/server";
@@ -282,6 +286,24 @@ export async function WeekEvening({
       pair.kind === "inplay" &&
       (phase.kind === "final" || pair.sides.some((side) => side.userId === userId)),
   );
+  // Calls, once the member is out (ADR-118): every later match they are not in.
+  const out = night.rows.some((row) => row.kind === "out");
+  const calls = out ? await loadCalls(supabase, current.tournament_id as string) : null;
+  const cards = calls
+    ? callCards({ bracket, night, predictions: calls.predictions, splits: calls.splits, now })
+    : null;
+  const callBlock = (foot: boolean) =>
+    cards && (
+      <MidweekPredictions
+        cards={cards}
+        coins={predictionCoins(rounds)}
+        foot={foot}
+        rounds={rounds}
+        tournamentId={current.tournament_id as string}
+      />
+    );
+  const callsPending = cards?.some((card) => card.pick !== null && card.state !== "ended") ?? false;
+
   const live =
     watched?.kind === "inplay"
       ? await loadLiveMatch(supabase, {
@@ -403,9 +425,14 @@ export async function WeekEvening({
             )}
           </section>
         )}
+        {callBlock(false)}
         <p className={`${PANEL} text-sm text-ink-dim`}>
           The champion is named and coins are paid when the final ends.
-          {night.entered ? ` You: +${night.coins} so far.` : ""}
+          {night.entered
+            ? callsPending
+              ? ` You: +${night.coins} so far, and ${predictionCoins(rounds)} for each call that comes true.`
+              : ` You: +${night.coins} so far.`
+            : ""}
         </p>
         {rounds > 1 && (
           <RoundSection link round={bracket[rounds - 2]} userId={userId} weekStart={weekStart} />
@@ -430,10 +457,7 @@ export async function WeekEvening({
           <div className="grid gap-7 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)] lg:items-start lg:gap-10">
             {yourNight}
             <div className="grid content-start gap-3.5">
-              <MidweekPlaceholder
-                name="Something to follow after a knockout"
-                note="A prediction, a consolation bracket or a season table. Its card goes here once you choose one."
-              />
+              {callBlock(true)}
               <section
                 aria-labelledby="final-card-h"
                 className="grid gap-2 rounded-2xl border border-brass/50 bg-brass-bg/30 p-4 sm:px-6 sm:py-5"
@@ -690,9 +714,10 @@ export async function WeekComplete({
   now: Date;
 }) {
   const rounds = tournament.rounds as number;
-  const [results, rewards] = await Promise.all([
+  const [results, rewards, calls] = await Promise.all([
     loadWeekResults(supabase, tournament.tournament_id),
     loadMyRewards(supabase, tournament.tournament_id),
+    loadCalls(supabase, tournament.tournament_id),
   ]);
   const championId = tournament.champion_user_id ?? null;
   const championCards = results.entries
@@ -712,6 +737,12 @@ export async function WeekComplete({
   });
   const finish = finishStat(night, rounds);
   const coins = rewards.reduce((sum, row) => sum + Number(row.amount), 0);
+  // Calls (ADR-118): counted from the member's own picks, since a member with
+  // none right has no reward row; the coins from the row once paid.
+  const picks = calls.predictions.length;
+  const right = calls.predictions.filter((row) => row.correct === true).length;
+  const perCall = predictionCoins(rounds);
+  const callCoins = calls.reward ? Number(calls.reward.amount) : right * perCall;
   const field = fieldCounts(results.entries);
   const totals = nightTotals(results.matches, rounds);
   const seed = tournament.seed ?? null;
@@ -765,7 +796,13 @@ export async function WeekComplete({
         </section>
 
         <dl className="grid grid-cols-2 overflow-hidden rounded-2xl border border-line/60 bg-gradient-to-b from-panel-2/70 to-panel/70 sm:grid-cols-4 [&>div]:px-4 [&>div]:py-3.5 max-sm:[&>div:nth-child(n+3)]:border-t max-sm:[&>div:nth-child(even)]:border-l sm:[&>div+div]:border-l [&>div]:border-line/50">
-          <Stat label="You" note="paid to your wallet" tone="brass" value={`+${coins}`} />
+          <Stat
+            label="You"
+            note={picks > 0 ? `${coins} for wins, ${callCoins} for calls` : "paid to your wallet"}
+            tone="brass"
+            unit="KUT"
+            value={`+${coins + callCoins}`}
+          />
           <Stat label="Your finish" note={finish.note} value={finish.value} />
           <Stat
             label="Entrants"
@@ -793,6 +830,12 @@ export async function WeekComplete({
             />
           ) : (
             <p className="text-sm text-ink-dim">You weren&rsquo;t in this one.</p>
+          )}
+          {picks > 0 && (
+            <MidweekWeeklyCalls
+              href={`/midweek/${tournament.week_start}#calls`}
+              line={weeklyCallsLine(right, picks, perCall)}
+            />
           )}
         </section>
 
@@ -844,11 +887,14 @@ function Stat({
   value,
   note,
   tone,
+  unit,
 }: {
   label: string;
   value: string;
   note: string;
   tone?: "brass";
+  /** A small unit after the value: `+54 KUT` (DR3, round 2). */
+  unit?: string;
 }) {
   return (
     <div>
@@ -859,6 +905,7 @@ function Stat({
         className={`mt-1 text-[26px] font-black tracking-[-0.01em] tabular-nums ${tone === "brass" ? "text-brass" : ""}`}
       >
         {value}
+        {unit && <span className="ml-1 text-sm font-extrabold tracking-normal">{unit}</span>}
         <small className="block text-xs font-bold tracking-normal text-ink-faint">{note}</small>
       </dd>
     </div>

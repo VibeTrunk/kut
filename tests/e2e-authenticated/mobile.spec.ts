@@ -258,6 +258,51 @@ test.describe("Midweek Madness entry (PR 7)", () => {
     await expectNoHorizontalOverflow(page);
   });
 
+  test("the plusses count follows the five: no count without a Goalkeeper, a short line and its factor, then balanced", async ({
+    page,
+  }) => {
+    const add = (name: string) =>
+      page.getByRole("button", { name: new RegExp(`${PICK_BUTTON.source}${name}`) }).click();
+    await signIn(page, "release_member");
+    await page.goto("/midweek");
+    // Each phone row shows its card's plusses, from the engine's table.
+    await expect(
+      page.getByText("Plusses: attack 3, midfield 1, defence 0").filter({ visible: true }),
+    ).toHaveCount(1);
+
+    const lines = page.getByRole("region", { name: "Plusses per line" });
+    for (const name of ["Striker Fixture", "Winger Fixture", "Engine Fixture"]) await add(name);
+    await expect(lines.getByText(/^Add a Goalkeeper to see your count\./)).toBeVisible();
+    await expect(page.getByText("No Goalkeeper yet, so no line count")).toBeVisible();
+    await expectNoHorizontalOverflow(page);
+
+    // With the Goalkeeper in goal, the empty slot plays as a trialist (1/1/1).
+    await add("Keeper Fixture");
+    await expect(lines.getByRole("group")).toHaveAccessibleName(
+      "Attack 7 of 3, enough; Midfield 7 of 3, enough; Defence 1 of 3, 2 short",
+    );
+    await expect(
+      lines.getByText("2 plusses short, so your whole five plays at ×0.77 this week."),
+    ).toBeVisible();
+    await expect(lines.getByText("Keeper Fixture goes in goal and isn’t counted.")).toBeVisible();
+    await expect(page.getByText("! Defence 2 short · ×0.77")).toBeVisible();
+    await expectNoHorizontalOverflow(page);
+
+    await add("Wall Fixture");
+    await expect(lines.getByText("Every line has 3 or more, so no penalty.")).toBeVisible();
+    await expect(page.getByText("✓ Lines balanced")).toBeVisible();
+    await expect(lines.getByRole("link", { name: "How plusses work →" })).toHaveAttribute(
+      "href",
+      "/how-it-works#midweek-shape",
+    );
+
+    // From sm the save bar is inline and its second row is hidden; the count stays.
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await expect(page.getByText("✓ Lines balanced")).toBeHidden();
+    await expect(lines).toBeVisible();
+    await expectNoHorizontalOverflow(page);
+  });
+
   test("the settings opt-out toggles, and the picker offers the way back", async ({ page }) => {
     await signIn(page, "release_member");
     await page.goto("/settings");
@@ -826,25 +871,46 @@ test.describe("Midweek Madness calls (D, ADR-118)", () => {
     await resetMidweek("release_member");
     let weekStart = "";
     let rounds = 0;
-    let out = null as { username: string; round: number } | null;
+    let out = null as { login: string; round: number } | null;
     await withDatabase(async (database) => {
       ({ weekStart, rounds } = await startFixtureEvening(database));
-      // Whichever fixture account goes out first, before the final.
-      const lost = await database.query<{ username: string; round: number }>(
-        `select p.username, min(m.round)::int as round from kut.midweek_matches m
+      // Whoever goes out first before the final, a release account if one does.
+      // The field is the local stack's, so it can be a fixture member: then it
+      // gets the release password for this test (local rows the teardown deletes).
+      const lost = await database.query<{ id: string; username: string | null; round: number }>(
+        `select p.id, p.username, min(m.round)::int as round from kut.midweek_matches m
          join kut.midweek_tournaments t on t.id = m.tournament_id
          join kut.profiles p on p.id in (m.side_0_user_id, m.side_1_user_id)
          where t.week_start = $1 and not m.bye and m.winner_user_id <> p.id
-           and p.username in ('release_member', 'release_admin')
-         group by p.username order by 2 limit 1`,
-        [weekStart],
+           and (p.username in ('release_member', 'release_admin') or p.id::text like '00000097-%')
+         group by p.id, p.username
+         having min(m.round) < $2
+         order by (p.username is null), 3, p.username
+         limit 1`,
+        [weekStart, rounds],
       );
-      out = lost.rows[0] ?? null;
+      const row = lost.rows[0];
+      if (!row) return;
+      if (!row.username) {
+        const email = await database.query<{ email: string }>(
+          `update auth.users set encrypted_password = extensions.crypt($2, extensions.gen_salt('bf')),
+             email_confirmed_at = coalesce(email_confirmed_at, now()),
+             instance_id = '00000000-0000-0000-0000-000000000000',
+             confirmation_token = '', recovery_token = '', email_change_token_new = '', email_change = ''
+           where id = $1 returning email`,
+          [row.id, "fictional-release-password"],
+        );
+        out = { login: email.rows[0].email, round: row.round };
+      } else out = { login: row.username, round: row.round };
       // A minute before the next round kicks off: every match before it has ended.
-      if (out && out.round < rounds) await advanceFixtureEvening(database, 3 + 15 * out.round);
+      await advanceFixtureEvening(database, 3 + 15 * row.round);
     });
-    test.skip(!out || out.round >= rounds, "No fixture account goes out before the final.");
-    await signIn(page, out!.username);
+    test.skip(!out, "Nobody in the fixture goes out before the final.");
+    await page.goto("/login");
+    await page.getByLabel("Username").fill(out!.login);
+    await page.getByLabel("Password").fill("fictional-release-password");
+    await page.getByRole("button", { name: "Sign in" }).click();
+    await expect(page).toHaveURL(/\/$/);
 
     await page.goto("/midweek");
     const block = page.getByRole("region", { name: "Call the winners" });

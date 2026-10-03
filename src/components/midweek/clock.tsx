@@ -9,7 +9,7 @@ import {
 const STOP_DOT: Record<StopState, string> = {
   locked: "border-[1.5px] border-steel bg-steel-bg",
   played: "border-[1.5px] border-brass bg-brass",
-  live: "border-[2.5px] border-live bg-team-red-bg shadow-[0_0_0_4px_rgb(255_128_145/18%)]",
+  live: "border-[2.5px] border-live bg-live-bg shadow-[0_0_0_4px_rgb(255_128_145/18%)]",
   next: "border-2 border-brass bg-board-deep",
   later: "border-[1.5px] border-dashed border-ink-faint bg-board-deep",
 };

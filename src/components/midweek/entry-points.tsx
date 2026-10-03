@@ -96,7 +96,7 @@ export function MidweekLiveCard({
 }) {
   return (
     <Link
-      className={`group ${NOW_CARD} border-team-red-line bg-[linear-gradient(180deg,rgb(51_20_25/55%),rgb(33_28_21/60%))] hover:border-live`}
+      className={`group ${NOW_CARD} border-live-line bg-[linear-gradient(180deg,color-mix(in_srgb,var(--color-live-bg)_55%,transparent),rgb(33_28_21/60%))] hover:border-live`}
       href={button.href}
     >
       <span className="flex flex-wrap items-center justify-between gap-x-2.5 gap-y-1">

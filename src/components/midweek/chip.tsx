@@ -34,7 +34,7 @@ export function Chip({ tone = "neutral", children }: { tone?: ChipTone; children
  */
 export function LiveMarker({ children = "Live" }: { children?: ReactNode }) {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-team-red-line bg-team-red-bg px-[9px] py-0.5 text-[10.5px] font-black tracking-[0.1em] whitespace-nowrap text-live uppercase">
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-live-line bg-live-bg px-[9px] py-0.5 text-[10.5px] font-black tracking-[0.1em] whitespace-nowrap text-live uppercase">
       <span
         aria-hidden="true"
         className="h-[7px] w-[7px] rounded-full bg-live shadow-[0_0_0_3px_rgb(255_128_145/25%)] motion-safe:animate-pulse"

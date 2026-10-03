@@ -1,8 +1,10 @@
+import { resolvePhotoUrls } from "@/lib/player-photos";
 import type { createClient } from "@/lib/supabase/server";
 import type { MidweekTournament, MyRewardRow } from "./entry";
 import { maskInPlay } from "./live";
 import { loadMatchEnds } from "./live-load";
-import type { DrawRow, EntryCardRow, MatchRow, PickShareRow } from "./rows";
+import { nightRatings, playedMatches, type NightRatings } from "./night-ratings";
+import type { DrawRow, EntryCardRow, EventRow, MatchRow, PickShareRow } from "./rows";
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
 
@@ -69,6 +71,50 @@ export async function loadWeekResults(
     matches: maskInPlay((matches.data ?? []) as MatchRow[], ends, now),
     entries: (entries.data ?? []) as EntryCardRow[],
   };
+}
+
+/**
+ * A member's night ratings once the week is complete (DR3 HANDOFF §1): the
+ * events of their own matches in one query, never one call per match, and the
+ * photos of their five. Null when they weren't entered, or before the week is
+ * complete, when a rating can't be known yet (ADR-117).
+ */
+export async function loadNightRatings(
+  supabase: SupabaseServerClient,
+  tournament: Pick<MidweekTournament, "status" | "rounds" | "seed_hash" | "week_start">,
+  results: { matches: readonly MatchRow[]; entries: readonly EntryCardRow[] },
+  userId: string,
+): Promise<NightRatings | null> {
+  if (tournament.status !== "complete" || !tournament.rounds) return null;
+  const own = results.entries.filter((row) => row.user_id === userId);
+  const played = playedMatches(results.matches, userId);
+  if (own.length === 0 || played.length === 0) return null;
+  const [events, photoUrls] = await Promise.all([
+    supabase
+      .schema("kut")
+      .from("midweek_events_public")
+      .select("*")
+      .in(
+        "match_id",
+        played.map(({ match }) => match.match_id),
+      )
+      .order("seq"),
+    resolvePhotoUrls(
+      supabase,
+      own.map((row) => row.photo_path),
+    ),
+  ]);
+  if (events.error) throw new Error("Could not load your five's ratings.");
+  return nightRatings({
+    seedHash: tournament.seed_hash ?? "",
+    userId,
+    rounds: tournament.rounds,
+    weekStart: tournament.week_start,
+    matches: results.matches,
+    events: (events.data ?? []) as EventRow[],
+    entries: results.entries,
+    photoUrls,
+  });
 }
 
 export async function loadMyRewards(

@@ -4689,3 +4689,27 @@ Verification: `npm run verify:fast` (446 tests); the authenticated E2E (49 passe
 expected skip), whose match-report checks now read the computed violet and
 teal names and fills and the strip at 320, 412 and 1440 px, and Home's live
 card on the Live tokens.
+
+## MM 2.0 F7 pages: card ratings on the champion view, the bracket and each report — 2026-10-03
+
+`feat/midweek-ratings-pages`, ADR-117 amended. No migration. Built to the
+DR3 mockups `Evening-Champion`, `Bracket-Complete` and `Match-Rated`.
+
+- **`MidweekRatingList`:** `Your five's ratings`, best first with `★ Best of
+  your five`, neutral discs, the line, and `Show each match` chips that link
+  to each report. On the champion view (closed) in place of the placeholder,
+  and on the complete bracket (open) with a `Your ratings` jump link.
+- **`MidweekWhyList`:** a rating column with its key and foot sentence, on
+  every report of a complete week.
+- **Data:** `loadNightRatings` reads the member's own matches' events in one
+  query; `nightRatings` is a pure function of the rows, unit-tested against
+  `rateNight` over the golden tournaments (the stored-row builders moved to
+  `tests/support/midweek-stored-rows.ts`).
+- **Copy:** how-it-works §12 "Ratings".
+
+Verification: `npm run verify:fast` (444 tests, 6 new for `nightRatings`); the
+authenticated E2E (53 passed, 1 expected skip): the complete bracket's ratings
+(open, a `Your ratings` jump link, five night discs, one best chip, chips per
+match) at 320 and 412 px and in a row of five at 1440, a chip opening its rated
+report (ten discs, the key, the foot sentence), the how-it-works anchor, and the
+champion view's block closed until `Show each match`; every no-overflow check.

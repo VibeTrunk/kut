@@ -4,9 +4,11 @@ import { useEffect, useId, useState } from "react";
 import { archetypeLabel } from "@/game/archetypes";
 import { MIDWEEK, PPM } from "@/game/midweek/config";
 import { handicapText } from "@/lib/midweek/evening";
+import { RATING } from "@/lib/midweek/report/rating-rule";
 import type { WhyCard, WhySide } from "@/lib/midweek/report/types";
 import { Chip } from "./chip";
 import { PlayerName } from "./player-name";
+import { MidweekRatingDisc } from "./rating-disc";
 
 /**
  * `MidweekWhyList` (HANDOFF "Matches", DR1-5, DR2-3, DR2-6..8): the odds before
@@ -15,6 +17,9 @@ import { PlayerName } from "./player-name";
  * factor boxes under every card, and each box's label explains itself on
  * hover, tap or focus. No tables, so nothing scrolls sideways at any width;
  * bars are SVG with `width` attributes because the CSP blocks inline styles.
+ * Once the week is complete each card also shows its rating for this match
+ * (DR3 HANDOFF §1, ADR-117): an untinted disc on the right, apart from the
+ * Power pill on the left in shape, side, range and colour.
  */
 
 /** A card's power in this match: the week's power, fixed at the lock, times this match's Day roll. */
@@ -172,6 +177,7 @@ function FactorStrip({
 function CardRow({
   card,
   side,
+  rating,
   open,
   tipKey,
   tips,
@@ -179,6 +185,8 @@ function CardRow({
 }: {
   card: WhyCard;
   side: 0 | 1;
+  /** This match's rating, once the week is complete. */
+  rating: number | null;
   open: boolean;
   tipKey: string;
   tips: Tips;
@@ -195,7 +203,9 @@ function CardRow({
     card.assists > 0 && plural(card.assists, "assist"),
   ].filter(Boolean);
   return (
-    <li className="grid grid-cols-[3.4rem_minmax(0,1fr)] items-center gap-x-2.5 gap-y-[5px] border-b border-line/35 py-[7px]">
+    <li
+      className={`grid items-center gap-x-2.5 gap-y-[5px] border-b border-line/35 py-[7px] ${rating === null ? "grid-cols-[3.4rem_minmax(0,1fr)]" : "grid-cols-[3.4rem_minmax(0,1fr)_auto]"}`}
+    >
       <p
         className={`row-span-2 grid h-full min-h-[34px] place-items-center rounded-[9px] border text-[17px] font-black tabular-nums ${band.pill}`}
       >
@@ -226,6 +236,11 @@ function CardRow({
         <rect className={band.bar} height="6" rx="3" width={powerBarWidth(power)} />
         <rect className="fill-ink-dim" height="6" width="0.8" x="49.6" />
       </svg>
+      {rating !== null && (
+        <span className="col-start-3 row-span-2 row-start-1 self-center">
+          <MidweekRatingDisc context="for this match" rating={rating} size="sm" />
+        </span>
+      )}
       {open && <FactorStrip card={card} setTips={setTips} tipKey={tipKey} tips={tips} />}
     </li>
   );
@@ -234,10 +249,13 @@ function CardRow({
 export function MidweekWhyList({
   why,
   beforeFullTime = false,
+  ratings = null,
 }: {
   why: readonly [WhySide, WhySide];
   /** A match in play: its goals and assists are left out until full time (ADR-115). */
   beforeFullTime?: boolean;
+  /** Each card's rating for this match by side and slot, once the week is complete (ADR-117). */
+  ratings?: readonly [readonly number[], readonly number[]] | null;
 }) {
   const [open, setOpen] = useState(false);
   const [tips, setTips] = useState<Tips>({ open: null, hover: null, dismissed: null });
@@ -260,6 +278,29 @@ export function MidweekWhyList({
       <h2 className="display text-3xl" id="why-h">
         Why
       </h2>
+      {ratings && (
+        <dl className="grid gap-2 text-[13px] text-ink-dim">
+          <div className="flex items-center gap-2.5">
+            <dt className="grid h-[26px] w-[42px] flex-none place-items-center rounded-[7px] border border-[#3c5230] bg-[#1c2416] text-xs font-black text-[#8bbd6c] tabular-nums">
+              <span aria-hidden="true">1.19</span>
+              <span className="sr-only">Power</span>
+            </dt>
+            <dd>Power: how strong a card was going in</dd>
+          </div>
+          <div className="flex items-center gap-2.5">
+            <dt className="grid h-[30px] w-[42px] flex-none place-items-center">
+              <span
+                aria-hidden="true"
+                className="grid h-[30px] w-[30px] place-items-center rounded-full border border-ink-dim bg-panel-2 text-[11.5px] font-black text-ink tabular-nums"
+              >
+                7.2
+              </span>
+              <span className="sr-only">Rating</span>
+            </dt>
+            <dd>Rating: how it played, out of 10</dd>
+          </div>
+        </dl>
+      )}
       <div className="grid gap-1.5">
         <p className="text-[10.4px] font-extrabold tracking-[0.15em] text-ink-faint uppercase">
           Chances before kick-off
@@ -300,6 +341,11 @@ export function MidweekWhyList({
                   {line} {short} short
                 </Chip>
               ))}
+              {ratings && (
+                <small className="ml-auto text-[10px] font-black tracking-[0.12em] text-ink-faint uppercase">
+                  Rating
+                </small>
+              )}
             </h3>
             <ul className="grid">
               {side.cards
@@ -310,6 +356,7 @@ export function MidweekWhyList({
                     card={card}
                     key={slot}
                     open={open}
+                    rating={ratings?.[s]?.[slot] ?? null}
                     setTips={setTips}
                     side={s as 0 | 1}
                     tipKey={`${s}:${slot}`}
@@ -338,8 +385,10 @@ export function MidweekWhyList({
         card. Green is stronger than that, amber and orange weaker. It multiplies the card&rsquo;s
         rating, form, pick, fitness and this match&rsquo;s day roll
         {open && "; hover or tap a factor to see what it means"}.
-        {beforeFullTime && " Goals and assists are added at full time."} Who picked whom is on the
-        bracket page after the final.
+        {beforeFullTime && " Goals and assists are added at full time."}
+        {ratings &&
+          ` The circle on the right is how the card played in this match, out of 10, from what it did: every card starts at ${RATING.base}.`}{" "}
+        Who picked whom is on the bracket page after the final.
       </p>
     </section>
   );

@@ -11,6 +11,7 @@ import { MidweekMiniCard } from "@/components/midweek/mini-card";
 import { MIDWEEK_PAGE, MidweekPageHead, MidweekSectionHead } from "@/components/midweek/page-head";
 import { MidweekPath } from "@/components/midweek/path";
 import { MidweekPlaceholder } from "@/components/midweek/placeholder";
+import { MidweekRatingList } from "@/components/midweek/rating-list";
 import {
   MidweekLaneTimeline,
   MidweekScoreboard,
@@ -55,7 +56,7 @@ import {
   type BracketRound,
 } from "@/lib/midweek/evening";
 import { loadLiveMatch, type LiveMatch } from "@/lib/midweek/live-load";
-import { loadMyRewards, loadWeekResults } from "@/lib/midweek/results";
+import { loadMyRewards, loadNightRatings, loadWeekResults } from "@/lib/midweek/results";
 import type { MatchRow } from "@/lib/midweek/rows";
 import { resolvePhotoUrls } from "@/lib/player-photos";
 import type { createClient } from "@/lib/supabase/server";
@@ -671,8 +672,8 @@ async function WeekLocked({
 
 /**
  * Week-Complete: the champion leads, then the member's own result and coins
- * (now paid), the night in numbers, the next week one tap away, and the seed
- * with its check against the seal (§44.8).
+ * (now paid), the night in numbers, their five's ratings (DR3, ADR-117), the
+ * next week one tap away, and the seed with its check against the seal (§44.8).
  */
 export async function WeekComplete({
   supabase,
@@ -716,6 +717,7 @@ export async function WeekComplete({
   const seed = tournament.seed ?? null;
   const seal = tournament.seed_hash ?? "";
   const championName = tournament.champion_name ?? "The champion";
+  const ratings = await loadNightRatings(supabase, tournament, results, userId);
 
   return (
     <main className={MIDWEEK_PAGE}>
@@ -794,10 +796,7 @@ export async function WeekComplete({
           )}
         </section>
 
-        <MidweekPlaceholder
-          name="Your five’s ratings"
-          note="Each card’s 1–10 rating for the night, with a short line. Shape decided with the ratings ADR."
-        />
+        {ratings && <MidweekRatingList defaultOpen={false} ratings={ratings} />}
         <MidweekPlaceholder
           name="Share your night"
           note="An image for the group chat. It must say what it shows beyond the members-only pages (ADR-079)."

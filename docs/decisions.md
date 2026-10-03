@@ -6685,6 +6685,39 @@ season table built on the ratings was considered for "Something to follow
 after a knockout" and not chosen (Q2): Midweek has no season, and a card's
 rating is final once its manager is out.
 
+**Amended 2026-10-03 (F7 pages, built to the owner-approved DR3 mockups,
+`design/mm2-dr3/HANDOFF.md` §1, DR3-4):**
+
+- **Where ratings show,** only once the week is complete (paid): the champion
+  view (until Thursday 23:59, D4) as `Your five's ratings` in place of DR2's
+  placeholder, closed per match; the week's bracket for good, near the top
+  with a `Your ratings` jump link and each match open, which is how the
+  ratings outlive Thursday; and every match report of that week, in the Why
+  list, for both sides. Not before the week is complete, even for a match at
+  full time while the evening runs: a rating needs the whole week's result. A
+  member who wasn't entered sees no block.
+- **A neutral disc** (`MidweekRatingDisc`): `panel-2` fill, an `ink-dim`
+  ring, one decimal, never tinted, so nobody reads it against Power's heat
+  bands (different shape, side, range and colour). Screen readers hear "rated
+  7.5 out of 10 for the night" (or "for this match", "against Eline").
+- **Best first** (ties in slot order), with `★ Best of your five` on the top
+  card and no mark for the lowest. Below `lg` one row per card (mini card,
+  name, archetype and tier, the line in the serif, the disc); from `lg` the
+  five LiveCards in a row with the disc and name under each.
+- **Per-match chips:** one `Show each match` button per block opens a chip
+  per match under every card (`Round 2 v Eline` and the disc), each linking to
+  that report, where the same number is in the Why list. The chips are
+  rendered on the server; the toggle is the block's only client code.
+- **The Why list's rating column:** a 38 px disc on the right of each card,
+  `Rating` at the end of each side's heading, a key above the odds bar (a mini
+  Power pill and a mini disc), and one foot sentence.
+- **One read:** the champion view and the bracket load the events of the
+  member's own matches in one query (`loadNightRatings`); every other row was
+  already loaded. `RATING` moved to `report/rating-rule.ts` so client code can
+  quote it (`ratings.ts` needs `node:crypto`).
+- **How-it-works** gains "Ratings" in §12 (`#midweek-ratings`), which the
+  block's `How ratings work →` opens.
+
 Tier: no migration.
 
 ## ADR-118 — Predictions for members who are out: pick the later matches, coins for the right ones

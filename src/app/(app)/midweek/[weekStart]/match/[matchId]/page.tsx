@@ -22,6 +22,7 @@ import { capitalise, fiveOf, isWeekStart, matchName, roundName } from "@/lib/mid
 import { maskInPlay } from "@/lib/midweek/live";
 import { loadLiveMatch, loadMatchEnds } from "@/lib/midweek/live-load";
 import { reportInputFromRows, renderStoredReport } from "@/lib/midweek/report/from-db";
+import { matchRatings } from "@/lib/midweek/report/ratings";
 import { loadTournamentByWeek } from "@/lib/midweek/results";
 import type { EntryCardRow, EventRow, MatchRow } from "@/lib/midweek/rows";
 import { runDueMidweek } from "@/lib/midweek/run-due";
@@ -37,7 +38,9 @@ export const metadata = { title: "Midweek Madness match report" };
  * from the stored match, its events and both sides' lock-time entries, every
  * name in its side's colour. A match that isn't revealed yet, a bye or a void
  * week has no report. A match in play shows live, or as in play, without its
- * result (`InPlayMatch`, ADR-115).
+ * result (`InPlayMatch`, ADR-115). Once the week is complete, the Why list
+ * adds each card's rating for this match (`Match-Rated`, ADR-117); not
+ * earlier, even at full time, because a rating needs the whole week's result.
  */
 export default async function MidweekReportPage({
   params,
@@ -167,6 +170,10 @@ export default async function MidweekReportPage({
   });
   if (!input) notFound();
   const report = renderStoredReport(input);
+  const ratings =
+    tournament.status === "complete"
+      ? (matchRatings(input).map((side) => side.map((card) => card.rating)) as [number[], number[]])
+      : null;
   const managers: Managers = [input.sides[0].manager, input.sides[1].manager];
   const youSide =
     match.side_0_user_id === user.id ? 0 : match.side_1_user_id === user.id ? 1 : null;
@@ -220,7 +227,7 @@ export default async function MidweekReportPage({
             {report.shootout && <MidweekShootout managers={managers} shootout={report.shootout} />}
           </div>
           <aside className="min-w-0">
-            <MidweekWhyList why={report.why} />
+            <MidweekWhyList ratings={ratings} why={report.why} />
           </aside>
         </div>
       </article>

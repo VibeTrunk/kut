@@ -89,6 +89,31 @@ async function expectTeamColours(page: Page) {
   expect(seen.strip?.width).toBeGreaterThan(seen.board - 4);
 }
 
+/**
+ * The ratings block (F7, ADR-117): five night ratings in neutral discs, one
+ * best chip, `Show each match` opening a chip per match, all inside the screen.
+ */
+async function expectRatings(page: Page, { open }: { open: boolean }) {
+  const block = page.getByRole("region", { name: "Your five’s ratings" });
+  await expect(block).toBeVisible();
+  await expect(block.getByText(/^Out of 10, the mean of \d+ match(es)?$/)).toBeVisible();
+  await expect(
+    block.getByText(/^rated \d+\.\d out of 10 for the night$/).filter({ visible: true }),
+  ).toHaveCount(5);
+  await expect(block.getByText("★ Best of your five").filter({ visible: true })).toHaveCount(1);
+  const chips = block.getByRole("link", { name: / v .+ rated \d+\.\d out of 10 against / });
+  const toggle = block.getByRole("button", { name: /^(Show|Hide) each match$/ });
+  await expect(toggle).toHaveAttribute("aria-expanded", String(open));
+  if (!open) {
+    await expect(chips.filter({ visible: true })).toHaveCount(0);
+    await toggle.click();
+    await expect(toggle).toHaveAccessibleName("Hide each match");
+  }
+  expect(await chips.filter({ visible: true }).count()).toBeGreaterThanOrEqual(5);
+  await expect(block.getByRole("link", { name: "How ratings work →" })).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+}
+
 /** A picker card's button, whether it adds to the five or fills the slot being chosen. */
 const PICK_BUTTON = /^(Put in slot \d|Add to your five): /;
 
@@ -384,6 +409,56 @@ test.describe("Midweek Madness results (PR 8)", () => {
     await expectMatchPageWhy(page);
   });
 
+  test("the complete bracket leads with your ratings, and each chip opens its rated report", async ({
+    page,
+  }) => {
+    await signIn(page, "release_member");
+    await page.goto(`/midweek/${COMPLETED_WEEK}`);
+    await expect(page.getByRole("navigation", { name: "Jump to" })).toContainText("Your ratings");
+    await expectRatings(page, { open: true });
+
+    const block = page.getByRole("region", { name: "Your five’s ratings" });
+    const chip = block
+      .getByRole("link", { name: / rated \d+\.\d out of 10 against / })
+      .filter({ visible: true })
+      .first();
+    const shown = (await chip.innerText()).match(/\d+\.\d/)![0];
+    await chip.click();
+    await expect(page).toHaveURL(new RegExp(`/midweek/${COMPLETED_WEEK}/match/[0-9a-f-]{36}$`));
+    // The Why list adds a rating per card for this match, the chip's number among them.
+    await expect(page.getByText(/^rated \d+\.\d out of 10 for this match$/)).toHaveCount(10);
+    await expect(page.getByText(`rated ${shown} out of 10 for this match`).first()).toBeAttached();
+    await expect(page.getByText("Rating: how it played, out of 10")).toBeVisible();
+    await expect(page.getByText(/The circle on the right is how the card played/)).toBeVisible();
+    await expectNoHorizontalOverflow(page);
+
+    await page.goto("/how-it-works#midweek-ratings");
+    await expect(page.getByRole("heading", { name: "Ratings", exact: true })).toBeVisible();
+    await expectNoHorizontalOverflow(page);
+  });
+
+  test("on a 1440 px desktop the ratings show the five cards in a row", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await signIn(page, "release_member");
+    await page.goto(`/midweek/${COMPLETED_WEEK}`);
+    await expectRatings(page, { open: true });
+    const block = page.getByRole("region", { name: "Your five’s ratings" });
+    const discs = block
+      .getByText(/^rated \d+\.\d out of 10 for the night$/)
+      .filter({ visible: true });
+    const tops = await discs.evaluateAll((nodes) =>
+      nodes.map((node) => Math.round(node.parentElement!.getBoundingClientRect().top)),
+    );
+    // One row of five: the discs line up, give or take the best chip's extra line.
+    expect(Math.max(...tops) - Math.min(...tops)).toBeLessThanOrEqual(12);
+    await page
+      .getByRole("link", { name: /^Match report: / })
+      .first()
+      .click();
+    await expect(page.getByText(/^rated \d+\.\d out of 10 for this match$/)).toHaveCount(10);
+    await expectNoHorizontalOverflow(page);
+  });
+
   test("from lg, every bracket line meets the match it leads to (KB-031)", async ({ page }) => {
     await signIn(page, "release_member");
     await page.setViewportSize({ width: 1280, height: 900 });
@@ -555,7 +630,7 @@ test.describe("Midweek Madness evening from the lock (F5, ADR-113)", () => {
     await expect(page.getByRole("heading", { name: "How it went" })).toBeVisible();
   });
 
-  test("after the final: the champion, the placeholders and the way to past weeks", async ({
+  test("after the final: the champion, your ratings and the way to past weeks", async ({
     page,
   }) => {
     await resetMidweek("release_member");
@@ -569,7 +644,9 @@ test.describe("Midweek Madness evening from the lock (F5, ADR-113)", () => {
 
     await expect(page.getByText(/· Champion$/)).toBeVisible();
     await expect(page.getByTestId("midweek-clock")).toHaveCount(0);
-    await expect(page.getByRole("note").filter({ hasText: "Your five’s ratings" })).toBeVisible();
+    // The ratings replace their placeholder (F7, ADR-117), closed by default here.
+    await expect(page.getByRole("note").filter({ hasText: "Your five’s ratings" })).toHaveCount(0);
+    await expectRatings(page, { open: false });
     await expect(page.getByRole("note").filter({ hasText: "Share your night" })).toBeVisible();
     await expectNoHorizontalOverflow(page);
     await page.getByRole("link", { name: "Past weeks →" }).click();

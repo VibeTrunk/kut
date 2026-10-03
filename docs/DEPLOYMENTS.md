@@ -47,12 +47,13 @@ own data-changing `db push`:
     re-verified, finalizer readiness, authenticated E2E 47 passed). No evening
     was running (Saturday). After the push `migration list --linked` showed 85
     local and 85 remote, no drift.
-  - **Smoke test handed to the owner.** The one-row query below, run locally
-    first, returned `t | t | f | t | tank | t | f | 0 |` (recorded; the log
-    has RLS, members can't read it and the service role can; a fixed seed and
-    Player draw `tank`; the open step locks, rotates and logs; nobody can
-    call the rotation directly; nothing logged yet; no week open locally).
-    On hosted the last column should be the open week, `2026-10-05`:
+  - **Smoke-tested on hosted.** The owner ran the one-row query below in the
+    SQL editor and confirmed it matched: the local run returned
+    `t | t | f | t | tank | t | f | 0 |`, and hosted ends in the open week,
+    `2026-10-05` (recorded; the log has RLS, members can't read it and the
+    service role can; a fixed seed and Player draw `tank`; the open step
+    locks, rotates and logs; nobody can call the rotation directly; nothing
+    logged yet):
 
     ```sql
     select

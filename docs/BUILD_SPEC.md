@@ -1817,6 +1817,15 @@ engine must reproduce that file (ADR-090).
   `ARCHETYPE_CHANGE_COOLDOWN_DAYS` (14, measured as 336 elapsed hours). The
   first change is always allowed, re-saving the archetype the Player already
   has is not a change, and the admin path is not limited (ADR-094).
+- **Unclaimed Players' archetypes rotate weekly** (ADR-110). Right before a
+  week opens, every active, collectible Player with no linked account draws
+  one of the seven archetypes, independently and uniformly, All-rounder and
+  Goalkeeper included, from the new week's own seed (tag
+  `rotation:<player id>`). The snapshot then freezes the draw for that week.
+  Each change is logged; the card faces are rebuilt at once; OVR doesn't
+  move. Claiming ends the rotation: the member keeps the archetype the Player
+  has then, and their first change is still free. The seed is secret until the
+  week is paid, so no draw can be known in advance, and checkable afterwards.
 
 ### 44.3 Card power
 
@@ -2120,7 +2129,8 @@ KUT has no scheduler; like ADR-061, one idempotent, service-role-only worker
 (`kut.run_midweek_due`) runs lazily from page visits and does whatever is due:
 
 - **open:** create the next tournament with its seed and `seed_hash` when the
-  config is enabled;
+  config is enabled, first rotating unclaimed Players' archetypes from that
+  seed (§44.2, ADR-110), one opener at a time;
 - **lock:** after `lock_at`, apply the gates, build auto squads, snapshot,
   simulate the whole bracket and store it (`simulated`);
 - **pay:** after `final_reveal_at`, the end of the final, pay, publish the
@@ -2190,6 +2200,10 @@ Added to Part L by the PR that makes each hold:
   member), and one tournament pays any member at most
   `MIDWEEK_CHAMPION_TOTAL`. **Added to Part L by
   `20261006000000_midweek_payouts.sql` (ADR-096).**
+- **#27 (rotation PR):** only the open step changes an archetype without a
+  member or an admin, and only an unclaimed, active, collectible Player's.
+  **Added to Part L by `20261015000000_midweek_archetype_rotation.sql`
+  (ADR-110).**
 
 ### 44.14 Data and functions
 
@@ -2314,6 +2328,15 @@ Views only.
 | `kut.midweek_matches_public` | Re-created: goals, penalties, `winner_side` and `winner_user_id` null until the match has ended; appends `ends_at` (null until passed) and `in_play`. |
 | `kut.midweek_events_public` | Re-created: each event from its own `reveal_at` (with its match before ADR-104); appends `reveal_at`. |
 | `kut.midweek_tournaments_public` | The champion from the end of the final. |
+
+**Archetype rotation (`20261015000000_midweek_archetype_rotation.sql`, ADR-110).** Adds Part L #27.
+
+| Object | What it holds or does |
+|---|---|
+| `kut.midweek_archetype_rotations` | One row per archetype the open step changed: `tournament_id`, `player_id`, `from_archetype`, `to_archetype`, `rotated_at`. Service role reads it. |
+| `kut._mm_rotation_archetype(bytea, uuid)` | A Player's draw for a seed: rng.ts `uniform` over the seven archetypes (`src/game/archetypes.ts` order), tag `rotation:<player id>`. Internal. |
+| `kut._mm_rotate_archetypes(bytea)` | Sets every active, collectible Player with no linked account to their draw, returns the changes as `[{playerId, from, to}]`, and rebuilds the active season once if anything changed. The same seed again changes nothing. Internal. |
+| `kut._mm_open_next()` | Re-created: one opener at a time (a transaction advisory lock, then the running-week check again); rotates with the new week's seed right before the insert, so the snapshot freezes the rotation; logs each change against the new week. A clash on `week_start` now raises, rolling the rotation back with the open. |
 
 ---
 
@@ -5309,6 +5332,7 @@ Tasks:
 24. An injury check-in protects at most one (Player, football week), pays its stipend at most once, and protects only a week in which that Player made zero appearances (ADR-082).
 25. A Midweek Madness tournament is simulated at most once and its stored result never changes: a void hides it, never recomputes it. A tournament only moves forward (`open` → `skipped`, `simulated` or `void`; `simulated` → `complete` or `void`), and squads are immutable after the lock (§44.8, ADR-095). Its lock and its clock (`schedule_version`) may move only while it is open, and the times stored at the lock (each match's start and end, each event's time) never change (ADR-104).
 26. A Midweek Madness win pays at most once per (tournament, round, member), only for a win in the stored bracket at its round's amount, and one tournament pays any member at most `MIDWEEK_CHAMPION_TOTAL`. A week is paid exactly when it completes, so a paid week cannot be voided (§44.7, ADR-096).
+27. Only the Midweek open step changes a Player's archetype without the member or an admin, and only an active, collectible Player with no linked account, once per opened week, drawn from that week's seed and logged. A rotation never changes OVR and never stamps the archetype cooldown (§44.2, ADR-110).
 
 Every coding agent should treat this section as a regression checklist.
 

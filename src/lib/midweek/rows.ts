@@ -115,6 +115,11 @@ export type EntryCardRow = {
   picks: number | null;
   /** Null until complete, and below three owners always (ADR-091). */
   owners: number | null;
+  /**
+   * The squad's weakest-line factor (ADR-116). Null for a week locked before
+   * the rule, and absent until the migration that adds it is on the database.
+   */
+  balance_ppm?: number | null;
 };
 
 /** A `kut.midweek_pick_shares_public` row, for a complete week. */

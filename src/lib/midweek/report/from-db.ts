@@ -38,6 +38,7 @@ function toSide(rows: readonly EntryCardRow[]): ReportSide | null {
     auto: cards[0].auto,
     keeperSlot: cards[0].keeper_slot,
     keeperless: cards[0].keeperless,
+    balancePpm: cards[0].balance_ppm ?? null,
     cards: cards.map((card) => ({
       name: card.trialist ? null : card.player_name,
       trialist: card.trialist,

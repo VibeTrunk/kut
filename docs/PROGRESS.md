@@ -4576,3 +4576,52 @@ rotates nothing; a rerun opens, rotates and logs nothing);
 with safeupdate loaded: one week opens, every eligible Player has their draw,
 one log row per change, the snapshot matches; a later call changes nothing);
 `npm run sim:midweek` unchanged.
+
+## MM 2.0 PR 8 (C2): balanced squads beat All-rounders — 2026-10-03
+
+`feat/midweek-balance`, ADR-116 (amends ADR-089 and ADR-092). Migration
+`20261016000000_midweek_balance.sql`, data-changing tier; no invariant
+changes. Decided in the owner's Q13 interview and tuning sign-off
+(2026-10-03); Q3 (captain, own-card bonus) out of scope.
+
+- **The interview found the lines were not worth the same.** Measured with the
+  match engine before deciding: one card at 1.40 added about 3 points of win
+  chance in attack or midfield and under 1 in defence; four Speedsters or
+  Playmakers beat four All-rounders about 56%, a balanced four only tied them.
+- **The plusses are the engine's input** (`MIDWEEK.shape.plusses`, both
+  engines): All-rounder 1/1/1, Speedster 2/2/0, Finisher 3/1/0, Playmaker
+  1/3/0, Defender 0/1/3, Tank 0/2/2 (the owner's change at the sign-off),
+  Goalkeeper 0/0/3. Line values per plus count are tuned so a plus is worth
+  about the same in every line (+3.4 / +3.3 / +2.3 points), with outfield
+  defence now 0.8 of a shot's resistance.
+- **The weakest-line rule:** each outfield line needs 3 plusses; each plus
+  short costs the squad ×0.88 (`kut._mm_balance`, stored as
+  `midweek_entries.balance_ppm`, shown in `midweek_entries_public`).
+- **The keeper's own strength:** a Goalkeeper 1.65 × power, a stand-in 0.45 of
+  that whatever its archetype.
+- **Retuned with the rotation on** (`archive/MIDWEEK_TUNING.md`, option R2):
+  OVR factor at 83 1.12, auto factor 0.55. Strongest vs weakest 71.2%,
+  thought-through vs random 61.6% (55.0% with the rotation alone), balanced
+  vs All-rounders 63.1%, the best stack 32.7%; every target passes.
+- **The harness** plays the `uniform` rotation by default, its thinker picks
+  for the plusses, and it reports the shapes at equal power (two new target
+  rows). The tuning sweeps ran as throwaway drivers, not committed.
+- **Pages:** how-it-works shows the plusses table and the rule (§6 points to
+  it); the Why list shows a chip per short line ("Defence 3 short"), only
+  when the stored balance is below 1. Both work before the push: a missing or
+  null `balance_ppm` means no chip.
+- **Fixtures re-picked:** `midweek_live_reveal.test.sql`'s mid-shoot-out
+  evening moves from seed 01 to fb; `midweek_engine.test.sql` reads the new
+  auto factor; `midweek_draw_from_lock.test.sql` lists the appended column.
+
+Verification: `npm run verify:fast` (427 tests); every pgTAP suite through
+`docker exec` (36 files, 1,528 assertions), including the regenerated
+`midweek_engine_parity.test.sql` (199: the SQL twin reproduces every golden
+value, the balance vectors and a one-line-stack match included) and the new
+`midweek_balance.test.sql` (23: the table and the line values, the rule and
+its floors, the keeper's plusses skipped, the lock step storing each squad's
+balance as the engine played it, auto squads included, and members reading it
+from the lock); the midweek integration suites (race, switch, rotation: 7);
+`npm run sim:midweek` at 5,000 seasons (every target passes; rewrites
+`MIDWEEK_TUNING.md`); the authenticated E2E (49 passed, 1 expected skip),
+including a new how-it-works check at 320 px and on a Pixel 7.

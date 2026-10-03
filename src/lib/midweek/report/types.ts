@@ -31,6 +31,8 @@ export type ReportSide = {
   auto: boolean;
   keeperSlot: number;
   keeperless: boolean;
+  /** The weakest-line factor the squad played with (ADR-116); null for a week before the rule. */
+  balancePpm: number | null;
   cards: readonly ReportCard[];
 };
 
@@ -115,10 +117,15 @@ export type WhyCard = {
   assists: number;
 };
 
+/** An outfield line that fell short of the weakest-line rule, and by how many plusses (ADR-116). */
+export type ShortLine = { line: "Attack" | "Midfield" | "Defence"; short: number };
+
 export type WhySide = {
   manager: string;
   auto: boolean;
   keeperless: boolean;
+  /** Empty when no line fell short, and for a week before the rule. */
+  shortLines: ShortLine[];
   winChancePpm: number;
   cards: WhyCard[];
 };

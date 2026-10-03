@@ -234,7 +234,7 @@ select results_eq($q$select slot::int, trialist, card_id, handicap_ppm from kut.
   'a saved card no longer owned drops out, the survivors move up, and trialists fill the rest');
 select results_eq($q$select trialist, pick_factor_ppm, handicap_ppm from kut.midweek_entry_cards
   where tournament_id='00000095-0000-4000-8000-000000000501' and user_id='00000095-0000-4000-8000-000000000005' order by slot$q$,
-  $q$values (false,1000000,575000),(true,1000000,474375),(true,1000000,474375),(true,1000000,474375),(true,1000000,474375)$q$,
+  $q$values (false,1000000,550000),(true,1000000,453750),(true,1000000,453750),(true,1000000,453750),(true,1000000,453750)$q$,
   'an auto squad fields the one card it owns at the auto factor and neutral pick, and its trialists at both factors');
 select ok((select bool_and(card.player_id in ('00000095-0000-4000-8000-000000000102','00000095-0000-4000-8000-000000000108'))
   and count(*) filter (where not trialist) = 2

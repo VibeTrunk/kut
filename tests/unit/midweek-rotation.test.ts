@@ -84,12 +84,18 @@ describe("simulated archetype rotation", () => {
     }
   });
 
-  it("leaves the simulation untouched when off", () => {
+  it("leaves the simulation untouched when off", { timeout: 30_000 }, () => {
     const players = roster();
     const off = weekArchetypes(players, NO_ROTATION, "k", 7);
     for (const player of players) expect(off.get(player.playerId)).toBe(player.archetype);
 
-    const options = { ...DEFAULT_SIM, seasons: 4, weeksPerSeason: 3, seed: 5 };
+    const options = {
+      ...DEFAULT_SIM,
+      seasons: 4,
+      weeksPerSeason: 3,
+      seed: 5,
+      rotation: NO_ROTATION,
+    };
     const a = runSimulation(options);
     const b = runSimulation({ ...options, rotation: UNIFORM });
     expect(a.visibility.weeklyChangeRotating).toBe(0);

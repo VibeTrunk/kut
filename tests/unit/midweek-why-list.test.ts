@@ -8,6 +8,53 @@ import {
   powerBand,
   powerBarWidth,
 } from "@/components/midweek/why-list";
+import type { Archetype } from "@/game/archetypes";
+import { PPM } from "@/game/midweek/config";
+import { shortLines } from "@/lib/midweek/report/render";
+import type { ReportSide } from "@/lib/midweek/report/types";
+
+function sideOf(archetypes: Archetype[], balancePpm: number | null): ReportSide {
+  return {
+    manager: "M",
+    auto: false,
+    keeperSlot: 0,
+    keeperless: false,
+    balancePpm,
+    cards: archetypes.map((archetype) => ({
+      name: null,
+      trialist: false,
+      injured: false,
+      ovr: 50,
+      archetype,
+      ovrFactorPpm: PPM,
+      formRollPpm: PPM,
+      pickFactorPpm: PPM,
+      fitnessPpm: PPM,
+      handicapPpm: PPM,
+      powerPpm: PPM,
+      picks: null,
+      owners: null,
+    })),
+  };
+}
+
+describe("the weakest-line chips (ADR-116)", () => {
+  const stack: Archetype[] = ["goalkeeper", "finisher", "finisher", "finisher", "finisher"];
+
+  it("names each outfield line that fell short, and by how much", () => {
+    expect(shortLines(sideOf(stack, 681_472))).toEqual([{ line: "Defence", short: 3 }]);
+    expect(
+      shortLines(sideOf(["goalkeeper", "defender", "defender", "tank", "all_rounder"], 774_400)),
+    ).toEqual([{ line: "Attack", short: 2 }]);
+  });
+
+  it("shows nothing when no line fell short, or for a week before the rule", () => {
+    expect(
+      shortLines(sideOf(["goalkeeper", "finisher", "playmaker", "defender", "tank"], PPM)),
+    ).toEqual([]);
+    expect(shortLines(sideOf(stack, null))).toEqual([]);
+  });
+});
 
 describe("the match page's Why list (HANDOFF MidweekWhyList)", () => {
   it("shows a card's power in this match: the week's power times the Day roll", () => {
@@ -42,7 +89,7 @@ describe("the match page's Why list (HANDOFF MidweekWhyList)", () => {
 
   it("explains every factor with the figures in MIDWEEK", () => {
     expect(FACTOR_EXPLANATIONS).toEqual({
-      Rating: "From the card's OVR: no boost at OVR 30, up to +10% at OVR 83.",
+      Rating: "From the card's OVR: no boost at OVR 30, up to +12% at OVR 83.",
       Form: "The Player's form this week, rolled once at the lock: from −20% to +25%, usually close to zero. Every copy of the Player shares it.",
       Pick: "Picking against the crowd pays: up to +25% when few owners picked this Player, down to −12.5% when nearly all of them did.",
       Fitness: "−5% when the Player is injured; otherwise no change.",

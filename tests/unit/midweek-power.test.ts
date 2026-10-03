@@ -12,7 +12,13 @@ import {
 } from "@/game/midweek/power";
 import { roundPayouts } from "@/game/midweek/rewards";
 import { shaRng } from "@/game/midweek/rng";
-import { chooseKeeper, lineMultsPpm } from "@/game/midweek/shape";
+import {
+  chooseKeeper,
+  keeperStrengthPpm,
+  lineMultsPpm,
+  plussesOf,
+  squadBalance,
+} from "@/game/midweek/shape";
 
 const SEED = "a".repeat(64);
 
@@ -109,15 +115,56 @@ describe("midweek card power", () => {
 });
 
 describe("midweek squad shape", () => {
-  it("makes All-rounders average and specialists lean their way", () => {
-    expect(lineMultsPpm("all_rounder")).toEqual({ attPpm: PPM, midPpm: PPM, defPpm: PPM });
-    expect(lineMultsPpm("finisher").attPpm).toBeGreaterThan(PPM);
-    expect(lineMultsPpm("playmaker").midPpm).toBeGreaterThan(PPM);
-    expect(lineMultsPpm("goalkeeper").defPpm).toBeGreaterThan(lineMultsPpm("tank").defPpm);
+  it("gives the All-rounder one plus per line and every specialist four (ADR-116)", () => {
+    expect(plussesOf("all_rounder")).toEqual([1, 1, 1]);
     for (const archetype of ARCHETYPES) {
-      const lines = lineMultsPpm(archetype);
-      for (const value of Object.values(lines)) expect(value).toBeGreaterThan(0);
+      const plusses = plussesOf(archetype);
+      for (const plus of plusses) expect([0, 1, 2, 3]).toContain(plus);
+      const total = plusses.reduce((sum, plus) => sum + plus, 0);
+      if (archetype === "goalkeeper") expect(total).toBe(3);
+      else if (archetype !== "all_rounder") expect(total).toBe(4);
     }
+    expect(plussesOf("tank")).not.toEqual(plussesOf("defender"));
+  });
+
+  it("reads each line's value from its plusses, rising with every plus", () => {
+    expect(lineMultsPpm("all_rounder")).toEqual({ attPpm: PPM, midPpm: PPM, defPpm: PPM });
+    expect(lineMultsPpm("finisher").attPpm).toBe(MIDWEEK.shape.attPpm[3]);
+    expect(lineMultsPpm("playmaker").midPpm).toBe(MIDWEEK.shape.midPpm[3]);
+    expect(lineMultsPpm("defender").defPpm).toBe(MIDWEEK.shape.defPpm[3]);
+    for (const line of ["attPpm", "midPpm", "defPpm"] as const) {
+      const values = MIDWEEK.shape[line];
+      expect(values).toHaveLength(4);
+      expect(values[1]).toBe(PPM);
+      for (let plus = 1; plus < 4; plus += 1)
+        expect(values[plus]).toBeGreaterThan(values[plus - 1]);
+      expect(values[0]).toBeGreaterThan(0);
+    }
+  });
+
+  it("scales a squad short in an outfield line, leaving the keeper out of the count", () => {
+    const allRounders = squadBalance(new Array(5).fill("all_rounder"), 0);
+    expect(allRounders).toEqual({ lines: [4, 4, 4], short: [0, 0, 0], balancePpm: PPM });
+
+    // Four Finishers: 12 attack, 4 midfield, no defence, so defence is three short.
+    const stack = squadBalance(["goalkeeper", "finisher", "finisher", "finisher", "finisher"], 0);
+    expect(stack.lines).toEqual([12, 4, 0]);
+    expect(stack.short).toEqual([0, 0, MIDWEEK.balance.minPlusses]);
+    const f = MIDWEEK.balance.shortfallPpm;
+    expect(stack.balancePpm).toBe(
+      Math.floor((Math.floor((Math.floor((PPM * f) / PPM) * f) / PPM) * f) / PPM),
+    );
+
+    // The keeper's own plusses never count: a Goalkeeper in slot 2 is skipped.
+    const mixed = squadBalance(["speedster", "playmaker", "goalkeeper", "defender", "tank"], 2);
+    expect(mixed.lines).toEqual([3, 8, 5]);
+    expect(mixed.balancePpm).toBe(PPM);
+  });
+
+  it("gives a Goalkeeper its own strength and a stand-in a fixed share of it", () => {
+    expect(keeperStrengthPpm(PPM, false)).toBe(MIDWEEK.keeperPpm);
+    const standIn = Math.floor((MIDWEEK.keeperPpm * MIDWEEK.keeperlessFactorPpm) / PPM);
+    expect(keeperStrengthPpm(PPM, true)).toBe(standIn);
   });
 
   const card = (archetype: (typeof ARCHETYPES)[number], powerPpm: number) => ({
@@ -142,12 +189,12 @@ describe("midweek squad shape", () => {
   });
 
   it("without a Goalkeeper, puts the biggest defensive contribution in goal", () => {
-    // Tank DEF+PHY = +16 edges Defender's +14 at equal power.
+    // A Defender's three defence plusses edge a Tank's two at equal power.
     expect(
       chooseKeeper([
         card("finisher", 1_300_000),
-        card("defender", 1_000_000),
         card("tank", 1_000_000),
+        card("defender", 1_000_000),
         card("all_rounder", 1_000_000),
       ]),
     ).toEqual({ slot: 2, keeperless: true });

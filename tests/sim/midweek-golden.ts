@@ -14,7 +14,7 @@ import {
 import { roundPayouts } from "@/game/midweek/rewards";
 import { seedHash, shaRng } from "@/game/midweek/rng";
 import { lockAt, matchTiming, roundStartAt } from "@/game/midweek/schedule";
-import { lineMultsPpm } from "@/game/midweek/shape";
+import { lineMultsPpm, squadBalance } from "@/game/midweek/shape";
 import {
   buildField,
   simulateTournament,
@@ -205,6 +205,17 @@ function matchCases() {
       b: allRounders(790, 55),
     },
     {
+      name: "a one-line stack against a balanced side",
+      a: [
+        card(820, 60, "goalkeeper"),
+        card(821, 60, "finisher"),
+        card(822, 60, "finisher"),
+        card(823, 60, "finisher"),
+        card(824, 60, "finisher"),
+      ],
+      b: withKeeper(830),
+    },
+    {
       name: "two trialists each",
       a: allRounders(800, 45).slice(0, 3),
       b: allRounders(810, 45).slice(0, 3),
@@ -307,6 +318,22 @@ export function buildGolden() {
       return { picks, owners, sharePpm, pickFactorPpm: pickFactorPpm(sharePpm) };
     }),
     lineMults: Object.fromEntries(ARCHETYPES.map((a) => [a, lineMultsPpm(a)])),
+    // The weakest-line rule (ADR-116) over squads that meet it, fall short in
+    // one line or several, and keep a Goalkeeper's plusses out of the count.
+    balances: (
+      [
+        [["all_rounder", "all_rounder", "all_rounder", "all_rounder", "all_rounder"], 0],
+        [["goalkeeper", "finisher", "finisher", "finisher", "finisher"], 0],
+        [["goalkeeper", "speedster", "playmaker", "defender", "tank"], 0],
+        [["speedster", "goalkeeper", "goalkeeper", "goalkeeper", "all_rounder"], 1],
+        [["defender", "playmaker", "playmaker", "speedster", "finisher"], 0],
+        [["tank", "defender", "goalkeeper", "defender", "tank"], 2],
+      ] as Array<[Archetype[], number]>
+    ).map(([archetypes, keeperSlot]) => ({
+      archetypes,
+      keeperSlot,
+      balance: squadBalance(archetypes, keeperSlot),
+    })),
     powerShares: [
       [1_000_000, 1_000_000, 1],
       [1_300_000, 1_000_000, 2],

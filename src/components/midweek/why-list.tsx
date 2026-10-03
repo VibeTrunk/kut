@@ -300,6 +300,11 @@ export function MidweekWhyList({
               </small>
               {side.auto && <Chip tone="auto">Auto squad</Chip>}
               {side.keeperless && <Chip tone="warn">No keeper</Chip>}
+              {side.shortLines.map(({ line, short }) => (
+                <Chip key={line} tone="warn">
+                  {line} {short} short
+                </Chip>
+              ))}
             </h3>
             <ul className="grid">
               {side.cards

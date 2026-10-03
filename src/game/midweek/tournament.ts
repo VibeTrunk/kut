@@ -6,7 +6,7 @@ import { playMatch, type MatchOutcome, type MatchSide } from "./match";
 import { cardPowerPpm, formRollPpm, ovrFactorPpm, pickFactorPpm, pickSharePpm } from "./power";
 import { roundPayouts } from "./rewards";
 import type { Rng } from "./rng";
-import { chooseKeeper, lineMultsPpm, type LineMults } from "./shape";
+import { chooseKeeper, lineMultsPpm, squadBalance, type LineMults } from "./shape";
 
 /**
  * A whole tournament as one pure function of the locked squads, the lock-time
@@ -56,6 +56,8 @@ export type Entry = {
   cards: EntryCard[];
   keeperSlot: number;
   keeperless: boolean;
+  /** The weakest-line factor (§44.4): `shortfallPpm` per plus an outfield line falls short. */
+  balancePpm: number;
 };
 
 export type PickShare = {
@@ -243,12 +245,18 @@ export function buildField(
       }
     }
     const keeper = chooseKeeper(entryCards);
+    const balance = squadBalance(
+      entryCards.map((card) => card.archetype),
+      keeper.slot,
+      cfg,
+    );
     return {
       userId: entrant.userId,
       auto,
       cards: entryCards,
       keeperSlot: keeper.slot,
       keeperless: keeper.keeperless,
+      balancePpm: balance.balancePpm,
     };
   });
 
@@ -264,6 +272,7 @@ export function toMatchSide(entry: Entry): MatchSide {
     })),
     keeperSlot: entry.keeperSlot,
     keeperless: entry.keeperless,
+    balancePpm: entry.balancePpm,
   };
 }
 

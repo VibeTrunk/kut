@@ -1,9 +1,16 @@
 import { ARCHETYPES, type Archetype } from "@/game/archetypes";
 import { MIDWEEK, PPM, type MidweekConfig } from "@/game/midweek/config";
 import { mulPpm } from "@/game/midweek/fixed";
-import { playMatch, sideRatingPpm, type MatchOutcome } from "@/game/midweek/match";
+import {
+  playMatch,
+  sideRatingPpm,
+  type MatchCard,
+  type MatchOutcome,
+  type MatchSide,
+} from "@/game/midweek/match";
 import { ovrFactorPpm } from "@/game/midweek/power";
 import type { Rng } from "@/game/midweek/rng";
+import { chooseKeeper, lineMultsPpm, plussesOf, squadBalance } from "@/game/midweek/shape";
 import {
   buildField,
   simulateTournament,
@@ -209,6 +216,9 @@ export type Rotation = {
 
 export const NO_ROTATION: Rotation = { mode: "off", keeperQuota: null, everyWeeks: 1 };
 
+/** The decided model (Q8, ADR-110): weekly, each rotating Player draws any of the seven. */
+export const UNIFORM_ROTATION: Rotation = { mode: "uniform", keeperQuota: null, everyWeeks: 1 };
+
 export function rotates(player: Player): boolean {
   return player.active && player.collectible && !player.claimed;
 }
@@ -283,6 +293,7 @@ export function pickSquad(
   published: Published,
   random: () => number,
   cfg: MidweekConfig,
+  plusWeight = THINKER_PLUS_WEIGHT,
 ): EngineCard[] {
   const cards = distinctCards(member.owned);
   const byOvr = (a: EngineCard, b: EngineCard) =>
@@ -315,30 +326,84 @@ export function pickSquad(
       return [...winners, ...rest].slice(0, 5);
     }
     case "thoughtful":
-      return thoughtfulSquad(cards, cfg);
+      return thoughtfulSquad(cards, cfg, plusWeight);
   }
 }
 
+/** How many of its strongest other cards the thinker weighs for the outfield. */
+const THINKER_POOL = 7;
+
 /**
- * A thought-through weekly pick: a Goalkeeper if one is owned, then the
- * outfielders with the best OVR, leaving out injured Players when there is a
- * choice. Deliberately not pick-share-aware: trying to predict this week's
- * pick shares from last week's did worse than ignoring them in tuning, which
- * is itself the "no pick stays best" goal at work.
+ * What the thinker reckons one plus is worth, as a share of a card's power. It
+ * reads the plusses table as members do: a specialist (4 plusses) is worth a
+ * little more than an All-rounder (3), and a line short of the weakest-line
+ * rule costs the whole squad.
  */
-function thoughtfulSquad(cards: readonly EngineCard[], cfg: MidweekConfig): EngineCard[] {
+export const THINKER_PLUS_WEIGHT = 0.06;
+
+function combinations<T>(items: readonly T[], size: number): T[][] {
+  if (size === 0) return [[]];
+  const result: T[][] = [];
+  items.forEach((item, i) => {
+    for (const rest of combinations(items.slice(i + 1), size - 1)) result.push([item, ...rest]);
+  });
+  return result;
+}
+
+/**
+ * A thought-through weekly pick (ADR-116): a Goalkeeper if one is owned, then
+ * the outfielders, out of its seven strongest other cards, with the most
+ * power weighted by plusses under the weakest-line rule, leaving out injured
+ * Players when there is a choice. Deliberately not pick-share-aware: trying to
+ * predict this week's pick shares from last week's did worse than ignoring
+ * them in tuning, which is itself the "no pick stays best" goal at work.
+ */
+function thoughtfulSquad(
+  cards: readonly EngineCard[],
+  cfg: MidweekConfig,
+  plusWeight: number,
+): EngineCard[] {
   const score = (card: EngineCard) =>
     mulPpm(ovrFactorPpm(card.ovr, cfg), card.injured ? cfg.injuredFitnessPpm : PPM);
   const scored = cards
     .map((card) => ({ card, score: score(card) }))
     .sort((a, b) => b.score - a.score || (a.card.playerId < b.card.playerId ? -1 : 1));
   const keeper = scored.find(({ card }) => card.archetype === "goalkeeper");
-  const squad = keeper ? [keeper.card] : [];
-  for (const { card } of scored) {
-    if (squad.length >= 5) break;
-    if (card.archetype !== "goalkeeper") squad.push(card);
+  const pool = scored.filter((entry) => entry !== keeper).slice(0, THINKER_POOL);
+  const need = keeper ? 4 : 5;
+  if (pool.length <= need) return [...(keeper ? [keeper.card] : []), ...pool.map((e) => e.card)];
+
+  let best: typeof pool = [];
+  let bestValue = -1;
+  for (const outfield of combinations(pool, need)) {
+    const squad = keeper ? [keeper, ...outfield] : outfield;
+    const keeperSlot = keeper
+      ? 0
+      : chooseKeeper(
+          squad.map(({ card, score }) => ({
+            archetype: card.archetype,
+            powerPpm: score,
+            lines: lineMultsPpm(card.archetype, cfg),
+          })),
+        ).slot;
+    const { balancePpm } = squadBalance(
+      squad.map(({ card }) => card.archetype),
+      keeperSlot,
+      cfg,
+    );
+    let value = 0;
+    squad.forEach(({ card, score }, slot) => {
+      if (slot === keeperSlot) return;
+      const plusses = plussesOf(card.archetype, cfg).reduce((sum, v) => sum + v, 0);
+      value += score * (1 + plusWeight * (plusses - 3));
+    });
+    value *= balancePpm / PPM;
+    if (value > bestValue) {
+      bestValue = value;
+      best = squad;
+    }
   }
-  return squad;
+  return best.map(({ card }) => card);
 }
 
 // --- measurement ----------------------------------------------------------
@@ -390,6 +455,8 @@ export type SimOptions = {
   cfg: MidweekConfig;
   injuryRate: number;
   rotation: Rotation;
+  /** What the thought-through manager reckons a plus is worth (THINKER_PLUS_WEIGHT). */
+  thinkerPlusWeight: number;
 };
 
 export const DEFAULT_SIM: SimOptions = {
@@ -400,7 +467,8 @@ export const DEFAULT_SIM: SimOptions = {
   world: DEFAULT_WORLD,
   cfg: MIDWEEK,
   injuryRate: 0.04,
-  rotation: NO_ROTATION,
+  rotation: UNIFORM_ROTATION,
+  thinkerPlusWeight: THINKER_PLUS_WEIGHT,
 };
 
 export type SimStats = ReturnType<typeof runSimulation>;
@@ -423,6 +491,102 @@ const groupOf = (strategy: Strategy): SquadGroup =>
 
 /** Weeks watched before a member could tell a rotating Player from a fixed one. */
 export const OBSERVED_WEEKS = [2, 3, 4, 8] as const;
+
+// --- squad shape at equal power (ADR-116) -----------------------------------
+
+const OUTFIELD_SPECIALISTS: readonly Archetype[] = [
+  "speedster",
+  "finisher",
+  "playmaker",
+  "defender",
+  "tank",
+];
+
+function combinationsWithRepeats<T>(items: readonly T[], size: number): T[][] {
+  if (size === 0) return [[]];
+  const result: T[][] = [];
+  items.forEach((item, i) => {
+    for (const rest of combinationsWithRepeats(items.slice(i), size - 1))
+      result.push([item, ...rest]);
+  });
+  return result;
+}
+
+/**
+ * Squad shapes against four All-rounders, every card at equal power and both
+ * sides with a Goalkeeper in goal, so only the plusses and the weakest-line
+ * rule differ: every four specialists (repeats allowed) that meet the rule,
+ * every one-line stack (four of a kind), and one extra plus on one card in
+ * each line.
+ */
+export function shapeDuels(cfg: MidweekConfig, matches: number) {
+  const card = (archetype: Archetype, lines = lineMultsPpm(archetype, cfg)): MatchCard => ({
+    archetype,
+    weekPowerPpm: PPM,
+    lines,
+  });
+  const sideOf = (outfield: MatchCard[]): MatchSide => {
+    const cards = [card("goalkeeper"), ...outfield];
+    return {
+      cards,
+      keeperSlot: 0,
+      keeperless: false,
+      balancePpm: squadBalance(
+        cards.map((c) => c.archetype),
+        0,
+        cfg,
+      ).balancePpm,
+    };
+  };
+  const base = sideOf([1, 2, 3, 4].map(() => card("all_rounder")));
+  const winRate = (side: MatchSide, tag: string) => {
+    let wins = 0;
+    for (let i = 0; i < matches; i += 1) {
+      const flip = i % 2 === 1;
+      const rng = fastRng(cyrb53(`${tag}:${i}`, 5) >>> 0);
+      const out = playMatch(rng, `s:${i}`, flip ? base : side, flip ? side : base, cfg);
+      if (out.winnerSide === (flip ? 1 : 0)) wins += 1;
+    }
+    return wins / matches;
+  };
+
+  const balanced: Array<{ squad: string; rate: number }> = [];
+  for (const four of combinationsWithRepeats(OUTFIELD_SPECIALISTS, 4)) {
+    const { short } = squadBalance(["goalkeeper", ...four], 0, cfg);
+    if (short[0] + short[1] + short[2] > 0) continue;
+    const squad = four.join(", ");
+    balanced.push({ squad, rate: winRate(sideOf(four.map((a) => card(a))), squad) });
+  }
+  const stacks = OUTFIELD_SPECIALISTS.map((archetype) => ({
+    squad: archetype,
+    rate: winRate(sideOf([1, 2, 3, 4].map(() => card(archetype))), `stack:${archetype}`),
+  }));
+  const allRounder = lineMultsPpm("all_rounder", cfg);
+  const onePlus = (["attPpm", "midPpm", "defPpm"] as const).map((line) => {
+    const plussed = card("all_rounder", { ...allRounder, [line]: cfg.shape[line][2] });
+    const others = [1, 2, 3].map(() => card("all_rounder"));
+    return winRate(sideOf([plussed, ...others]), `plus:${line}`) - 0.5;
+  });
+  // Five All-rounders, one of them standing in goal, against the same four with a Goalkeeper.
+  const keeperless: MatchSide = {
+    cards: [1, 2, 3, 4, 5].map(() => card("all_rounder")),
+    keeperSlot: 0,
+    keeperless: true,
+    balancePpm: squadBalance(new Array(5).fill("all_rounder"), 0, cfg).balancePpm,
+  };
+  const keeperlessVsKeeper = winRate(keeperless, "keeperless");
+  const mean = balanced.reduce((sum, b) => sum + b.rate, 0) / Math.max(1, balanced.length);
+  const worstStack = stacks.reduce((a, b) => (b.rate > a.rate ? b : a));
+  return {
+    matches,
+    balanced,
+    balancedVsAllRounders: mean,
+    stacks,
+    worstStack,
+    onePlus,
+    keeperlessVsKeeper,
+  };
+}
 
 export function runSimulation(options: SimOptions) {
   const cfg = options.cfg;
@@ -535,7 +699,14 @@ export function runSimulation(options: SimOptions) {
       const inputs: EntrantInput[] = members.map((member) => ({
         userId: member.userId,
         owned: member.owned,
-        saved: pickSquad(strategies.get(member.userId)!, member, published, random, cfg),
+        saved: pickSquad(
+          strategies.get(member.userId)!,
+          member,
+          published,
+          random,
+          cfg,
+          options.thinkerPlusWeight,
+        ),
       }));
 
       const result = simulateTournament(rng, inputs, cfg) as SimulatedTournament;
@@ -611,7 +782,7 @@ export function runSimulation(options: SimOptions) {
 
       // Counterfactual matches in this week's field.
       const thoughtful = (member: Member) =>
-        pickSquad("thoughtful", member, published, random, cfg);
+        pickSquad("thoughtful", member, published, random, cfg, options.thinkerPlusWeight);
       const strongMember = members.find((m) => m.userId === strongest.userId)!;
       const weakMember = members.find((m) => m.userId === weakest.userId)!;
       const duelInputs = withSaved(
@@ -750,6 +921,8 @@ export function runSimulation(options: SimOptions) {
 
   return {
     options,
+    // 20,000 matches a shape for a sign-off run; a short smoke run plays fewer.
+    shape: shapeDuels(cfg, Math.min(20_000, Math.max(100, options.seasons * 4))),
     strongBeatsWeak: ratio(strongBeatsWeak),
     strongBeatsWeakFull: ratio(strongBeatsWeakFull),
     strongWins8: ratio(strongWins8),
@@ -869,6 +1042,20 @@ export function evaluateTargets(stats: SimStats, tolerance = 0): Target[] {
       goal: "about 2% or less",
       value: pct(stats.autoLastFour),
       pass: stats.autoLastFour <= 0.02 + t,
+    },
+    {
+      name: "Four balanced specialists beat four All-rounders of equal power",
+      goal: "about 60–65% (ADR-116)",
+      value: pct(stats.shape.balancedVsAllRounders),
+      pass:
+        stats.shape.balancedVsAllRounders >= 0.6 - t &&
+        stats.shape.balancedVsAllRounders <= 0.65 + t,
+    },
+    {
+      name: "A one-line stack beats four All-rounders of equal power",
+      goal: "below 50%, every stack (ADR-116)",
+      value: `${pct(stats.shape.worstStack.rate)} (${stats.shape.worstStack.squad}, the best stack)`,
+      pass: stats.shape.worstStack.rate < 0.5 + t,
     },
     {
       name: "The squad that looks strongest after round 1 reaches the final",

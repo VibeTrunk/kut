@@ -14,10 +14,12 @@
 --
 --   TP  seed 06, locked 2 minutes ago      -> round 1 starts in 3 minutes
 --   TK  seed 02, locked 6 minutes ago      -> round 1 kicked off a minute ago
---   TS  seed 01, locked 10 minutes ago     -> round 1, 5 minutes in: pairings 0
+--   TS  seed fb, locked 10 minutes ago     -> round 1, 5 minutes in: pairings 0
 --                                             and 2 are drawn and mid shoot-out
---                                             (full time at 4:40, ends at 6:00
---                                             and 5:20), 1 and 3 have ended
+--                                             (full time at 4:40, ends at 6:10
+--                                             and 5:25), 1 and 3 have ended
+--                                             (re-chosen for ADR-116's engine;
+--                                             seed 01 was this evening before)
 --   TL  seed 05, locked 36 minutes ago     -> the final kicked off a minute ago
 --   TF  seed 04, locked 3 hours ago        -> complete, paid
 --   TV  seed 03, version 1, locked 45 minutes ago, its stored times then
@@ -94,12 +96,12 @@ from generate_series(1,20) n;
 insert into kut.midweek_tournaments(id,week_start,lock_at,seed_hash,schedule_version)
 select ('00000106-0000-4000-8000-0000000005' || s)::uuid, date '2025-01-06' + 7 * w, now() + interval '1 day',
   encode(sha256(decode(repeat(s, 32),'hex')),'hex'), v
-from (values ('06', 6, 2), ('02', 2, 2), ('01', 1, 2), ('05', 5, 2), ('04', 4, 2), ('03', 3, 1)) t(s, w, v);
+from (values ('06', 6, 2), ('02', 2, 2), ('fb', 1, 2), ('05', 5, 2), ('04', 4, 2), ('03', 3, 1)) t(s, w, v);
 insert into kut.midweek_tournament_secrets(tournament_id,seed)
 select ('00000106-0000-4000-8000-0000000005' || s)::uuid, repeat(s, 32)
-from unnest(array['06','02','01','05','04','03']) s;
+from unnest(array['06','02','fb','05','04','03']) s;
 update kut.midweek_tournaments t set lock_at = now() - o
-from (values ('06', interval '2 minutes'), ('02', interval '6 minutes'), ('01', interval '10 minutes'),
+from (values ('06', interval '2 minutes'), ('02', interval '6 minutes'), ('fb', interval '10 minutes'),
   ('05', interval '36 minutes'), ('04', interval '3 hours'), ('03', interval '45 minutes')) x(s, o)
 where t.id = ('00000106-0000-4000-8000-0000000005' || x.s)::uuid;
 
@@ -119,17 +121,17 @@ set local session_replication_role = origin;
 
 -- What the tables hold, for comparison once reading as a member.
 select is((select string_agg(pairing || ':' || (side_0_penalties is not null) || ':' || extract(epoch from ends_at - reveal_at)::int, ','
-  order by pairing) from kut.midweek_matches where tournament_id = '00000106-0000-4000-8000-000000000501' and round = 1),
-  '0:true:360,1:false:280,2:true:320,3:false:280',
+  order by pairing) from kut.midweek_matches where tournament_id = '00000106-0000-4000-8000-0000000005fb' and round = 1),
+  '0:true:370,1:false:280,2:true:325,3:false:280',
   'TS''s round 1 is the evening this file was written for');
 select set_config('kut_test.tk_due', (select count(*)::text from kut.midweek_match_events e
   join kut.midweek_matches m on m.id = e.match_id
   where m.tournament_id = '00000106-0000-4000-8000-000000000502' and e.reveal_at <= now()), true);
 select set_config('kut_test.ts_kicks', (select concat_ws(':', count(*) filter (where e.reveal_at <= now()), count(*))
   from kut.midweek_match_events e join kut.midweek_matches m on m.id = e.match_id
-  where m.tournament_id = '00000106-0000-4000-8000-000000000501' and m.round = 1 and m.pairing = 0 and e.kind = 'penalty'), true);
+  where m.tournament_id = '00000106-0000-4000-8000-0000000005fb' and m.round = 1 and m.pairing = 0 and e.kind = 'penalty'), true);
 select set_config('kut_test.ts_ended', (select string_agg(concat_ws(':', pairing, side_0_goals, side_1_goals, winner_side, ends_at), ','
-  order by pairing) from kut.midweek_matches where tournament_id = '00000106-0000-4000-8000-000000000501'
+  order by pairing) from kut.midweek_matches where tournament_id = '00000106-0000-4000-8000-0000000005fb'
   and round = 1 and pairing in (1, 3)), true);
 select set_config('kut_test.tf_champion', (select winner_user_id::text from kut.midweek_matches
   where tournament_id = '00000106-0000-4000-8000-000000000504' and round = 3), true);
@@ -165,22 +167,22 @@ select ok((select coalesce(bool_and(reveal_at <= now()), true) from kut.midweek_
 
 -- TS: five minutes in, two matches mid shoot-out.
 select results_eq($q$select pairing::int, in_play, winner_side is null, side_0_goals is null, ends_at is null
-  from kut.midweek_matches_public where tournament_id = '00000106-0000-4000-8000-000000000501' and round = 1 order by pairing$q$,
+  from kut.midweek_matches_public where tournament_id = '00000106-0000-4000-8000-0000000005fb' and round = 1 order by pairing$q$,
   $q$values (0, true, true, true, true), (1, false, false, false, false), (2, true, true, true, true), (3, false, false, false, false)$q$,
   'the matches that went to penalties are still in play, the others have ended');
 select is((select string_agg(concat_ws(':', pairing, side_0_goals, side_1_goals, winner_side, ends_at), ',' order by pairing)
-  from kut.midweek_matches_public where tournament_id = '00000106-0000-4000-8000-000000000501' and round = 1 and pairing in (1, 3)),
+  from kut.midweek_matches_public where tournament_id = '00000106-0000-4000-8000-0000000005fb' and round = 1 and pairing in (1, 3)),
   current_setting('kut_test.ts_ended'),'an ended match shows its goals, winner and end');
 select is((select concat_ws(':', count(*), split_part(current_setting('kut_test.ts_kicks'), ':', 2))
-  from kut.midweek_events_public where tournament_id = '00000106-0000-4000-8000-000000000501'
+  from kut.midweek_events_public where tournament_id = '00000106-0000-4000-8000-0000000005fb'
   and round = 1 and pairing = 0 and kind = 'penalty'),
   current_setting('kut_test.ts_kicks'),'mid shoot-out, only the kicks taken so far show');
 select ok(split_part(current_setting('kut_test.ts_kicks'), ':', 1)::int between 1 and
   split_part(current_setting('kut_test.ts_kicks'), ':', 2)::int - 1,
   'and the shoot-out really is half taken');
-select is((select count(*)::int from kut.midweek_events_public where tournament_id = '00000106-0000-4000-8000-000000000501'
+select is((select count(*)::int from kut.midweek_events_public where tournament_id = '00000106-0000-4000-8000-0000000005fb'
   and round = 1 and pairing = 0 and kind = 'toss'),0,'a settling draw that is still to come does not show');
-select is((select count(*)::int from kut.midweek_matches_public where tournament_id = '00000106-0000-4000-8000-000000000501'
+select is((select count(*)::int from kut.midweek_matches_public where tournament_id = '00000106-0000-4000-8000-0000000005fb'
   and round > 1),0,'round 2 has not kicked off');
 
 -- TL: the final a minute in.

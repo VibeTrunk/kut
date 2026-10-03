@@ -3,7 +3,7 @@ import type { Archetype } from "@/game/archetypes";
 import { MIDWEEK, PPM, type MidweekConfig } from "@/game/midweek/config";
 import { playMatch, winChancePpm, type MatchSide } from "@/game/midweek/match";
 import { shaRng } from "@/game/midweek/rng";
-import { lineMultsPpm } from "@/game/midweek/shape";
+import { lineMultsPpm, squadBalance } from "@/game/midweek/shape";
 
 function side(
   archetypes: Archetype[],
@@ -19,6 +19,7 @@ function side(
     })),
     keeperSlot,
     keeperless,
+    balancePpm: squadBalance(archetypes, keeperSlot).balancePpm,
   };
 }
 
@@ -34,11 +35,14 @@ describe("midweek match", () => {
     expect(playMatch(shaRng(seed(1)), "m:1:1", balanced, allRounders)).not.toEqual(a);
   });
 
-  it("scores about the intended goals per match between equal sides", () => {
+  it("scores about the intended goals per match between equal All-rounder sides", () => {
+    // Specialists concentrate attack in their best shooter, so two balanced
+    // sides of specialists score more; equal All-rounders are the neutral case.
+    const plain = side(["goalkeeper", "all_rounder", "all_rounder", "all_rounder", "all_rounder"]);
     let goals = 0;
     const matches = 1_500;
     for (let n = 0; n < matches; n += 1) {
-      const outcome = playMatch(shaRng(seed(n)), "m:1:0", balanced, balanced);
+      const outcome = playMatch(shaRng(seed(n)), "m:1:0", plain, plain);
       goals += outcome.goals[0] + outcome.goals[1];
     }
     expect(Math.abs(goals / matches - MIDWEEK.match.intendedGoalsPerMatch)).toBeLessThan(0.25);

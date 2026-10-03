@@ -18,6 +18,74 @@ dated "Hosted deployment…" entries in `PROGRESS.md`.
 then bump the "Latest hosted migration" line in `CLAUDE.md`. Record the tier,
 backup id, pre/post `migration list` counts, the smoke row, and the rollback.
 
+## 2026-10-03 — `20261016000000` balanced squads beat All-rounders (ADR-116)
+
+Deployed 2026-10-03 from `VibeTrunk/supabase` (catalogue PR #75 there), on its
+own data-changing `db push`:
+
+- `20261016000000_midweek_balance.sql` (BUILD_SPEC §44.3–§44.5, §44.12,
+  §44.14, §145, ADR-116 amending ADR-089 and ADR-092, owner Q13 interview and
+  tuning sign-off R2, KUT PR #172, tier data-changing) &mdash; MM 2.0 PR 8 (C2).
+  - **What changed.** Each archetype's plusses per line (attack, midfield,
+    defence, 0–3; All-rounder 1/1/1, every outfield specialist four, Tank
+    0/2/2) are the engine's input: `kut._mm_config()`, `kut._mm_lines`,
+    `kut._mm_play_match`, `kut._mm_simulate` and `kut._mm_lock_tournament` are
+    re-created, and the new `kut._mm_balance(text[], integer)` applies the
+    weakest-line rule (each outfield line needs 3 plusses, ×0.88 per plus
+    short). The lock step stores it in the new nullable
+    `kut.midweek_entries.balance_ppm`, appended to
+    `kut.midweek_entries_public`. Outfield defence counts 0.8 of a shot's
+    resistance, a Goalkeeper keeps at 1.65 × power and a stand-in 0.45 of
+    that; OVR factor at 83 1.12, auto factor 0.55.
+  - **No DML at the push.** Data-changing because it changes what the lock
+    step computes and so who is paid.
+  - **Before the push.** Fresh backup `20261003-122258`, cold-verified, no
+    cards in escrow. `migration list --linked` showed 86 entries, 85 remote,
+    with `20261016000000` the only local-only one and no remote-only drift; the
+    dry run named exactly that file, and again from the catalogue's merged main
+    (`0832f6f`) just before the push; the catalogue check reported 86 approved
+    source migrations. The production gate **passed** for `b96ee52`
+    (2026-10-03 12:36 Amsterdam: CI checks, catalogue parity, the backup
+    re-verified, finalizer readiness, authenticated E2E 49 passed, 1 expected
+    skip). No evening was running (Saturday). After the push
+    `migration list --linked` showed 86 local and 86 remote, no drift.
+  - **Smoke test on hosted.** The one-row query below, for the SQL editor. The
+    local run returned
+    `t | 3 | [0, 2, 2] | 1120000 | 681472 | [2000000, 1000000, 200000] | balance_ppm | f | 0 |`,
+    and hosted should end in the open week, `2026-10-05` (recorded; the rule's
+    threshold; the Tank's plusses; the OVR factor; a one-line Finisher stack
+    at 0.88³ = 0.681472; a Finisher's lines; the view's new last column; no
+    member execute grant on the rule; no balanced entries yet):
+
+    ```sql
+    select
+      exists (select 1 from supabase_migrations.schema_migrations where version = '20261016000000') as recorded,
+      kut._mm_config()#>>'{balance,minPlusses}' as min_plusses,
+      kut._mm_config()#>>'{shape,plusses,tank}' as tank,
+      kut._mm_config()#>>'{ovr,factorMaxPpm}' as ovr_max,
+      (kut._mm_balance(array['goalkeeper','finisher','finisher','finisher','finisher'], 0)->>'balancePpm')::int as stack_balance,
+      (select jsonb_build_array(att_ppm, mid_ppm, def_ppm)::text from kut._mm_lines('finisher')) as finisher_lines,
+      (select attname::text from pg_attribute where attrelid = 'kut.midweek_entries_public'::regclass
+        and attnum = (select max(attnum) from pg_attribute where attrelid = 'kut.midweek_entries_public'::regclass and attnum > 0)) as view_last,
+      has_function_privilege('authenticated', 'kut._mm_balance(text[],integer)', 'execute') as members_call,
+      (select count(*) from kut.midweek_entries where balance_ppm is not null) as balanced_entries,
+      (select week_start from kut.midweek_tournaments where status = 'open') as open_week;
+    ```
+  - **Deploy ordering** was safe: #172's pages read `midweek_entries_public`
+    with `select("*")` and treat a missing or null `balance_ppm` as no chip,
+    and how-it-works described the rule from the Vercel deploy. **Switch at the
+    push** (owner): the week open at the push, **Wed 7 Oct** (`week_start`
+    2026-10-05), is the first played and paid under the new balance; weeks
+    already locked keep their stored results and a null `balance_ppm`.
+  - Rollback: in the migration's header. Drop and re-create
+    `kut.midweek_entries_public` from `20261012000000_midweek_draw_from_lock.sql`;
+    re-create `kut._mm_lock_tournament` and `kut._mm_config` from
+    `20261011000000_midweek_evening_timing.sql`; re-create `kut._mm_lines`,
+    `kut._mm_play_match` and `kut._mm_simulate` from
+    `20261005000000_midweek_engine.sql`; drop `kut._mm_balance(text[], integer)`
+    and `kut.midweek_entries.balance_ppm`. Weeks locked on the new engine keep
+    their stored results.
+
 ## 2026-10-03 — `20261015000000` unclaimed Players' archetypes rotate weekly (ADR-110)
 
 Deployed 2026-10-03 from `VibeTrunk/supabase` (catalogue PR #73 there), on its

@@ -6757,3 +6757,53 @@ nothing pays. The pages will read the views tolerantly.
 
 Tier: data-changing (docs/OPERATIONS.md): it widens what the ledger accepts,
 adds a faucet and changes what the worker writes when it pays a week.
+
+## ADR-119 — Deeper team colours: violet and teal, with a text tone and a fill per side, and Live on its own tokens
+
+Date: 2026-10-03
+
+Status: Accepted (amends ADR-111's team colours and ADR-107's Live token; MM
+2.0, built to the owner-approved DR3 mockups, `design/mm2-dr3/HANDOFF.md` §5,
+decisions DR3-1, DR3-2, DR3-3, DR3-9 and DR3-10)
+
+Context: the owner found the match page's blue and red too bright (3 Oct):
+deeper is classier. DR3 tried deeper royal blue and claret, then royal blue
+and teal, then four pairs without the blue, and the owner chose **violet and
+teal** (DR3-10). Deep colours on a dark board don't pass AA as small text, and
+today the red side and the `Live` marker are one colour (`#ff8091`).
+
+Decision (no migration):
+
+- **Two tokens per side.** The plain token is the **text tone** (names, score
+  digits, side headings): violet `#9e80d1`, teal `#4fb3a0`, both AA on board,
+  panel, panel-2 and the tinted lanes. `-fill` is everything drawn (lane
+  rails, the odds bar, scored penalty dots, the scoreboard strip): violet
+  `#6f4fa1`, teal `#1f7a6c`, with light ink (`#f4efe3`) on them at AA. `-bg`
+  (`#181322`, `#0e1f1c`) tints the lanes at 55%; `-line` (`#423658`,
+  `#23514a`) is kept for borders.
+- **Side-neutral names** (DR3-10): `--color-team-blue*` becomes
+  `--color-team-0*` and `--color-team-red*` `--color-team-1*`, with their
+  Tailwind classes, since neither side is blue or red any more.
+- **The fills** pass 3:1 for graphics in teal; violet's is 2.92:1 on the board,
+  within the stretch the owner allowed. Nothing relies on a fill alone: names,
+  lane side, the odds bar's percentages and the ✓/✕ on each kick carry it.
+  The odds bar's side-1 opacity goes, as both fills are now deep.
+- **Live on its own tokens** (DR3-3): `--color-live-bg` and
+  `--color-live-line` keep today's pink tint, and the Live chip, the clock's
+  live stop and Home's live card use them instead of the red side's. The
+  `Live` pink itself is unchanged.
+- **A 3 px strip** across the top of every scoreboard, side 0's fill on the left
+  half and side 1's on the right (DR3-2); decorative and hidden from screen
+  readers.
+- **Checked in a unit test** (`tests/unit/team-colours.test.ts`): DR3's
+  values, every contrast DR3's table computes (read from `globals.css`), Live
+  apart from both sides, and no source file left on the old names.
+
+Consequences: Live and the sides can no longer be confused (they were one
+colour). For deuteranopes violet and teal differ mainly by lightness (ΔE 36,
+as royal blue and teal did); the lane side, names and screen-reader sentences
+carry the side too. Lists of matches stay neutral (DR2-1). DR2's mockup
+generator (`design/ux-review/build/ux.css`) still names the old tokens and is
+left as the record of DR2; DR3's generator sets its own values.
+
+Tier: no migration.

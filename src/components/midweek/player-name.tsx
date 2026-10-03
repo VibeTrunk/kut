@@ -1,8 +1,8 @@
 import type { Side } from "@/game/midweek/match";
 import type { Segment } from "@/lib/midweek/report/types";
 
-/** A side's team colour as text (HANDOFF "Team colours"): side 0 blue, side 1 red. */
-export const TEAM_TEXT = ["text-team-blue", "text-team-red"] as const;
+/** A side's team colour as text (DR3 HANDOFF §5): side 0 violet, side 1 teal. */
+export const TEAM_TEXT = ["text-team-0", "text-team-1"] as const;
 
 /**
  * `PlayerName` (HANDOFF "Matches", DR1-5, DR2-2): a Player or manager in their

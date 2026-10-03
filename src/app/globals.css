@@ -41,22 +41,29 @@
   --color-brick: #dd7a55;
   --color-brick-bg: #2a1712;
   --color-brick-line: #5c3221;
-  /* The Midweek evening's `Live` marker (design/ux-review/HANDOFF.md), pinker
-     than the brick `Out` chip; the on-colour keeps its text dark. */
+  /* The Midweek evening's `Live` marker, pinker and brighter than either side
+     colour and the brick `Out` chip; its own tint, so it never follows a team
+     (DR3-3). The on-colour keeps its text dark. */
   --color-live: #ff8091;
   --color-ink-on-live: #2a0a10;
-  /* Team colours (HANDOFF "Team colours", DR2-1): side 0 is blue and on the
-     left, side 1 red and on the right, for every viewer. Only where one match
-     is open: a match page and the blocks that preview one; lists of matches
-     stay neutral. Both pass AA on board, panel and their tinted lanes. */
-  --color-team-blue: #7cb0ff;
-  --color-team-blue-bg: #14213a;
-  --color-team-blue-line: #2f4f86;
-  --color-ink-on-team-blue: #0b1424;
-  --color-team-red: #ff8091;
-  --color-team-red-bg: #331419;
-  --color-team-red-line: #7a2d3b;
-  --color-ink-on-team-red: #2a0a10;
+  --color-live-bg: #331419;
+  --color-live-line: #7a2d3b;
+  /* Team colours (design/mm2-dr3/HANDOFF.md, violet and teal, DR3-10): side 0
+     violet on the left, side 1 teal on the right, for every viewer, only where
+     one match is open (DR2-1); lists of matches stay neutral. The plain token
+     is the TEXT tone (names, score digits, side headings: AA on board, panel,
+     panel-2 and the tinted lanes); -fill is everything drawn (lane rails, the
+     chance bar, penalty dots, the scoreboard strip). */
+  --color-team-0: #9e80d1;
+  --color-team-0-fill: #6f4fa1;
+  --color-team-0-bg: #181322;
+  --color-team-0-line: #423658;
+  --color-ink-on-team-0: #f4efe3;
+  --color-team-1: #4fb3a0;
+  --color-team-1-fill: #1f7a6c;
+  --color-team-1-bg: #0e1f1c;
+  --color-team-1-line: #23514a;
+  --color-ink-on-team-1: #f4efe3;
 
   /* Instrument Serif carries the clubblad voice in page headings; Archivo
      does every interface job and every number. Both are self-hosted through

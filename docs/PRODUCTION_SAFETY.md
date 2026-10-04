@@ -151,18 +151,47 @@ powershell -NoProfile -File scripts/release/approve-production-release.ps1 `
 ```
 
 Even a passing gate plus approval does not authorize or perform a deployment.
-There is no deployment command in this tooling. `vercel.json` now contains
-`git.deploymentEnabled.main = false` with no overlapping true rule. This is a
-prepared repository control, **not a claim that live automatic deployments
-have already stopped**. Publication and activation need their own explicit
-instruction. See [Vercel Git configuration](https://vercel.com/docs/project-configuration/git-configuration).
+There is no deployment command in this tooling. PR #188 published
+`git.deploymentEnabled.main = false` with no overlapping true rule. At
+2026-10-04 14:31:31 UTC, authenticated Vercel verification found no deployments
+for its merged SHA `0d82bf1d2d2ee05747d457133803f79a7cef3ca2`; the production
+domain still served #187's `b99db188c6e0993552747c6f6d84a3779a480e71`.
+This confirms the hold for that merge; recheck it for each release. See
+[Vercel Git configuration](https://vercel.com/docs/project-configuration/git-configuration).
 
-For the cutover, publish the reviewed hold through an authorized PR and verify
-read-only that the Vercel Git integration honors it. Until that verification,
-keep the existing automatic deployment gap visible. Once active, an authorized
+If the hold is changed, publish it through an authorized PR and verify read-only
+that the Vercel Git integration honors it. With the hold active, an authorized
 squash merge creates the final candidate without automatically deploying it.
 Run the gate on that exact clean SHA, record explicit release approval, and
 run `assert-production-evidence.ps1` with its gate and approval manifests before
 any separately authorized deployment. Verify the deployed SHA afterwards.
 Branch-protection changes are separate external actions. A passing postdeploy
 gate cannot retroactively establish predeployment ordering.
+
+## Direct deployment verification and CLI access
+
+Check Vercel access at the start of release work, before promising a direct
+deployment audit:
+
+```powershell
+node scripts/release/check-vercel-deployment.mjs --candidate <40-character-sha>
+```
+
+The read-only checker resolves `kut.vibetrunk.com` to its bound Vercel deployment,
+checks the project, production target, ready state and exact Git SHA, and reads
+candidate deployments separately. A successful preview or an unpromoted ready
+build is not proof of what the production domain serves. Re-reading the domain
+binding detects reassignment during the check. A partial candidate-history page
+is identified as incomplete. No release approval or deployment is authorized.
+
+Authentication failures produce `unverified`, never a deployment conclusion.
+The operator can run `node scripts/release/check-vercel-deployment.mjs --login`
+in their own interactive terminal and complete Vercel's browser sign-in. The
+official CLI manages its existing saved session; do not copy tokens into chat,
+arguments, repository files, or a new credential store. The checker reuses the
+already installed Vercel CLI 59.23.2; it never installs a package. An explicit
+`KUT_VERCEL_CLI_PATH` may locate that CLI if the usual Windows npm locations
+are unavailable. Raw API responses and credential-bearing logs are not emitted.
+
+Endpoint contracts: [Vercel alias lookup](https://vercel.com/docs/rest-api/aliases/get-an-alias)
+and [deployment metadata filtering](https://vercel.com/docs/cli/list).

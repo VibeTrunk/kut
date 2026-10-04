@@ -76,6 +76,18 @@ This block is generated from `policy/PRODUCTION_INVARIANTS.md`. Run
     prepare and validate the central catalogue companion as far as authorized;
     report any remaining operator action with exact PowerShell commands.
     Hosted application and other external mutations need their own instruction.
+  - **Close out the checkout after publication.** Compare local edits with
+    merged main, preserve unpublished work in a named stash and a verified
+    private archive, and bring the ordinary checkout onto current main without
+    resets or broad discards. Put new scratch worktrees under the ignored
+    `.release-evidence/worktrees/` directory; the parent repository must not
+    treat an independently tracked worktree as untracked application code.
+    Keep generated previews private. Report any preserved unpublished notes
+    separately instead of leaving already-merged code appearing as pending work.
+  - **Check Vercel access early.** Run the read-only deployment checker in
+    `docs/PRODUCTION_SAFETY.md`; an expired login requires operator sign-in.
+    A green preview, absent GitHub status or missing deployment record alone
+    does not certify the commit serving the production domain.
   - **The packaging agent reads `git diff main...HEAD` in full** before
     writing the PR body — not only its own changes.
 - **Vercel:** connected as project `kut` at `kut.vibetrunk.com`.
@@ -105,9 +117,11 @@ locks Wed 30 Sep 2026 20:00 Amsterdam.
 
 Lessons that hold for every migration-bearing change:
 
-- **Before the ADR-123 cutover, Vercel deploys on merge to `main`, before the schema push.**
-  `vercel.json` prepares a main deployment hold; it is not active until its
-  separately authorized publication and integration verification. See
+- **Since the ADR-123 cutover, automatic main deployment is held.**
+  PR #188 published `git.deploymentEnabled.main = false`. An authenticated
+  Vercel audit on 2026-10-04 confirmed no deployment for its final main SHA;
+  the production domain still served #187. Recheck this control and live SHA
+  for each release. See
   `docs/PRODUCTION_SAFETY.md` for final-SHA gating and manual deployment order.
   New code must
   degrade gracefully against the old schema (a tolerant read, a flag, or a

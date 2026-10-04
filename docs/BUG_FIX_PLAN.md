@@ -17,6 +17,13 @@ migration is applied and read-only verified; see the final release record
 below and DEPLOYMENTS.md.
 The affected-phone diagnosis remains unconfirmed.
 
+**Latest owner update — 4 October 2026:** the bug has disappeared. Keep
+KB-037 logged and open for monitoring only; no active resolution is needed
+for now. This supersedes the active investigation steps below. Resume those
+steps on recurrence, capturing the original failure before clearing browser
+state. The owner report does not establish the cause or complete the detailed
+real-device preview/Share/Save/cancellation/Retry checks.
+
 ## Scope and inventory
 
 Reviewed the complete bug register, tester feedback, the roadmap's defect
@@ -31,14 +38,16 @@ items need explicit treatment: the latent Special-card tier defect in the
 roadmap, and KB-018's deliberately deferred database follow-up.
 
 Current inventory: **38 entries, 36 fixed (KB-035/036 verified locally and
-deployed; KB-038 verified locally and hosted), one investigating (KB-037), one
-cannot-reproduce (KB-025)**.
+deployed; KB-038 verified locally and hosted), one open for monitoring only
+(KB-037, no active resolution needed), one cannot-reproduce (KB-025)**.
 GitHub confirms the final merged frontend candidate is deployed to Production.
-KB-037 remains open because deployment does not supply real-device evidence.
+KB-037 remains logged and open at the owner's request after the reported
+symptoms disappeared; the cause and detailed real-device checks remain
+unconfirmed. No further fix or active retest is planned for now.
 
 | Order | Item | Current assessment | Planned disposition |
 |---|---|---|---|
-| 1 | KB-037: sharing fails on a phone | Recovery implemented; exact device cause still unconfirmed | Keep investigating until the affected device passes |
+| On recurrence | KB-037: sharing fails on a phone | Owner reports the bug has disappeared; recovery deployed, cause still unconfirmed | Keep logged, monitoring only; no active resolution needed for now |
 | 2 | KB-035: uneven rating chips | Fixed, verified locally in Chromium/WebKit and deployed | Full-width rows with the rating disc and arrow pinned right |
 | 3 | KB-036: misaligned share tiles | Fixed, verified locally and deployed; PNG dimensions unchanged | Shared desktop grid rows; compact phone layout retained |
 | Before any Special issuance | KB-038: Special-card rarity projection | Corrected locally and hosted with one migration | Applied from central #79; no Special issuance |
@@ -78,7 +87,7 @@ slice. KB-025 and KB-018 do not justify speculative database changes now.
 The ignored investigation scripts and JSON are in `test-results/`; they are
 temporary evidence, not part of the maintained test suite.
 
-## 1. KB-037 — make sharing work on the affected phone
+## 1. KB-037 — deployed recovery and recurrence investigation
 
 **Files:** `src/components/midweek/share.tsx`,
 `src/lib/midweek/share-draw.ts`, authenticated Playwright configuration and
@@ -106,7 +115,7 @@ simulated recovery evidence from the reported phone failure.
    exercise stored-week data, but the actual 30 September payload has not
    been reproduced on the affected device.
 
-### Implementation sequence
+### Implementation sequence (historical; resume only on recurrence)
 
 1. Capture browser/OS and a sanitized failure record with a stage:
    `fonts`, `canvas-context`, `draw`, or `png-export`, plus image kind and
@@ -262,7 +271,11 @@ pgTAP fixture, and a tolerant frontend read during deployment. Test capped
 and uncapped Form and injury/comeback contributions. Do not reopen the fixed
 user-facing bug or alter the rating engine simply to remove this debt.
 
-## Verification and completion order
+## Original verification and completion order
+
+The frontend recovery and Special-tier release below are complete. KB-037
+is now monitoring only per the latest owner update; these steps do not
+require further work while the reported symptoms remain absent.
 
 1. Build local fixtures and capture KB-037's actual failing stage; implement
    its bounded compatibility/recovery fix.

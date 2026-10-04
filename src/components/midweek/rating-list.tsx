@@ -28,14 +28,14 @@ function BestChip() {
 
 function MatchChips({ card }: { card: RatedCard }) {
   return (
-    <ul className="mt-2 hidden flex-wrap gap-1.5 group-data-[open=true]:flex">
+    <ul className="mt-2 hidden min-w-0 gap-1.5 group-data-[open=true]:grid">
       {card.matches.map((match) => (
-        <li key={match.href}>
+        <li className="min-w-0" key={match.href}>
           <Link
-            className="inline-flex min-h-[38px] items-center gap-2 rounded-full border border-line bg-board-deep/40 py-[3px] pr-1.5 pl-3 text-[12.5px] font-bold text-ink-dim hover:border-brass"
+            className="grid min-h-11 w-full grid-cols-[minmax(0,1fr)_30px_8px] items-center gap-2 rounded-2xl border border-line bg-board-deep/40 py-1 pr-2 pl-3 text-[12.5px] font-bold text-ink-dim hover:border-brass"
             href={match.href}
           >
-            {match.label}
+            <span className="[overflow-wrap:anywhere]">{match.label}</span>
             <MidweekRatingDisc
               context={`against ${match.opponent}`}
               rating={match.rating}
@@ -108,15 +108,17 @@ export function MidweekRatingList({
                   <p className="mt-1 font-serif text-[17px] leading-[1.3] text-pretty text-ink">
                     {card.line}
                   </p>
-                  <MatchChips card={card} />
                 </div>
                 <MidweekRatingDisc context="for the night" rating={card.rating} />
+                <div className="col-span-2 col-start-2 hidden min-w-0 group-data-[open=true]:block">
+                  <MatchChips card={card} />
+                </div>
               </li>
             ))}
           </ol>
-          <ol className="hidden grid-cols-5 items-start gap-5 lg:grid">
+          <ol className="hidden grid-cols-5 items-start gap-x-5 gap-y-2.5 lg:grid">
             {ratings.cards.map((card) => (
-              <li className="grid min-w-0 content-start gap-2.5" key={card.slot}>
+              <li className="row-span-4 grid min-w-0 grid-rows-subgrid" key={card.slot}>
                 {card.face ? (
                   <LiveCard player={card.face} />
                 ) : (

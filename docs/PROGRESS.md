@@ -4795,3 +4795,72 @@ authenticated E2E (61 passed, 1 expected skip): the count with no Goalkeeper,
 a short defence at ×0.77 with the sticky row, then balanced, at 320 and 412 px
 and at 1440 (the sticky row hidden); each phone row's plusses; every
 no-overflow check.
+
+## Share recovery and rating/share alignment — 2026-10-04 (local, not released)
+
+Frontend slice for KB-037, KB-035 and KB-036, implemented in that order;
+ADR-117/120 amendment. No migration dependency. Existing owner reports and
+the documentation-map change are retained. Git status/history and canonical
+guidance were read before editing, followed by installed Next.js 16.3.5 docs.
+
+- **Share recovery:** each image owns loading/drawing/Retry and its preview
+  URL. Font failures fall back to system fonts after at most 3 seconds; photo
+  fetch/decode keeps the shirt fallback and a 5-second bound. `arcTo` replaces
+  a missing `roundRect`; nonempty PNG export is bounded to 10 seconds.
+  Canvas-context/draw/export failures are isolated to their tile, with a real
+  Retry. Bitmaps, late cancelled decodes, canvas backing stores and owned URLs
+  are released; downloads reuse the preview URL.
+- **Diagnostics:** local console/event records only stage, image kind,
+  allowlisted error name and recovery. Native share cancellation is neutral;
+  action failures keep the PNG and allow Share/Save again. No photo URL,
+  credential, payload, error message, member name or user agent is logged.
+- **Rating links:** full-width rows, wrapped opponent names, disc/arrow right,
+  44 px minimum targets. Phone rows span the text/disc area; desktop cards use
+  shared rows. Toggle ARIA state, accessible names and report targets remain.
+- **Share layout:** five shared desktop rows for preview/title/description/
+  actions/feedback, compact 110 px phone thumbnails. Both PNGs were already
+  1080 × 1350; this corrects content-dependent page alignment, not dimensions.
+- **Browser coverage:** Chromium Pixel 7/320 and WebKit iPhone emulation;
+  the release runner provisions both engines. New regressions cover old
+  schedule-v1 and current schedule-v2 completed fixtures, real local CORS
+  photos, rejected/hung fonts, missing roundRect, failed photos, context/draw/
+  null or stalled PNG failures, independent Retry, share abort/error/success,
+  download fallback and cleanup after rendering or cancelled decode. Geometry
+  spans 320/412/640/1280 px, short/long names, one/two images and loading/error/
+  ready/feedback on completed views. Desktop screenshot visually checked.
+
+Validation: `verify:fast` passes (49 files, 474 unit tests), including policy
+sync, formatting, ESLint and TypeScript. Final browser/build results are
+recorded in the verification addendum below.
+
+**KB-037 stays investigating.** The affected phone, OS and browser were asked
+for early but remain unknown. Neither its actual exception nor the hosted
+30 September payload has been reproduced. Rejected fonts and missing
+roundRect are demonstrated failures, not confirmed explanations for that
+device. Emulated WebKit and mocked sharing cannot close the report.
+
+### Verification addendum for the frontend slice
+
+- Full authenticated run: **129 passed, two expected duplicate pack-test
+  skips, one WebKit Sign in click timeout** before KB-033's layout assertions.
+  The same case passed unchanged on a focused rerun (1/1, 8.1 seconds).
+  All **39 new share/rating/layout regressions passed**, no skips. The initial
+  full run was not green; the two skips are not passes (pack coverage ran
+  successfully once on narrow Chromium).
+- `test:integration`: **7 files / 16 tests passed**, explicit loopback target.
+  `test:e2e`: **26 passed**, no skips. Production build passed.
+- Local installed Next.js is **16.3.5**, while package declaration/lockfile
+  specify **16.3.6**. Documentation was read from the installed package;
+  dependency files were untouched. Validate the eventual candidate in CI's
+  clean lockfile install before release; local checks do not certify 16.3.6.
+- `verify:fast` passed as recorded above. Its first ESLint run raced
+  Playwright's initial cleanup of `test-results`; the rerun passed.
+- `npm audit --omit=dev --audit-level=high`: zero vulnerabilities. Pinned
+  Gitleaks working-source and history scans passed with full redaction.
+  Working-tree migration policy passed; the release runner parses without
+  executing the production gate. `git diff --check` is clean.
+- No missing local stack or browser engine remains. **Missing evidence:**
+  affected real phone/browser and actual 30 September diagnosis, central
+  migration catalogue parity, exact-candidate GitHub merge/scan evidence,
+  applicable cold backup and production release gate. Nothing is deployed;
+  each external mutation and each commit needs separate explicit instruction.

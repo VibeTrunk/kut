@@ -16,7 +16,7 @@ async function signIn(page: Page, username: string) {
   await page.getByLabel("Username").fill(username);
   await page.getByLabel("Password").fill("fictional-release-password");
   await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page).toHaveURL(/\/$/);
+  await expect(page).toHaveURL(/\/$/, { timeout: 15_000 });
 }
 
 async function expectNoHorizontalOverflow(page: Page) {
@@ -1262,13 +1262,13 @@ test("admin can reach the mobile attendance finalization surface", async ({ page
   await expectNoHorizontalOverflow(page);
 });
 
-// Last in the file, and only in the last project, so it is the run's last
-// test: it spends 175 of the member's 500 coins and adds three cards, which
-// the picker tests count.
+// Last in this file and run once on the narrow Chromium project. It spends
+// 175 coins and adds cards; finally removes those cards so the later WebKit
+// project keeps the same picker inventory.
 test("a pack's summary names the slots it fills and the copies it adds (ADR-114)", async ({
   page,
 }, testInfo) => {
-  test.skip(testInfo.project.name !== "authenticated-320", "runs once, last");
+  test.skip(testInfo.project.name !== "authenticated-320", "runs once on narrow Chromium");
   await signIn(page, "release_member");
   await page.goto("/club/packs");
   try {

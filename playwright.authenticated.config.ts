@@ -11,7 +11,7 @@ assertLocalTarget(apiUrl, process.env.API_URL ? "API_URL" : "the built-in defaul
 export default defineConfig({
   testDir: "./tests/e2e-authenticated",
   fullyParallel: false,
-  // One worker: both projects sign in as the same two fixture accounts, and
+  // One worker: all projects sign in as the same two fixture accounts, and
   // the global setup owns those rows.
   workers: 1,
   retries: process.env.CI ? 1 : 0,
@@ -24,7 +24,8 @@ export default defineConfig({
   },
   // Two widths, because they fail differently: the Pixel 7 is the realistic
   // club phone, and 320x568 is the narrowest screen still in use — it is what
-  // catches a table or a button row that cannot shrink.
+  // catches a table or a button row that cannot shrink. WebKit covers a second
+  // browser engine, including font/canvas recovery; it is not a real iPhone.
   projects: [
     {
       name: "authenticated-pixel7",
@@ -37,6 +38,10 @@ export default defineConfig({
         browserName: "chromium",
         viewport: { width: 320, height: 568 },
       },
+    },
+    {
+      name: "authenticated-webkit",
+      use: { ...devices["iPhone 13"], browserName: "webkit" },
     },
   ],
   webServer: {

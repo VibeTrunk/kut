@@ -81,16 +81,85 @@ export type ShareAssets = {
   photos: ReadonlyMap<string, ImageBitmap>;
 };
 
+type ShareStage = "fonts" | "canvas-context" | "draw" | "png-export" | "share" | "download";
+
+/** Never include error messages, URLs, names, user agents or the page payload. */
+export function reportShareFailure(
+  stage: ShareStage,
+  kind: ShareImage["kind"],
+  error: unknown,
+  recovery: "fallback" | "failed" = "failed",
+) {
+  const name = error instanceof Error || error instanceof DOMException ? error.name : "Error";
+  const errorName =
+    /^(Error|TypeError|SyntaxError|RangeError|SecurityError|NotSupportedError|InvalidStateError|NotAllowedError|AbortError|TimeoutError|NetworkError|EncodingError)$/.test(
+      name,
+    )
+      ? name
+      : "Error";
+  const detail = { stage, kind, errorName, recovery };
+  console.warn("KUT share image", detail);
+  window.dispatchEvent(new CustomEvent("kut:share-diagnostic", { detail }));
+}
+
+/** Bounds optional assets and export; late bitmaps are closed even after cancellation. */
+function bounded<T>(
+  work: Promise<T>,
+  ms: number,
+  signal?: AbortSignal,
+  late?: (value: T) => void,
+): Promise<T> {
+  return new Promise((resolve, reject) => {
+    let finished = false;
+    const finish = (error?: unknown, value?: T) => {
+      if (finished) return;
+      finished = true;
+      clearTimeout(timer);
+      signal?.removeEventListener("abort", abort);
+      if (error) reject(error);
+      else resolve(value as T);
+    };
+    const abort = () => finish(new DOMException("", "AbortError"));
+    const timer = setTimeout(() => finish(new DOMException("", "TimeoutError")), ms);
+    signal?.addEventListener("abort", abort, { once: true });
+    if (signal?.aborted) abort();
+    work.then(
+      (value) => (finished ? late?.(value) : finish(undefined, value)),
+      (error) => finish(error),
+    );
+  });
+}
+
+export function releaseShareAssets(assets: ShareAssets) {
+  assets.photos.forEach((photo) => photo.close());
+}
+
 /** The app's own fonts (next/font's families), loaded before anything is drawn. */
-export async function loadShareAssets(images: readonly ShareImage[]): Promise<ShareAssets> {
+export async function loadShareAssets(
+  images: readonly ShareImage[],
+  signal?: AbortSignal,
+): Promise<ShareAssets> {
   const style = getComputedStyle(document.body);
-  const sans =
+  let sans =
     style.getPropertyValue("--font-archivo").trim() || "Archivo, Helvetica, Arial, sans-serif";
-  const serif = style.getPropertyValue("--font-instrument").trim() || "Georgia, serif";
-  await Promise.all([
-    ...["700", "800", "900"].map((weight) => document.fonts.load(`${weight} 40px ${sans}`)),
-    document.fonts.load(`400 40px ${serif}`),
-  ]);
+  let serif = style.getPropertyValue("--font-instrument").trim() || "Georgia, serif";
+  try {
+    await bounded(
+      Promise.resolve().then(() =>
+        Promise.all([
+          ...["700", "800", "900"].map((weight) => document.fonts.load(`${weight} 40px ${sans}`)),
+          document.fonts.load(`400 40px ${serif}`),
+        ]),
+      ),
+      3_000,
+      signal,
+    );
+  } catch (error) {
+    if (signal?.aborted) throw error;
+    images.forEach((image) => reportShareFailure("fonts", image.kind, error, "fallback"));
+    sans = "Helvetica, Arial, sans-serif";
+    serif = "Georgia, serif";
+  }
   const urls = [
     ...new Set(images.flatMap((image) => image.cards.map((card) => card.photoUrl))),
   ].filter((url): url is string => Boolean(url));
@@ -100,14 +169,42 @@ export async function loadShareAssets(images: readonly ShareImage[]): Promise<Sh
       // `fetch` with CORS, then a bitmap: drawing it never taints the canvas,
       // so `toBlob` works. A photo that can't be read falls back to the shirt.
       try {
-        const response = await fetch(url, { mode: "cors", credentials: "omit" });
-        if (!response.ok) return;
-        photos.set(url, await createImageBitmap(await response.blob()));
+        const request = new AbortController();
+        const abort = () => request.abort();
+        signal?.addEventListener("abort", abort, { once: true });
+        if (signal?.aborted) request.abort();
+        try {
+          const bitmap = await bounded(
+            (async () => {
+              const response = await fetch(url, {
+                mode: "cors",
+                credentials: "omit",
+                signal: request.signal,
+              });
+              if (!response.ok) return null;
+              return createImageBitmap(await response.blob());
+            })(),
+            5_000,
+            signal,
+            (photo) => photo?.close(),
+          );
+          if (bitmap) {
+            if (signal?.aborted) bitmap.close();
+            else photos.set(url, bitmap);
+          }
+        } finally {
+          request.abort();
+          signal?.removeEventListener("abort", abort);
+        }
       } catch {
         // The shirt back stands in.
       }
     }),
   );
+  if (signal?.aborted) {
+    photos.forEach((photo) => photo.close());
+    throw new DOMException("", "AbortError");
+  }
   return { fonts: { sans, serif }, photos };
 }
 
@@ -178,7 +275,16 @@ function wrap(
 
 function roundRect(ctx: Ctx, x: number, y: number, w: number, h: number, r: number) {
   ctx.beginPath();
-  ctx.roundRect(x, y, w, h, r);
+  if (typeof ctx.roundRect === "function") ctx.roundRect(x, y, w, h, r);
+  else {
+    const radius = Math.min(r, w / 2, h / 2);
+    ctx.moveTo(x + radius, y);
+    ctx.arcTo(x + w, y, x + w, y + h, radius);
+    ctx.arcTo(x + w, y + h, x, y + h, radius);
+    ctx.arcTo(x, y + h, x, y, radius);
+    ctx.arcTo(x, y, x + w, y, radius);
+    ctx.closePath();
+  }
 }
 
 /** KUT's shield: `polygon(50% 0, 100% 38%, 82% 100%, 18% 100%, 0 38%)`. */
@@ -625,17 +731,41 @@ export function drawMyNight(ctx: Ctx, data: MyNightData, assets: ShareAssets) {
 }
 
 /** Draws one image and returns it as a PNG. */
-export async function renderShareImage(data: ShareImage, assets: ShareAssets): Promise<Blob> {
+export async function renderShareImage(
+  data: ShareImage,
+  assets: ShareAssets,
+  signal?: AbortSignal,
+): Promise<Blob> {
   const canvas = document.createElement("canvas");
-  canvas.width = SHARE_WIDTH;
-  canvas.height = SHARE_HEIGHT;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) throw new Error("No 2D canvas.");
-  if (data.kind === "poster") drawPoster(ctx, data, assets);
-  else drawMyNight(ctx, data, assets);
-  return new Promise((resolve, reject) =>
-    canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error("No image."))), "image/png"),
-  );
+  let stage: ShareStage = "canvas-context";
+  try {
+    if (signal?.aborted) throw new DOMException("", "AbortError");
+    canvas.width = SHARE_WIDTH;
+    canvas.height = SHARE_HEIGHT;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("No 2D canvas.");
+    stage = "draw";
+    if (data.kind === "poster") drawPoster(ctx, data, assets);
+    else drawMyNight(ctx, data, assets);
+    stage = "png-export";
+    return await bounded(
+      new Promise<Blob>((resolve, reject) =>
+        canvas.toBlob(
+          (blob) => (blob && blob.size ? resolve(blob) : reject(new Error("No image."))),
+          "image/png",
+        ),
+      ),
+      10_000,
+      signal,
+    );
+  } catch (error) {
+    if (!signal?.aborted) reportShareFailure(stage, data.kind, error);
+    throw error;
+  } finally {
+    // Release the backing store, including failed/cancelled exports.
+    canvas.width = 0;
+    canvas.height = 0;
+  }
 }
 
 // ---- colour helpers ---------------------------------------------------------------

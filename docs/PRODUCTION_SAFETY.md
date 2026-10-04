@@ -115,7 +115,8 @@ powershell -NoProfile -File scripts/release/request-production-gate.ps1 `
 The gate reads GitHub check evidence for that SHA, checks byte-identical central
 migration catalogue parity, requires a cold-verified backup less than 24 hours
 old, and freshly decrypts and hash-checks that ciphertext in another process.
-It also runs authenticated member + admin mobile Playwright tests. Missing, skipped, cancelled, stale,
+It provisions Chromium and WebKit and runs authenticated member + admin mobile
+Playwright tests, including share recovery and geometry. Missing, skipped, cancelled, stale,
 duplicated, or mismatched evidence fails closed. Its manifest explicitly
 records that release approval is absent and deployment is unauthorized.
 

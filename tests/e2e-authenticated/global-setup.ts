@@ -67,7 +67,7 @@ export default async function globalSetup() {
       if (fixture.username === "release_member") await seedMidweekFixture(database, userId);
     }
   } catch (error) {
-    await removeMidweekFixture(database);
+    await removeMidweekFixture(database, true);
     await removeFixtureUsers();
     throw error;
   } finally {

@@ -166,3 +166,31 @@ run `assert-production-evidence.ps1` with its gate and approval manifests before
 any separately authorized deployment. Verify the deployed SHA afterwards.
 Branch-protection changes are separate external actions. A passing postdeploy
 gate cannot retroactively establish predeployment ordering.
+
+## Direct deployment verification and CLI access
+
+Check Vercel access at the start of release work, before promising a direct
+deployment audit:
+
+```powershell
+node scripts/release/check-vercel-deployment.mjs --candidate <40-character-sha>
+```
+
+The read-only checker resolves `kut.vibetrunk.com` to its bound Vercel deployment,
+checks the project, production target, ready state and exact Git SHA, and reads
+candidate deployments separately. A successful preview or an unpromoted ready
+build is not proof of what the production domain serves. Re-reading the domain
+binding detects reassignment during the check. A partial candidate-history page
+is identified as incomplete. No release approval or deployment is authorized.
+
+Authentication failures produce `unverified`, never a deployment conclusion.
+The operator can run `node scripts/release/check-vercel-deployment.mjs --login`
+in their own interactive terminal and complete Vercel's browser sign-in. The
+official CLI manages its existing saved session; do not copy tokens into chat,
+arguments, repository files, or a new credential store. The checker reuses the
+already installed Vercel CLI 59.23.2; it never installs a package. An explicit
+`KUT_VERCEL_CLI_PATH` may locate that CLI if the usual Windows npm locations
+are unavailable. Raw API responses and credential-bearing logs are not emitted.
+
+Endpoint contracts: [Vercel alias lookup](https://vercel.com/docs/rest-api/aliases/get-an-alias)
+and [deployment metadata filtering](https://vercel.com/docs/cli/list).

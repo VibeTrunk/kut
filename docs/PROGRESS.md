@@ -5106,3 +5106,209 @@ need no manual environment configuration. No dependencies, migration, hosted
 SQL, credentials, external configuration, commit, push, merge or deployment
 changed. The Windows WebKit/JWT cause and historical SQL timing flake remain
 unproven; actual versions are recorded, and no environment cure is claimed.
+
+## KB-037 owner follow-up: monitoring only — 2026-10-04
+
+The owner reports: "For some reason the bug has disappeared." They request
+that it remain logged but need no active resolution for now. KNOWN_BUGS now
+marks KB-037 open for monitoring only, preserving the original failure and
+deployed recovery record; BUG_FIX_PLAN supersedes its active investigation
+steps and resumes them only on recurrence. No additional fix is proposed.
+
+This is an owner-reported disappearance of symptoms, not a confirmed cause
+or a recorded pass of each preview, native Share, Save, cancellation and
+Retry check. Device/OS/browser, completed week/page and sanitized failing
+stage remain unknown. If it returns, capture the original failure before
+clearing browser state. KB-025 remains cannot-reproduce; KB-018's database
+follow-up remains deliberately deferred. KB-038 needs no further application.
+
+Documentation-only update; application, tests, dependencies and migrations
+are untouched. No browser/device/database tests or release gate were rerun;
+prior passed and failed checks remain historical evidence. Git status was
+clean before these edits. The initial remote-main lookup failed under
+restricted network access; the read-only retry succeeded and reported
+`1e0b712beb046093109f76eaa5039b68f57c7d97`. The local `origin/main` reference
+remains stale at `13185dc8000970ee5d42b54503973c17aa50327f`; no fetch, checkout
+or fresh deployment verification was performed for this documentation update.
+Validation: reviewed the three documentation diffs; `git diff --check` passed.
+No commit, push, merge, deployment or hosted mutation was performed.
+
+## Match report release investigation handover — 2026-10-04
+
+Following the owner's instruction to deploy, open and merge the Soft graphite
+change, the agent committed and pushed an isolated six-file slice and opened
+PR #186. The owner subsequently confirmed they personally merged the PR.
+GitHub records the squash merge under account MartinFloris at 08:58:09 UTC
+as `70de2f1c654db81967dc3c4f1df01170c7dde894`; the agent did not issue the
+merge command. Vercel automatically deployed that SHA successfully
+at 08:58:45 UTC (GitHub deployment `6838989819`). All required GitHub checks
+passed, including an unchanged rerun of the initially failing database job.
+Read-only public checks returned HTTP 200 and served the approved CSS tokens.
+This supersedes the pre-release status in the preceding implementation entry.
+
+The full local production release gate never passed. Windows production-server
+testing yielded 128 passes, two WebKit sign-in timeouts and two expected skips;
+the later managed development-server run yielded 118 passes, three flaky
+tests, nine WebKit failures and two expected skips. Two selected WebKit tests
+passed with version-matched Linux browsers against the production build.
+These targeted passes do not prove a root cause or constitute a passing gate.
+No passing gate manifest was produced for the PR head or squash SHA. The
+automatic deployment preceded completion of the full gate; retrospective
+checks cannot establish predeployment ordering.
+
+The owner challenged the prolonged investigation and requested a fresh-session
+handover. Added
+[`match-report-release-handover-2026-10-04.md`](session-prompts/match-report-release-handover-2026-10-04.md)
+with release identities, ordered test conditions, evidence locations and
+limitations, interrupted local fixture cleanup, agent process mistakes, a
+bounded diagnostic prompt and the exact-SHA versus automatic-deploy design gap.
+The diagnosis and prevention proposals remain open. Owned app/browser helpers
+were stopped; original dirty work and ignored local evidence were preserved.
+
+This handover is documentation only. No additional suite, commit, push,
+merge, deployment, hosted SQL, secret or external configuration mutation was
+performed to prepare it. Validation: checked Markdown formatting, relative
+document links and whitespace. The handover records failed validation honestly
+and does not waive production invariants.
+
+## Match report gate: bounded diagnosis — 2026-10-04
+
+Followed the fresh-session handover with read-only release checks and bounded
+local diagnostics in the clean exact-SHA checkout. Main and the latest
+successful Production deployment still name
+`70de2f1c654db81967dc3c4f1df01170c7dde894`; its seven required CI checks pass,
+but there is still no passing full local gate or predeployment gate approval.
+
+The unchanged poster-layout case passed once in Windows WebKit and once in
+the matching Linux browser, with a fresh locked production build, the same
+runner/app/fixtures and zero retries (20.50 / 24.89 seconds). Traces and reports
+were captured immediately in distinct ignored directories. These passes do
+not reproduce or resolve the historical browser failures.
+
+A controlled interruption probe demonstrated the cleanup defect: owner removal
+left one worker-created successor and 22 rotation rows. The defective removal
+was rolled back before normal recovery; non-fixture archetypes were restored
+and final fixture counts were zero. A separate eight-token comparison returned
+200 on all requests to original PostgREST 14.5 and a temporary 14.18 sidecar.
+The upstream cached-clock fix is an environment lead, not a proven local cure.
+
+Recorded the diagnosis, limitations, private evidence locations and concrete
+independent proposals in
+[the diagnostic follow-up](session-prompts/match-report-release-diagnosis-2026-10-04.md).
+The release proposal holds automatic main deployment, creates the final
+squash SHA, runs its unchanged gate, then requires separate release approval
+and deployment instruction. Account capabilities and configuration activation
+remain for an authorized cutover; no existing gate or invariant was weakened.
+
+No broad suite, full gate, tracked app/test-source change, migration, hosted SQL,
+credential/configuration mutation, commit, push, merge or deployment occurred.
+Primary dirty work and retained evidence were preserved. Owned local app,
+browser and comparison helpers were stopped; original Supabase services remain.
+The SQL timing flake and browser root cause remain unresolved. No durable
+fixture fix or passing release certificate is claimed.
+
+## Permanent local release fixes implemented — 2026-10-04
+
+Following the owner's implementation instruction, prepared two independent
+worktrees at the live Soft graphite tree: `work/fix-fixture-lifecycle` (ADR-122,
+durable exact-ID ownership and transactional crash recovery) and
+`work/fix-production-gate` (ADR-123, owned fresh production builds, first-failure
+diagnostics, evidence integrity/freshness and a prepared main deployment hold).
+Their source, regression tests, decisions and runbooks are reviewable locally;
+the primary checkout's existing edits remain intact.
+
+Both final fast checks passed (475 / 489 unit tests); five database lifecycle
+regressions and two focused Windows WebKit cases passed on a locked production
+build. Final fixture/rotation/journal counts are zero, the owned app listener
+has stopped, and all 21 historical retained contexts match their saved hashes.
+The browser/JWT and SQL timing causes remain unproven. No full gate certificate
+was emitted for these uncommitted changes. No commit, push, merge, deploy,
+hosted SQL, credentials or external configuration changed; the main deployment
+hold requires separate publication/cutover authorization before it is active.
+
+See [the implementation handover](session-prompts/match-report-permanent-fixes-2026-10-04.md)
+for files, evidence, limitations and the remaining exact-SHA release steps.
+
+## Permanent-fix publication preparation — 2026-10-04
+
+On continuation, committed the fixture recovery and release evidence changes
+separately as `b375ae0cdc01d18d99895c83bf87644266cc8dc9` and
+`7895b597a6ba519fd6332b2fea14f4859c270e63` in their isolated worktrees.
+Both are clean; complete diffs against refreshed remote main and PR descriptions
+are ready. Primary dirty source/docs and private evidence remain preserved.
+Automatic approval review rejected the first push because publication to the
+remote was not explicitly authorized by trusted user content. Neither branch
+was pushed; no PR, same-SHA CI, merge, deployment or hold activation occurred.
+Explicit authorization to publish both branches to `VibeTrunk/kut` and open
+PRs is now required. See the implementation handover for the exact branches.
+
+## Permanent-fix PR publication — 2026-10-04
+
+After the owner explicitly authorized pushing and opening PRs, published the
+two branches to `VibeTrunk/kut`: [fixture recovery #187](https://github.com/VibeTrunk/kut/pull/187)
+at `b375ae0cdc01d18d99895c83bf87644266cc8dc9`, and
+[production release evidence #188](https://github.com/VibeTrunk/kut/pull/188)
+at `7895b597a6ba519fd6332b2fea14f4859c270e63`. Both target main. All seven
+required checks passed on each exact head (`fast`, `e2e`, `database`,
+`migrations`, `security`, `merge-gate`, `scan`); both PRs are open with clean
+merge status. Automatic branch previews completed.
+No merge or manual deployment occurred; the main hold remains inactive until
+its separately authorized cutover is verified.
+
+## PR #188 conflict resolution — 2026-10-04
+
+After the owner merged fixture recovery #187 and requested conflict resolution,
+merged current main into #188's existing branch. The two documentation append
+conflicts preserve both ADR-122/123 and their implementation records in order;
+all release code is unchanged and fixture code matches merged main.
+`verify:fast` passed (52 files / 490 unit tests). Pushed merge commit
+`b689aaaadbf16c718de5e368e354713e3dfe41a5`, updated the PR validation record,
+and confirmed GitHub considers #188 mergeable with clean merge status. All
+seven required checks passed on the exact updated head. No merge of #188,
+manual deployment or hold activation was performed.
+
+## Permanent fixes merged: remaining release work — 2026-10-04
+
+The owner merged #188 as `0d82bf1d2d2ee05747d457133803f79a7cef3ca2`;
+all seven required checks passed on the final main SHA. The main deployment
+hold is present in merged configuration. GitHub records no deployment for that
+SHA; the latest successful Production record still names #187's
+`b99db188c6e0993552747c6f6d84a3779a480e71`, consistent with the hold.
+An authenticated Vercel account audit was not performed.
+The full version-2 production gate for final main remains outstanding, followed
+by separate release approval and deployment instruction if deployment is wanted.
+The historical WebKit/JWT and SQL timing causes remain unresolved; local dirty
+work, handover files and ignored evidence remain preserved.
+
+## Workspace reconciliation and direct deployment verification — 2026-10-04
+
+The ordinary checkout still showed 24 pending files because it remained on
+`docs/special-tier-release-record` while the UI and permanent fixes were
+published from other worktrees. Three report source files and their specification
+and decision records were already merged. The remaining material included the
+unpublished KB-037 monitoring update, eight unique progress entries, three
+session handovers and twelve generated preview/patch files.
+
+Preserved all 24 files in a private SHA-256-verified archive and the twelve
+source/documentation files in a named Git stash. Archived the twelve generated
+files without overwriting the snapshot. Updated the ordinary checkout to exact
+main `0d82bf1d2d2ee05747d457133803f79a7cef3ca2`; it is now clean. Three clean
+registered nested worktrees are locally excluded from the parent status while
+retaining their independent tracking. The unpublished documentation is restored
+in this separate review checkout; none of the original work was discarded.
+
+Added an independent read-only Vercel check with early authentication preflight,
+production-domain/deployment/SHA verification, candidate-preview separation and
+binding-race refusal. It reuses the installed official CLI and never deploys,
+changes settings, exposes tokens or imports credentials. The operator's existing
+CLI session still needs interactive sign-in; a login request is pending. Local
+unit evidence and the actual logged-out preflight are not a live Vercel audit.
+
+Validation: final `verify:fast` passed (53 files / 498 unit tests), including eight
+direct-verification regressions for preview/production distinction, exact SHA,
+project mismatch, missing/conflicting provenance, alias reassignment, incomplete
+history, explicit CLI commit metadata and sensitive-metadata exclusion. Original-file hashes and all twelve
+stashed source/doc contents were independently rechecked. A stale primary
+Next runtime (16.3.5 versus locked 16.3.6) was also found. Reinstalled the existing
+lockfile in the ordinary checkout and verified Next/Playwright versions now
+match it; its Git status remains clean.

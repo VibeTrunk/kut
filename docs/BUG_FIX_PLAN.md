@@ -8,11 +8,13 @@ Implementation and local validation are recorded below for two separate
 reviewable slices. The owner subsequently authorized commits and pushes:
 frontend on `docs/known-bugs-kb035-kb036`, with the migration on
 `fix/special-snapshot-tiers`. The owner squash-merged frontend PR #183;
-migration PR #184 now targets `main`. Its former stack caused conflicts in
+migration PR #184 was then merged. Its former stack caused conflicts in
 three shared documentation files; updated `origin/main` was merged into the
 migration branch, retaining both slices' documentation. Independent future
-slices will branch from `main` instead. Central catalogue PR #79 is prepared
-and validated, but neither migration PR is merged or applied to hosted.
+slices will branch from `main` instead. The owner merged migration PR #184 and
+central catalogue PR #79, then separately authorized hosted application. The
+migration is applied and read-only verified; see the final release record
+below and DEPLOYMENTS.md.
 The affected-phone diagnosis remains unconfirmed.
 
 ## Scope and inventory
@@ -28,16 +30,18 @@ resolution; this was not a fresh reproduction of all 33 fixes. Two additional
 items need explicit treatment: the latent Special-card tier defect in the
 roadmap, and KB-018's deliberately deferred database follow-up.
 
-After local implementation: **38 entries, 36 fixed (including local-only
-KB-035/036/038), one investigating (KB-037), one cannot-reproduce (KB-025)**.
-Local fixed status is not a claim that a change has shipped.
+Current inventory: **38 entries, 36 fixed (KB-035/036 verified locally and
+deployed; KB-038 verified locally and hosted), one investigating (KB-037), one
+cannot-reproduce (KB-025)**.
+GitHub confirms the final merged frontend candidate is deployed to Production.
+KB-037 remains open because deployment does not supply real-device evidence.
 
 | Order | Item | Current assessment | Planned disposition |
 |---|---|---|---|
 | 1 | KB-037: sharing fails on a phone | Recovery implemented; exact device cause still unconfirmed | Keep investigating until the affected device passes |
-| 2 | KB-035: uneven rating chips | Fixed and verified locally in Chromium/WebKit | Full-width rows with the rating disc and arrow pinned right |
-| 3 | KB-036: misaligned share tiles | Fixed and verified locally; PNG dimensions unchanged | Shared desktop grid rows; compact phone layout retained |
-| Before any Special issuance | KB-038: Special-card rarity projection | Confirmed latent defect; corrected locally with one migration | Separate catalogue/hosted release before issuance |
+| 2 | KB-035: uneven rating chips | Fixed, verified locally in Chromium/WebKit and deployed | Full-width rows with the rating disc and arrow pinned right |
+| 3 | KB-036: misaligned share tiles | Fixed, verified locally and deployed; PNG dimensions unchanged | Shared desktop grid rows; compact phone layout retained |
+| Before any Special issuance | KB-038: Special-card rarity projection | Corrected locally and hosted with one migration | Applied from central #79; no Special issuance |
 | On recurrence | KB-025: inconsistent discard quote | Still cannot reproduce; previous hosted investigation found no source for 120 | Capture simultaneous evidence and investigate before changing pricing |
 | Deferred | KB-018: inferred carried Form | User-facing issue fixed; explicit database provenance remains intentionally declined | Preserve the decision; reconsider before another rating-rule cutover |
 
@@ -275,8 +279,9 @@ user-facing bug or alter the rating engine simply to remove this debt.
 5. Complete the Special-tier slice before Special issuance. Keep KB-025's
    recurrence path and KB-018's deferred decision visible.
 
-The production release gate has not run. Existing loopback guards remain on;
-test fixtures must never target hosted Supabase to reproduce a member report.
+The initial investigation preceded the production release gate; its final
+passing run is recorded below. Existing loopback guards remain on; test
+fixtures must never target hosted Supabase to reproduce a member report.
 Every commit, push, merge, deployment and hosted migration remains a separate
 authorization decision under the repository's production-safety rules.
 
@@ -344,7 +349,9 @@ authorization decision under the repository's production-safety rules.
   Source verification passes for 88 shared migrations; KUT parity passes for
   87 KUT migrations. Read-only hosted preflight confirms 87 applied migrations
   match and only this migration is pending; the central dry run names only
-  `20261018000000_special_snapshot_tiers.sql`. Nothing has been applied.
+  `20261018000000_special_snapshot_tiers.sql` at that preflight. Subsequently
+  applied after merged-main gates and separately authorized by the owner;
+  final hosted verification is recorded below.
 
 ### Review and release boundaries
 
@@ -362,11 +369,11 @@ spec/roadmap/ADR/register/progress changes belong to its companion branch.
 
 KB-025 remains cannot-reproduce; no new mismatch evidence was found. KB-018's
 declined database provenance follow-up remains deferred. Hosted card inventory
-was not queried. Both original KUT PR heads passed all required GitHub checks,
-including clean-lockfile build and database suites. The updated migration head
-requires fresh CI. Real-device evidence, migration PR merges, final candidate
-release/backup gates and separately authorized central hosted application
-remain release work. The read-only preflight must be repeated after merging.
+was not queried during the initial investigation. Both original KUT PR heads
+and the final merged candidate passed all required GitHub checks, including
+clean-lockfile build and database suites. Merges, final release/backup gates,
+repeated central preflight, authorized hosted application and read-only smoke
+are now complete. Real-device evidence for KB-037 remains outstanding.
 
 ### Final local checks (before PR publication)
 
@@ -382,3 +389,63 @@ remain release work. The read-only preflight must be repeated after merging.
 | Production dependency audit | Pass: zero vulnerabilities at the required high-severity threshold. |
 | Pinned local Gitleaks | No leaks in tracked/new working sources or 246 history commits, with full redaction. This is local evidence, not exact-candidate GitHub `scan`. |
 | Production/device/catalogue | Not run/complete: affected device and actual 30 September diagnosis, central catalogue parity, exact-candidate CI and production gate/backup. No skipped check is substituted for these. |
+
+### Final merged-candidate release — 2026-10-04
+
+- **Candidate and catalogue:** KUT PR #184 merged as
+  `13185dc8000970ee5d42b54503973c17aa50327f`; central PR #79 merged as
+  `6c08eb0e84325a40185cf38034a6192c8dc4e78f`. All seven required GitHub checks passed
+  for the exact KUT candidate, including the clean-lockfile build, database,
+  integration, security and secret scan. Source verification covers 88 shared
+  migrations; KUT parity covers 87, with aggregate SHA-256
+  `337b807448fd329e414a9c8c73fbffff6817e7a15be2e9748483cb601b3d25f5`.
+- **Backup and gate:** fresh encrypted backup `kut-backup-20261004-032324.sql.enc`,
+  independently cold-verified at creation and again by the release gate.
+  The canonical gate passed (`gate-20261004-035939.json`), using the
+  unchanged authenticated suite against a local production build: **130 passed,
+  two deliberate duplicate pack-test skips**, across Chromium and WebKit.
+  Pack coverage passed once at 320 px; skips are not counted as passes.
+  All 39 new share/rating/layout cases passed. Every fixture targeted loopback.
+- **Failed attempts retained:** the first full gate against Next development
+  mode failed (125 passed, five WebKit preview/layout timeouts, two skips).
+  An unchanged focused development-mode rerun passed three and failed two.
+  All five passed against the production build before the full gate was rerun.
+  The timeout cause remains unconfirmed; no code, tests, timeouts or skips were
+  changed to obtain the passing gate. Installed Next.js 16.3.5 was used locally;
+  exact-candidate CI passed with the locked 16.3.6 install.
+- **Hosted ledger:** 88 catalogue entries before, 87 remote, with only
+  `20261018000000_special_snapshot_tiers.sql` pending and no unrelated drift.
+  The final dry run named only that file. After applying from central merged
+  `main`, all 88 local/remote versions match and the dry run has zero pending
+  migrations. Vault updates were explicitly skipped.
+- **Read-only hosted smoke:** the migration is recorded; all four view
+  definitions exactly match the tested local definitions. Column order/types,
+  owners, ACLs, security modes and barriers match the pre-application snapshot.
+  Frozen Special count/hash is unchanged (**zero Specials**; none issued).
+  An existing ordinary active member can read collection, market, saved pack
+  results and trade offers; collection tiers match the Live-state/frozen-tier
+  contract. No hosted fixture rows or users were created. Special value cases
+  are demonstrated by the 51 local pgTAP assertions, not hosted issuance.
+
+KB-038 is verified fixed locally and hosted. KB-037 remains investigating:
+emulated WebKit and controlled font/roundRect recovery do not establish the
+affected phone's cause or prove actual device sharing. KB-025 and KB-018 keep
+their existing dispositions. No additional migration or application change
+was needed for hosted application.
+
+### Production deployment verification and documentation closeout — 2026-10-04
+
+Read-only GitHub evidence confirms a successful **Production** deployment for
+`13185dc8000970ee5d42b54503973c17aa50327f` (deployment id `6835330096`,
+created `2026-10-04T01:18:43Z`; Vercel commit status is success). The public
+`https://kut.vibetrunk.com/login` responds HTTP 200 with Next assets, CSP and
+HSTS present. This checks public availability and deployment provenance; it
+does not assert authenticated hosted geometry or real-phone sharing.
+
+KB-035 and KB-036 now record verified deployment as well as local regression
+results. KB-037's recovery is deployed, but its status stays investigating.
+The remaining technical release records are documentation-only follow-ups in
+KUT and the central catalogue, each branching independently from merged
+`main`. No further schema, application or test change is needed. The owner
+reviews/merges their PRs; no additional hosted mutation is required. Real-device
+details and sharing verification remain the only functional acceptance gap.

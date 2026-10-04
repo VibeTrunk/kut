@@ -18,6 +18,71 @@ dated "Hosted deployment…" entries in `PROGRESS.md`.
 then bump the "Latest hosted migration" line in `CLAUDE.md`. Record the tier,
 backup id, pre/post `migration list` counts, the smoke row, and the rollback.
 
+## 2026-10-04 — `20261018000000` frozen Special tiers (ADR-121 / KB-038)
+
+Applied with the owner's separate hosted-application authorization, only from
+**VibeTrunk/supabase**, at **2026-10-04 02:00 UTC (04:00 Amsterdam)**.
+**Tier: additive / projection-only.** Four
+`create or replace view` definitions read Specials' `snapshot_rarity_tier`
+directly; Live behavior and missing-state floors remain. No DML, issuance,
+snapshot rewrite, rating/pricing/economy change or RPC signature change.
+
+- **Candidate and catalogue:** KUT PR #184 merged as
+  `13185dc8000970ee5d42b54503973c17aa50327f`; central PR #79 merged as
+  `6c08eb0e84325a40185cf38034a6192c8dc4e78f`. All seven required GitHub checks passed
+  for the exact KUT candidate, including the clean-lockfile build, database,
+  integration, security and secret scan. Source verification covers 88 shared
+  migrations; KUT parity covers 87, with aggregate SHA-256
+  `337b807448fd329e414a9c8c73fbffff6817e7a15be2e9748483cb601b3d25f5`.
+- **Backup and gate:** fresh encrypted backup `kut-backup-20261004-032324.sql.enc`,
+  independently cold-verified at creation and again by the release gate.
+  The canonical gate passed (`gate-20261004-035939.json`), using the
+  unchanged authenticated suite against a local production build: **130 passed,
+  two deliberate duplicate pack-test skips**, across Chromium and WebKit.
+  Pack coverage passed once at 320 px; skips are not counted as passes.
+  All 39 new share/rating/layout cases passed. Every fixture targeted loopback.
+- **Failed attempts retained:** the first full gate against Next development
+  mode failed (125 passed, five WebKit preview/layout timeouts, two skips).
+  An unchanged focused development-mode rerun passed three and failed two.
+  All five passed against the production build before the full gate was rerun.
+  The timeout cause remains unconfirmed; no code, tests, timeouts or skips were
+  changed to obtain the passing gate. Installed Next.js 16.3.5 was used locally;
+  exact-candidate CI passed with the locked 16.3.6 install.
+- **Hosted ledger:** 88 catalogue entries before, 87 remote, with only
+  `20261018000000_special_snapshot_tiers.sql` pending and no unrelated drift.
+  The final dry run named only that file. After applying from central merged
+  `main`, all 88 local/remote versions match and the dry run has zero pending
+  migrations. Vault updates were explicitly skipped.
+- **Read-only hosted smoke:** the migration is recorded; all four view
+  definitions exactly match the tested local definitions. Column order/types,
+  owners, ACLs, security modes and barriers match the pre-application snapshot.
+  Frozen Special count/hash is unchanged (**zero Specials**; none issued).
+  An existing ordinary active member can read collection, market, saved pack
+  results and trade offers; collection tiers match the Live-state/frozen-tier
+  contract. No hosted fixture rows or users were created. Special value cases
+  are demonstrated by the 51 local pgTAP assertions, not hosted issuance.
+
+- **Rollback:** re-create the prior four views from their named immutable
+  sources: collection `20260911000000`, market `20261010000000`, pack results
+  `20261002000000`, trade offers `20260928000000`. No drop, snapshot rewrite or
+  grant change. Prepared rollback SQL was not executed; rollback needs its own
+  authorization. KB-037 still needs the affected real phone/OS/browser and
+  real-device sharing evidence; passing emulation does not close it.
+
+### Frontend deployment verification addendum — 2026-10-04
+
+Read-only GitHub deployment evidence confirms the final KUT candidate
+`13185dc8000970ee5d42b54503973c17aa50327f` was successfully deployed to **Production**
+(deployment id `6835330096`, created `2026-10-04T01:18:43Z`, Vercel status
+success). This merged candidate contains frontend PR #183 and migration source
+PR #184. The existing public login returns HTTP 200 with Next assets, CSP and
+HSTS present. No new app deployment was triggered for this check.
+
+KB-035/036 are deployed, with their local Chromium/WebKit geometry checks
+recorded above. KB-037 recovery is deployed, but the actual phone/OS/browser,
+30 September exception/payload and real-device sharing evidence remain
+unconfirmed. Public availability and deployment success do not close KB-037.
+
 ## 2026-10-03 — `20261017000000` predictions for members who are out (ADR-118)
 
 Deployed 2026-10-03 from `VibeTrunk/supabase` (catalogue PR #77 there), on its

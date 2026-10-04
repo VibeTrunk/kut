@@ -4947,3 +4947,82 @@ preflight, separately authorized hosted application and ordinary-member smoke
 verification. The agent will perform the technical steps as far as authorized
 and provide exact PowerShell if an operator action is needed. KB-037 remains
 investigating pending the affected phone/OS/browser and real-device evidence.
+
+## Special-tier hosted application — 2026-10-04
+
+The owner merged KUT #184 and central #79 and separately instructed the agent
+to proceed with hosted application. Applied only the reviewed immutable
+`20261018000000_special_snapshot_tiers.sql` from the central checkout after
+the required exact-candidate gate passed, at 2026-10-04 02:00 UTC
+(04:00 Amsterdam). No app deployment was performed.
+
+- **Candidate and catalogue:** KUT PR #184 merged as
+  `13185dc8000970ee5d42b54503973c17aa50327f`; central PR #79 merged as
+  `6c08eb0e84325a40185cf38034a6192c8dc4e78f`. All seven required GitHub checks passed
+  for the exact KUT candidate, including the clean-lockfile build, database,
+  integration, security and secret scan. Source verification covers 88 shared
+  migrations; KUT parity covers 87, with aggregate SHA-256
+  `337b807448fd329e414a9c8c73fbffff6817e7a15be2e9748483cb601b3d25f5`.
+- **Backup and gate:** fresh encrypted backup `kut-backup-20261004-032324.sql.enc`,
+  independently cold-verified at creation and again by the release gate.
+  The canonical gate passed (`gate-20261004-035939.json`), using the
+  unchanged authenticated suite against a local production build: **130 passed,
+  two deliberate duplicate pack-test skips**, across Chromium and WebKit.
+  Pack coverage passed once at 320 px; skips are not counted as passes.
+  All 39 new share/rating/layout cases passed. Every fixture targeted loopback.
+- **Failed attempts retained:** the first full gate against Next development
+  mode failed (125 passed, five WebKit preview/layout timeouts, two skips).
+  An unchanged focused development-mode rerun passed three and failed two.
+  All five passed against the production build before the full gate was rerun.
+  The timeout cause remains unconfirmed; no code, tests, timeouts or skips were
+  changed to obtain the passing gate. Installed Next.js 16.3.5 was used locally;
+  exact-candidate CI passed with the locked 16.3.6 install.
+- **Hosted ledger:** 88 catalogue entries before, 87 remote, with only
+  `20261018000000_special_snapshot_tiers.sql` pending and no unrelated drift.
+  The final dry run named only that file. After applying from central merged
+  `main`, all 88 local/remote versions match and the dry run has zero pending
+  migrations. Vault updates were explicitly skipped.
+- **Read-only hosted smoke:** the migration is recorded; all four view
+  definitions exactly match the tested local definitions. Column order/types,
+  owners, ACLs, security modes and barriers match the pre-application snapshot.
+  Frozen Special count/hash is unchanged (**zero Specials**; none issued).
+  An existing ordinary active member can read collection, market, saved pack
+  results and trade offers; collection tiers match the Live-state/frozen-tier
+  contract. No hosted fixture rows or users were created. Special value cases
+  are demonstrated by the 51 local pgTAP assertions, not hosted issuance.
+
+The execution and sanitized evidence are local under
+`.release-evidence/migration/` and `.release-evidence/gates/13185dc8000970ee5d42b54503973c17aa50327f/`;
+encrypted backup evidence is in `.private-backups/`. No credentials, private
+member identifiers or raw authenticated traces belong in committed logs.
+The local production server logged early-closed destination streams and one
+invalid upstream response during the passing run; those messages were not
+attributed to the original phone failure. The owned test server was stopped
+after verification.
+Deployment and rollback details are in DEPLOYMENTS; ADR-121 and KB-038 now
+record the verified hosted result. Existing migrations and application code
+were untouched. KB-037 stays investigating; its affected device and actual
+30 September exception/payload remain missing. KB-025 stays cannot-reproduce,
+and KB-018's deliberate database follow-up deferral remains.
+
+## Release-record closeout — 2026-10-04
+
+After the owner instructed the agent to continue with everything possible,
+confirmed the existing production deployment read-only: GitHub deployment
+`6835330096` names exact KUT candidate `13185dc8000970ee5d42b54503973c17aa50327f`,
+environment Production and state success; Vercel commit status also succeeds.
+Public `/login` returns HTTP 200, with Next assets, CSP and HSTS present.
+This is availability/provenance evidence, not an authenticated hosted layout
+test or real-device share-sheet retest. No new deployment was triggered.
+
+Updated KB-035/036 to include verified deployment and KB-037 to note its
+deployed recovery while retaining investigating status. Original reported
+fields are preserved; KB-025 remains cannot-reproduce and KB-018's database
+follow-up remains deferred. The affected phone/OS/browser and older/newer-week
+real-device retest were requested again because the evidence remains missing.
+
+Publishing the release records as documentation-only PRs in KUT and central
+VibeTrunk/supabase under the original per-change commit/push instruction.
+Each branches independently from its merged `main`; neither carries a new
+migration or application/test change. PR merges remain for owner review.
+No manual SQL copy, database setup or hosted migration command remains.

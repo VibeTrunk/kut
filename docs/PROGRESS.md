@@ -5312,3 +5312,22 @@ stashed source/doc contents were independently rechecked. A stale primary
 Next runtime (16.3.5 versus locked 16.3.6) was also found. Reinstalled the existing
 lockfile in the ordinary checkout and verified Next/Playwright versions now
 match it; its Git status remains clean.
+
+## Authenticated Vercel audit of merged #188 — 2026-10-04
+
+After the owner completed official CLI sign-in, the new checker successfully
+queried Vercel at 14:31:31 UTC. `kut.vibetrunk.com` resolves to ready production
+deployment `dpl_ALTcwQAUR2hpMDmNewfbYZup13u3`, whose exact commit is #187's
+`b99db188c6e0993552747c6f6d84a3779a480e71`. No deployments exist in either
+complete commit-metadata lookup for #188's merged candidate
+`0d82bf1d2d2ee05747d457133803f79a7cef3ca2`. The domain binding was unchanged
+on re-read. This confirms the main deployment hold for that merge; the candidate
+is not live. The sandboxed attempt could not authenticate over the restricted
+network, so the successful audit used an approved read-only CLI invocation.
+
+Sanitized evidence is retained privately in the primary checkout at
+`.release-evidence/vercel/0d82bf1d2d2ee05747d457133803f79a7cef3ca2/2026-10-04T14-31-31.604Z.json`.
+The helper and documentation remain local review work, with no new push or PR.
+The exact-candidate full gate, separate release approval and explicit deployment
+instruction remain required before deploying #188. This audit changed no
+deployment, project setting, secret or hosted database state.

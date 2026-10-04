@@ -2,8 +2,10 @@
 
 Current status: the owner merged both independently reviewed fixes (#187 and
 #188). Main is `0d82bf1d2d2ee05747d457133803f79a7cef3ca2`, its required CI
-passes, and its configuration holds automatic main deployment. Direct Vercel
-verification still needs operator sign-in; no full production gate certificate
+passes, and its configuration holds automatic main deployment. After operator
+sign-in, direct Vercel verification at 14:31:31 UTC confirmed the production
+domain serves #187's `b99db188c6e0993552747c6f6d84a3779a480e71` and found no
+deployments for #188's final main SHA. No full production gate certificate
 or manual production deployment exists for that candidate. The ordinary
 checkout is now clean, with original work preserved as recorded in the final
 closeout section. The sections below retain the implementation/publication
@@ -190,7 +192,12 @@ Vercel verification helper are prepared separately in
 
 The new direct checker and preserved documentation passed `verify:fast`
 (53 files / 498 unit tests, formatting, lint, typecheck, policy parity).
-The actual logged-out preflight returns `unverified/authentication_required`
-without exposing credentials or making a deployment claim. Interactive Vercel
-sign-in is requested from the operator; no live Vercel audit, deployment,
-credential replacement or settings mutation has been claimed or performed.
+The logged-out preflight returned `unverified/authentication_required`
+without exposing credentials or making a deployment claim. The owner then
+completed official CLI sign-in. The authenticated audit at 14:31:31 UTC confirmed
+the ready production domain binding to deployment `dpl_ALTcwQAUR2hpMDmNewfbYZup13u3`
+and #187's exact SHA, with no candidate deployments for merged #188. Both metadata
+lookups were complete and the domain binding was unchanged on re-read.
+Sanitized evidence is saved in the primary checkout at
+`.release-evidence/vercel/0d82bf1d2d2ee05747d457133803f79a7cef3ca2/2026-10-04T14-31-31.604Z.json`.
+No deployment, credential replacement or settings mutation was performed.

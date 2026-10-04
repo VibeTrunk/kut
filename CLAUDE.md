@@ -117,9 +117,11 @@ locks Wed 30 Sep 2026 20:00 Amsterdam.
 
 Lessons that hold for every migration-bearing change:
 
-- **Before the ADR-123 cutover, Vercel deploys on merge to `main`, before the schema push.**
-  `vercel.json` prepares a main deployment hold; it is not active until its
-  separately authorized publication and integration verification. See
+- **Since the ADR-123 cutover, automatic main deployment is held.**
+  PR #188 published `git.deploymentEnabled.main = false`. An authenticated
+  Vercel audit on 2026-10-04 confirmed no deployment for its final main SHA;
+  the production domain still served #187. Recheck this control and live SHA
+  for each release. See
   `docs/PRODUCTION_SAFETY.md` for final-SHA gating and manual deployment order.
   New code must
   degrade gracefully against the old schema (a tolerant read, a flag, or a

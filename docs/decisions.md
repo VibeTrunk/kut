@@ -6976,3 +6976,35 @@ instead of a photo) covers the image too, since the image draws whatever the
 card shows. The 1,600 px WhatsApp figure should be checked on a real phone.
 
 Tier: no migration.
+
+
+## Share and rating recovery amendment — 2026-10-04 (ADR-117/120)
+
+The frontend correction keeps the approved rating rules, privacy exception,
+PNG dimensions (1080 × 1350) and capability-based Share/Download behavior.
+
+- Per-match links are full-width rows, label left, disc and arrow right;
+  long names wrap. Phone links span the text/disc area. Desktop card columns
+  share their description and match-list rows (KB-035).
+- Share tiles share preview, title, description, action and feedback rows from
+  `sm`, retaining 110 px phone thumbnails (KB-036). Both exports were already
+  1080 × 1350; no export size was changed.
+- Each image loads, draws and retries independently. Optional font loading is
+  bounded to 3 seconds and falls back to Helvetica/Arial and Georgia on
+  rejection or timeout; photo loading/decoding is bounded to 5 seconds and
+  retains the shirt fallback. Rounded paths use `arcTo` when `roundRect` is
+  unavailable. PNG export is bounded to 10 seconds; Retry rebuilds that tile.
+- Bitmaps close after drawing and after late cancelled decoding, canvases
+  release their backing stores, and preview URLs revoke on replacement or
+  unmount. Downloads reuse the preview's owned URL.
+- Failure diagnostics are local console warnings and `kut:share-diagnostic`
+  events containing only `stage`, image `kind`, an allowlisted `errorName`
+  and `recovery`. No message, signed URL, payload, member name or user agent
+  is recorded. Stages distinguish fonts/context/draw/export/share/download.
+  Share errors retain the image and offer another Share or Save action;
+  cancelling the share sheet is neutral.
+
+KB-037 remains unconfirmed on the affected phone. Rejected fonts and missing
+roundRect are demonstrated recovery paths, not its confirmed explanation.
+The browser/OS/device details and real-device retest remain required before
+closing that report. No image is uploaded or hosted.

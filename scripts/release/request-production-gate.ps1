@@ -106,6 +106,8 @@ if (-not $env:API_URL -or -not $env:ANON_KEY -or -not $env:SERVICE_ROLE_KEY -or 
 $e2eStarted = (Get-Date).ToUniversalTime().ToString('o')
 Push-Location $repoRoot
 try {
+  & npx playwright install chromium webkit
+  if ($LASTEXITCODE -ne 0) { throw 'Authenticated E2E browser provisioning failed.' }
   & npm run test:e2e:authenticated
   if ($LASTEXITCODE -ne 0) { throw 'Authenticated mobile E2E failed.' }
 }

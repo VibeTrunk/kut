@@ -71,6 +71,18 @@ Install the local browser once with:
 npx playwright install chromium
 ```
 
+Authenticated mobile verification also needs WebKit:
+
+```powershell
+npx playwright install chromium webkit
+npm run test:e2e:authenticated
+```
+
+Export `API_URL`, `ANON_KEY`, `SERVICE_ROLE_KEY` and `DB_URL` from the local
+Supabase stack without logging their values. Both fixture targets must be
+loopback. The suite runs Chromium at 320 px and Pixel 7 sizes and WebKit at
+an iPhone size; browser emulation does not replace a reported-device check.
+
 ## Operations
 
 [docs/OPERATIONS.md](docs/OPERATIONS.md) is the deploy / migration runbook

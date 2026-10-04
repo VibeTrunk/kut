@@ -7047,8 +7047,10 @@ Release dependency: predecessor `20261017000000_midweek_predictions.sql`.
 Catalogue the new SQL byte-for-byte in **VibeTrunk/supabase**, extend its
 catalogue verification and review it as its own projection-only/additive
 migration PR before any Special issuance. The frontend fixes have no schema
-dependency. This KUT working copy contains the local migration/test only;
-central catalogue work and hosted application remain outstanding and require
+dependency. Central catalogue PR #79 now contains matching immutable SQL and
+verification; source verification and KUT parity pass. Read-only hosted ledger
+and dry-run checks identify this as the sole pending migration. Catalogue
+merge and hosted application remain outstanding; application requires
 separate authorization. Existing migrations are immutable. Rollback, if
 needed, re-creates the four views from the source versions named in the SQL;
 no drop, edition rewrite or grant change is needed. Release gates and the

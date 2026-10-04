@@ -18,7 +18,7 @@ export default async function globalTeardown() {
   const database = new Client({ connectionString: databaseUrl });
   await database.connect();
   try {
-    await removeMidweekFixture(database);
+    await removeMidweekFixture(database, true);
   } finally {
     await database.end();
   }

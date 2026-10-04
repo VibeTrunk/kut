@@ -5055,6 +5055,24 @@ hosted or live-data test. No new tests, dependency, migration, environment
 variable or manual setup is needed. No commit, push, merge or deployment was
 performed. The implementation is ready for review.
 
+## Durable authenticated fixture recovery — 2026-10-04
+
+Implemented ADR-122 in an isolated checkout of the already-live Soft graphite
+tree. A durable loopback-only ownership journal now captures worker-created
+successors atomically. Normal and global cleanup restore only owned rotations
+and payouts and delete exact owned IDs in a transaction; missing evidence
+aborts recovery before any deletion. Original Midweek configuration is restored
+and successful global teardown removes the local instrumentation.
+
+Validation: `verify:fast` passed (50 unit files, 475 tests), the five focused
+database lifecycle regressions passed, and the locked Next 16.3.6 production
+build passed. Two focused Windows WebKit cases (champion after the final and
+poster-only layout) passed with zero retries against an owned production
+server using the new recovery helpers; global teardown left zero fixture
+users/Players, active weeks, rotations or ownership schema. No migration, game rule,
+dependency, hosted SQL, commit, push, merge or deployment changed. Existing
+dirty work and prior ignored evidence remain in the primary checkout.
+
 ## Production build evidence and a prepared main deployment hold — 2026-10-04
 
 Implemented ADR-123 in a separate isolated checkout of the live Soft graphite

@@ -7078,6 +7078,42 @@ Applies to both live and completed match reports through their shared
 components. Presentation only: no engine, rating, economy, privacy, database
 or API contract changes, and no migration or external mutation.
 
+## ADR-122 — Recover authenticated fixtures by durable local ownership
+
+Date: 2026-10-04. Status: implemented locally; publication pending.
+
+An interrupted authenticated suite could leave the next week opened by its
+worker and that week's rotations behind. Global cleanup recognized only the
+two fixed seeds, while evening cleanup inferred successors from their dates.
+Neither is sufficient evidence for deleting another tournament.
+
+The fixture installs a loopback-only, private `kut_e2e_fixture` journal and
+insert trigger. The fixed fixture roots identify themselves by their seed
+hashes. A worker successor is recognized by the `_mm_open_next` call stack
+and exactly one completed fixture owner; its exact UUID and the owner's
+successor list commit in the same transaction as the worker's insert. Manual
+unrelated inserts are not captured. Ambiguity aborts the worker transaction.
+No production function or immutable migration is modified.
+
+Both evening and global recovery validate the complete ownership graph first,
+then undo owned rotations newest first, rebuild card faces, reverse exactly
+the owned payouts, and delete exact owned tournament IDs in one transaction.
+Missing ownership or an intervening archetype edit fails closed. Recovery
+shares the opener's advisory lock, survives runner termination and is
+idempotent. The journal preserves the original Midweek enabled setting.
+Successful global teardown/setup-failure cleanup removes the instrumentation;
+interrupted cleanup keeps it for the next process.
+
+The integration regression kills a worker process after its commit, recovers
+through another connection, compares non-fixture archetypes and economy
+state, preserves an unrelated later week, forces rollback midway through
+cleanup, and removes a successor's journal entry to check refusal. Local-only
+instrumentation additionally refuses hosted databases even with the existing
+nonlocal-test acknowledgement. Part L and all production RPCs are unchanged.
+
+Legacy residue without this journal is deliberately not guessed at or deleted.
+Its recovery requires separately reviewed evidence of exact ownership.
+
 ## ADR-123 — Hold main deployments and certify an owned production build
 
 Date: 2026-10-04. Status: implemented locally; external activation pending.

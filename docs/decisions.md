@@ -7013,8 +7013,9 @@ closing that report. No image is uploaded or hosted.
 
 Date: 2026-10-04
 
-Status: Accepted; implemented locally, not hosted. Correction to ADR-055's
-existing immutable tier contract, separate from the KB-035–037 frontend slice.
+Status: Accepted; implemented locally and hosted 2026-10-04. Correction to
+ADR-055's existing immutable tier contract, separate from the KB-035–037
+frontend slice.
 
 Decision: `20261018000000_special_snapshot_tiers.sql` replaces only the
 Special tier expression in `my_collection_cards`, `active_market_listings`,
@@ -7049,9 +7050,12 @@ catalogue verification and review it as its own projection-only/additive
 migration PR before any Special issuance. The frontend fixes have no schema
 dependency. Central catalogue PR #79 now contains matching immutable SQL and
 verification; source verification and KUT parity pass. Read-only hosted ledger
-and dry-run checks identify this as the sole pending migration. Catalogue
-merge and hosted application remain outstanding; application requires
-separate authorization. Existing migrations are immutable. Rollback, if
-needed, re-creates the four views from the source versions named in the SQL;
+and dry-run checks identified this as the sole pending migration. The owner
+merged KUT #184 and central #79, then separately authorized hosted application
+on 2026-10-04. The exact-candidate gate and cold backup verification passed;
+all 88 hosted versions now match and read-only smoke confirms definitions,
+permissions/security/column contracts and frozen snapshots. See DEPLOYMENTS.
+Existing migrations are immutable. Rollback, if needed, re-creates the four
+views from the source versions named in the SQL;
 no drop, edition rewrite or grant change is needed. Release gates and the
 applicable backup remain mandatory for the exact candidate SHA.

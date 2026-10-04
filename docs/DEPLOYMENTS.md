@@ -18,6 +18,37 @@ dated "Hosted deployment…" entries in `PROGRESS.md`.
 then bump the "Latest hosted migration" line in `CLAUDE.md`. Record the tier,
 backup id, pre/post `migration list` counts, the smoke row, and the rollback.
 
+## 2026-10-04 — gated frontend release of #189 (ADR-124)
+
+Owner merge of #189 produced `13bf6ad5e821532debe5c4237df75bcc54cc5b57`.
+The owner's explicit merge-as-deployment instruction authorized its Vercel release
+after the full gate. No migration, function, secret or protection change occurred.
+
+- **Predeployment evidence:** version-2 `gate-20261004-172619.json` passed at
+  15:26:19 UTC, followed by approval recording and evidence assertion. All seven
+  exact-SHA GitHub checks passed. The fresh locked production build passed 130
+  authenticated mobile cases; only two approved duplicate pack-device skips,
+  zero retries and zero flaky results. Central parity covered 87 KUT migrations,
+  aggregate `337b807448fd329e414a9c8c73fbffff6817e7a15be2e9748483cb601b3d25f5`.
+  Backup `kut-backup-20261004-032324.sql.enc` was within 24 hours and independently
+  decrypted/hash-verified again by the gate.
+- **Failed evidence preserved:** first full run had one WebKit geometry timeout
+  (125 passes, two skips, four not run). The unchanged focused case passed before
+  a new complete gate passed. No assertions or timeouts were weakened; the
+  intermittent timeout's cause remains unproven. All evidence remains private.
+- **Deployment:** created at 15:29:03 UTC (17:29 Amsterdam) from the exact Git SHA,
+  ID `dpl_cm1RXc4wcfUCNe7MkSHBBKRHfYPq`, URL
+  `https://kut-im2j7x7kr-vibetrunk.vercel.app`. Ready state confirmed at 15:29:57 UTC.
+  Authenticated alias/deployment reads confirmed `kut.vibetrunk.com` points to
+  this ready production build with matching Git provenance. Public `/` and
+  `/login` returned HTTP 200. The Git main deployment hold stays enabled.
+- **Database and rollback:** no hosted SQL was applied and no fresh hosted
+  migration-ledger audit is claimed. The preceding migration record below is
+  unchanged. Previous Vercel production deployment
+  `dpl_ALTcwQAUR2hpMDmNewfbYZup13u3` at
+  `b99db188c6e0993552747c6f6d84a3779a480e71` remains the rollback reference;
+  rollback was not executed and requires its own authorization.
+
 ## 2026-10-04 — `20261018000000` frozen Special tiers (ADR-121 / KB-038)
 
 Applied with the owner's separate hosted-application authorization, only from

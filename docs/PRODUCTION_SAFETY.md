@@ -143,15 +143,27 @@ old gate records must be rerun. Approval/assertion check the nested E2E
 manifest and report/inventory integrity and recheck the 24-hour backup and
 72-hour external-check limits. A checkout changed during the run fails.
 
-Release approval is a second, interactive command:
+On 2026-10-04 the owner explicitly instructed: "Consider me merging the PR as
+the approval. Run the full gate automatically youself. Merge = deployment approval."
+An owner merge of a reviewed PR into main therefore supplies per-change release
+and Vercel production deployment authorization for the exact resulting SHA.
+Confirm the owner and merge SHA through GitHub, run the full gate automatically
+on that clean commit, then record approval using the command below. The agent
+may supply its exact-SHA confirmation from that verified authorization without
+asking the owner again. A failed gate stops deployment; changed candidates need
+their own passing evidence and authorized owner merge.
+
+Approval remains a separate record created only after the gate passes:
 
 ```powershell
 powershell -NoProfile -File scripts/release/approve-production-release.ps1 `
   -GateManifest <gate.json> -CandidateSha <sha> -ApprovedBy <name>
 ```
 
-Even a passing gate plus approval does not authorize or perform a deployment.
-There is no deployment command in this tooling. PR #188 published
+The gate and approval artifacts do not themselves authorize or perform a
+deployment; authorization comes from the owner's merge instruction (ADR-124).
+The approval schema's `deployment_authorized: false` remains unchanged.
+There is no deployment command in the gate tooling. PR #188 published
 `git.deploymentEnabled.main = false` with no overlapping true rule. At
 2026-10-04 14:31:31 UTC, authenticated Vercel verification found no deployments
 for its merged SHA `0d82bf1d2d2ee05747d457133803f79a7cef3ca2`; the production
@@ -162,10 +174,13 @@ This confirms the hold for that merge; recheck it for each release. See
 If the hold is changed, publish it through an authorized PR and verify read-only
 that the Vercel Git integration honors it. With the hold active, an authorized
 squash merge creates the final candidate without automatically deploying it.
-Run the gate on that exact clean SHA, record explicit release approval, and
+Run the gate on that exact clean SHA, record the owner's merge approval, and
 run `assert-production-evidence.ps1` with its gate and approval manifests before
-any separately authorized deployment. Verify the deployed SHA afterwards.
-Branch-protection changes are separate external actions. A passing postdeploy
+the Vercel production deployment already authorized by that owner merge.
+Verify the deployed SHA and production domain binding afterwards. Do not request
+another release/deployment confirmation. New commits/pushes, hosted migrations,
+Supabase functions, secrets and branch-protection changes still require their
+own authorization. A passing postdeploy
 gate cannot retroactively establish predeployment ordering.
 
 ## Direct deployment verification and CLI access
@@ -180,7 +195,10 @@ node scripts/release/check-vercel-deployment.mjs --candidate <40-character-sha>
 The read-only checker resolves `kut.vibetrunk.com` to its bound Vercel deployment,
 checks the project, production target, ready state and exact Git SHA, and reads
 candidate deployments separately. A successful preview or an unpromoted ready
-build is not proof of what the production domain serves. Re-reading the domain
+build is not proof of what the production domain serves. CLI list rows without
+IDs are resolved by their validated Vercel hostname through the authenticated
+deployment API, with project and commit provenance checked against the list row.
+Re-reading the domain
 binding detects reassignment during the check. A partial candidate-history page
 is identified as incomplete. No release approval or deployment is authorized.
 

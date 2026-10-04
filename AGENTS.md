@@ -21,7 +21,7 @@ This block is generated from `policy/PRODUCTION_INVARIANTS.md`. Run
 - One migration- or invariant-bearing feature is allowed per PR or independently reviewable change slice.
 - Never deploy when a required release gate has not run successfully for the exact candidate SHA.
 - Never declare an encrypted backup successful unless its credential is durably retrievable and an independent recovery check passes.
-- Production release approval never authorizes deployment, migration application, branch-protection changes, secret changes, or any other external mutation. Each needs a separate explicit instruction.
+- The owner's merge of a reviewed PR into main authorizes release and Vercel production deployment of that exact resulting SHA, conditional on the full production gate passing first. The agent runs the gate, records approval, asserts evidence and deploys without another confirmation. This does not authorize migration application, Supabase function deployment, branch-protection changes, secret changes or other external mutations.
 - Hosted Supabase migrations are applied only from `VibeTrunk/supabase`, never from this repository. Existing migration files are immutable; a change may add at most one migration and must include a database test or reviewed machine-readable exemption.
 - A production candidate is one exact 40-character commit SHA. Every gate artifact and external check must name that SHA; skipped, stale, cancelled, missing, or mismatched evidence fails closed.
 - Production-sensitive work, including the release gate, runs in the owner's ordinary agent session. There is no production launcher or session receipt, and the gate does not certify which model ran it (ADR-108).

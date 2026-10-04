@@ -22,7 +22,7 @@ This block is generated from `policy/PRODUCTION_INVARIANTS.md`. Run
 - One migration- or invariant-bearing feature is allowed per PR or independently reviewable change slice.
 - Never deploy when a required release gate has not run successfully for the exact candidate SHA.
 - Never declare an encrypted backup successful unless its credential is durably retrievable and an independent recovery check passes.
-- Production release approval never authorizes deployment, migration application, branch-protection changes, secret changes, or any other external mutation. Each needs a separate explicit instruction.
+- The owner's merge of a reviewed PR into main authorizes release and Vercel production deployment of that exact resulting SHA, conditional on the full production gate passing first. The agent runs the gate, records approval, asserts evidence and deploys without another confirmation. This does not authorize migration application, Supabase function deployment, branch-protection changes, secret changes or other external mutations.
 - Hosted Supabase migrations are applied only from `VibeTrunk/supabase`, never from this repository. Existing migration files are immutable; a change may add at most one migration and must include a database test or reviewed machine-readable exemption.
 - A production candidate is one exact 40-character commit SHA. Every gate artifact and external check must name that SHA; skipped, stale, cancelled, missing, or mismatched evidence fails closed.
 - Production-sensitive work, including the release gate, runs in the owner's ordinary agent session. There is no production launcher or session receipt, and the gate does not certify which model ran it (ADR-108).
@@ -75,7 +75,10 @@ This block is generated from `policy/PRODUCTION_INVARIANTS.md`. Run
     still approves PR merges separately or merges personally. For migrations,
     prepare and validate the central catalogue companion as far as authorized;
     report any remaining operator action with exact PowerShell commands.
-    Hosted application and other external mutations need their own instruction.
+    An owner merge into main authorizes the exact merged SHA's gated Vercel
+    production release (ADR-124). Run the full gate automatically, record
+    approval and assert its evidence before deploying; do not ask again.
+    Hosted database application and other external mutations need their own instruction.
   - **Close out the checkout after publication.** Compare local edits with
     merged main, preserve unpublished work in a named stash and a verified
     private archive, and bring the ordinary checkout onto current main without
@@ -120,7 +123,10 @@ Lessons that hold for every migration-bearing change:
 - **Since the ADR-123 cutover, automatic main deployment is held.**
   PR #188 published `git.deploymentEnabled.main = false`. An authenticated
   Vercel audit on 2026-10-04 confirmed no deployment for its final main SHA;
-  the production domain still served #187. Recheck this control and live SHA
+  the production domain then still served #187. The owner subsequently authorized
+  merge as deployment approval (ADR-124); #189 passed the full gate and was
+  deployed at 15:29 UTC. The hold remains enabled so deployment follows the
+  gate rather than the Git push. Recheck this control and live SHA
   for each release. See
   `docs/PRODUCTION_SAFETY.md` for final-SHA gating and manual deployment order.
   New code must

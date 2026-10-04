@@ -7159,3 +7159,30 @@ gate must be rerun after publication; uncommitted targeted verification is not
 exact-candidate release evidence. No backup, external check or assertion is
 waived. Actual PostgREST versions are recorded rather than inferred from CLI;
 the WebKit/JWT cause remains unproven and no environment replacement is claimed.
+
+## ADR-124 — Owner merge authorizes a gated Vercel release
+
+Date: 2026-10-04. Status: owner instruction active; versioned guidance pending publication.
+
+The owner explicitly instructed that personally merging a reviewed PR is release
+and deployment approval, and that the agent must run the full gate automatically.
+This supersedes ADR-123's requirement for another deployment instruction for
+that Vercel release. Confirm the owner merge and exact resulting main SHA,
+run the full gate on its clean checkout, record approval only after success,
+assert the fresh evidence, then deploy that exact SHA and verify its production
+domain binding. No further owner confirmation is required for those steps.
+
+The automatic main deployment hold stays enabled. It enforces gate-before-deploy
+ordering; it does not require another approval. Gate and approval artifacts keep
+their existing schema and do not themselves grant deployment authorization.
+Authorization comes from the owner's explicit merge policy and particular merge.
+Failed, stale, missing or mismatched evidence still stops deployment.
+An owner merge does not authorize new commits/pushes, hosted migrations,
+Supabase function deployments, secrets, protection changes or other mutations.
+
+The first release under this instruction is merged #189 at
+`13bf6ad5e821532debe5c4237df75bcc54cc5b57`. Its full gate passed before the
+authorized Vercel deployment. Direct verification exposed CLI list rows that
+omit deployment IDs: the checker now resolves their validated Vercel hostname
+through the authenticated deployment API and verifies identity, project, SHA
+and target without relaxing conflicting-provenance or domain-race checks.

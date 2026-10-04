@@ -5026,3 +5026,31 @@ VibeTrunk/supabase under the original per-change commit/push instruction.
 Each branches independently from its merged `main`; neither carries a new
 migration or application/test change. PR merges remain for owner review.
 No manual SQL copy, database setup or hosted migration command remains.
+
+## Match report: Soft graphite — 2026-10-04
+
+The owner selected Soft graphite from four previews and instructed the agent
+to implement it. The shared match-report components now show Why squad Player
+names in light neutral ink, every card's power bar in one grey, and Save,
+Block, Woodwork and Wide tags on the same graphite background. Goal keeps its
+brass fill. Team headings, the scoreboard, odds split, commentary names,
+strength badges and expanded factors retain their approved colours. The
+legend distinguishes bar length from the number badges' colour scale, and
+duplicate Player names retain their screen-reader owner labels.
+
+Three named report palette tokens hold the approved values. BUILD_SPEC
+§44.10 and the ADR-111/119 refinement record describe the scope. Existing
+KB-037 monitoring edits in this working tree were preserved.
+
+Validation: `npm run verify:fast` passed (policy parity, formatting, lint,
+typecheck and 49 unit files / 474 tests). Lint reports one existing unused
+variable warning in the local, unrelated
+`.release-evidence/migration/verify-special-tiers-hosted.mjs`; no errors.
+Rendered the actual React components with generated Tailwind CSS and fictional
+fixture data in Chromium at 320, 736 and 1280 px. Confirmed the approved
+computed name/bar/tag colours, the gold Goal tag, distinct bar lengths,
+screen-reader owner labels and no horizontal overflow; inspected phone and
+desktop screenshots. This isolated presentation check is not an authenticated
+hosted or live-data test. No new tests, dependency, migration, environment
+variable or manual setup is needed. No commit, push, merge or deployment was
+performed. The implementation is ready for review.

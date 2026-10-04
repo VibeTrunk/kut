@@ -27,31 +27,27 @@ export function matchPower(card: Pick<WhyCard, "powerPpm" | "dayRollPpm">): numb
   return (card.powerPpm / PPM) * (card.dayRollPpm / PPM);
 }
 
-/** Strength bands for Power, a heat scale (HANDOFF table): pill text, tint, border, bar, and the band in words. */
+/** Strength bands for Power: pill text, tint, border and the band in words. Bars stay neutral. */
 const BANDS = [
   {
     min: 1.1,
     word: "strong",
     pill: "border-[#3c5230] bg-[#1c2416] text-[#8bbd6c]",
-    bar: "fill-[#8bbd6c]",
   },
   {
     min: 1.0,
     word: "above ordinary",
     pill: "border-[#4a5030] bg-[#22241a] text-[#c3d27c]",
-    bar: "fill-[#c3d27c]",
   },
   {
     min: 0.9,
     word: "below ordinary",
     pill: "border-[#5c4419] bg-[#2b1f0a] text-[#e0ac4a]",
-    bar: "fill-[#e0ac4a]",
   },
   {
     min: -Infinity,
     word: "weak",
     pill: "border-[#6a3524] bg-[#2a1712] text-[#e8794f]",
-    bar: "fill-[#e8794f]",
   },
 ] as const;
 
@@ -176,7 +172,6 @@ function FactorStrip({
 
 function CardRow({
   card,
-  side,
   rating,
   open,
   tipKey,
@@ -184,7 +179,6 @@ function CardRow({
   setTips,
 }: {
   card: WhyCard;
-  side: 0 | 1;
   /** This match's rating, once the week is complete. */
   rating: number | null;
   open: boolean;
@@ -213,9 +207,12 @@ function CardRow({
         <span className="sr-only"> power, {band.word}</span>
       </p>
       <p className="min-w-0 text-[14.5px] leading-tight font-bold [overflow-wrap:anywhere]">
-        <PlayerName owner={card.label.owner} side={side}>
+        <span className="font-extrabold text-report-ink">
           {card.label.text}
-        </PlayerName>{" "}
+          {card.label.owner !== undefined && (
+            <span className="sr-only"> ({card.label.owner}&rsquo;s)</span>
+          )}
+        </span>{" "}
         <small className="text-xs font-semibold text-ink-faint">
           {archetypeLabel(card.archetype)} &middot; {card.ovr}
           {notes.length > 0 && (
@@ -233,7 +230,7 @@ function CardRow({
         viewBox="0 0 100 6"
       >
         <rect className="fill-panel-2" height="6" rx="3" width="100" />
-        <rect className={band.bar} height="6" rx="3" width={powerBarWidth(power)} />
+        <rect className="fill-report-bar" height="6" rx="3" width={powerBarWidth(power)} />
         <rect className="fill-ink-dim" height="6" width="0.8" x="49.6" />
       </svg>
       {rating !== null && (
@@ -358,7 +355,6 @@ export function MidweekWhyList({
                     open={open}
                     rating={ratings?.[s]?.[slot] ?? null}
                     setTips={setTips}
-                    side={s as 0 | 1}
                     tipKey={`${s}:${slot}`}
                     tips={tips}
                   />
@@ -382,8 +378,9 @@ export function MidweekWhyList({
       </p>
       <p className="text-xs leading-relaxed text-ink-faint">
         Power is a card&rsquo;s strength in this match; 1.00, the tick on each bar, is an ordinary
-        card. Green is stronger than that, amber and orange weaker. It multiplies the card&rsquo;s
-        rating, form, pick, fitness and this match&rsquo;s day roll
+        card. Longer bars mean stronger cards; the number badges are green for stronger cards, amber
+        and orange for weaker ones. Power multiplies the card&rsquo;s rating, form, pick, fitness
+        and this match&rsquo;s day roll
         {open && "; hover or tap a factor to see what it means"}.
         {beforeFullTime && " Goals and assists are added at full time."}
         {ratings &&

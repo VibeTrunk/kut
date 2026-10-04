@@ -125,14 +125,6 @@ const KIND_WORD: Record<MomentKind, string> = {
   wide: "Wide",
 };
 
-const KIND_CHIP: Record<MomentKind, string> = {
-  goal: "border-brass bg-brass text-ink-on-accent",
-  save: "border-steel-line text-steel",
-  block: "border-steel-line text-steel",
-  woodwork: "border-warning-line text-warning",
-  wide: "border-line text-ink-dim",
-};
-
 /** "39th", "1st", "22nd": the minute as screen readers hear it. */
 export function ordinal(n: number): string {
   const tens = n % 100;
@@ -204,7 +196,7 @@ export function MidweekLaneTimeline({
                     {item.minute}&prime;
                   </span>
                   <span
-                    className={`inline-flex items-center rounded-md border px-[7px] py-px text-[9.5px] font-black tracking-[0.1em] uppercase ${KIND_CHIP[item.kind]}`}
+                    className={`inline-flex items-center rounded-md border px-[7px] py-px text-[9.5px] font-black tracking-[0.1em] uppercase ${goal ? "border-brass bg-brass text-ink-on-accent" : "border-transparent bg-report-tag text-report-ink"}`}
                   >
                     {KIND_WORD[item.kind]}
                   </span>

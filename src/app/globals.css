@@ -25,6 +25,12 @@
   --color-ink-faint: #8a8072;
   --color-ink-on-accent: #1c150a;
 
+  /* Soft graphite for the match report's player names, power bars and
+     non-goal chance tags (owner-approved colour refinement, 2026-10-04). */
+  --color-report-ink: #d0d0cb;
+  --color-report-bar: #9c9c99;
+  --color-report-tag: #30302e;
+
   --color-brass: #e0ac4a;
   --color-brass-deep: #a3711d;
   --color-brass-bg: #2b1f0a;

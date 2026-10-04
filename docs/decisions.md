@@ -7059,3 +7059,21 @@ Existing migrations are immutable. Rollback, if needed, re-creates the four
 views from the source versions named in the SQL;
 no drop, edition rewrite or grant change is needed. Release gates and the
 applicable backup remain mandatory for the exact candidate SHA.
+
+## Match report colour refinement — 2026-10-04 (ADR-111/119)
+
+The owner approved **Soft graphite** after comparing four report previews.
+The Why squads now use neutral Player names (`#d0d0cb`) and one bar fill
+(`#9c9c99`), with bar length carrying strength. Non-goal chance tags (Save,
+Block, Woodwork and Wide) share a graphite fill (`#30302e`) and neutral text;
+Goal keeps its brass treatment. These colours have named report tokens.
+
+The team headings, scoreboard, odds split and commentary names keep their
+team colours. Power number badges and expanded factor effects retain their
+strength colours, matching the approved preview. The legend explicitly
+distinguishes the neutral bars from the coloured number badges. Duplicate
+Player names still announce the manager's copy to screen readers.
+
+Applies to both live and completed match reports through their shared
+components. Presentation only: no engine, rating, economy, privacy, database
+or API contract changes, and no migration or external mutation.

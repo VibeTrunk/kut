@@ -2077,9 +2077,10 @@ Everything is gated by time in definer projections on
   holds every goal, topped up with the biggest other chances to 4–8 moments.
   A shoot-out narrates its misses and the deciding kick; scored kicks show as
   a tally.
-- **Team colours and the Why list (ADR-111):** on a match page every Player
-  and manager name is in its side's colour, side 0 violet on the left and side 1
-  teal on the right for every viewer (blue and red until ADR-119); lists of
+- **Team colours and the Why list (ADR-111):** on a match page Player names
+  in the commentary and manager names are in their side's colour, side 0
+  violet on the left and side 1 teal on the right for every viewer (blue and
+  red until ADR-119); lists of
   matches stay neutral. Each side has a text tone for names and digits and a
   deeper fill for what is drawn; the scoreboard carries both fills as a strip,
   and `Live` has its own pink, never a side's. The
@@ -2090,6 +2091,11 @@ Everything is gated by time in definer projections on
   its side's lane. The "why" is a list, never a table: per card its **Power in
   this match** (`power × day_roll`) in a pill tinted by strength band (≥ 1.10,
   1.00–1.09, 0.90–0.99, < 0.90) with a bar from 0.50 to 1.50, strongest first.
+  By owner decision (2026-10-04, ADR-111/119 colour refinement), Player names
+  in the Why squads and every card's power bar use Soft graphite neutral tones;
+  the squad headings keep the team colours and the power pills keep their
+  strength scale. All non-goal chance tags use the same graphite background
+  and light neutral text; Goal alone keeps its brass fill.
   Five factor boxes (Rating, Form, Pick, Fitness, Day) open on request, each
   explained from `MIDWEEK`. Owner counts are not in the report.
 - **Colour comes from engine events, never invented.** Every phrase is chosen

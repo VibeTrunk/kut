@@ -5331,3 +5331,38 @@ The helper and documentation remain local review work, with no new push or PR.
 The exact-candidate full gate, separate release approval and explicit deployment
 instruction remain required before deploying #188. This audit changed no
 deployment, project setting, secret or hosted database state.
+
+## Owner-approved merged release and verification follow-up — 2026-10-04
+
+The owner merged #189 as `13bf6ad5e821532debe5c4237df75bcc54cc5b57`
+and explicitly defined owner merge as release and Vercel deployment approval.
+Recorded ADR-124 and synchronized the canonical invariant guidance so future
+sessions run the full gate and deploy without requesting the same approval again.
+The main Git deployment hold remains enabled to preserve gate-before-deploy order.
+
+The first unchanged full production run had 125 passes, two permitted skips,
+one WebKit 90-second completed-share geometry timeout and four cases not run.
+Its retained trace showed successful HTTP responses and slow repeated navigation;
+the cause remains unproven. The unchanged focused case passed with zero retries.
+A fresh full run then passed all 130 required cases, with only the two existing
+duplicate pack-device skips, zero retries, zero flaky results and no runner
+errors. No source, assertions, timeout or skip rules were changed for the pass.
+
+Version-2 gate `gate-20261004-172619.json` passed at 15:26:19 UTC, with
+all seven exact-SHA external checks, central catalogue parity and a fresh
+separate-process decrypt/hash check of the existing encrypted backup. Approval
+was recorded and evidence asserted before Vercel deployment at 15:29:03 UTC.
+Deployment `dpl_cm1RXc4wcfUCNe7MkSHBBKRHfYPq` became ready; authenticated
+domain reads confirmed `kut.vibetrunk.com` binds to that exact merged SHA.
+Public root and login returned HTTP 200. No hosted database mutation occurred.
+
+The actual Vercel CLI list response omitted deployment IDs. Added authenticated
+API resolution by validated Vercel hostname, retaining strict project/SHA/target
+checks and refusing conflicting IDs. Fifteen verifier regressions pass, including
+the observed URL-only shape, deduplication, unsafe URLs and provenance mismatches.
+This follow-up is isolated from the clean deployed primary checkout; original
+archived work and its named stash remain preserved.
+`verify:fast` passed (53 files / 505 unit tests), and the corrected checker
+returned `candidate_live` with a complete lookup at 15:44:32 UTC. A final
+read-only local check found zero fixture users, players, active weeks,
+rotations or ownership schema, with the original disabled setting restored.

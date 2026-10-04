@@ -49,6 +49,50 @@ function fixture() {
 }
 
 describe("direct Vercel production verification", () => {
+  function urlFixture() {
+    const f = fixture();
+    f.live.meta.githubCommitSha = candidate;
+    const row = {
+      url: "kut-reviewed.vercel.app",
+      target: "production",
+      state: "READY",
+      meta: { githubCommitSha: candidate },
+    };
+    const resolved = { ...f.live, meta: { ...f.live.meta } };
+    const get = async (endpoint: string) =>
+      endpoint === `/v13/deployments/${row.url}` ? resolved : f.get(endpoint);
+    return { ...f, row, resolved, get, list: async () => ({ deployments: [row] }) };
+  }
+  it("resolves URL-only CLI rows and deduplicates the returned deployment identity", async () => {
+    const f = urlFixture();
+    const result = await inspectVercelDeployment(candidate, f.get, f.list);
+    expect(result.result).toBe("candidate_live");
+    expect(result.candidate_deployments).toEqual([result.production]);
+  });
+  it.each(["", "https://kut-reviewed.vercel.app", "attacker.example", "kut.vercel.app/path"])(
+    "refuses an unsafe or missing list hostname: %s",
+    async (url) => {
+      const f = urlFixture();
+      f.row.url = url;
+      await expect(inspectVercelDeployment(candidate, f.get, f.list)).rejects.toThrow("hostname");
+    },
+  );
+  it("rejects resolved project, SHA and target mismatches", async () => {
+    const f = urlFixture();
+    f.resolved.projectId = "prj_other";
+    await expect(inspectVercelDeployment(candidate, f.get, f.list)).rejects.toThrow("mismatched");
+    f.resolved.projectId = f.project.id;
+    f.resolved.meta.githubCommitSha = previous;
+    await expect(inspectVercelDeployment(candidate, f.get, f.list)).rejects.toThrow("mismatched");
+    f.resolved.meta.githubCommitSha = candidate;
+    f.row.target = "preview";
+    await expect(inspectVercelDeployment(candidate, f.get, f.list)).rejects.toThrow("mismatched");
+  });
+  it("does not use URL recovery to bypass conflicting listed identities", async () => {
+    const f = urlFixture();
+    Object.assign(f.row, { id: "dpl_one", uid: "dpl_two" });
+    await expect(inspectVercelDeployment(candidate, f.get, f.list)).rejects.toThrow("identity");
+  });
   it("does not confuse a successful candidate preview with the live production domain", async () => {
     const f = fixture();
     const result = await inspectVercelDeployment(candidate, f.get, f.list);

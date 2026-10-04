@@ -52,22 +52,40 @@ export async function inspectVercelDeployment(candidate, get, list) {
   ]);
   if (pages.some((page) => !Array.isArray(page.deployments)))
     throw new Error("Incomplete candidate deployment lookup.");
-  const candidates = [
-    ...new Map(
-      pages
-        .flatMap((page) => page.deployments)
-        .map((deployment) => {
-          const summary = deploymentSummary(deployment);
+  const entries = await Promise.all(
+    pages
+      .flatMap((page) => page.deployments)
+      .map(async (deployment) => {
+        // CLI list output can omit IDs. Resolve only a Vercel hostname through
+        // the authenticated API; never fetch a URL supplied by a list row.
+        if (!deployment.id && !deployment.uid) {
+          if (!/^[a-zA-Z0-9][a-zA-Z0-9-]*\.vercel\.app$/.test(deployment.url)) {
+            throw new Error("Candidate lookup lacks a safe deployment hostname.");
+          }
+          const resolved = await get(`/v13/deployments/${deployment.url}`);
+          const listed = deploymentSummary({ ...deployment, id: resolved.id });
+          const detail = deploymentSummary(resolved);
           if (
-            summary.sha !== candidate ||
+            resolved.projectId !== project.id ||
+            listed.sha !== detail.sha ||
+            listed.target !== detail.target ||
             (deployment.projectId && deployment.projectId !== project.id)
           ) {
             throw new Error("Candidate lookup returned mismatched provenance.");
           }
-          return [summary.id, summary];
-        }),
-    ).values(),
-  ];
+          deployment = resolved;
+        }
+        const summary = deploymentSummary(deployment);
+        if (
+          summary.sha !== candidate ||
+          (deployment.projectId && deployment.projectId !== project.id)
+        ) {
+          throw new Error("Candidate lookup returned mismatched provenance.");
+        }
+        return [summary.id, summary];
+      }),
+  );
+  const candidates = [...new Map(entries).values()];
   const confirmation = await get(aliasEndpoint);
   if (
     confirmation.alias !== DOMAIN ||

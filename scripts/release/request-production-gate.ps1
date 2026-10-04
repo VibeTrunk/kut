@@ -103,23 +103,31 @@ finally {
 if (-not $env:API_URL -or -not $env:ANON_KEY -or -not $env:SERVICE_ROLE_KEY -or -not $env:DB_URL) {
   throw 'Authenticated mobile E2E requires API_URL, ANON_KEY, SERVICE_ROLE_KEY and DB_URL from the local Supabase stack.'
 }
-$e2eStarted = (Get-Date).ToUniversalTime().ToString('o')
 Push-Location $repoRoot
 try {
-  & npx playwright install chromium webkit
-  if ($LASTEXITCODE -ne 0) { throw 'Authenticated E2E browser provisioning failed.' }
-  & npm run test:e2e:authenticated
-  if ($LASTEXITCODE -ne 0) { throw 'Authenticated mobile E2E failed.' }
+  $e2eJson = & node scripts/release/run-production-e2e.mjs --candidate $CandidateSha
+  if ($LASTEXITCODE -ne 0) { throw 'Production authenticated mobile E2E failed. Its unique private evidence directory is retained.' }
+  $e2eResult = $e2eJson | ConvertFrom-Json
+  if ($e2eResult.result -ne 'passed' -or $e2eResult.candidate_sha -ne $CandidateSha) {
+    throw 'Production E2E returned mismatched evidence.'
+  }
+  $e2eEvidence = & (Join-Path $PSScriptRoot 'assert-production-e2e.ps1') `
+    -ManifestPath $e2eResult.manifest_path -CandidateSha $CandidateSha -PassThru
 }
 finally { Pop-Location }
-$e2eCompleted = (Get-Date).ToUniversalTime().ToString('o')
+# A successful suite cannot certify a checkout changed while it was running.
+$head = (& git -C $repoRoot rev-parse HEAD).Trim().ToLowerInvariant()
+$dirty = & git -C $repoRoot status --porcelain --untracked-files=all
+if ($LASTEXITCODE -ne 0 -or $head -ne $CandidateSha -or $dirty) {
+  throw 'Candidate checkout changed during the production gate.'
+}
 
 $gateDir = Join-Path $repoRoot ".release-evidence\gates\$CandidateSha"
 [IO.Directory]::CreateDirectory($gateDir) | Out-Null
 $manifestPath = Join-Path $gateDir "gate-$(Get-Date -Format 'yyyyMMdd-HHmmss').json"
 if (Test-Path -LiteralPath $manifestPath) { throw 'Refusing to overwrite gate evidence.' }
 $manifest = [ordered]@{
-  version = 1
+  version = 2
   candidate_sha = $CandidateSha
   result = 'passed'
   release_approval = 'not_granted'
@@ -137,9 +145,13 @@ $manifest = [ordered]@{
   }
   authenticated_mobile_e2e = [ordered]@{
     result = 'passed'
-    started_at = $e2eStarted
-    completed_at = $e2eCompleted
-    config = 'playwright.authenticated.config.ts'
+    candidate_sha = $CandidateSha
+    started_at = $e2eEvidence.started_at
+    completed_at = $e2eEvidence.completed_at
+    config = $e2eEvidence.config
+    build_id = $e2eEvidence.build_id
+    manifest_path = $e2eResult.manifest_path
+    manifest_sha256 = (Get-FileHash -LiteralPath $e2eResult.manifest_path -Algorithm SHA256).Hash.ToLowerInvariant()
   }
   finalizer_readiness = [ordered]@{
     # Since the ADR-071 addendum this is a real end-to-end finalization: a due
@@ -150,6 +162,8 @@ $manifest = [ordered]@{
     github_check_id = ($checkEvidence | Where-Object { $_.name -eq 'database' } | Select-Object -First 1).id
   }
 }
+$null = & (Join-Path $PSScriptRoot 'assert-production-prerequisites.ps1') `
+  -GitHubChecks $manifest.github_checks -Backup $manifest.backup -CandidateSha $CandidateSha
 $manifestPending = "$manifestPath.pending"
 if (Test-Path -LiteralPath $manifestPending) { throw 'Refusing to overwrite pending gate evidence.' }
 try {

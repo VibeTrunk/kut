@@ -5054,3 +5054,37 @@ desktop screenshots. This isolated presentation check is not an authenticated
 hosted or live-data test. No new tests, dependency, migration, environment
 variable or manual setup is needed. No commit, push, merge or deployment was
 performed. The implementation is ready for review.
+
+## Production build evidence and a prepared main deployment hold — 2026-10-04
+
+Implemented ADR-123 in a separate isolated checkout of the live Soft graphite
+SHA. The gate now builds the clean exact candidate itself, owns its production
+server, refuses reuse/remote browsers/nonlocal fixtures and runs the complete
+authenticated inventory with zero retries, first-failure tracing and a bounded
+deadline. Installed Next/Playwright versions must match the lockfile. Private
+per-run manifests record build/runtime identity and report/inventory hashes;
+approval/assertion reject altered, mismatched, obsolete or expired evidence.
+
+`vercel.json` prepares a main automatic-deployment hold with no conflicting
+allow rule. Its separate publication/cutover remains unauthorized and unperformed;
+the live deployment path has not changed. The runbook defines final-SHA gating
+after merge, then separate approval and deployment instruction. No gate is waived.
+
+Validation: `verify:fast` passed (51 unit files, 489 tests). Fifteen focused
+unit checks include the PowerShell validators' eleven fictional evidence
+scenarios, missing/filtered coverage, same-line parameterized tests, retries,
+unexpected skips, wrong SHA, runtime drift and occupied-port refusal. The actual
+release config lists all 132 tests with zero retries under `CI=true`; validation
+of its real inventory with synthetic statuses covers all 44 cases per project
+and is explicitly not a browser pass. A combined focused smoke with ADR-122's
+fixture helpers and the owned production config passed two Windows WebKit
+cases, without retries or skips. Earlier smoke-only configuration-loader errors
+were corrected before fixtures started. PowerShell parsing and diff checks pass.
+
+No full production gate/pass certificate was emitted: the changes are uncommitted
+and have no final candidate SHA or same-SHA CI. Runner-owned
+`KUT_RELEASE_RUN_DIR`, `KUT_RELEASE_CANDIDATE` and `KUT_RELEASE_REPORT_PATH`
+need no manual environment configuration. No dependencies, migration, hosted
+SQL, credentials, external configuration, commit, push, merge or deployment
+changed. The Windows WebKit/JWT cause and historical SQL timing flake remain
+unproven; actual versions are recorded, and no environment cure is claimed.

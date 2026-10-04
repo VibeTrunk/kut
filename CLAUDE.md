@@ -105,7 +105,11 @@ locks Wed 30 Sep 2026 20:00 Amsterdam.
 
 Lessons that hold for every migration-bearing change:
 
-- **Vercel deploys on merge to `main`, before the schema push.** New code must
+- **Before the ADR-123 cutover, Vercel deploys on merge to `main`, before the schema push.**
+  `vercel.json` prepares a main deployment hold; it is not active until its
+  separately authorized publication and integration verification. See
+  `docs/PRODUCTION_SAFETY.md` for final-SHA gating and manual deployment order.
+  New code must
   degrade gracefully against the old schema (a tolerant read, a flag, or a
   catalogue push ready to follow the merge). PR #86 broke listing creation for
   ~2 hours by expecting a signature that didn't exist yet.

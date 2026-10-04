@@ -8,7 +8,7 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $gate = Get-Content -LiteralPath $GateManifest -Raw | ConvertFrom-Json
-if ($gate.result -ne 'passed' -or $gate.candidate_sha -ne $CandidateSha.ToLowerInvariant() -or
+if ($gate.version -ne 2 -or $gate.result -ne 'passed' -or $gate.candidate_sha -ne $CandidateSha.ToLowerInvariant() -or
     $gate.deployment_authorized -ne $false) {
   throw 'Gate manifest is not a passing, non-deploying record for this candidate.'
 }
@@ -16,6 +16,13 @@ $gateAge = (Get-Date).ToUniversalTime() - [datetime]::Parse($gate.created_at).To
 if ($gateAge.TotalHours -gt 8 -or $gateAge.TotalSeconds -lt 0) {
   throw 'Gate evidence is stale or future-dated; run a new production gate.'
 }
+$e2e = $gate.authenticated_mobile_e2e
+if ((Get-FileHash -LiteralPath $e2e.manifest_path -Algorithm SHA256).Hash.ToLowerInvariant() -ne $e2e.manifest_sha256) {
+  throw 'Gate production E2E manifest changed.'
+}
+& (Join-Path $PSScriptRoot 'assert-production-e2e.ps1') -ManifestPath $e2e.manifest_path -CandidateSha $CandidateSha
+& (Join-Path $PSScriptRoot 'assert-production-prerequisites.ps1') `
+  -GitHubChecks $gate.github_checks -Backup $gate.backup -CandidateSha $CandidateSha
 $confirmation = Read-Host "Type the full candidate SHA to approve release (this still does not deploy)"
 if ($confirmation.ToLowerInvariant() -ne $CandidateSha.ToLowerInvariant()) { throw 'Approval phrase did not match.' }
 $approvalPath = "$GateManifest.approval.json"

@@ -7077,3 +7077,49 @@ Player names still announce the manager's copy to screen readers.
 Applies to both live and completed match reports through their shared
 components. Presentation only: no engine, rating, economy, privacy, database
 or API contract changes, and no migration or external mutation.
+
+## ADR-123 — Hold main deployments and certify an owned production build
+
+Date: 2026-10-04. Status: implemented locally; external activation pending.
+
+Soft graphite was automatically deployed immediately after its squash merge,
+while its full local gate had not passed. Its final SHA cannot be gated before
+the squash exists. The authenticated configuration also switched server and
+retry behavior under `CI`, and could reuse an unrelated development server.
+
+The repository Vercel configuration holds automatic deployments for `main`
+using `git.deploymentEnabled.main = false`, with no conflicting allow rule.
+Other branches retain Vercel's default preview behavior. This local change is
+not an activated external control: separately authorized publication/cutover
+and read-only verification of the integration are required before relying on
+it. See [Vercel's Git configuration](https://vercel.com/docs/project-configuration/git-configuration).
+
+After cutover: merge under explicit authorization, identify the final exact
+SHA, run all gates on that clean checkout, obtain release approval, assert its
+evidence, then deploy only under a separate explicit instruction. The tooling
+still has no deployment command. Until cutover is verified, the old automatic
+path remains an operational gap; do not claim historical predeployment approval.
+
+The production E2E runner requires a clean exact-SHA checkout, loopback API/DB,
+the locked Next/Playwright runtimes and installed browsers. It creates a fresh
+build, starts its own `next start` server with reuse disabled, runs every
+authenticated mobile project without retries, and rechecks the checkout and
+build identity afterwards. CI cannot switch it to development mode. Occupied
+ports and remote browser overrides fail before fixture mutation. One failure
+stops the run; a 30-minute Playwright deadline bounds a broken suite.
+
+Every run has a unique ignored evidence directory with build/server logs,
+first-failure traces, an unfiltered test inventory, JSON results, and OS,
+Node/Next/Playwright/browser/Postgres/PostgREST metadata. Known local credentials
+are redacted from durable text logs; raw authenticated traces remain private.
+The report must match the inventory, cover all three projects and have one
+first-attempt result per test. Only the existing two duplicate-device pack
+skips are permitted, with that test passing on narrow Chromium.
+
+Gate manifests advance to version 2 and bind the production E2E manifest and
+report/inventory hashes. Approval and evidence assertion reject obsolete,
+changed or mismatched evidence and recheck backup/check freshness. The current
+gate must be rerun after publication; uncommitted targeted verification is not
+exact-candidate release evidence. No backup, external check or assertion is
+waived. Actual PostgREST versions are recorded rather than inferred from CLI;
+the WebKit/JWT cause remains unproven and no environment replacement is claimed.

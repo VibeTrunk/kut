@@ -20,6 +20,8 @@ node_modules/
 /coverage/
 /test-results/
 /playwright-report/
+/.release-evidence/
+/.private-backups/
 /.vercel/
 /next-env.d.ts
 /tsconfig.tsbuildinfo

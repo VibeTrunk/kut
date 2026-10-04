@@ -5739,6 +5739,16 @@ protection, and secret changes always require their own explicit instruction.
 
 Detailed contracts and commands are in `docs/PRODUCTION_SAFETY.md` (ADR-071).
 
+**Local release-tooling amendment (2026-10-04, ADR-123):** the authenticated
+gate builds its exact clean candidate and owns a production server; it refuses
+reuse, runtime drift and remote browser overrides, runs every authenticated
+mobile case without retries and preserves first-failure diagnostics. Version-2
+gate records bind build/runtime provenance and report/inventory integrity;
+approval/assertion recheck backup and check freshness. The repository prepares
+a `main` automatic-deployment hold so the final squash SHA can be gated before
+deployment. That control is not active until separately authorized publication
+and integration verification; no historical predeployment approval is claimed.
+
 ---
 
 # IMPLEMENTED FEATURE AMENDMENT — 2026-09-27: goals + assists (ADR-101)

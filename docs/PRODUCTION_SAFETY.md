@@ -24,10 +24,13 @@ production. The guard covers the integration suites, the Playwright global
 setup and teardown, and the authenticated Playwright config, which fails before
 a browser starts.
 
-The only way past it is setting `KUT_ALLOW_NONLOCAL_TEST_TARGET` to the exact
+The general test guard's override is setting `KUT_ALLOW_NONLOCAL_TEST_TARGET` to the exact
 acknowledgement phrase named in the failure message. CI never sets it and no
 repository script sets it. Refusals name the host only, never the connection
 string.
+
+The production E2E runner is stricter: it always requires loopback and refuses
+remote browser overrides, regardless of that acknowledgement.
 
 ## Credentials
 
@@ -115,10 +118,30 @@ powershell -NoProfile -File scripts/release/request-production-gate.ps1 `
 The gate reads GitHub check evidence for that SHA, checks byte-identical central
 migration catalogue parity, requires a cold-verified backup less than 24 hours
 old, and freshly decrypts and hash-checks that ciphertext in another process.
-It provisions Chromium and WebKit and runs authenticated member + admin mobile
-Playwright tests, including share recovery and geometry. Missing, skipped, cancelled, stale,
+It invokes `scripts/release/run-production-e2e.mjs --candidate <sha>`, which
+verifies installed Next/Playwright versions against the lockfile, provisions
+Chromium and WebKit, builds the candidate afresh and starts an owned production
+server on loopback 3101. An occupied port fails; an existing server is never
+reused. All three authenticated mobile projects run with zero retries, traces
+retained on their first failure, one failure stopping the run and a 30-minute
+deadline. CI does not change these conditions. Member/admin, share recovery and
+geometry assertions are unchanged. Missing, skipped, cancelled, stale,
 duplicated, or mismatched evidence fails closed. Its manifest explicitly
 records that release approval is absent and deployment is unauthorized.
+
+The sole existing coverage exception is the pack-summary case running once
+on narrow Chromium: its two duplicate-device skips are accepted only by exact
+title/project, while narrow Chromium must pass. Every other skip fails closed.
+The report must match an unfiltered inventory from the same configuration.
+
+Each run preserves private diagnostics under a unique
+`.release-evidence/authenticated/<sha>/<run-id>/`. Do not upload raw reports,
+traces or screenshots: they may contain authenticated local member data.
+The manifest records runtime versions, actual PostgREST image/version when
+available, build identity and artifact hashes. The gate now emits version 2;
+old gate records must be rerun. Approval/assertion check the nested E2E
+manifest and report/inventory integrity and recheck the 24-hour backup and
+72-hour external-check limits. A checkout changed during the run fails.
 
 Release approval is a second, interactive command:
 
@@ -128,6 +151,18 @@ powershell -NoProfile -File scripts/release/approve-production-release.ps1 `
 ```
 
 Even a passing gate plus approval does not authorize or perform a deployment.
-There is no deployment command in this tooling. Vercel auto-deploy behaviour
-must remain unchanged until the owner separately authorizes the external
-cutover and any associated branch-protection change.
+There is no deployment command in this tooling. `vercel.json` now contains
+`git.deploymentEnabled.main = false` with no overlapping true rule. This is a
+prepared repository control, **not a claim that live automatic deployments
+have already stopped**. Publication and activation need their own explicit
+instruction. See [Vercel Git configuration](https://vercel.com/docs/project-configuration/git-configuration).
+
+For the cutover, publish the reviewed hold through an authorized PR and verify
+read-only that the Vercel Git integration honors it. Until that verification,
+keep the existing automatic deployment gap visible. Once active, an authorized
+squash merge creates the final candidate without automatically deploying it.
+Run the gate on that exact clean SHA, record explicit release approval, and
+run `assert-production-evidence.ps1` with its gate and approval manifests before
+any separately authorized deployment. Verify the deployed SHA afterwards.
+Branch-protection changes are separate external actions. A passing postdeploy
+gate cannot retroactively establish predeployment ordering.

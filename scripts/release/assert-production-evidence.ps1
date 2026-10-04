@@ -11,7 +11,9 @@ $repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $sha = $CandidateSha.ToLowerInvariant()
 $gate = Get-Content -LiteralPath $GateManifest -Raw | ConvertFrom-Json
 $approval = Get-Content -LiteralPath $ApprovalManifest -Raw | ConvertFrom-Json
-if ($gate.result -ne 'passed' -or $gate.candidate_sha -ne $sha) { throw 'Gate evidence mismatch.' }
+if ($gate.version -ne 2 -or $gate.result -ne 'passed' -or $gate.candidate_sha -ne $sha) {
+  throw 'Gate evidence mismatch or obsolete provenance. Run the current production gate.'
+}
 if ($approval.release_approved -ne $true -or $approval.candidate_sha -ne $sha) {
   throw 'Release approval mismatch.'
 }
@@ -32,4 +34,12 @@ $head = (& git -C $repoRoot rev-parse HEAD).Trim().ToLowerInvariant()
 if ($LASTEXITCODE -ne 0 -or $head -ne $sha) { throw 'Checked-out HEAD does not match the evidence SHA.' }
 $dirty = & git -C $repoRoot status --porcelain --untracked-files=all
 if ($LASTEXITCODE -ne 0 -or $dirty) { throw 'Evidence assertion requires a clean candidate checkout.' }
+$e2e = $gate.authenticated_mobile_e2e
+if ($e2e.result -ne 'passed' -or $e2e.candidate_sha -ne $sha -or
+    (Get-FileHash -LiteralPath $e2e.manifest_path -Algorithm SHA256).Hash.ToLowerInvariant() -ne $e2e.manifest_sha256) {
+  throw 'Gate production E2E manifest changed or names another candidate.'
+}
+& (Join-Path $PSScriptRoot 'assert-production-e2e.ps1') -ManifestPath $e2e.manifest_path -CandidateSha $sha
+& (Join-Path $PSScriptRoot 'assert-production-prerequisites.ps1') `
+  -GitHubChecks $gate.github_checks -Backup $gate.backup -CandidateSha $sha
 Write-Host "Evidence is valid for $sha. A separate explicit deployment instruction is still required."

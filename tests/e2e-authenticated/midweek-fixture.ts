@@ -1,7 +1,16 @@
-import { createHash } from "node:crypto";
 import type { Client } from "pg";
 import { lockAt, nextTournamentWeek } from "@/game/midweek/schedule";
 import { seedHash } from "@/game/midweek/rng";
+import {
+  assertFixtureDatabase,
+  clearOwnedWeeks,
+  COMPLETED_SEED,
+  FIXTURE_SEED,
+  installFixtureOwnership,
+  ownedWeeks,
+  uninstallFixtureOwnership,
+  type OwnedWeek,
+} from "./fixture-ownership";
 
 /**
  * Midweek Madness for the authenticated E2E: release_member owns six cards of
@@ -34,8 +43,6 @@ const PLAYERS = [
   ["04", "Wall Fixture", "defender"],
   ["05", "Engine Fixture", "playmaker"],
 ] as const;
-const FIXTURE_SEED = createHash("sha256").update("kut-e2e-midweek").digest("hex");
-const COMPLETED_SEED = createHash("sha256").update("kut-e2e-midweek-complete").digest("hex");
 
 /** The completed week's Monday, and its lock (a Wednesday 20:00 CET). */
 export const COMPLETED_WEEK = "2001-01-15";
@@ -94,29 +101,69 @@ async function takeBackPayouts(database: Client, weeks: string[]) {
   ]);
 }
 
-export async function removeMidweekFixture(database: Client) {
-  const fixtureWeeks = [seedHash(FIXTURE_SEED), seedHash(COMPLETED_SEED)];
-  const weeks = (
-    await database.query<{ id: string }>(
-      "select id from kut.midweek_tournaments where seed_hash = any($1::text[])",
-      [fixtureWeeks],
-    )
-  ).rows.map((row) => row.id);
+async function fixtureTransaction<T>(database: Client, work: () => Promise<T>): Promise<T> {
+  assertFixtureDatabase(database);
+  await database.query("begin");
+  try {
+    await database.query("select pg_advisory_xact_lock(hashtext('kut._mm_open_next'))");
+    const result = await work();
+    await database.query("commit");
+    return result;
+  } catch (error) {
+    await database.query("rollback");
+    throw error;
+  }
+}
+
+async function removeOwnedTournaments(database: Client, records: OwnedWeek[]) {
+  let rebuilt = false;
+  // Reverse in creation order so successive rotations of the same Player
+  // unwind correctly. Refuse an intervening unowned archetype edit.
+  for (const record of records.filter((row) => row.id !== row.owner_id)) {
+    const conflict = await database.query(
+      `select 1 from kut.midweek_archetype_rotations r
+       join kut.players p on p.id = r.player_id
+       where r.tournament_id = $1 and p.archetype <> r.to_archetype limit 1`,
+      [record.id],
+    );
+    if (conflict.rowCount) throw new Error("An owned rotation has an intervening archetype edit.");
+    const rotated = await database.query(
+      `update kut.players p set archetype = r.from_archetype
+       from kut.midweek_archetype_rotations r
+       where r.player_id = p.id and r.tournament_id = $1`,
+      [record.id],
+    );
+    rebuilt ||= Boolean(rotated.rowCount);
+  }
+  if (rebuilt)
+    await database.query(
+      "select kut._rebuild_season_core(id) from kut.seasons where is_active limit 1",
+    );
+  const weeks = records.map((row) => row.id);
   // The completed week paid its winners: take that back first.
   await takeBackPayouts(database, weeks);
   // Cascades to secrets, squads, entries, cards, pick shares, matches and events.
   await database.query("delete from kut.midweek_tournaments where id = any($1::uuid[])", [weeks]);
-  await database.query("delete from kut.match_sessions where id::text like $1", [`${PREFIX}%`]);
-  await database.query("delete from kut.seasons where id::text like $1", [`${PREFIX}%`]);
-  await database.query("delete from kut.user_cards where id::text like $1", [`${PREFIX}%`]);
-  await database.query("delete from kut.card_editions where id::text like $1", [`${PREFIX}%`]);
-  await database.query("delete from kut.players where id::text like $1", [`${PREFIX}%`]);
-  await database.query("delete from kut.wallets where user_id::text like $1", [`${PREFIX}%`]);
-  await database.query("delete from kut.profiles where id::text like $1", [`${PREFIX}%`]);
-  await database.query("delete from auth.users where id::text like $1", [`${PREFIX}%`]);
-  // The migration's default. Local stacks keep it off between runs, so the
-  // teardown puts it back rather than remembering what it was.
-  await database.query("update kut.midweek_config set enabled = false");
+  await clearOwnedWeeks(database, weeks);
+}
+
+export async function removeMidweekFixture(database: Client, uninstall = false) {
+  await fixtureTransaction(database, async () => {
+    await installFixtureOwnership(database);
+    await removeOwnedTournaments(database, await ownedWeeks(database));
+    await database.query("delete from kut.match_sessions where id::text like $1", [`${PREFIX}%`]);
+    await database.query("delete from kut.seasons where id::text like $1", [`${PREFIX}%`]);
+    await database.query("delete from kut.user_cards where id::text like $1", [`${PREFIX}%`]);
+    await database.query("delete from kut.card_editions where id::text like $1", [`${PREFIX}%`]);
+    await database.query("delete from kut.players where id::text like $1", [`${PREFIX}%`]);
+    await database.query("delete from kut.wallets where user_id::text like $1", [`${PREFIX}%`]);
+    await database.query("delete from kut.profiles where id::text like $1", [`${PREFIX}%`]);
+    await database.query("delete from auth.users where id::text like $1", [`${PREFIX}%`]);
+    await database.query(
+      "update kut.midweek_config set enabled = (select enabled from kut_e2e_fixture.settings where id)",
+    );
+    if (uninstall) await uninstallFixtureOwnership(database);
+  });
 }
 
 export async function seedMidweekFixture(database: Client, memberId: string) {
@@ -132,6 +179,7 @@ export async function seedMidweekFixture(database: Client, memberId: string) {
       `A Midweek week outside this suite is open or already exists for ${weekStart}; run the E2E on a stack without one.`,
     );
   }
+  await database.query("update kut.midweek_config set enabled = false");
 
   for (const [n, name, archetype] of PLAYERS) {
     await database.query(
@@ -388,35 +436,22 @@ export async function advanceFixtureEvening(
  * any, and opens the fixture week again.
  */
 export async function endFixtureEvening(database: Client) {
-  const week = await fixtureWeek(database);
-  await database.query("delete from kut.match_sessions where id = $1", [id("6", "03")]);
-  if (week.status === "open") {
-    // A start that failed before the draw: only the lock moved.
-    await database.query("update kut.midweek_tournaments set lock_at = $2 where id = $1", [
-      week.id,
-      lockAt(week.week_start).toISOString(),
-    ]);
-    return;
-  }
-  await takeBackPayouts(database, [week.id]);
-  // Opening the week after it rotated every unclaimed Player, the fixture's
-  // included (ADR-110). Put each archetype back from that week's log before the
-  // delete takes the log with it, and the card faces with them.
-  const rotated = await database.query(
-    `update kut.players player set archetype = rotation.from_archetype
-     from kut.midweek_archetype_rotations rotation
-     join kut.midweek_tournaments tournament on tournament.id = rotation.tournament_id
-     where rotation.player_id = player.id and tournament.week_start > $1::date`,
-    [week.week_start],
-  );
-  if (rotated.rowCount) {
-    await database.query(
-      "select kut._rebuild_season_core(id) from kut.seasons where is_active limit 1",
-    );
-  }
-  await database.query(
-    "delete from kut.midweek_tournaments where id = $1 or week_start > $2::date",
-    [week.id, week.week_start],
-  );
-  await openFixtureWeek(database, week.week_start);
+  await fixtureTransaction(database, async () => {
+    const week = await fixtureWeek(database);
+    const records = await ownedWeeks(database, week.id);
+    await database.query("delete from kut.match_sessions where id = $1", [id("6", "03")]);
+    if (week.status === "open") {
+      // A start that failed before the draw: only the lock moved.
+      await database.query("update kut.midweek_tournaments set lock_at = $2 where id = $1", [
+        week.id,
+        lockAt(week.week_start).toISOString(),
+      ]);
+      return;
+    }
+    // Opening the week after it rotated every unclaimed Player, the fixture's
+    // included (ADR-110). Put each archetype back from that week's log before the
+    // delete takes the log with it, and the card faces with them.
+    await removeOwnedTournaments(database, records);
+    await openFixtureWeek(database, week.week_start);
+  });
 }

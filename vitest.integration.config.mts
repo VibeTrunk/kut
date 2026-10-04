@@ -1,4 +1,5 @@
 import { defineConfig } from "vitest/config";
+import path from "node:path";
 
 // The database-backed concurrency suites, run by `npm run test:integration`.
 // They are deliberately NOT reachable from `vitest.config.mts` / `npm test`,
@@ -7,6 +8,7 @@ import { defineConfig } from "vitest/config";
 //
 // To run a single file: npm run test:integration -- tests/integration/trade-race.test.ts
 export default defineConfig({
+  resolve: { alias: { "@": path.resolve(import.meta.dirname, "./src") } },
   test: {
     include: ["tests/integration/**/*.test.ts"],
     environment: "node",

@@ -6,11 +6,14 @@ uncommitted KB-035–KB-037 entries in `KNOWN_BUGS.md`.
 
 Implementation and local validation are recorded below for two separate
 reviewable slices. The owner subsequently authorized commits and pushes:
-frontend on `docs/known-bugs-kb035-kb036`, with the migration on stacked
-`fix/special-snapshot-tiers`. Review the migration against the frontend branch
-until the frontend merges; do not combine both in one PR to `main`.
-No merge, deployment or hosted migration has been performed. The affected-phone
-diagnosis remains unconfirmed.
+frontend on `docs/known-bugs-kb035-kb036`, with the migration on
+`fix/special-snapshot-tiers`. The owner squash-merged frontend PR #183;
+migration PR #184 now targets `main`. Its former stack caused conflicts in
+three shared documentation files; updated `origin/main` was merged into the
+migration branch, retaining both slices' documentation. Independent future
+slices will branch from `main` instead. Central catalogue PR #79 is prepared
+and validated, but neither migration PR is merged or applied to hosted.
+The affected-phone diagnosis remains unconfirmed.
 
 ## Scope and inventory
 
@@ -336,9 +339,12 @@ authorization decision under the repository's production-safety rules.
   SQL exit status, TAP plans/counts and every assertion. All fixture work was
   local; loopback guards and hosted opt-in variables were not bypassed.
 - Working-tree migration policy passes: one addition with its database test,
-  no existing migration mutation. Central **VibeTrunk/supabase** catalogue
-  parity is still outstanding; catalogue the SQL byte-for-byte and extend
-  central verification before any hosted application or Special issuance.
+  no existing migration mutation. Central **VibeTrunk/supabase** PR #79
+  contains the committed SQL byte-for-byte and extends central verification.
+  Source verification passes for 88 shared migrations; KUT parity passes for
+  87 KUT migrations. Read-only hosted preflight confirms 87 applied migrations
+  match and only this migration is pending; the central dry run names only
+  `20261018000000_special_snapshot_tiers.sql`. Nothing has been applied.
 
 ### Review and release boundaries
 
@@ -355,12 +361,14 @@ spec/roadmap/ADR/register/progress changes belong to its companion branch.
 | Migration | `20261018000000_special_snapshot_tiers.sql`, `special_snapshot_tiers.test.sql`, BUILD_SPEC and ROADMAP corrections | KB-038, ADR-121, migration PROGRESS and plan sections |
 
 KB-025 remains cannot-reproduce; no new mismatch evidence was found. KB-018's
-declined database provenance follow-up remains deferred. Hosted inventory was
-not queried. Real-device evidence, central catalogue work, exact-candidate CI
-merge/secret checks and the applicable production release/backup gates remain
-release work requiring the relevant separate authorizations.
+declined database provenance follow-up remains deferred. Hosted card inventory
+was not queried. Both original KUT PR heads passed all required GitHub checks,
+including clean-lockfile build and database suites. The updated migration head
+requires fresh CI. Real-device evidence, migration PR merges, final candidate
+release/backup gates and separately authorized central hosted application
+remain release work. The read-only preflight must be repeated after merging.
 
-### Final local checks
+### Final local checks (before PR publication)
 
 | Check | Result |
 |---|---|

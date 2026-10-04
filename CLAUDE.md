@@ -65,6 +65,17 @@ This block is generated from `policy/PRODUCTION_INVARIANTS.md`. Run
   - **Never run two agents in one working tree.** Each holds stale file state
     and they will silently clobber each other. Serialize them on the branch,
     or give each its own `git worktree` and merge into the PR branch.
+  - **Independent slices branch from `main`.** Do not stack an independent
+    migration on a frontend branch: squash-merging and auto-deleting the first
+    branch loses its ancestry and can conflict when GitHub retargets the child.
+    For a genuinely dependent stack, merge updated `origin/main` into the child
+    after its base is squash-merged, resolve conflicts, and rerun its checks.
+    Never force-push to repair the stack.
+  - **Commit-and-push requests include opening or updating the PR.** The owner
+    still approves PR merges separately or merges personally. For migrations,
+    prepare and validate the central catalogue companion as far as authorized;
+    report any remaining operator action with exact PowerShell commands.
+    Hosted application and other external mutations need their own instruction.
   - **The packaging agent reads `git diff main...HEAD` in full** before
     writing the PR body — not only its own changes.
 - **Vercel:** connected as project `kut` at `kut.vibetrunk.com`.

@@ -471,7 +471,7 @@ migration and product decision", so this needs an ADR and a spec change
 | Midweek Madness | Allowed, and deliberately strong. | `src/lib/midweek/copies.ts` already picks a member's strongest copy per Player, so a Groundmaster outranks its Live card, and a Special never goes into the injury cast (ADR-085). That is the reason to chase one. A +12 boost would tilt the weekly bracket; +6 to +8 keeps the edge bounded (the payout cap, Part L #26, bounds the coins). |
 | Admin grants | Settle in the same ADR. | "Admin grant of specific cards" (Admin tooling, below) already asks whether grants respect `max_supply` and increment `minted_count`; today `open_pack` is its only writer. |
 
-**Groundwork found while scoping (fix in the issuance migration):**
+**Groundwork found while scoping:**
 
 - `card_editions.edition_type` only allows `live`, `totw`, `hat_trick`,
   `milestone`, `iron_man`, `comeback`, `tots` and `other`. Add a proper
@@ -484,6 +484,11 @@ migration and product decision", so this needs an ADR and a spec change
   `20261010000000_market_listing_discard_value.sql` line 78, and the same
   expression in the other card views. Invisible today because no Special
   exists; the first Groundmaster would show the wrong tier.
+  **Correction is a separate slice (KB-038, ADR-121):**
+  `20261018000000_special_snapshot_tiers.sql` reads the frozen tier in the
+  collection, market, saved pack results and offered-card JSON. Catalogue and
+  apply it through `VibeTrunk/supabase` before issuance; issuance must not
+  bundle this projection fix.
 
 **Card designs (2026-09-30).** Five directions, built on the real `LiveCard`
 and `globals.css`, in [`design/groundmasters/`](../design/groundmasters/README.md)
@@ -527,7 +532,7 @@ with an uploaded photo instead of the shirt back, and the Midweek mini card.
 1. ADR + spec update for the rules above. Docs only.
 2. The card design and the album section, in the UI. Safe to deploy first:
    nothing renders it until a Special exists.
-3. Migration: the `groundmaster` edition type, the Special tier fix, and an
+3. Migration: the `groundmaster` edition type and an
    admin issuance RPC that also grants the honoured Player's own copy, with
    pgTAP coverage.
 4. Migration: the Special roll in `open_pack` with window, cap and concurrency

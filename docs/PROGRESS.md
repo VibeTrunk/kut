@@ -4839,7 +4839,51 @@ for early but remain unknown. Neither its actual exception nor the hosted
 roundRect are demonstrated failures, not confirmed explanations for that
 device. Emulated WebKit and mocked sharing cannot close the report.
 
-### Verification addendum for the frontend slice
+## Frozen Special tier correction — 2026-10-04 (separate local migration slice)
+
+KB-038 / ADR-121; `20261018000000_special_snapshot_tiers.sql`, following
+`20261017000000_midweek_predictions.sql`. Existing migrations are immutable
+and untouched. The new migration has been applied only to local Supabase.
+
+Collection, market, saved pack results and offered-card JSON now read a
+Special's `snapshot_rarity_tier` directly. The first three had the obsolete
+OVR ladder; trade JSON always used Common. Live tiers and missing-state
+floors, frozen OVR/stat/tier rows, discard/pricing/economy formulas, view
+column contracts, grants and invoker/definer/barrier modes remain unchanged.
+Current projections and RPC output were audited; Live-only projections and
+weights need no change, and past Midweek lock snapshots are not rewritten.
+
+Validation: 51 new pgTAP assertions exercise all six divergent stored tiers,
+Live/current-state and missing-state floors in all four outputs, real trade
+RPC guards, frozen rebuild persistence/immutability, columns, ACLs and
+anon/member/disabled/profileless/service-role boundaries. Full local pgTAP
+passed **38 files / 1,626 assertions**. The Windows Supabase CLI failed to
+quote this repository's spaced path (zero tests); every SQL file was instead
+run with `psql` in the local DB container, with TAP plan/count/assertion and
+SQL exit-status checks. The working-tree migration policy passes: one added
+migration and companion test, no existing migration edits. `verify:fast` and
+production dependency audit pass; pinned local Gitleaks scans found no leaks
+in working sources or 246 history commits.
+
+**Independent review/release:** package this SQL/test and Special-related
+spec/roadmap/ADR/KB/progress hunks separately from the frontend PR. Part L and
+RPC contracts do not change; there is no issuance. Catalogue the exact SQL in
+**VibeTrunk/supabase**, extend its verification, and establish parity before
+Special issuance. Central catalogue work and hosted application remain
+outstanding. Rollback re-creates the four prior view definitions named in the
+SQL; no snapshot rewrite/drop/grant change is needed. Applicable release and
+backup evidence must name the eventual exact candidate SHA.
+
+The initial implementation ended without commits or external mutations.
+The owner subsequently authorized commits and pushes of these two slices:
+frontend on `docs/known-bugs-kb035-kb036`, migration on stacked
+`fix/special-snapshot-tiers` (review against the frontend branch until it
+merges). At that point, merges, deployments, hosted migrations and
+central-repository mutations remained unauthorized. Later PR/catalogue work
+is recorded below. KB-025 remains cannot-reproduce; KB-018's
+database provenance follow-up remains deliberately deferred.
+
+### Verification addendum for both local slices (before PR publication)
 
 - Full authenticated run: **129 passed, two expected duplicate pack-test
   skips, one WebKit Sign in click timeout** before KB-033's layout assertions.
@@ -4864,3 +4908,42 @@ device. Emulated WebKit and mocked sharing cannot close the report.
   migration catalogue parity, exact-candidate GitHub merge/scan evidence,
   applicable cold backup and production release gate. Nothing is deployed;
   each external mutation and each commit needs separate explicit instruction.
+
+## PR and catalogue follow-up — 2026-10-04
+
+Opened KUT PRs #183 (frontend) and #184 (Special-tier migration), plus central
+**VibeTrunk/supabase PR #79** with the exact committed SQL, catalogue entry and
+verification entry. Both original KUT heads passed every required GitHub check,
+including clean-lockfile build, database/integration, migration policy and
+secret scan. The central repository has no automated PR checks; its local
+source verification passes for 88 shared migrations, and KUT parity passes
+for 87 KUT migrations.
+
+Read-only hosted preflight from the central checkout, using the stored DPAPI
+credential without logging it: 87 applied migrations match, and only
+`20261018000000_special_snapshot_tiers.sql` is pending. The central dry run
+with vault updates explicitly disabled names only that file. Sanitized
+evidence and an executable PowerShell preflight are stored locally under
+`.release-evidence/migration/`; they are ignored and contain no credentials.
+No hosted migration was applied and the production release gate was not run.
+
+The owner squash-merged #183 as `17fc33e163c35965f2abcd961395c14df6a3ae46`.
+GitHub retargeted the stacked #184 to `main`; squash ancestry caused conflicts
+in KNOWN_BUGS, PROGRESS and decisions. Merged updated `origin/main` into the
+migration branch, retaining the frontend history and all KB-038/ADR-121
+documentation. SQL, database tests and application code are unchanged.
+The updated head requires fresh CI before the owner merges #184. Independent
+future slices branch from `main`, as now recorded in CLAUDE.md; commit/push
+requests include opening or updating their PRs.
+
+Conflict-repair checks: `verify:fast` passes again (49 files / 474 tests,
+policy copies, formatting, lint and TypeScript). A byte comparison confirms
+unchanged migration/test content; KB-018/025/035–037 exactly match merged
+main, and no frontend application/test changes remain in the PR diff.
+
+Remaining: owner approval/merges for #184 and central #79; final-candidate
+release evidence and applicable cold-verified backup; a repeated central
+preflight, separately authorized hosted application and ordinary-member smoke
+verification. The agent will perform the technical steps as far as authorized
+and provide exact PowerShell if an operator action is needed. KB-037 remains
+investigating pending the affected phone/OS/browser and real-device evidence.

@@ -846,6 +846,7 @@ If all Live Bas cards show different stats, the implementation is wrong.
 A Special edition stores a frozen snapshot:
 
 - OVR;
+- rarity tier (`snapshot_rarity_tier`, independent of OVR; ADR-055/121);
 - six stats;
 - special type;
 - issue date;
@@ -5672,6 +5673,10 @@ implementation ADRs are ADR-055 through ADR-059.
 - **Special editions:** are scaffolded with immutable frozen identity, rating,
   rarity, description and artwork fields; no Special edition or copy is issued
   and packs draw Live editions only.
+  Collection, market, saved pack results and offered-card JSON read the stored
+  `snapshot_rarity_tier` for Specials (ADR-121); Live tiers keep following
+  current season state. This correction does not issue cards or rewrite
+  frozen editions or past Midweek lock snapshots.
 - **Club Value:** duplicate copies of the same edition contribute 100%, 20%,
   5%, then 0% of discard value. Selling or discarding still uses the full card
   value and is not discounted by this projection.

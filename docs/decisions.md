@@ -7008,3 +7008,48 @@ KB-037 remains unconfirmed on the affected phone. Rejected fonts and missing
 roundRect are demonstrated recovery paths, not its confirmed explanation.
 The browser/OS/device details and real-device retest remain required before
 closing that report. No image is uploaded or hosted.
+
+## ADR-121 — Special projections read the frozen tier (KB-038)
+
+Date: 2026-10-04
+
+Status: Accepted; implemented locally, not hosted. Correction to ADR-055's
+existing immutable tier contract, separate from the KB-035–037 frontend slice.
+
+Decision: `20261018000000_special_snapshot_tiers.sql` replaces only the
+Special tier expression in `my_collection_cards`, `active_market_listings`,
+`my_pack_opening_results` and `my_trade_offers.offered_cards`. Specials read
+`snapshot_rarity_tier` directly; Live editions retain current state rarity
+with their existing Common fallback. The old ladder was shifted, and trade
+JSON hardcoded every Special as Common. All six stored tiers are legal
+independently of OVR; no new ladder or fallback is invented for Specials.
+
+Audit: `my_wanted_cards` inherits market eligibility and contains no separate
+tier expression. Directory, risers, Chronicle tier changes and pack economy
+are Live-only. The only current RPC source mentioning rarity is `open_pack`:
+it uses Live state rarity for draw weights and returns an opening id, price
+and replay flags, never a Special tier. Rebuild/capture functions write Live
+state/history; `protect_frozen_card_edition` already protects the stored tier.
+No RPC signature or output shape changes. Existing Midweek results retain
+lock-time OVR-based presentation: this migration does not rewrite stored
+week/entry snapshots or add new tournament inputs.
+
+Consequences: four `create or replace view` definitions retain column order,
+types, owners and ACLs. Collection and pack results remain invoker views;
+market and trade offers remain definer views with the active-member gate.
+Every security barrier remains. No DML, card issuance, discard/pricing rule,
+pack activation, snapshot mutation or Part L invariant change. pgTAP covers
+six deliberately divergent frozen tiers, Live state and missing-state floors,
+trade RPC output via the view, rebuild persistence, immutability, column
+contracts, grants and caller boundaries.
+
+Release dependency: predecessor `20261017000000_midweek_predictions.sql`.
+Catalogue the new SQL byte-for-byte in **VibeTrunk/supabase**, extend its
+catalogue verification and review it as its own projection-only/additive
+migration PR before any Special issuance. The frontend fixes have no schema
+dependency. This KUT working copy contains the local migration/test only;
+central catalogue work and hosted application remain outstanding and require
+separate authorization. Existing migrations are immutable. Rollback, if
+needed, re-creates the four views from the source versions named in the SQL;
+no drop, edition rewrite or grant change is needed. Release gates and the
+applicable backup remain mandatory for the exact candidate SHA.

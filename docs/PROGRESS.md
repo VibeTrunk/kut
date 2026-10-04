@@ -4839,7 +4839,50 @@ for early but remain unknown. Neither its actual exception nor the hosted
 roundRect are demonstrated failures, not confirmed explanations for that
 device. Emulated WebKit and mocked sharing cannot close the report.
 
-### Verification addendum for the frontend slice
+## Frozen Special tier correction — 2026-10-04 (separate local migration slice)
+
+KB-038 / ADR-121; `20261018000000_special_snapshot_tiers.sql`, following
+`20261017000000_midweek_predictions.sql`. Existing migrations are immutable
+and untouched. The new migration has been applied only to local Supabase.
+
+Collection, market, saved pack results and offered-card JSON now read a
+Special's `snapshot_rarity_tier` directly. The first three had the obsolete
+OVR ladder; trade JSON always used Common. Live tiers and missing-state
+floors, frozen OVR/stat/tier rows, discard/pricing/economy formulas, view
+column contracts, grants and invoker/definer/barrier modes remain unchanged.
+Current projections and RPC output were audited; Live-only projections and
+weights need no change, and past Midweek lock snapshots are not rewritten.
+
+Validation: 51 new pgTAP assertions exercise all six divergent stored tiers,
+Live/current-state and missing-state floors in all four outputs, real trade
+RPC guards, frozen rebuild persistence/immutability, columns, ACLs and
+anon/member/disabled/profileless/service-role boundaries. Full local pgTAP
+passed **38 files / 1,626 assertions**. The Windows Supabase CLI failed to
+quote this repository's spaced path (zero tests); every SQL file was instead
+run with `psql` in the local DB container, with TAP plan/count/assertion and
+SQL exit-status checks. The working-tree migration policy passes: one added
+migration and companion test, no existing migration edits. `verify:fast` and
+production dependency audit pass; pinned local Gitleaks scans found no leaks
+in working sources or 246 history commits.
+
+**Independent review/release:** package this SQL/test and Special-related
+spec/roadmap/ADR/KB/progress hunks separately from the frontend PR. Part L and
+RPC contracts do not change; there is no issuance. Catalogue the exact SQL in
+**VibeTrunk/supabase**, extend its verification, and establish parity before
+Special issuance. Central catalogue work and hosted application remain
+outstanding. Rollback re-creates the four prior view definitions named in the
+SQL; no snapshot rewrite/drop/grant change is needed. Applicable release and
+backup evidence must name the eventual exact candidate SHA.
+
+The initial implementation ended without commits or external mutations.
+The owner subsequently authorized commits and pushes of these two slices:
+frontend on `docs/known-bugs-kb035-kb036`, migration on stacked
+`fix/special-snapshot-tiers` (review against the frontend branch until it
+merges). Merges, deployments, hosted migrations and central-repository
+mutations remain unauthorized. KB-025 remains cannot-reproduce; KB-018's
+database provenance follow-up remains deliberately deferred.
+
+### Verification addendum for both local slices
 
 - Full authenticated run: **129 passed, two expected duplicate pack-test
   skips, one WebKit Sign in click timeout** before KB-033's layout assertions.

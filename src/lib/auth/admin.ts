@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
+import { enabledProfile } from "./profile-read";
 import { isAdminRole } from "./roles";
 
 export type AdminIdentity = {
@@ -19,14 +20,15 @@ export const requireAdmin = cache(async (): Promise<AdminIdentity> => {
     redirect("/login");
   }
 
-  const { data: profile, error: profileError } = await supabase
+  const profileResponse = await supabase
     .schema("kut")
     .from("profiles")
     .select("display_name, role, is_disabled")
     .eq("id", userId)
     .maybeSingle();
 
-  if (profileError || !profile || profile.is_disabled || !isAdminRole(profile.role)) {
+  const profile = enabledProfile(profileResponse, "admin");
+  if (!profile || !isAdminRole(profile.role)) {
     redirect("/");
   }
 

@@ -65,7 +65,7 @@ prefix_rule(
 # which means each one must surface an approval prompt.
 prefix_rule(
     pattern = ["git", "commit"],
-    decision = "ask",
+    decision = "prompt",
     justification = "A commit records an authorization decision the user must make per change slice.",
     match = [
         "git commit -m \"Fix typo\"",
@@ -74,7 +74,7 @@ prefix_rule(
 
 prefix_rule(
     pattern = ["git", "push"],
-    decision = "ask",
+    decision = "prompt",
     justification = "Publishing a branch is outward-facing; the user authorizes each push. Direct pushes to main are additionally rejected by branch protection.",
     match = [
         "git push",
@@ -167,7 +167,7 @@ prefix_rule(
 
 prefix_rule(
     pattern = ["npx", "supabase", "functions", "deploy"],
-    decision = "ask",
+    decision = "prompt",
     justification = "This ships code to the shared hosted project every VibeTrunk tool uses. Being reversible does not make it unattended: it is an external deployment and needs the user to say so.",
     match = [
         "npx supabase functions deploy <function-name>",

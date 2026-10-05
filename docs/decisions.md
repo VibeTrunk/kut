@@ -7168,7 +7168,7 @@ the WebKit/JWT cause remains unproven and no environment replacement is claimed.
 
 Date: 2026-10-04. Status: owner instruction active; guidance merged in #190
 and released with #195 on 2026-10-05. Documentation-only amendment below is
-owner-approved and included in this documentation slice; merge pending.
+merged in documentation-only #199 on 2026-10-05; no release was requested.
 
 The owner explicitly instructed that personally merging a reviewed PR is release
 and deployment approval, and that the agent must run the full gate automatically.
@@ -7196,8 +7196,7 @@ remains required. A requested docs-only deployment still requires the full
 gate, approval record and evidence assertion for its exact SHA; no parent
 evidence is inherited and no unreleased executable change is waived.
 Deployment records accompany the next PR for other work, never a standalone
-record PR. The current #196/#197/#198 records belong in this shared-guidance
-slice once publication is authorized.
+record PR. The #196/#197/#198 records were published once in #199.
 
 The first release under this instruction is merged #189 at
 `13bf6ad5e821532debe5c4237df75bcc54cc5b57`. Its full gate passed before the
@@ -7332,8 +7331,8 @@ release does not establish a Topic A or B repair.
 ## ADR-128 — The release gate runs only from the main checkout
 
 Date: 2026-10-05. Status: merged in #197 and released 2026-10-05; checkout
-guard active. Complete #197 timing reconciliation remains a follow-up before
-orchestrator work.
+guard active. Complete #197 timing reconciliation measured on 2026-10-05
+before the read-only preflight slice (ADR-129).
 
 The release of #196 (`84ed754`) took about 33 minutes of agent time against
 about 15 for the morning's release. The gate was started from a linked git
@@ -7362,10 +7361,17 @@ check, and from the main checkout, where it passed the check.
 "Main checkout" means the ordinary, non-linked checkout, not necessarily the
 `main` branch. Exact candidate SHA and cleanliness are separate requirements.
 #197's full gate passed there before deployment and binding verification.
-Its merge-to-binding timestamps span 22m55s; the owner's approximately
-28-minute session-work report uses another boundary. The complete timeline
-must be measured and reconciled before orchestrator work; no idle-time or
-orchestrator benefit is inferred here.
+Retained exact-SHA artifacts and session evidence reconcile the boundaries:
+merge 11:16:17 UTC, full required main CI 11:18:16, runner 11:21:56.020,
+gate pass 11:31:37.035, deployment creation 11:38:02.253 and domain binding
+11:39:12.330 (Europe/Amsterdam is UTC+2). Merge-to-binding is 22m55.330s.
+The session ran 11:16:53.982-11:45:14.316 UTC (28m20.334s; reported task
+duration 28m20.524s), continuing 6m01.986s after binding for smoke and checkout
+closeout. Runner time was 580.795s, including the independently recorded
+32.412s build; Playwright report time was 545.495s. The gate tool submission
+at 11:21:37.228 is not an exact internal process-start timestamp. No idle-time
+or prospective saving is inferred. The scalar measurement and source locators
+are retained at `.release-evidence/investigations/pr197-release-timeline-20261005.md`.
 
 Alternatives: letting a worktree find the main checkout's backup pointer
 would widen where the gate reads evidence. That conflicts with its
@@ -7374,3 +7380,37 @@ exact-checkout design. A note in the release request alone relies on memory.
 Consequences: release tooling and docs only. No check is loosened, and no
 application code, schema, hosted data or setting changes. Scratch worktrees
 remain fine for other work (CLAUDE.md, close-out), but never for the gate.
+
+## ADR-129 — Read-only release preflight before expensive work
+
+Date: 2026-10-05. Status: implemented and reviewed locally; the owner authorized
+publication of this slice. PR merge remains pending.
+
+The owner selected orchestration as three independent slices: read-only
+preflight (3a), safe runner progress (3b), then a chain ending at evidence
+assertion (3c). The #197 timeline prerequisite is measured in ADR-128; this
+slice implements only 3a. No timing-saving claim follows from that measurement.
+
+`npm run release:preflight -- --candidate <sha>` checks the ordinary checkout
+and real dependencies first using ADR-128's existing guard. Independent
+read-only probes then check clean exact HEAD, complete successful fresh CI,
+GitHub and Vercel project access, Docker/local Supabase, the existing fresh
+backup pointer, retrievable DPAPI credentials, the central catalogue and port
+3101. All check failures return nonzero with fixed reasons and safe remedies.
+CLI output stays in memory; child commands have deadlines and output bounds.
+The Vercel deployment checker and preflight share installed CLI discovery,
+without changing the existing deployment verifier's evidence contract.
+
+Explicit network/sandbox denial, unavailable networks, timeout, sign-in required,
+explicit expiration, authentication rejection and unknown access failure are
+distinct. A generic failure at authentication is not proof of expired login.
+Use supported per-command approval for authorized read-only probes; no blanket
+access or new agent approval rule is introduced.
+
+Preflight starts no service and creates no backup, build, fixture, gate,
+approval or deployment. Its fresh pointer check does not certify recoverability:
+the unchanged full gate still requires fresh separate-process decrypt/hash
+verification. Preflight checks can race changing services or evidence; the gate
+and runner keep their own final exact-SHA, freshness and port checks. No schema,
+RPC, Part L invariant, application behavior or hosted/machine setting changes.
+The docs-only #199 closeout record accompanies this normal tooling slice.

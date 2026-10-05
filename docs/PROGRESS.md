@@ -5509,3 +5509,58 @@ links, balanced code fences, conflict markers, ADR qualifications and unchanged
 Part L text. The existing classifier reports docs-only for this PR diff and
 full CI for a main push. No executable change, product test rerun or release
 gate was needed or run; documentation is hand-wrapped and excluded by Prettier.
+
+## Read-only release preflight (item 3a) — 2026-10-05
+
+Completed the #197 timing prerequisite from retained exact-SHA gate, runner,
+CI, deployment and session evidence. Merge-to-binding was 22m55.330s; session
+wall time was 28m20.334s (reported task duration 28m20.524s), including
+6m01.986s of work after binding. Runner time was 580.795s, with a separately
+recorded 32.412s build and 545.495s Playwright report duration. UTC and
+Europe/Amsterdam (UTC+2) boundaries and source locators are retained privately
+in `pr197-release-timeline-20261005.md` and summarized in ADR-128. Internal
+PowerShell gate process start was not recorded; tool submission is labelled
+separately. No idle-time or prospective saving estimate is inferred.
+
+Implemented only the bounded read-only preflight, ADR-129, on local review
+branch `fix/release-preflight`. It reuses the ordinary-checkout guard, DPAPI
+store, catalogue parity and port check, and shares installed Vercel CLI
+discovery with the deployment checker. Complete fresh exact-SHA CI and backup
+pointer evidence are required. Fixed safe reasons distinguish explicit
+sandbox/network denial, network failure, timeout, required sign-in, explicit
+expiration, authentication rejection and unknown access. Raw CLI output stays
+in memory with output and deadline bounds. A pointer pass explicitly leaves
+independent recovery proof to the unchanged full gate.
+
+Validation: the complete unit suite passed, 59 files / 577 tests; all 52 new
+preflight tests passed again after the test-only TypeScript environment fix.
+Wired success/failure paths use fictional CLI/backup fixtures; real subprocess
+timeout/output handling and existing ADR-128/occupied-port regressions pass.
+Policy parity, ordinary-checkout formatting, lint, typecheck and whitespace
+passed. The plain `npm run verify:fast` wrapper stopped at formatting because
+it traversed three preserved `work/` checkouts (72 existing formatting issues).
+Equivalent checks used ordinary-checkout source/config paths and a private
+333-file TypeScript review config; no worktree or project check was weakened
+or reformatted to obtain a pass. The wrapper limitation remains open.
+
+Actual read-only validation with per-command sandbox approval completed in
+5.265s: ordinary checkout, #199 CI, GitHub/Vercel/Docker access, DPAPI,
+existing fresh backup pointer, central catalogue and port passed. It correctly
+returned nonzero for the local edits and unavailable local Supabase stack. Restricted
+sandbox probes separately reported explicit network denial and unknown Vercel
+access, without inferring login expiration. An uppercase existing backup hash
+is accepted, matching the gate's case-insensitive hash handling.
+
+Carried the private #199 docs-only closeout into DEPLOYMENTS with its actual
+merge SHA, full main CI and the dated 14:02:19 UTC domain observation. That
+observation is not a fresh domain check in this session. All 507 handoff private
+entries matched their saved metadata at task start; all seven protected stashes,
+17 worktrees, backups, recordings and unrelated pack-luck material remain.
+
+No commit, push, PR, gate, backup/export, build, browser fixture, deployment,
+stack start/stop, hosted migration or machine setting change occurred. No
+application, RPC, schema or Part L invariant changed. Topic A remains open;
+Topic B/KB-037 are monitoring only; ADR-125 reboot persistence is unverified.
+The owner subsequently authorized commit, push and PR with "Publish this slice".
+PR merge remains the owner's decision. Items 3b/3c, browser work and worktree
+inventory/removal remain subsequent separate slices.

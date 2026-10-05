@@ -1,10 +1,9 @@
 import { spawnSync } from "node:child_process";
-import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { inspectVercelDeployment } from "./vercel-deployment-contract.mjs";
+import { resolveVercelCli } from "./vercel-cli.mjs";
 
-const VERSION = "59.23.2";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const args = process.argv.slice(2);
 const login = args.length === 1 && args[0] === "--login";
@@ -16,43 +15,9 @@ if (!login && !/^[a-f0-9]{40}$/.test(candidate ?? "")) {
   process.exit(2);
 }
 
-function resolveCli() {
-  // Reuse an already installed official CLI. Never download a package or read credentials.
-  const packages = [path.join(root, "node_modules/vercel")];
-  if (process.env.KUT_VERCEL_CLI_PATH) {
-    packages.unshift(path.resolve(path.dirname(process.env.KUT_VERCEL_CLI_PATH), ".."));
-  }
-  if (process.env.APPDATA) packages.push(path.join(process.env.APPDATA, "npm/node_modules/vercel"));
-  const cache =
-    process.env.npm_config_cache ??
-    (process.env.LOCALAPPDATA ? path.join(process.env.LOCALAPPDATA, "npm-cache") : null);
-  if (cache && existsSync(path.join(cache, "_npx"))) {
-    for (const entry of readdirSync(path.join(cache, "_npx"), { withFileTypes: true })) {
-      if (entry.isDirectory())
-        packages.push(path.join(cache, "_npx", entry.name, "node_modules/vercel"));
-    }
-  }
-  for (const directory of packages) {
-    try {
-      const metadata = JSON.parse(readFileSync(path.join(directory, "package.json"), "utf8"));
-      const cli = path.join(directory, "dist/vc.js");
-      if (
-        metadata.name === "vercel" &&
-        metadata.version === VERSION &&
-        metadata.bin?.vercel === "./dist/vc.js" &&
-        existsSync(cli)
-      )
-        return cli;
-    } catch {
-      /* A missing cache entry is not authentication evidence. */
-    }
-  }
-  throw new Error("cli_unavailable");
-}
-
 let stage = "cli-discovery";
 try {
-  const cli = resolveCli();
+  const cli = resolveVercelCli(root);
   if (login) {
     // Operator-only terminal flow. No agent enters credentials or stores a new token itself.
     if (!process.stdin.isTTY || !process.stdout.isTTY)

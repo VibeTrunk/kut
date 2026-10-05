@@ -23,24 +23,34 @@ deployment identity and domain-verification time; do not change the latest
 migration line when no migration was applied. Records accompany the next PR
 opened for other work, never a standalone record PR.
 
-## 2026-10-05 — documentation-only publication policy (item 2)
+## 2026-10-05 — documentation-only merge of #199; intentional production lag (ADR-124 / ADR-126)
 
-This slice aligns shared instructions and ADR-123–128 statuses and
-includes the unpublished #196/#197/#198 records below once. It changes only
-documentation, including the policy source and its generated Markdown blocks.
-The owner authorized its commit, push and PR after reviewing the local changes.
-The merge remains the owner's decision; no release gate or deployment is
-requested for this documentation-only slice.
+MartinFloris merged #199 at 13:59:21 UTC (15:59:21 Europe/Amsterdam), producing
+exactly `02668326146623befa659bca99de0e2b2cc40916`. Its tree matches reviewed
+publication commit `e08455244db9692b42d8895134e521fef2478ff7`: 12 Markdown
+files only. It aligns shared instructions, records the docs-only release
+exception and ADR-123–128 statuses, and includes #196/#197/#198's records once.
 
-Under the owner's 5 October amendment to ADR-124, a documentation-only merge
-needs no release gate or deployment unless requested; full main CI remains
-required (ADR-126). This PR must explicitly say production may lag main
-by this documentation-only merge. The last retained domain observation is
-#198 at `7dafa40552654778acad88ece5fcc7abb6be500a`, verified 2026-10-05
-12:52:58 UTC (14:52:58 Europe/Amsterdam). This is historical evidence, not a
-fresh live-domain check. No newer merged SHA or actual production lag is claimed
-before this slice is merged. Record the eventual merge SHA and any resulting
-docs-only lag with the next PR for other work; do not create a record-only PR.
+- Full main CI passed on that exact SHA: fast, e2e, database, migrations,
+  security, merge-gate and scan, without skipped required jobs. The changes
+  classifier also succeeded. The last required job completed at 14:01:16 UTC.
+- No release gate or production deployment was run, under the approved
+  documentation-only exception. Production intentionally lagged main by this
+  docs-only commit at closeout.
+- Authenticated read-only verification at 14:02:19.411 UTC (16:02:19
+  Europe/Amsterdam) returned `candidate_not_live`, complete candidate lookup
+  and zero #199 deployments. The domain bound to READY deployment
+  `dpl_8JpizqmeD24eeaZ9NC7sGBZoDZX9`, exact #198 SHA
+  `7dafa40552654778acad88ece5fcc7abb6be500a`. Automatic main deployment remained
+  held (`git.deploymentEnabled.main = false`). This is the dated #199 closeout
+  observation, not a fresh domain check in the preflight implementation session.
+- Private evidence: `.release-evidence/deployments/02668326146623befa659bca99de0e2b2cc40916/docs-only-domain-2026-10-05T14-02-19-411Z.json`.
+- The ordinary checkout was fast-forwarded cleanly to the merged SHA; policy
+  parity passed. Seven protected stashes, 17 worktrees, backups, recordings and
+  unrelated pack-luck material were preserved; no cleanup, restore or hosted
+  mutation occurred.
+- ADR-125 reboot persistence remains unverified. Topic A is unresolved;
+  Topic B/KB-037 remain monitoring only. No incident repair is claimed.
 
 ## 2026-10-05 — gated agent-policy release of #198 (ADR-124)
 

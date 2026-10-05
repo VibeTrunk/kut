@@ -56,7 +56,9 @@ production scripts use only the independently retrievable DPAPI records.
 
 The `verify` workflow runs on every PR and `main` push, including docs-only
 changes. `merge-gate` is always present; it permits expensive jobs to be
-skipped only for a mechanically classified docs-only diff. Code changes need
+skipped only for a mechanically classified docs-only **pull request**. A push
+to `main` always runs every job, because its SHA is the release candidate and
+the gate refuses skipped evidence (ADR-126). Code changes need
 successful fast/build, E2E, database/pgTAP/concurrency, migration-policy, and
 dependency-audit jobs. Gitleaks runs separately with an immutable container
 digest.

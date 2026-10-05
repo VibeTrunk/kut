@@ -25,10 +25,11 @@ jobs:
         with:
           fetch-depth: 0
       - id: classify
-        name: Classify docs-only changes
+        name: Classify docs-only changes (pull requests only; main always runs in full)
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
-        run: node scripts/policy/classify-ci-change.mjs --base "$BASE_SHA"
+          EVENT_NAME: ${{ github.event_name }}
+        run: node scripts/policy/classify-ci-change.mjs --base "$BASE_SHA" --event "$EVENT_NAME"
 
   fast:
     needs: changes

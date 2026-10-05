@@ -7215,3 +7215,39 @@ post-reboot persistence check. Never delete volumes or use `--no-backup`
 during recovery. Reboot persistence remains an operator follow-up, not a
 claim of verification. The unresolved WebKit and local storage issues are
 separate; this repair makes no claim about either.
+
+## ADR-126 — Every main push earns complete release evidence
+
+Date: 2026-10-05. Status: prepared locally; awaiting owner review.
+
+ADR-071 let `verify` skip the E2E, database and security jobs for a
+mechanically classified docs-only diff, and made the release gate refuse
+skipped evidence: "a docs-only candidate … cannot be promoted by exception."
+ADR-124 then made the exact SHA produced by an owner merge the release
+candidate. Together they deadlock. When the last merge before a release is
+docs-only, its main SHA can never pass the gate, and code merged just before
+it stays undeployed. That happened on 5 October. #190–#192 were followed by
+docs-only #193 (`df7dce7`), whose main push skipped those three jobs. The gate
+refused, and production stayed on `13bf6ad`.
+
+Decision: the docs-only shortcut applies to pull-request runs only. The
+classifier reports `docs_only=false` for every other event, including every
+push to `main` and any unknown or missing event name. Every main SHA therefore
+earns the full fast/build, E2E, database, migration-policy and dependency-audit
+evidence the gate requires. The gate is unchanged and still refuses skipped,
+stale, cancelled, missing or mismatched evidence. Docs-only pull requests keep
+their fast path, and `merge-gate` still accepts it for them.
+
+Rejected alternatives: letting the gate accept a docs-only SHA by inheriting
+its parent's evidence (an exception that ADR-071 forbids, and it trusts a
+classification instead of a run); refusing to release docs-only SHAs (that
+strands the code merged before them, which is the failure itself); and a
+manual full-run dispatch (one more operator step on every such release).
+
+Consequences: CI only. No application code, schema, migration, hosted data,
+Vercel setting or branch protection changes. A docs-only merge now costs one
+full `verify` run on `main`. `cancel-in-progress` still cancels a superseded
+main run, which is harmless: only the final main SHA is a candidate. The SHA
+that merges this change is itself non-docs-only, so it is the first eligible
+candidate since `13bf6ad`. It carries #190–#193, none of which changes
+application runtime code.

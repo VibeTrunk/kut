@@ -57,9 +57,10 @@ production scripts use only the independently retrievable DPAPI records.
 The `verify` workflow runs on every PR and `main` push, including docs-only
 changes. `merge-gate` is always present; it permits expensive jobs to be
 skipped only for a mechanically classified docs-only **pull request**. A push
-to `main` always runs every job, because its SHA is the release candidate and
-the gate refuses skipped evidence (ADR-126). Code changes need
-successful fast/build, E2E, database/pgTAP/concurrency, migration-policy, and
+to `main` always runs every job, so its SHA has complete CI evidence if a
+release is requested; the gate refuses skipped evidence (ADR-126). The
+documentation-only release exception below does not waive main CI. Code
+changes need successful fast/build, E2E, database/pgTAP/concurrency, migration-policy, and
 dependency-audit jobs. Gitleaks runs separately with an immutable container
 digest.
 
@@ -107,8 +108,29 @@ to `main` is denied outright.
 
 ## Production gate and approval
 
-From the main checkout (never a linked git worktree), clean at the exact
-candidate commit, with its own `node_modules` from `npm ci` (ADR-128), the
+**Documentation-only exception (owner decision, 2026-10-05):** a merge changing
+only documentation needs no release gate or deployment unless the owner asks
+for that release. Production may lag `main` by documentation-only commits.
+State the exception and production lag explicitly in the PR and
+`docs/DEPLOYMENTS.md`, with the last verified production SHA and observation
+time; do not imply a historical observation is a fresh domain check. Review the
+complete diff rather than trusting a label, filename or CI shortcut: executable
+and configuration changes are not documentation-only. Full main CI still runs
+under ADR-126. If the owner asks to release a docs-only SHA, all ordinary
+exact-SHA gate, approval, assertion and deployment-verification requirements
+apply. This exception grants no waiver for unreleased executable changes.
+
+Deployment records ride with the next PR opened for other work, never a
+standalone record PR. Preserve unpublished records and their private evidence
+until they can be included in that slice.
+
+"Main checkout" means the ordinary checkout, not necessarily the `main`
+branch. Checkout identity, real dependencies, the exact SHA and cleanliness
+are separate requirements. A repair worktree cannot run the gate.
+
+For a release, use the ordinary, non-linked checkout (never a linked git
+worktree), clean at the exact candidate commit, with its own `node_modules`
+from `npm ci` (ADR-128), the
 local full Supabase stack running and its `API_URL`,
 `ANON_KEY`, `SERVICE_ROLE_KEY`, and `DB_URL` exported:
 
@@ -148,8 +170,9 @@ manifest and report/inventory integrity and recheck the 24-hour backup and
 
 On 2026-10-04 the owner explicitly instructed: "Consider me merging the PR as
 the approval. Run the full gate automatically youself. Merge = deployment approval."
-An owner merge of a reviewed PR into main therefore supplies per-change release
-and Vercel production deployment authorization for the exact resulting SHA.
+Except for the documentation-only exception above, an owner merge of a reviewed
+PR into main supplies per-change release and Vercel production deployment
+authorization for the exact resulting SHA.
 Confirm the owner and merge SHA through GitHub, run the full gate automatically
 on that clean commit, then record approval using the command below. The agent
 may supply its exact-SHA confirmation from that verified authorization without
@@ -177,8 +200,9 @@ This confirms the hold for that merge; recheck it for each release. See
 If the hold is changed, publish it through an authorized PR and verify read-only
 that the Vercel Git integration honors it. With the hold active, an authorized
 squash merge creates the final candidate without automatically deploying it.
-Run the gate on that exact clean SHA, record the owner's merge approval, and
-run `assert-production-evidence.ps1` with its gate and approval manifests before
+When a release is required under the policy above, run the gate on that exact
+clean SHA, record the owner's merge approval, and run
+`assert-production-evidence.ps1` with its gate and approval manifests before
 the Vercel production deployment already authorized by that owner merge.
 Verify the deployed SHA and production domain binding afterwards. Do not request
 another release/deployment confirmation. New commits/pushes, hosted migrations,

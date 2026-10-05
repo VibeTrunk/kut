@@ -7116,7 +7116,8 @@ Its recovery requires separately reviewed evidence of exact ownership.
 
 ## ADR-123 — Hold main deployments and certify an owned production build
 
-Date: 2026-10-04. Status: implemented locally; external activation pending.
+Date: 2026-10-04. Status: merged in #188; hold verified and tooling released
+with #189 on 2026-10-04. WebKit/JWT initiating causes remain unproven.
 
 Soft graphite was automatically deployed immediately after its squash merge,
 while its full local gate had not passed. Its final SHA cannot be gated before
@@ -7125,16 +7126,19 @@ retry behavior under `CI`, and could reuse an unrelated development server.
 
 The repository Vercel configuration holds automatic deployments for `main`
 using `git.deploymentEnabled.main = false`, with no conflicting allow rule.
-Other branches retain Vercel's default preview behavior. This local change is
-not an activated external control: separately authorized publication/cutover
-and read-only verification of the integration are required before relying on
-it. See [Vercel's Git configuration](https://vercel.com/docs/project-configuration/git-configuration).
+Other branches retain Vercel's default preview behavior. PR #188 published
+this control; authenticated verification at 14:31:31 UTC on 2026-10-04 found
+no deployment for its final SHA while production still served #187. The hold
+is verified for that merge and must be rechecked for each release. See
+[Vercel's Git configuration](https://vercel.com/docs/project-configuration/git-configuration).
 
-After cutover: merge under explicit authorization, identify the final exact
-SHA, run all gates on that clean checkout, obtain release approval, assert its
-evidence, then deploy only under a separate explicit instruction. The tooling
-still has no deployment command. Until cutover is verified, the old automatic
-path remains an operational gap; do not claim historical predeployment approval.
+The original decision required a separate deployment instruction after cutover.
+ADR-124 supersedes that requirement: except for its documentation-only
+exception, the owner's merge authorizes the exact resulting SHA's gated Vercel
+release. Run the full gate from the ordinary checkout (ADR-128), record approval
+after success, assert evidence, deploy and verify binding. The gate tooling
+still has no deployment command. #189 followed that ordering; this does not
+retroactively certify Soft graphite's earlier automatic deployment.
 
 The production E2E runner requires a clean exact-SHA checkout, loopback API/DB,
 the locked Next/Playwright runtimes and installed browsers. It creates a fresh
@@ -7162,13 +7166,16 @@ the WebKit/JWT cause remains unproven and no environment replacement is claimed.
 
 ## ADR-124 — Owner merge authorizes a gated Vercel release
 
-Date: 2026-10-04. Status: owner instruction active; versioned guidance pending publication.
+Date: 2026-10-04. Status: owner instruction active; guidance merged in #190
+and released with #195 on 2026-10-05. Documentation-only amendment below is
+owner-approved and included in this documentation slice; merge pending.
 
 The owner explicitly instructed that personally merging a reviewed PR is release
 and deployment approval, and that the agent must run the full gate automatically.
 This supersedes ADR-123's requirement for another deployment instruction for
-that Vercel release. Confirm the owner merge and exact resulting main SHA,
-run the full gate on its clean checkout, record approval only after success,
+that Vercel release, subject to the 2026-10-05 amendment below. Confirm the
+owner merge and exact resulting main SHA, run the full gate on its clean
+checkout, record approval only after success,
 assert the fresh evidence, then deploy that exact SHA and verify its production
 domain binding. No further owner confirmation is required for those steps.
 
@@ -7180,6 +7187,18 @@ Failed, stale, missing or mismatched evidence still stops deployment.
 An owner merge does not authorize new commits/pushes, hosted migrations,
 Supabase function deployments, secrets, protection changes or other mutations.
 
+**Owner amendment, 2026-10-05:** a merge changing only documentation needs
+no release gate or deployment unless the owner asks for that release.
+Production may lag main by documentation-only commits; state that explicitly
+in the PR and `DEPLOYMENTS.md`. Review the complete diff: executable or
+configuration edits are not documentation-only. Full main CI under ADR-126
+remains required. A requested docs-only deployment still requires the full
+gate, approval record and evidence assertion for its exact SHA; no parent
+evidence is inherited and no unreleased executable change is waived.
+Deployment records accompany the next PR for other work, never a standalone
+record PR. The current #196/#197/#198 records belong in this shared-guidance
+slice once publication is authorized.
+
 The first release under this instruction is merged #189 at
 `13bf6ad5e821532debe5c4237df75bcc54cc5b57`. Its full gate passed before the
 authorized Vercel deployment. Direct verification exposed CLI list rows that
@@ -7189,7 +7208,8 @@ and target without relaxing conflicting-provenance or domain-race checks.
 
 ## ADR-125 — Keep local Supabase ports and reserve them on Windows
 
-Date: 2026-10-05. Status: owner-applied machine repair; documentation prepared locally.
+Date: 2026-10-05. Status: owner-applied machine repair; runbook merged in #193
+and included in #195's release. Reboot persistence remains unverified.
 
 The local stack could not bind its standard ports because automatic
 Hyper-V/WinNAT TCP exclusions had accumulated across 54017–54616, including
@@ -7218,7 +7238,8 @@ separate; this repair makes no claim about either.
 
 ## ADR-126 — Every main push earns complete release evidence
 
-Date: 2026-10-05. Status: prepared locally; awaiting owner review.
+Date: 2026-10-05. Status: merged in #194; included in the passing #195 release.
+Full main CI remains required after ADR-124's documentation-only amendment.
 
 ADR-071 let `verify` skip the E2E, database and security jobs for a
 mechanically classified docs-only diff, and made the release gate refuse
@@ -7238,11 +7259,18 @@ evidence the gate requires. The gate is unchanged and still refuses skipped,
 stale, cancelled, missing or mismatched evidence. Docs-only pull requests keep
 their fast path, and `merge-gate` still accepts it for them.
 
-Rejected alternatives: letting the gate accept a docs-only SHA by inheriting
-its parent's evidence (an exception that ADR-071 forbids, and it trusts a
+Rejected alternatives at the original decision: letting the gate accept a
+docs-only SHA by inheriting its parent's evidence (an exception that ADR-071
+forbids, and it trusts a
 classification instead of a run); refusing to release docs-only SHAs (that
 strands the code merged before them, which is the failure itself); and a
 manual full-run dispatch (one more operator step on every such release).
+
+The owner's later 2026-10-05 amendment to ADR-124 permits documentation-only
+merges to remain undeployed, with explicit production-lag records. It changes
+when a release is required, not the CI classifier or the gate's evidence
+contract. It does not waive release of executable changes; when a release is
+requested, the exact candidate must have complete evidence.
 
 Consequences: CI only. No application code, schema, migration, hosted data,
 Vercel setting or branch protection changes. A docs-only merge now costs one
@@ -7254,7 +7282,8 @@ application runtime code.
 
 ## ADR-127 — Chromium test browsers run without Windows TCP port randomization
 
-Date: 2026-10-05. Status: prepared locally; awaiting owner review.
+Date: 2026-10-05. Status: merged in #195 and released 2026-10-05; the gated
+Chromium workaround is verified. Topic A and Topic B remain unresolved.
 
 The first release gate for `bd076a0` (#194) stopped on Chromium 320 px, in the
 sign-in of "between rounds" (`tests/e2e-authenticated/mobile.spec.ts:642`):
@@ -7296,12 +7325,15 @@ against the same rare failure. KB-039 and KB-040 register how the app
 currently handles such a failure.
 
 Consequences: test configuration and docs only. No application code, schema,
-migration, hosted data or setting changes. The gate must run again on the
-SHA that merges this.
+migration, hosted data or setting changes. The full gate passed on #195's
+exact resulting SHA before deployment; see `DEPLOYMENTS.md`. This green
+release does not establish a Topic A or B repair.
 
 ## ADR-128 — The release gate runs only from the main checkout
 
-Date: 2026-10-05. Status: prepared locally; awaiting owner review.
+Date: 2026-10-05. Status: merged in #197 and released 2026-10-05; checkout
+guard active. Complete #197 timing reconciliation remains a follow-up before
+orchestrator work.
 
 The release of #196 (`84ed754`) took about 33 minutes of agent time against
 about 15 for the morning's release. The gate was started from a linked git
@@ -7327,6 +7359,14 @@ with the worktree comparison removed failed as intended. The portable
 PowerShell gate was also run from a worktree, where it stopped at the new
 check, and from the main checkout, where it passed the check.
 
+"Main checkout" means the ordinary, non-linked checkout, not necessarily the
+`main` branch. Exact candidate SHA and cleanliness are separate requirements.
+#197's full gate passed there before deployment and binding verification.
+Its merge-to-binding timestamps span 22m55s; the owner's approximately
+28-minute session-work report uses another boundary. The complete timeline
+must be measured and reconciled before orchestrator work; no idle-time or
+orchestrator benefit is inferred here.
+
 Alternatives: letting a worktree find the main checkout's backup pointer
 would widen where the gate reads evidence. That conflicts with its
 exact-checkout design. A note in the release request alone relies on memory.
@@ -7334,4 +7374,3 @@ exact-checkout design. A note in the release request alone relies on memory.
 Consequences: release tooling and docs only. No check is loosened, and no
 application code, schema, hosted data or setting changes. Scratch worktrees
 remain fine for other work (CLAUDE.md, close-out), but never for the gate.
-

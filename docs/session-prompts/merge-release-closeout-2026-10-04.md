@@ -1,5 +1,13 @@
 # Merge-approved release closeout — 4 October 2026
 
+**Historical handover, superseded after #190:** this slice is merged and was
+included in #195's gated release. The paste-in publication authorization and
+starting state below are historical, not permission for a new change. Current
+shared authority is `CLAUDE.md` and `PRODUCTION_SAFETY.md`: documentation-only
+merges need no gate/deployment unless requested, full main CI remains required,
+and any release gate runs only in the ordinary, non-linked checkout with real
+`node_modules`. Preserve the worktree and evidence; do not replay this prompt.
+
 This handover supersedes the **current-status and action instructions** in
 `match-report-release-handover-2026-10-04.md`. That older document remains useful
 historical evidence; its dirty-workspace and missing-current-gate statements are

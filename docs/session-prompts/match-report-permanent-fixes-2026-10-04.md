@@ -1,5 +1,12 @@
 # Permanent local release fixes — 4 October 2026
 
+**Historical record:** the status and remaining actions below describe the
+4 October #188 audit. ADR-123's hold was verified; #189 later released the
+tooling after its full gate. ADR-124 supersedes the extra Vercel deployment
+instruction below, with the owner's 5 October documentation-only exception.
+Follow `CLAUDE.md` and `PRODUCTION_SAFETY.md` for current authorization and
+ordinary-checkout requirements; do not rerun an old release from this handover.
+
 Current status: the owner merged both independently reviewed fixes (#187 and
 #188). Main is `0d82bf1d2d2ee05747d457133803f79a7cef3ca2`, its required CI
 passes, and its configuration holds automatic main deployment. After operator

@@ -5721,7 +5721,8 @@ implementation ADRs are ADR-055 through ADR-059.
 
 Production readiness is a fail-closed evidence contract for one exact commit
 SHA, not an informal checklist. CI always publishes one aggregate merge gate;
-docs-only classification may skip expensive jobs, while any executable change
+docs-only pull-request classification may skip expensive jobs, while every
+main push runs full CI (ADR-126). Any executable change
 requires fast/build, E2E, database/pgTAP/concurrency, migration policy and
 dependency results. The independent secret scan is also required by operating
 policy.
@@ -5734,20 +5735,33 @@ A production gate additionally requires byte-identical catalogue parity, an
 authenticated member/admin mobile E2E pass, finalizer-readiness proof, a fresh
 separate-process cold-verified encrypted backup. Since ADR-108 it no longer
 requires production-agent session evidence. The gate and the separate release approval both explicitly deny
-deployment authority. Deployment, hosted migration application, branch
-protection, and secret changes always require their own explicit instruction.
+deployment authority. Under ADR-124, the owner's merge of a reviewed PR
+authorizes that exact resulting SHA's Vercel release after the full gate,
+approval recording and evidence assertion, without another confirmation.
+A merge changing only documentation needs no release gate or deployment unless
+the owner asks for that release (owner amendment, 2026-10-05); production may
+lag main by documentation-only commits. State that in the PR and
+`docs/DEPLOYMENTS.md`. Executable/configuration changes are not docs-only;
+full main CI remains required, and any requested deployment still requires
+complete exact-SHA evidence. Hosted migration application, Supabase function
+deployment, branch protection and secret changes need separate authorization.
+Deployment records accompany the next PR for other work, never a standalone
+record PR.
 
 Detailed contracts and commands are in `docs/PRODUCTION_SAFETY.md` (ADR-071).
 
-**Local release-tooling amendment (2026-10-04, ADR-123):** the authenticated
+**Implemented release-tooling amendment (2026-10-04, ADR-123):** the authenticated
 gate builds its exact clean candidate and owns a production server; it refuses
 reuse, runtime drift and remote browser overrides, runs every authenticated
 mobile case without retries and preserves first-failure diagnostics. Version-2
 gate records bind build/runtime provenance and report/inventory integrity;
-approval/assertion recheck backup and check freshness. The repository prepares
-a `main` automatic-deployment hold so the final squash SHA can be gated before
-deployment. That control is not active until separately authorized publication
-and integration verification; no historical predeployment approval is claimed.
+approval/assertion recheck backup and check freshness. PR #188 published the
+`main` automatic-deployment hold; authenticated integration verification on
+2026-10-04 confirmed it, and #189 was released after the full gate. Recheck the
+hold and live SHA for each release; no historical predeployment approval for
+Soft graphite is claimed. ADR-128 additionally requires the ordinary,
+non-linked checkout with real `node_modules`. This identifies the checkout,
+not its branch; the exact candidate SHA and clean state are separate checks.
 
 ---
 

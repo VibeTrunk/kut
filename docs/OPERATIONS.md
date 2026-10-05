@@ -72,14 +72,22 @@ wallets, cards, sessions, or market history.
 
 PR checks and release evidence are now mechanical; the detailed contract is
 `docs/PRODUCTION_SAFETY.md`. The always-present `merge-gate` accepts skipped
-expensive jobs only for a docs-only diff. Configure it and `scan` as required
+expensive jobs only for a docs-only pull request; every main push runs full CI
+(ADR-126). Configure it and `scan` as required
 branch checks after the workflow has landed and passed once; changing branch
 protection is a separate external action. Those bare job names are the contexts
 GitHub actually reports — `verify / merge-gate` would never report and would
 block every PR.
 
-A release candidate is one exact commit SHA. From a clean checkout at that
-commit, run:
+A documentation-only merge needs no release gate or deployment unless the
+owner asks for that release (ADR-124, amended 2026-10-05). Production may lag
+main by those commits; say so explicitly in the PR and `DEPLOYMENTS.md`.
+Executable/configuration changes are not docs-only, and full main CI remains
+required. Deployment records accompany the next PR for other work, never a
+standalone record PR.
+
+A release candidate is one exact commit SHA. From the ordinary, non-linked
+checkout with real `node_modules`, clean at that commit (ADR-128), run:
 
 ```powershell
 powershell -NoProfile -File scripts/release/request-production-gate.ps1 `
@@ -89,9 +97,12 @@ powershell -NoProfile -File scripts/release/request-production-gate.ps1 `
 The gate reads rather than changes GitHub, checks catalogue and backup
 evidence, and runs authenticated mobile E2E against the local stack. It does
 not deploy or approve a release. Release approval has a separate interactive
-command, and even that records `deployment_authorized = false`. A merge,
-release approval, or passing gate never implicitly authorizes Vercel or a
-hosted Supabase mutation.
+command, and even that records `deployment_authorized = false`. Except for the
+docs-only exception, the owner's merge of a reviewed PR authorizes that exact
+SHA's Vercel release: pass the full gate, record approval, assert evidence,
+deploy and verify the production binding without asking again. The gate and
+approval artifacts do not grant that authorization. Hosted Supabase migrations,
+functions, secrets and protection changes still need separate authorization.
 
 ## Preview deployment preflight
 

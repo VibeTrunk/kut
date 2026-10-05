@@ -22,7 +22,9 @@ This block is generated from `policy/PRODUCTION_INVARIANTS.md`. Run
 - One migration- or invariant-bearing feature is allowed per PR or independently reviewable change slice.
 - Never deploy when a required release gate has not run successfully for the exact candidate SHA.
 - Never declare an encrypted backup successful unless its credential is durably retrievable and an independent recovery check passes.
-- The owner's merge of a reviewed PR into main authorizes release and Vercel production deployment of that exact resulting SHA, conditional on the full production gate passing first. The agent runs the gate, records approval, asserts evidence and deploys without another confirmation. This does not authorize migration application, Supabase function deployment, branch-protection changes, secret changes or other external mutations.
+- The owner's merge of a reviewed PR into main authorizes release and Vercel production deployment of that exact resulting SHA, conditional on the full production gate passing first, except for documentation-only merges. For a non-documentation-only merge, the agent runs the gate, records approval, asserts evidence and deploys without another confirmation. This does not authorize migration application, Supabase function deployment, branch-protection changes, secret changes or other external mutations.
+- A merge changing only documentation needs no release gate or deployment unless the owner asks for that release. Production may lag main by documentation-only commits; state that explicitly in the PR and `docs/DEPLOYMENTS.md`. Review the complete diff: executable or configuration changes are not documentation-only. Full main CI remains required under ADR-126; any requested deployment still needs the full gate for its exact SHA.
+- Deployment records accompany the next PR opened for other work, never a standalone record PR. Release gates run only from the ordinary, non-linked checkout with real `node_modules` (ADR-128); the exact candidate SHA and clean checkout are separate requirements.
 - Hosted Supabase migrations are applied only from `VibeTrunk/supabase`, never from this repository. Existing migration files are immutable; a change may add at most one migration and must include a database test or reviewed machine-readable exemption.
 - A production candidate is one exact 40-character commit SHA. Every gate artifact and external check must name that SHA; skipped, stale, cancelled, missing, or mismatched evidence fails closed.
 - Production-sensitive work, including the release gate, runs in the owner's ordinary agent session. There is no production launcher or session receipt, and the gate does not certify which model ran it (ADR-108).
@@ -42,8 +44,14 @@ This block is generated from `policy/PRODUCTION_INVARIANTS.md`. Run
 - **Branch workflow:** GitHub branch protection on `main` is enabled
   (2026-08-23) — direct pushes are rejected, even for admins. All changes
   go through a feature branch and PR, squash-merged, branch auto-deleted on
-  merge. See the global CLAUDE.md's "Branch workflow" section for the
-  session-level conventions (branch naming, who merges).
+  merge. Use `feat/<short-desc>`, `fix/<short-desc>`, `docs/<short-desc>` or
+  the appropriate conventional prefix. Never commit directly to `main` or
+  force a rejected main push. The owner reviews and merges unless explicitly
+  delegating that action. Publication needs per-change authorization; one
+  instruction such as "publish this slice" covers committing, pushing and
+  opening or updating its PR. Local implementation permission alone does not
+  authorize publication. Do not ask again for steps already covered by that
+  instruction.
 - **Batching agent work into one PR:** Claude Code and Codex often contribute
   to the same branch, and whichever agent pushes packages the lot into a
   single PR. That is the intended default — a full `verify` round costs
@@ -76,9 +84,20 @@ This block is generated from `policy/PRODUCTION_INVARIANTS.md`. Run
     prepare and validate the central catalogue companion as far as authorized;
     report any remaining operator action with exact PowerShell commands.
     An owner merge into main authorizes the exact merged SHA's gated Vercel
-    production release (ADR-124). Run the full gate automatically, record
+    production release (ADR-124), except when the merge changes only
+    documentation. For other merges, run the full gate automatically, record
     approval and assert its evidence before deploying; do not ask again.
+    A documentation-only merge needs no gate or deployment unless the owner
+    asks; full main CI still runs (ADR-126). Production may lag main by these
+    commits: explain that in the PR and `docs/DEPLOYMENTS.md`. Review the full
+    diff before classifying it; executable/configuration edits are not docs-only.
     Hosted database application and other external mutations need their own instruction.
+  - **Deployment records accompany the next PR for other work.** Never open
+    a standalone record PR. Preserve unpublished records until that slice.
+  - **Release gates use the ordinary checkout only.** It must be non-linked,
+    have real `node_modules`, and be clean at the exact candidate SHA (ADR-128).
+    "Main checkout" means the ordinary checkout, not necessarily the `main`
+    branch. Repair/scratch worktrees must not run release gates.
   - **Close out the checkout after publication.** Compare local edits with
     merged main, preserve unpublished work in a named stash and a verified
     private archive, and bring the ordinary checkout onto current main without
@@ -174,6 +193,20 @@ or Edge Functions, never as direct client writes to `wallets`, `user_cards`,
 or `market_listings`.
 
 ## Working style
+
+Explore the relevant files and form a plan before non-trivial edits; a small,
+well-scoped change needs no extra planning ceremony. Work autonomously through
+edit, verify and iterate within the authorized scope. Ask only for genuine
+unresolved decisions, missing access/credentials or destructive actions; do not
+re-ask stable questions or authorization already supplied for the same change.
+Publication remains a separate per-change decision.
+
+Batch typecheck, lint and test verification once per round of changes. Repeat
+when a new edit, failure or unresolved concern warrants it. Use conventional
+commit prefixes (`feat:`, `fix:`, `docs:`, `chore:`, `refactor:`, `test:`), or
+the combined prefixes allowed above. Never commit without explicit authorization
+in this session for this change.
+
 Same as `VibeTrunk/home`: this is partly a deliberate learning project in
 production-grade practices, not just a quick hack — favor clear structure
 and document decisions in markdown as you go (`docs/decisions.md`,
@@ -187,7 +220,8 @@ must update the spec or record the deviation in `docs/decisions.md` — never
 silently "improve" a formula.
 
 ## Agent safety
-Standard VibeTrunk scaffold (see global CLAUDE.md's agent safety policy) —
+
+The repository's VibeTrunk safety scaffold is the shared authority —
 PreToolUse hooks block destructive commands and young (<14-day) npm
 packages; see `AGENTS.md` and `.claude/settings.json` /
 `.codex/rules/project.rules` for exact allow/deny lists. This scaffold was

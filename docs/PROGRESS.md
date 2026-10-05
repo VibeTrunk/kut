@@ -5467,3 +5467,45 @@ on a real repository and worktree; the PowerShell evidence suite also passes.
 Release tooling only. No check is loosened, and no application or hosted state
 changes.
 
+## Shared publication and documentation-only release policy — 2026-10-05
+
+Prepared item 2 locally in the ordinary checkout after completed #198. After
+review, the owner authorized its commit, push and PR. Merge remains the owner's
+decision; no release gate or deployment is requested for this docs-only slice.
+Shared repository guidance now carries the applicable planning, verification,
+branching and authorization conventions without depending on a global Claude
+file. Corrected Codex's stale push/deployment wording and clarified that one
+"publish this slice" instruction covers commit, push and PR without separate
+confirmation for each step. The policy source and
+generated entry-point blocks carry the owner's documentation-only exception:
+no release gate or deployment unless requested, production may lag main with
+explicit PR/deployment-log disclosure, and full main CI remains required.
+Executable/configuration edits cannot use that exception. Release gates use
+only the ordinary, non-linked checkout with real dependencies (ADR-128).
+
+Updated ADR-123–128 to their merged/released or owner-applied states, retaining
+ADR-125's unverified reboot persistence and the open Topic A investigation.
+Topic B and KB-037 remain monitoring only. #197's complete timeline and the
+owner's session-work reconciliation remain prerequisites before orchestrator
+work; this documentation slice does not measure or implement it.
+
+Included #196/#197/#198's unpublished deployment records once. Corrected two
+truncated catalogue hashes in #196/#197 against their retained gate artifacts;
+the archived originals remain intact. The last domain observation is #198 at
+12:52:58 UTC, not a fresh live check. Publication is authorized; merge and
+any actual docs-only production lag are still pending.
+
+Bounded read-only preservation checks recovered the prior metadata-inventory
+procedure from session evidence. The pre-baseline file-creation-time subset
+reproduced all 454 entries and the recorded aggregate digest. This verifies
+metadata continuity, not unchanged file contents. The original deployment
+archive hash matches, all seven protected stash hashes and 17 registered
+worktrees remain, and the unrelated pack-luck directory's 13 files are untouched.
+Backups and all private recordings remain in place. No cleanup or restore ran.
+
+Validation: `policy:sync`, `policy:check` and `git diff --check` passed.
+Read-only documentation checks covered all 12 changed Markdown files, 15 local
+links, balanced code fences, conflict markers, ADR qualifications and unchanged
+Part L text. The existing classifier reports docs-only for this PR diff and
+full CI for a main push. No executable change, product test rerun or release
+gate was needed or run; documentation is hand-wrapped and excluded by Prettier.

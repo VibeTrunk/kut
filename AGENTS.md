@@ -21,7 +21,9 @@ This block is generated from `policy/PRODUCTION_INVARIANTS.md`. Run
 - One migration- or invariant-bearing feature is allowed per PR or independently reviewable change slice.
 - Never deploy when a required release gate has not run successfully for the exact candidate SHA.
 - Never declare an encrypted backup successful unless its credential is durably retrievable and an independent recovery check passes.
-- The owner's merge of a reviewed PR into main authorizes release and Vercel production deployment of that exact resulting SHA, conditional on the full production gate passing first. The agent runs the gate, records approval, asserts evidence and deploys without another confirmation. This does not authorize migration application, Supabase function deployment, branch-protection changes, secret changes or other external mutations.
+- The owner's merge of a reviewed PR into main authorizes release and Vercel production deployment of that exact resulting SHA, conditional on the full production gate passing first, except for documentation-only merges. For a non-documentation-only merge, the agent runs the gate, records approval, asserts evidence and deploys without another confirmation. This does not authorize migration application, Supabase function deployment, branch-protection changes, secret changes or other external mutations.
+- A merge changing only documentation needs no release gate or deployment unless the owner asks for that release. Production may lag main by documentation-only commits; state that explicitly in the PR and `docs/DEPLOYMENTS.md`. Review the complete diff: executable or configuration changes are not documentation-only. Full main CI remains required under ADR-126; any requested deployment still needs the full gate for its exact SHA.
+- Deployment records accompany the next PR opened for other work, never a standalone record PR. Release gates run only from the ordinary, non-linked checkout with real `node_modules` (ADR-128); the exact candidate SHA and clean checkout are separate requirements.
 - Hosted Supabase migrations are applied only from `VibeTrunk/supabase`, never from this repository. Existing migration files are immutable; a change may add at most one migration and must include a database test or reviewed machine-readable exemption.
 - A production candidate is one exact 40-character commit SHA. Every gate artifact and external check must name that SHA; skipped, stale, cancelled, missing, or mismatched evidence fails closed.
 - Production-sensitive work, including the release gate, runs in the owner's ordinary agent session. There is no production launcher or session receipt, and the gate does not certify which model ran it (ADR-108).
@@ -37,9 +39,9 @@ This block is generated from `policy/PRODUCTION_INVARIANTS.md`. Run
 
 ## Codex-specific safety and permissions
 
-- Repository-local Codex hooks and command rules live under `.codex/` and require the repository to be trusted. Standard VibeTrunk scaffold — see global `~/.codex/AGENTS.md` for the agent safety policy and push/deployment discipline these hooks and rules enforce.
-- Normal `git push`, `npm run *`, and `gh ...` commands are allowed by the repository command rules.
-- Never run a `vercel deploy`/`vercel --prod` unless explicitly asked.
+- Repository-local Codex hooks and command rules live under `.codex/` and require the repository to be trusted. Follow the shared safety and publication guidance in `CLAUDE.md`, the generated policy above and the local scaffold; shared conventions do not depend on a global agent file.
+- Routine read-only Git checks and `npm run *` have command rules. `git commit` and `git push` require per-change authorization and use `prompt` rules; a command permission never supplies authorization to publish a PR or mutate hosted state.
+- Under ADR-124, the owner's merge authorizes the full gated Vercel release of that exact resulting SHA without another confirmation, subject to the documentation-only exception above. Otherwise `vercel deploy`/`vercel --prod` needs an explicit per-change instruction. No merge authorizes hosted Supabase migrations, function deployments, secret or protection changes.
 - This same pattern (`.claude/`, `.codex/`, `AGENTS.md`, gitleaks CI) is the template for every VibeTrunk-org repo — copy it into new tool repos and adapt only the stack-specific command lists.
 
 <!-- BEGIN:nextjs-agent-rules -->

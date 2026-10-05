@@ -7251,3 +7251,50 @@ main run, which is harmless: only the final main SHA is a candidate. The SHA
 that merges this change is itself non-docs-only, so it is the first eligible
 candidate since `13bf6ad`. It carries #190–#193, none of which changes
 application runtime code.
+
+## ADR-127 — Chromium test browsers run without Windows TCP port randomization
+
+Date: 2026-10-05. Status: prepared locally; awaiting owner review.
+
+The first release gate for `bd076a0` (#194) stopped on Chromium 320 px, in the
+sign-in of "between rounds" (`tests/e2e-authenticated/mobile.spec.ts:642`):
+the page stayed on `/login` showing "Sign-in failed". The same test had passed
+on Pixel 7 in 2.0 s. The cause was established in steps, all from private
+evidence and read-only checks:
+
+- The gate trace shows the `/auth/v1/token` password request failing after
+  0 ms with `net::ERR_NO_BUFFER_SPACE`, the browser's only console error.
+- The gateway logged 38 password sign-ins in the surrounding two minutes, all
+  200, with no 4xx, 429 or refused data request. The request never reached it.
+- Ruled out: Docker/Windows clock skew (0.0 s), `PGRST303` (none), the auth
+  rate limit (81 password sign-ins in one five-minute block, no 429) and #192
+  (it renamed only the email-testing section).
+- Since Chromium 139, `TcpPortRandomizationWin` (enabled by default, Windows
+  11 22H2 and later) sets `SO_RANDOMIZE_PORT` before each connect
+  (`net/base/features.cc`, `net/socket/tcp_socket_win.cc`). Two outside
+  projects report collisions that fail immediately with WSAENOBUFS, shown as
+  `ERR_NO_BUFFER_SPACE`, about 1 in 2,500 connects.
+- A private probe on the owner's machine (build 26200) with the gate's
+  Chromium made 20,000 fresh loopback connects per arm: 4 failed with
+  `ERR_NO_BUFFER_SPACE` by default, 0 with only this feature disabled.
+
+Decision: every Playwright Chromium project, in the authenticated, release and
+ordinary E2E configurations, launches with `TcpPortRandomizationWin`
+disabled. Chromium keeps only the last `--disable-features` switch and
+Playwright passes its own, so `tests/support/chromium-launch.ts` repeats
+Playwright 1.63's fifteen features and adds this one.
+`tests/e2e/chromium-launch.spec.ts`, which CI runs, reads the browser's
+effective command line and fails if Playwright's own list changes or if
+either half is missing. A negative control with one feature dropped failed
+as intended. WebKit is untouched: it does not use Chromium's socket code.
+
+This removes a demonstrated property of the local Windows browser, not an
+unknown cause, and changes no assertion, timeout, retry or skip. It does not
+address the open WebKit slow-spell timeouts (Topic A) or the local storage
+stall (Topic B). It does not protect real Chrome or Edge users on Windows
+against the same rare failure. KB-039 and KB-040 register how the app
+currently handles such a failure.
+
+Consequences: test configuration and docs only. No application code, schema,
+migration, hosted data or setting changes. The gate must run again on the
+SHA that merges this.

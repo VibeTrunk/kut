@@ -5425,3 +5425,21 @@ ADR-124, unrelated to the open WebKit and local-storage investigations, and
 the gate behaved correctly. ADR-126 limits the docs-only shortcut to pull
 requests, with unit coverage for push, unknown events, mixed and empty diffs.
 The gate itself is unchanged. No WebKit or storage repair is claimed.
+
+## Release gate sign-in failure traced to Chromium port randomization — 2026-10-05
+
+ADR-126 (#194) let main SHA `bd076a0` earn full CI; all seven verify jobs
+passed. Its release gate then stopped after 59 passes: one Chromium 320 px
+sign-in request failed in 0 ms with `net::ERR_NO_BUFFER_SPACE`. Nothing was
+approved or deployed, and production remains `13bf6ad`. Clock skew,
+`PGRST303`, the auth rate limit and #192 were ruled out from read-only
+evidence. A private probe reproduced the failure: 4 of 20,000 fresh loopback
+connects failed with Chromium's default Windows port randomization, 0 of
+20,000 without it. ADR-127 disables that feature for the Chromium test
+projects, guarded by a new CI check that passed and failed its negative
+control. KB-039 and KB-040 register the app's handling of such a failure.
+
+The two earlier release-run failures (`e7a7`, `9893`) were WebKit 90 s
+budget timeouts under `next start`, so the dev-server hypothesis no longer
+explains them. That investigation (Topic A) and the storage stall (Topic B)
+remain open; no repair of either is claimed.

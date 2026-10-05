@@ -5366,3 +5366,40 @@ archived work and its named stash remain preserved.
 returned `candidate_live` with a complete lookup at 15:44:32 UTC. A final
 read-only local check found zero fixture users, players, active weeks,
 rotations or ownership schema, with the original disabled setting restored.
+
+## Isolate the evening-clock SQL fixtures — 2026-10-04
+
+Diagnosed the intermittent assertion 22 in `midweek_evening_timing.test.sql`.
+The test opened a random week after creating its unclaimed fixture Players.
+Since ADR-110 that rotates their archetypes and rebuilds the active season,
+replacing the test's artificial OVRs. Deleting the opened week did not restore
+those inputs. A transaction-local diagnostic controlled only the opener's seed:
+the 32-byte input ending in `06` reproduced zero post-full-time events and
+the original NULL timing assertion; inputs `00` through `05` passed. This
+demonstrates the failure mechanism, not the original CI run's unrecorded seed.
+
+The local test-only repair checks the opener before creating the match fixtures,
+requires actual penalty events, keeps the five-second assertion explicitly
+nonempty, and checks a settling draw with a deterministic clock vector. No
+migration, production function, game rule or release gate changed. The actual
+repair passed all 44 assertions under inputs `00` through `06`, with `06`
+repeated, always producing 18 penalty events. The complete local database suite
+passed: 38 files / 1,628 assertions. `verify:fast` also passed in an isolated
+checkout containing only this SQL slice (53 unit files / 505 tests); the ordinary
+checkout's formatter traversed pre-existing nested worktrees, which were left
+untouched. Raw diagnostics remain private.
+
+This SQL slice is uncommitted and unpublished. The authenticated WebKit timeout
+is a separate investigation; these database results do not certify a release.
+
+## SQL repair handoff validation — 2026-10-05
+
+Preserved the existing two-file SQL repair unchanged and copied it into an
+isolated review checkout based on main `18d93cf`. Re-ran the full local
+database suite on standard ports: 38 files / 1,628 assertions passed; the
+focused evening timing file passed all 44 assertions. `verify:fast` passed
+in the isolated checkout: policy, format, lint, typecheck and 53 unit files /
+505 tests. No existing migration is changed and no new migration is needed.
+The owner approved this slice's commit, push and separate PR on 5 October.
+The WebKit/storage issues
+remain outside the slice; this is not production-release evidence.

@@ -132,7 +132,47 @@ For a release, use the ordinary, non-linked checkout (never a linked git
 worktree), clean at the exact candidate commit, with its own `node_modules`
 from `npm ci` (ADR-128), the
 local full Supabase stack running and its `API_URL`,
-`ANON_KEY`, `SERVICE_ROLE_KEY`, and `DB_URL` exported:
+`ANON_KEY`, `SERVICE_ROLE_KEY`, and `DB_URL` exported for the full gate.
+
+Before expensive work, run the optional read-only preflight (ADR-129):
+
+```powershell
+$env:KUT_CENTRAL_SUPABASE_REPO = 'C:\path\to\VibeTrunk\supabase'
+npm run release:preflight -- --candidate <40-character-sha>
+```
+
+It checks ADR-128 checkout identity and real dependencies, exact HEAD and clean
+status, all seven exact-SHA successful CI checks within 72 hours, GitHub and
+Vercel project access, Docker and the local Supabase services, the ordinary
+checkout's backup pointer within 24 hours, independently retrievable DPAPI
+locators, central checkout/catalogue parity and free loopback port 3101.
+Missing, duplicate, partial, skipped, cancelled, mismatched, stale and
+future-dated evidence fails closed. It captures CLI output privately in memory
+and emits only fixed check names, reasons, remedies and elapsed time. Each
+child command has a 10-second deadline and a one-MiB combined-output bound;
+independent probes run concurrently. Normal runs finish in seconds; sequential
+probes may consume up to three command deadlines including the initial checkout
+check. Deadline cleanup targets only the probe's own process tree.
+
+The preflight never starts a stack, exports or creates a backup, builds, creates
+fixtures, approves a release or deploys. A passing backup-pointer check is
+**not independent recovery proof**: only the full gate freshly decrypts and
+hash-checks the ciphertext in another process. Likewise, a free port is a
+point-in-time observation that the E2E runner rechecks before building.
+
+`network_denied` means explicit access/sandbox denial; retry the authorized
+read-only command with supported per-command approval. `network_unavailable`
+and `timed_out` leave login status unverified. `login_required` means the CLI
+explicitly requires sign-in; `login_expired` requires explicit expiration
+evidence; `authentication_rejected` means an authentication rejection, not
+proof of expiration. A generic failure, including one during Vercel's
+authentication stage, is `access_unverified`. Never re-bootstrap login from
+that alone. Confirmed sign-in needs use the official operator terminal flow
+below. Preflight reads the existing installed CLIs and DPAPI locators only;
+it never downloads a package or falls back to `.env.local`.
+
+After prerequisite failures are resolved within the applicable authorization,
+run the unchanged full gate:
 
 ```powershell
 $env:KUT_CENTRAL_SUPABASE_REPO = 'C:\path\to\VibeTrunk\supabase'

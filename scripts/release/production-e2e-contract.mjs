@@ -1,5 +1,7 @@
 import { execFileSync } from "node:child_process";
+import { lstatSync } from "node:fs";
 import net from "node:net";
+import path from "node:path";
 
 export const RELEASE_PROJECTS = [
   "authenticated-pixel7",
@@ -18,15 +20,45 @@ export function assertLockedRuntime(lock, installed) {
   }
 }
 
+function gitReader(root) {
+  return (...args) =>
+    execFileSync("git", ["-C", root, ...args], {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "pipe"],
+    }).trim();
+}
+
+// The gate reads its backup evidence from the main checkout's
+// .private-backups/, which a linked worktree does not have, and a worktree
+// that borrows node_modules through a junction makes Turbopack refuse the
+// build. On 5 October such a run cost a needless hosted backup and a wasted
+// full gate attempt, so both conditions stop the gate before any work.
+export function assertMainCheckout(root, readGit = gitReader(root), inspect = lstatSync) {
+  const [gitDir, commonDir] = readGit(
+    "rev-parse",
+    "--path-format=absolute",
+    "--git-dir",
+    "--git-common-dir",
+  ).split(/\r?\n/);
+  if (!gitDir || !commonDir || path.resolve(gitDir) !== path.resolve(commonDir)) {
+    throw new Error("Run the release gate from the main checkout, not a git worktree.");
+  }
+  let modules;
+  try {
+    modules = inspect(path.join(root, "node_modules"));
+  } catch {
+    throw new Error("node_modules is missing; run npm ci in the main checkout.");
+  }
+  if (modules.isSymbolicLink() || !modules.isDirectory()) {
+    throw new Error(
+      "node_modules must be a real directory, not a link or junction; run npm ci in the main checkout.",
+    );
+  }
+}
+
 export function assertCandidate(root, sha, readGit) {
   if (!/^[a-f0-9]{40}$/.test(sha)) throw new Error("An exact lowercase candidate SHA is required.");
-  const git =
-    readGit ??
-    ((...args) =>
-      execFileSync("git", ["-C", root, ...args], {
-        encoding: "utf8",
-        stdio: ["ignore", "pipe", "pipe"],
-      }).trim());
+  const git = readGit ?? gitReader(root);
   if (git("rev-parse", "HEAD") !== sha) throw new Error("Candidate SHA differs from HEAD.");
   if (git("status", "--porcelain", "--untracked-files=all"))
     throw new Error("Production E2E requires a completely clean candidate checkout.");

@@ -8,6 +8,7 @@ import pg from "pg";
 import {
   assertCandidate,
   assertLockedRuntime,
+  assertMainCheckout,
   assertPortAvailable,
   releaseEnvironment,
   validateReleaseReport,
@@ -20,6 +21,7 @@ if (flag !== "--candidate" || !sha || extra.length) {
     "Usage: node scripts/release/run-production-e2e.mjs --candidate <40-character SHA>. Test filters are not accepted.",
   );
 }
+assertMainCheckout(root);
 assertCandidate(root, sha);
 const env = releaseEnvironment(process.env);
 const lockfile = await readFile(path.join(root, "package-lock.json"));

@@ -1,4 +1,5 @@
 import { defineConfig, devices } from "@playwright/test";
+import { chromiumLaunchOptions } from "./tests/support/chromium-launch";
 import { assertLocalTarget } from "./tests/support/local-target";
 
 const apiUrl = process.env.API_URL ?? "http://127.0.0.1:54321";
@@ -26,16 +27,18 @@ export default defineConfig({
   // club phone, and 320x568 is the narrowest screen still in use — it is what
   // catches a table or a button row that cannot shrink. WebKit covers a second
   // browser engine, including font/canvas recovery; it is not a real iPhone.
+  // Chromium launches without Windows TCP port randomization (ADR-127).
   projects: [
     {
       name: "authenticated-pixel7",
-      use: { ...devices["Pixel 7"], browserName: "chromium" },
+      use: { ...devices["Pixel 7"], browserName: "chromium", launchOptions: chromiumLaunchOptions },
     },
     {
       name: "authenticated-320",
       use: {
         ...devices["Pixel 7"],
         browserName: "chromium",
+        launchOptions: chromiumLaunchOptions,
         viewport: { width: 320, height: 568 },
       },
     },

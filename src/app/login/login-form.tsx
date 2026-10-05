@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { signInErrorMessage } from "@/lib/auth/sign-in-error";
 import { loginIdentifierToEmail } from "@/lib/auth/username";
 import { createClient } from "@/lib/supabase/client";
 
@@ -22,7 +23,7 @@ export function LoginForm() {
     });
 
     if (error) {
-      setErrorMessage("Sign-in failed. Check your username and password.");
+      setErrorMessage(signInErrorMessage(error));
       setIsSubmitting(false);
       return;
     }

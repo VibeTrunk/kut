@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
+import { enabledProfile } from "./profile-read";
 
 export type UserIdentity = {
   id: string;
@@ -22,14 +23,15 @@ export const requireUser = cache(async (): Promise<UserIdentity> => {
     redirect("/login");
   }
 
-  const { data: profile, error: profileError } = await supabase
+  const profileResponse = await supabase
     .schema("kut")
     .from("profiles")
     .select("display_name, is_disabled")
     .eq("id", userId)
     .maybeSingle();
 
-  if (profileError || !profile || profile.is_disabled) {
+  const profile = enabledProfile(profileResponse, "member");
+  if (!profile) {
     redirect("/");
   }
 

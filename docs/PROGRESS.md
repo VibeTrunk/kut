@@ -5443,3 +5443,15 @@ The two earlier release-run failures (`e7a7`, `9893`) were WebKit 90 s
 budget timeouts under `next start`, so the dev-server hypothesis no longer
 explains them. That investigation (Topic A) and the storage stall (Topic B)
 remain open; no repair of either is claimed.
+
+## Sign-in and profile-read failures say what happened — 2026-10-05
+
+Fixes KB-039 and KB-040, both registered during the ADR-127 investigation.
+The sign-in form no longer blames the password for a request that never
+reached Supabase Auth or got a server error ("Couldn't reach KUT…"), and names
+the Auth rate limit for a 429. The three signed-in guards (`getNavContext`,
+`requireUser`, `requireAdmin`) share one profile check: a missing or disabled
+profile still redirects, while a failed read is logged by PostgREST code and
+shown as the route error page with "Try again" instead of a silent redirect.
+Eight unit tests cover the branches. UI and server-guard behaviour only; no
+schema, RPC, Part L invariant or credential changed.

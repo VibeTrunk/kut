@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
+import { enabledProfile } from "@/lib/auth/profile-read";
 import { isAdminRole } from "@/lib/auth/roles";
 import { competeStatus, isPickingOpen, type MidweekCurrent } from "@/lib/midweek/entry";
 import type { CompeteStatus } from "./routes";
@@ -85,8 +86,8 @@ export const getNavContext = cache(async (): Promise<NavContext> => {
       loadCompeteStatus(supabase).catch(() => null),
     ]);
 
-  const profile = profileResponse.data;
-  if (profileResponse.error || !profile || profile.is_disabled) {
+  const profile = enabledProfile(profileResponse, "nav");
+  if (!profile) {
     redirect("/login");
   }
 

@@ -7186,3 +7186,32 @@ authorized Vercel deployment. Direct verification exposed CLI list rows that
 omit deployment IDs: the checker now resolves their validated Vercel hostname
 through the authenticated deployment API and verifies identity, project, SHA
 and target without relaxing conflicting-provenance or domain-race checks.
+
+## ADR-125 — Keep local Supabase ports and reserve them on Windows
+
+Date: 2026-10-05. Status: owner-applied machine repair; documentation prepared locally.
+
+The local stack could not bind its standard ports because automatic
+Hyper-V/WinNAT TCP exclusions had accumulated across 54017–54616, including
+5432x. The incident evidence recorded repeated Hyper-V VmSwitch events during
+WSL/Docker VM restarts. On 5 October at approximately 02:54 Amsterdam, the
+owner stopped Supabase normally, quit Docker Desktop, shut down WSL and
+stopped WinNAT, added an administrator exclusion for 54320–54329, then
+restarted WinNAT and the local stack. The administered range appeared as
+`54320 54329 *`; all services used their standard ports and existing data
+volumes were restored.
+
+Decision: keep the repository's API/database/Studio/Mailpit ports at
+54321/54322/54323/54324 and document the machine repair in README's local
+development runbook. Moving to 5502x would remain inside the default Windows
+dynamic TCP range (49152–65535) and require coordinated changes to config,
+Playwright, fixture setup/teardown, local-target guards, pack-EV tooling and
+documentation. No repository ports or system networking are changed by this
+documentation slice.
+
+The runbook includes the temporary WSL/Docker/Hyper-V networking interruption,
+normal data-preserving stop, exact diagnosis/add/delete commands and a
+post-reboot persistence check. Never delete volumes or use `--no-backup`
+during recovery. Reboot persistence remains an operator follow-up, not a
+claim of verification. The unresolved WebKit and local storage issues are
+separate; this repair makes no claim about either.

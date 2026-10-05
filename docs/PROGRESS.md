@@ -5403,3 +5403,15 @@ in the isolated checkout: policy, format, lint, typecheck and 53 unit files /
 The owner approved this slice's commit, push and separate PR on 5 October.
 The WebKit/storage issues
 remain outside the slice; this is not production-release evidence.
+
+## Windows local Supabase port runbook — 2026-10-05
+
+Prepared a docs-only slice from main `18d93cf`: README troubleshooting and
+ADR-125 record the owner's already-applied administrator exclusion for
+54320–54329, the normal-stop/data-volume safeguards, networking interruption,
+undo command and post-reboot operator check. Repository ports remain unchanged.
+Read-only inspection today confirms `54320 54329 *`; Docker and Supabase
+started on the standard ports. Post-reboot persistence is not yet verified.
+Documentation diff/whitespace and command review passed. No system networking,
+application, schema or credentials changed. The owner approved this slice's
+commit, push and separate PR on 5 October; no WebKit or storage repair is claimed.

@@ -48,6 +48,55 @@ The local Supabase stack is independent from the shared hosted project. Use
 the local stack for migrations and tests; do not point automated tests at the
 production database.
 
+### Windows: Supabase cannot bind a 5432x port
+
+If `npx supabase start` reports a bind/access-permission error on a 5432x
+port even though no process is listening, check Windows' TCP exclusions:
+
+```powershell
+netsh int ipv4 show excludedportrange protocol=tcp
+```
+
+In the 5 October 2026 incident, automatic Hyper-V/WinNAT exclusions covered
+Supabase's ports. The owner restored the standard ports by adding an
+administrator exclusion for 54320–54329. Keep the data volumes throughout
+recovery: never use `supabase stop --no-backup` or delete/prune Docker volumes.
+
+For a machine with the same diagnosis, stop Supabase normally from this
+checkout, quit Docker Desktop, then run the networking commands in an
+**Administrator PowerShell**. Save work first: `wsl --shutdown` and
+`net stop winnat` briefly interrupt WSL, Docker and Hyper-V networking.
+
+```powershell
+npx supabase stop
+# Quit Docker Desktop before continuing.
+wsl --shutdown
+net stop winnat
+netsh int ipv4 add excludedportrange protocol=tcp startport=54320 numberofports=10
+net start winnat
+netsh int ipv4 show excludedportrange protocol=tcp
+# Confirm the administered exclusion: 54320 54329 *
+# Restart Docker Desktop, wait until it is ready, then return to this checkout.
+npx supabase start
+```
+
+The API, database, Studio and Mailpit stay on 54321, 54322, 54323 and 54324.
+After the next reboot, confirm `54320 54329 *` is still listed and Supabase
+starts normally. To undo the administrator exclusion, stop Supabase, quit
+Docker Desktop and shut down WSL as above, then run in Administrator PowerShell:
+
+```powershell
+net stop winnat
+netsh int ipv4 delete excludedportrange protocol=tcp startport=54320 numberofports=10
+net start winnat
+```
+
+Moving to 5502x would still leave the ports inside Windows' default dynamic
+range and would require coordinated changes to local test/script fallbacks.
+See [ADR-125](docs/decisions.md#adr-125--keep-local-supabase-ports-and-reserve-them-on-windows),
+[Docker's port-exclusion report](https://github.com/docker/for-win/issues/3171)
+and [Microsoft's dynamic-port documentation](https://learn.microsoft.com/en-us/troubleshoot/windows-server/networking/default-dynamic-port-range-tcpip-chang).
+
 ## Verification
 
 ```powershell

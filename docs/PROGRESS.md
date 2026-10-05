@@ -5415,3 +5415,13 @@ started on the standard ports. Post-reboot persistence is not yet verified.
 Documentation diff/whitespace and command review passed. No system networking,
 application, schema or credentials changed. The owner approved this slice's
 commit, push and separate PR on 5 October; no WebKit or storage repair is claimed.
+
+## Release gate refused a docs-only main SHA — 2026-10-05
+
+The release after #190–#193 was held. The gate refused final main `df7dce7`
+because its docs-only main push skipped E2E, database and security; production
+stayed on `13bf6ad`. That is a CI-classification deadlock between ADR-071 and
+ADR-124, unrelated to the open WebKit and local-storage investigations, and
+the gate behaved correctly. ADR-126 limits the docs-only shortcut to pull
+requests, with unit coverage for push, unknown events, mixed and empty diffs.
+The gate itself is unchanged. No WebKit or storage repair is claimed.

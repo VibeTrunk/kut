@@ -19,7 +19,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path to extensions,kut,public;
 
-select plan(42);
+select plan(44);
 
 -- ---------------------------------------------------------------------------
 -- Shape and access
@@ -46,6 +46,22 @@ select is(array(select kut._mm_round_start_at('2026-10-14 17:55:00+00'::timestam
   array['2026-10-14 18:00:00+00','2026-10-14 18:15:00+00','2026-10-14 18:30:00+00','2026-10-14 18:45:00+00','2026-10-14 19:00:00+00']::timestamptz[],
   'round 1 starts at 20:00 and a round every 15 minutes, the final of five at 21:00');
 select throws_ok($q$select kut._mm_schedule(3)$q$,'22023',NULL,'an unknown version is refused');
+
+-- ---------------------------------------------------------------------------
+-- The open step names the current version
+-- ---------------------------------------------------------------------------
+-- Run before creating the match fixtures: opening rotates unclaimed Players
+-- and rebuilds the active season (ADR-110). Deleting the opened tournament
+-- does not undo those changes, so opening afterwards would randomize the
+-- supposedly fixed archetypes and replace the fixture OVRs before simulation.
+update kut.midweek_config set enabled = true;
+select set_config('kut_test.opened', coalesce(kut._mm_open_next()::text, ''), true);
+select isnt(current_setting('kut_test.opened'),'','with no week running, the open step opens one');
+select ok((select schedule_version = 2 and lock_at = kut._mm_lock_at(week_start, 2)
+    and to_char(lock_at at time zone 'Europe/Amsterdam', 'Dy HH24:MI') = 'Wed 19:55'
+  from kut.midweek_tournaments where id = current_setting('kut_test.opened')::uuid),
+  'the week it opens follows version 2 and locks Wednesday 19:55');
+delete from kut.midweek_tournaments where id = current_setting('kut_test.opened')::uuid;
 
 -- ---------------------------------------------------------------------------
 -- Fixtures
@@ -91,17 +107,8 @@ select ('00000104-0000-4000-8000-00000000070' || n)::uuid, '00000104-0000-4000-8
 from (values (1, date '2025-01-29'), (2, date '2025-02-05'), (3, date '2025-02-19'), (4, date '2025-02-26')) s(n, d);
 
 -- ---------------------------------------------------------------------------
--- The open step names the current version
+-- Fixed-seed tournaments use the unchanged match fixtures above
 -- ---------------------------------------------------------------------------
-update kut.midweek_config set enabled = true;
-select set_config('kut_test.opened', coalesce(kut._mm_open_next()::text, ''), true);
-select isnt(current_setting('kut_test.opened'),'','with no week running, the open step opens one');
-select ok((select schedule_version = 2 and lock_at = kut._mm_lock_at(week_start, 2)
-    and to_char(lock_at at time zone 'Europe/Amsterdam', 'Dy HH24:MI') = 'Wed 19:55'
-  from kut.midweek_tournaments where id = current_setting('kut_test.opened')::uuid),
-  'the week it opens follows version 2 and locks Wednesday 19:55');
-delete from kut.midweek_tournaments where id = current_setting('kut_test.opened')::uuid;
-
 insert into kut.midweek_tournaments(id,week_start,lock_at,seed_hash,schedule_version) values
 ('00000104-0000-4000-8000-0000000005a1', date '2025-02-03', now() - interval '50 minutes 1 second',
   encode(sha256(decode(repeat('ae', 32),'hex')),'hex'), 2),
@@ -154,12 +161,23 @@ select ok((select bool_and(e.reveal_at = m.reveal_at + interval '1 millisecond' 
   from kut.midweek_match_events e join kut.midweek_matches m on m.id = e.match_id
   where m.tournament_id in ('00000104-0000-4000-8000-0000000005a1','00000104-0000-4000-8000-0000000005b1') and e.kind = 'chance'),
   'a chance is due when the match clock reaches its minute: 90 minutes over 4:40');
+select ok((select count(*) > 0
+  from kut.midweek_match_events e join kut.midweek_matches m on m.id = e.match_id
+  where m.tournament_id in ('00000104-0000-4000-8000-0000000005a1','00000104-0000-4000-8000-0000000005b1') and e.kind = 'penalty'),
+  'the fixed fixtures produce shoot-out kicks, so their stored timing is exercised');
 select ok((select bool_and(e.reveal_at = m.reveal_at + interval '280 seconds' + interval '5 seconds' * e.after_full_time)
+    and count(*) > 0
   from (select event.*, row_number() over (partition by match_id order by seq) as after_full_time
     from kut.midweek_match_events event where kind <> 'chance') e
   join kut.midweek_matches m on m.id = e.match_id
   where m.tournament_id in ('00000104-0000-4000-8000-0000000005a1','00000104-0000-4000-8000-0000000005b1')),
   'each shoot-out kick, and a settling draw, follows 5 seconds after the one before');
+-- A clock-only vector covers the rare settling draw without relying on the
+-- seeded tournaments to exhaust a shoot-out's sudden-death rounds.
+select is(kut._mm_match_timing(
+  '[{"kind":"chance","minute":90},{"kind":"penalty"},{"kind":"penalty"},{"kind":"toss"}]'::jsonb, 2),
+  '{"eventOffsetsMs":[280000,285000,290000,295000],"endOffsetMs":295000}'::jsonb,
+  'the clock places a settling draw five seconds after the preceding shoot-out kick');
 select ok((select bool_and(e.reveal_at between m.reveal_at and m.ends_at
     and e.reveal_at >= coalesce(e.previous, m.reveal_at))
   from (select event.*, lag(reveal_at) over (partition by match_id order by seq) as previous

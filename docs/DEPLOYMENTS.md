@@ -18,6 +18,46 @@ dated "Hosted deployment…" entries in `PROGRESS.md`.
 then bump the "Latest hosted migration" line in `CLAUDE.md`. Record the tier,
 backup id, pre/post `migration list` counts, the smoke row, and the rollback.
 
+## 2026-10-05 — gated frontend release of #195 (ADR-124 / ADR-127)
+
+MartinFloris merged #195 into main at 09:16:53 UTC, producing exactly
+`ed3076cdf8a9ccb6d2f383d2ff754ac90cf4db6e`. The owner's merge instruction
+authorized this SHA's gated Vercel production release.
+
+- **Predeployment checks:** Vercel access succeeded; the production domain still
+  served #189 and the complete candidate lookup found no deployments. The clean
+  main checkout was fast-forwarded to the exact candidate. The Git main deployment
+  hold remains enabled (`git.deploymentEnabled.main = false`).
+- **Gate:** the sole full run passed at 09:30:37 UTC (11:30 Amsterdam), with
+  version-2 `gate-20261005-113037.json`. All seven exact-SHA GitHub checks passed,
+  including database/concurrency/finalizer readiness, dependency and secret scans.
+  Central parity covered 87 KUT migrations, aggregate SHA-256
+  `337b807448fd329e414a9c8c73fbffff6817e7a15be2e9748483cb601b3d25f5`.
+  Backup `kut-backup-20261005-104031.sql.enc` was within 24 hours and independently
+  decrypted/hash-verified again at gate time. The fresh locked Next 16.3.6 /
+  Playwright 1.63.0 production build passed 130 authenticated mobile cases,
+  with only the two approved duplicate pack-device skips, zero retries, zero
+  unexpected failures and zero flaky results. E2E report duration was 550.015 s.
+- **Approval and ordering:** the verified owner-merge authorization was recorded,
+  release approval was recorded at 09:31:36 UTC, and the full evidence assertion
+  succeeded before deployment creation. Private evidence remains under
+  `.release-evidence/gates/ed3076cdf8a9ccb6d2f383d2ff754ac90cf4db6e/`,
+  `.release-evidence/authenticated/ed3076cdf8a9ccb6d2f383d2ff754ac90cf4db6e/0479d19f-0e20-4c4a-8114-c204c8f3c4b7/`
+  and `.release-evidence/deployments/ed3076cdf8a9ccb6d2f383d2ff754ac90cf4db6e/32751074-0fa0-459c-bbc1-db407cd65fc1/`.
+- **Deployment and verification:** Vercel production deployment
+  `dpl_Dz9TgBJpR5sArVkRKkXYKJqKLnVJ` was created at 09:31:49 UTC
+  (11:31 Amsterdam), with READY and exact Git provenance confirmed at
+  09:32:27 UTC. At 09:33:17 UTC, authenticated alias/deployment reads and a
+  repeated binding check returned `candidate_live`: `kut.vibetrunk.com` serves
+  this exact SHA's ready production deployment; candidate lookup was complete.
+  Public `/` and `/login` returned HTTP 200 at 09:33:10–11 UTC.
+- **Database and rollback:** no hosted migration, function, secret or protection
+  change occurred. Previous production deployment
+  `dpl_cm1RXc4wcfUCNe7MkSHBBKRHfYPq`, SHA
+  `13bf6ad5e821532debe5c4237df75bcc54cc5b57`, remains the rollback reference;
+  rollback was not executed and needs separate authorization. Passive thread
+  sampler and stall-monitor diagnostics were left untouched.
+
 ## 2026-10-04 — gated frontend release of #189 (ADR-124)
 
 Owner merge of #189 produced `13bf6ad5e821532debe5c4237df75bcc54cc5b57`.

@@ -7298,3 +7298,40 @@ currently handles such a failure.
 Consequences: test configuration and docs only. No application code, schema,
 migration, hosted data or setting changes. The gate must run again on the
 SHA that merges this.
+
+## ADR-128 — The release gate runs only from the main checkout
+
+Date: 2026-10-05. Status: prepared locally; awaiting owner review.
+
+The release of #196 (`84ed754`) took about 33 minutes of agent time against
+about 15 for the morning's release. The gate was started from a linked git
+worktree under `.release-evidence/worktrees/`. Two things went wrong there:
+
+- The gate reads its backup pointer from `.private-backups/latest-backup-evidence.json`
+  under the checkout it runs from. A worktree has none, so the gate reported
+  no cold-verified backup although `kut-backup-20261005-104031` was about
+  1.3 hours old. That cost an extra owner authorization and an unneeded
+  hosted export (`kut-backup-20261005-121852`).
+- The worktree borrowed `node_modules` through a junction. Turbopack does not
+  resolve files outside the project root
+  ([`turbopack.root`](https://nextjs.org/docs/app/api-reference/config/next-config-js/turbopack#root-directory)),
+  so the candidate build failed and the whole gate had to run again.
+
+Decision: `request-production-gate.ps1` first runs
+`scripts/release/check-gate-checkout.mjs`, and `run-production-e2e.mjs`
+repeats the same `assertMainCheckout` check. They refuse a linked worktree
+(git's `--git-dir` differs from `--git-common-dir`) and a missing or linked
+`node_modules`, before any GitHub, backup, catalogue or build work. Unit tests
+use a real repository with a real worktree and junction. A negative control
+with the worktree comparison removed failed as intended. The portable
+PowerShell gate was also run from a worktree, where it stopped at the new
+check, and from the main checkout, where it passed the check.
+
+Alternatives: letting a worktree find the main checkout's backup pointer
+would widen where the gate reads evidence. That conflicts with its
+exact-checkout design. A note in the release request alone relies on memory.
+
+Consequences: release tooling and docs only. No check is loosened, and no
+application code, schema, hosted data or setting changes. Scratch worktrees
+remain fine for other work (CLAUDE.md, close-out), but never for the gate.
+

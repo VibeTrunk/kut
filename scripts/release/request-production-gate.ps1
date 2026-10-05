@@ -14,6 +14,9 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+# Refuse a linked worktree or a linked node_modules before any other work (ADR-128).
+& node (Join-Path $PSScriptRoot 'check-gate-checkout.mjs')
+if ($LASTEXITCODE -ne 0) { throw 'Run the release gate from the main checkout with its own node_modules (npm ci).' }
 $CandidateSha = $CandidateSha.ToLowerInvariant()
 $head = (& git -C $repoRoot rev-parse HEAD).Trim().ToLowerInvariant()
 if ($LASTEXITCODE -ne 0 -or $head -ne $CandidateSha) {

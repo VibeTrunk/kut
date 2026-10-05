@@ -5455,3 +5455,15 @@ profile still redirects, while a failed read is logged by PostgREST code and
 shown as the route error page with "Try again" instead of a silent redirect.
 Eight unit tests cover the branches. UI and server-guard behaviour only; no
 schema, RPC, Part L invariant or credential changed.
+
+## Release gate refuses a worktree checkout — 2026-10-05
+
+The #196 release ran its gate from a linked worktree. It missed the main
+checkout's fresh backup pointer, which prompted an unneeded hosted backup, and
+its borrowed `node_modules` junction failed the Turbopack build, costing a
+full rerun. ADR-128 makes the gate and its E2E runner refuse a linked worktree
+or a missing or linked `node_modules` before any other work. Four unit tests
+on a real repository and worktree; the PowerShell evidence suite also passes.
+Release tooling only. No check is loosened, and no application or hosted state
+changes.
+

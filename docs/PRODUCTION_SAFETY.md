@@ -107,8 +107,9 @@ to `main` is denied outright.
 
 ## Production gate and approval
 
-From a clean checkout at the exact candidate commit, with the local full
-Supabase stack running and its `API_URL`,
+From the main checkout (never a linked git worktree), clean at the exact
+candidate commit, with its own `node_modules` from `npm ci` (ADR-128), the
+local full Supabase stack running and its `API_URL`,
 `ANON_KEY`, `SERVICE_ROLE_KEY`, and `DB_URL` exported:
 
 ```powershell

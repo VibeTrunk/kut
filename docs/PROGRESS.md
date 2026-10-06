@@ -5632,3 +5632,12 @@ Topic A remains unresolved; Topic B/KB-037 remain monitoring only; ADR-125
 reboot persistence remains unverified. The owner subsequently authorized commit,
 push and PR publication on 2026-10-06. PR merge remains the owner's decision;
 the exact merged SHA must pass the full gate before its authorized deployment.
+
+Published as PR #201. Initial CI passed database/concurrency, browser E2E,
+migration policy and secret scanning, but exposed four Linux PowerShell fixture
+timeouts and two high production dependency audit findings in the unchanged
+lockfile (sharp and source-map-js). The focused subprocess harness now rejects
+early exits with fictional output redacted, rather than masking the cause with
+a timeout; its eleven Windows cases still pass. Linux compatibility is under
+verification. Dependency remediation is a separate change; the security gate
+remains enforced and this candidate is not eligible for release.

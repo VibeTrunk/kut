@@ -50,7 +50,18 @@ function observe(command: string, args: string[], env = process.env) {
   let stdout = "";
   let stderr = "";
   let closed = false;
-  const waiters: { match: (text: string) => boolean; resolve: () => void }[] = [];
+  const waiters: {
+    match: (text: string) => boolean;
+    resolve: () => void;
+    reject: (error: Error) => void;
+  }[] = [];
+  const prematureExit = () =>
+    new Error(
+      `Fictional subprocess exited before expected progress: ${(stdout + stderr)
+        .replaceAll(secret, "[REDACTED]")
+        .replaceAll(jwt, "[REDACTED JWT]")
+        .slice(-2000)}`,
+    );
   const check = () => {
     for (const waiter of waiters) if (waiter.match(stdout + stderr)) waiter.resolve();
   };
@@ -66,6 +77,7 @@ function observe(command: string, args: string[], env = process.env) {
     child.once("error", reject);
     child.once("close", (code) => {
       closed = true;
+      for (const waiter of waiters) waiter.reject(prematureExit());
       resolve(code);
     });
   });
@@ -82,8 +94,9 @@ function observe(command: string, args: string[], env = process.env) {
       return stderr;
     },
     until(match: (text: string) => boolean) {
-      return new Promise<void>((resolve) => {
-        waiters.push({ match, resolve });
+      return new Promise<void>((resolve, reject) => {
+        if (closed && !match(stdout + stderr)) return reject(prematureExit());
+        waiters.push({ match, resolve, reject });
         check();
       });
     },
@@ -366,7 +379,7 @@ describe("safe production E2E progress", () => {
         const wrapper = path.join(directory, "wrapper.ps1");
         await writeFile(
           wrapper,
-          `$ErrorActionPreference='Stop'\ntry { $json = & '${helper.replaceAll("'", "''")}' -CandidateSha ('a' * 40); $result = $json | ConvertFrom-Json; if ($result.result -ne 'passed' -or $ErrorActionPreference -ne 'Stop') { throw 'Invalid result or error policy' }; Write-Output 'JSON passed; Stop preserved' } catch { Write-Output 'Safe failure'; exit 1 }`,
+          `$ErrorActionPreference='Stop'\ntry { $json = & '${helper.replaceAll("'", "''")}' -CandidateSha ('a' * 40); $result = $json | ConvertFrom-Json; if ($result.result -ne 'passed' -or $ErrorActionPreference -ne 'Stop') { throw 'Invalid result or error policy' }; Write-Output 'JSON passed; Stop preserved' } catch { Write-Output ('Safe failure: ' + $_.Exception.Message.Replace('${secret}', '[REDACTED]').Replace('${jwt}', '[REDACTED JWT]')); exit 1 }`,
         );
         observed = observe(process.platform === "win32" ? "powershell.exe" : "pwsh", [
           "-NoProfile",

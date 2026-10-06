@@ -5564,3 +5564,115 @@ Topic B/KB-037 are monitoring only; ADR-125 reboot persistence is unverified.
 The owner subsequently authorized commit, push and PR with "Publish this slice".
 PR merge remains the owner's decision. Items 3b/3c, browser work and worktree
 inventory/removal remain subsequent separate slices.
+
+## Safe production E2E progress (slice 3b) — 2026-10-06
+
+Verified the ordinary checkout initially clean at released #200 SHA
+`d6c602b72fb28ce04656427464e9ec59573d16e0`, equal to the local origin/main
+ref, with real dependencies matching locked Next 16.3.6 and Playwright 1.63.0.
+The retained #200 closeout supersedes the older #199 handoff: 3a is merged
+and released. Carried its pending release record once into DEPLOYMENTS,
+including the dated 2026-10-05 15:59:06.090 UTC production binding observation.
+No release or #197 timeline investigation was repeated. Updated ADR-129's
+status and recorded this tooling decision in ADR-130.
+
+The runner now emits build started/done progress and per-project started/done
+events during execution. Fixed labels and monotonic integer elapsed times
+accompany accurate expected first-attempt pass, finished and total counts.
+Skips and expected failures are not passes. Incomplete started projects report
+`stopped`; even a complete project's `done` does not certify the release.
+Project events use a separate structured IPC pipe and an allowlist. Raw child
+output stays buffered until exit and redacted before private logging, including
+split credentials and JWTs. Stdout retains only the original final JSON result;
+manifest/report/inventory validation, hashes and candidate/build checks remain.
+
+The gate's new .NET Process capture displays only safe stderr progress while
+capturing stdout for its existing JSON checks. Windows PowerShell 5.1's native
+stderr adapter is avoided without changing `ErrorActionPreference = 'Stop'`.
+Process-start failures, nonzero exits, unexpected stderr, invalid JSON,
+mismatched evidence and artifact tampering still fail closed. No test selection,
+coverage, runtime/browser lock, zero-retry/one-worker policy, deadline, fixture
+target protection or two-skip exception changed.
+
+Validation: the complete unit suite passed, **60 files / 588 tests**. Eleven
+new focused cases exercise installed Playwright with fictional browser-free
+tests and real subprocess/IPC channels. A fixture latch demonstrates that build
+and project progress arrives before completion; observed project counts match
+validated final JSON reports, including the exact duplicate-device skip pattern.
+Failed tests and teardown failures return nonzero, even when every project
+reports done. Malformed IPC and sensitive stdout/stderr remain private; split
+credentials/JWTs are redacted. Windows PowerShell with Stop unchanged receives
+live progress, parses successful JSON, and refuses nonzero children, unexpected
+stderr and malformed JSON. Existing report/evidence integrity regressions pass.
+
+Policy parity, ordinary-checkout formatting, lint, scoped TypeScript and
+diff whitespace checks passed. Typechecking uses a private 343-file review
+config extending the unchanged repository config; preserved nested/private
+checkouts are excluded from this scoped run. Plain `npm run verify:fast` again
+stopped at the existing **72 formatting issues** in three preserved `work/`
+checkouts. No worktree was modified or project check weakened to obtain green.
+These tests are local tooling verification, not a full authenticated production
+E2E run or exact-candidate release gate. The read-only Docker query was
+unavailable in this session, so current stack state is not freshly certified;
+the #200 normal-stop record remains historical evidence.
+
+Preservation: all **507** explicit #199 baseline entries and all **540** private
+entries present at this slice's start match their saved size/mtime metadata;
+the 33 subsequently created pre-session artifacts are accounted for separately.
+All seven protected stash hashes, 17 registered worktrees and their directories,
+the independently hashed deployment archive, backups, recordings and all 13
+pack-luck files remain. New slice validation evidence is separate and private;
+metadata continuity does not certify every preserved file's contents.
+
+Local implementation completed before publication. No gate, production build,
+browser fixture, backup/export, stack start/stop, deployment, hosted mutation,
+application/RPC/schema/Part L invariant, agent-permission or machine-setting
+change occurred. Slice 3c, browser work and worktree cleanup remain separate.
+Topic A remains unresolved; Topic B/KB-037 remain monitoring only; ADR-125
+reboot persistence remains unverified. The owner subsequently authorized commit,
+push and PR publication on 2026-10-06. PR merge remains the owner's decision;
+the exact merged SHA must pass the full gate before its authorized deployment.
+
+Published as PR #201. Initial CI passed database/concurrency, browser E2E,
+migration policy and secret scanning, but exposed four Linux PowerShell fixture
+timeouts and two high production dependency audit findings in the unchanged
+lockfile (sharp and source-map-js). The focused subprocess harness now rejects
+early exits with fictional output redacted, rather than masking the cause with
+a timeout; its eleven Windows cases still pass. CI identified PowerShell's
+explicit application lookup returning multiple Node paths, which were joined
+into one invalid executable name. The helper now selects the first PATH match;
+every PowerShell fixture includes and checks a second executable match.
+Linux CI on `180df2b6688a02fce7ce9f215855898d7cd7e827` passed full
+`verify:fast`, all 60 files / 588 tests (including all eleven new cases), and
+the application build. The full Windows unit suite also passed again.
+Dependency remediation is a separate change; the security gate remains
+enforced and this candidate is not eligible for release.
+
+## PR #201 dependency security remediation — 2026-10-06
+
+The owner requested that the failing checks be fixed and approved a one-time
+package-age exception after reviewing the risks. ADR-131 records its exact
+scope: sharp 0.35.5 and source-map-js 1.2.2, with matching sharp platform
+bindings and libvips 1.3.4 bundles. The npm-resolved lockfile update changes
+only those 28 transitive entries within existing ranges. Direct dependencies,
+Next 16.3.6, Playwright 1.63.0 and every unrelated dependency entry are unchanged.
+Neither hook, agent permission, audit threshold nor CI gate was weakened.
+
+After a fresh `npm ci`, the installed package files confirm the exact patched
+versions and the production audit reports **zero vulnerabilities**. Native
+PNG/WebP conversion and SVG rasterization pass with librsvg 2.63.2. A separate
+child with a five-second deadline verifies valid source maps, rejection of a
+billion-line indexed offset, and prompt completion for an accepted ten-million-
+line offset. These two focused regressions are now part of the normal unit
+suite so CI exercises both patches on Linux as well as local Windows.
+
+The complete unit suite passes **61 files / 590 tests**. Scoped formatting,
+lint, TypeScript (a new private 344-file config extending the unchanged root
+config), policy parity and whitespace checks pass. The existing local plain
+`verify:fast` limitation remains: 72 formatting issues in three preserved
+nested `work/` checkouts. No nested checkout or project check was changed.
+Final-head CI must pass before merge; this tooling validation is not the
+production release gate. No application source, RPC, schema, Part L invariant,
+release coverage, runtime/browser lock, retry/worker policy, deadline, hosted
+setting, backup or stack state changed. Protected inventory and private
+evidence remain preserved; newly created fix evidence is accounted separately.

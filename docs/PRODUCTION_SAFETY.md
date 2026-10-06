@@ -199,6 +199,23 @@ on narrow Chromium: its two duplicate-device skips are accepted only by exact
 title/project, while narrow Chromium must pass. Every other skip fails closed.
 The report must match an unfiltered inventory from the same configuration.
 
+The runner keeps stdout exclusively for its final JSON result (ADR-130).
+Build started/done and project started/done progress is emitted during execution
+to stderr with fixed labels, monotonic integer elapsed milliseconds and scalar
+pass/finished/total counts. Skips and expected failures are not passes. A project
+`done` notice is not release evidence; final report validation and integrity
+checks still decide the result, including teardown failures. Incomplete started
+projects report `stopped`. Raw child output is buffered and redacted privately;
+project progress comes through a separate structured IPC channel, never by
+streaming browser or fixture output.
+
+The gate invokes `invoke-production-e2e.ps1` to capture stdout and display safe
+progress with .NET Process rather than PowerShell's native stderr adapter.
+This works with Windows PowerShell 5.1 and `ErrorActionPreference = 'Stop'`
+unchanged. Unexpected stderr, a nonzero exit or invalid/mismatched JSON still
+stops the gate. When invoking the Node runner directly, capture stdout and
+stderr separately; do not merge progress into the JSON stream.
+
 Each run preserves private diagnostics under a unique
 `.release-evidence/authenticated/<sha>/<run-id>/`. Do not upload raw reports,
 traces or screenshots: they may contain authenticated local member data.

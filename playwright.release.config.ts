@@ -24,6 +24,7 @@ export default defineConfig({
           process.env.KUT_RELEASE_REPORT_PATH ?? `${process.env.KUT_RELEASE_RUN_DIR}/report.json`,
       },
     ],
+    ["./scripts/release/production-e2e-progress.mjs"],
   ],
   use: { ...authenticated.use, trace: "retain-on-failure" },
   webServer: {

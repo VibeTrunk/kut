@@ -108,8 +108,7 @@ if (-not $env:API_URL -or -not $env:ANON_KEY -or -not $env:SERVICE_ROLE_KEY -or 
 }
 Push-Location $repoRoot
 try {
-  $e2eJson = & node scripts/release/run-production-e2e.mjs --candidate $CandidateSha
-  if ($LASTEXITCODE -ne 0) { throw 'Production authenticated mobile E2E failed. Its unique private evidence directory is retained.' }
+  $e2eJson = & (Join-Path $PSScriptRoot 'invoke-production-e2e.ps1') -CandidateSha $CandidateSha
   $e2eResult = $e2eJson | ConvertFrom-Json
   if ($e2eResult.result -ne 'passed' -or $e2eResult.candidate_sha -ne $CandidateSha) {
     throw 'Production E2E returned mismatched evidence.'

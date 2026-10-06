@@ -7383,8 +7383,8 @@ remain fine for other work (CLAUDE.md, close-out), but never for the gate.
 
 ## ADR-129 — Read-only release preflight before expensive work
 
-Date: 2026-10-05. Status: implemented and reviewed locally; the owner authorized
-publication of this slice. PR merge remains pending.
+Date: 2026-10-05. Status: merged in #200 and released on 2026-10-05 after
+the exact-SHA gate, approval and evidence assertion passed. See DEPLOYMENTS.
 
 The owner selected orchestration as three independent slices: read-only
 preflight (3a), safe runner progress (3b), then a chain ending at evidence
@@ -7414,3 +7414,77 @@ verification. Preflight checks can race changing services or evidence; the gate
 and runner keep their own final exact-SHA, freshness and port checks. No schema,
 RPC, Part L invariant, application behavior or hosted/machine setting changes.
 The docs-only #199 closeout record accompanies this normal tooling slice.
+
+## ADR-130 — Production E2E progress uses a separate safe control channel
+
+Date: 2026-10-06. Status: implemented and validated for slice 3b; the owner
+authorized commit, push and PR publication. Merge and release remain pending.
+
+The production runner previously stayed silent until its final stdout JSON.
+The owner requested build and project progress during execution while keeping
+raw child/browser/fixture output private. The gate consumes stdout as JSON;
+Windows PowerShell 5.1 can turn native stderr into terminating ErrorRecords
+under `ErrorActionPreference = 'Stop'`, including harmless progress notices.
+
+Decision: keep stdout exclusively for the unchanged final JSON result.
+The runner emits fixed build started/done labels and monotonic integer elapsed
+milliseconds to stderr. A Playwright reporter sends project events over a
+separate Node IPC pipe. The parent reconstructs progress from allowlisted
+project/event labels and nonnegative integer scalars; it never parses or
+streams child stdout/stderr to obtain progress. Test titles, errors, fixture
+identities, attachments and output are excluded. Child output remains buffered
+until exit, then redacted before its unique private log is written, including
+credentials split across output chunks and JWTs.
+
+Project started/done events include elapsed milliseconds, expected first-attempt
+passes, finished tests and total tests. Skips and expected/unexpected failures
+are not passes; duplicate result callbacks cannot inflate counts. An incomplete
+started project ends with `stopped`. A `done` event means all its test results
+arrived, not that the release passed: teardown can still fail afterwards.
+Only the existing report/inventory validator and final integrity/candidate
+checks certify a successful run. Progress has no evidence authority.
+
+`invoke-production-e2e.ps1` uses .NET Process to capture stdout separately and
+drain stderr live, displaying only the fixed progress grammar with Write-Host.
+It does not change PowerShell's error preferences. Process-start failures,
+nonzero child exits and unexpected stderr fail closed; raw exception text is
+never echoed. The gate still parses the captured JSON, checks result/SHA and
+asserts the manifest, report and inventory integrity before proceeding.
+
+Consequences: one Playwright execution still owns the production server and
+global fixtures for all three projects. Locked runtimes/browsers, unfiltered
+coverage, zero retries, one worker, fail-fast behavior, deadlines, loopback
+fixture protections and the exact two-skip exception are unchanged. Focused
+verification uses installed Playwright with fictional browser-free cases and
+Windows PowerShell with delayed subprocesses; it is not a production gate.
+No application, RPC, schema, Part L invariant, agent permission or hosted
+setting changes. Slice 3c and browser/worktree investigations remain separate.
+
+## ADR-131 — Narrow transitive security patches for PR #201
+
+Date: 2026-10-06. Status: implemented and validated locally; the owner
+authorized this PR #201 fix. Full CI, owner merge and release remain pending.
+
+PR #201's security check found high severity production dependency advisories
+GHSA-wq5f-xc86-pv6w (sharp's bundled librsvg) and GHSA-68fv-2mgg-jv7q
+(source-map-js indexed source maps). The owner requested remediation and then
+explicitly approved a one-time exception to the 14-day package-age restriction
+for sharp 0.35.5, source-map-js 1.2.2 and sharp's matching binary/libvips packages.
+The exact exception followed review of the published patch versions, dates,
+maintainer metadata and risks; it supplies no standing permission for young
+packages and does not change either safety hook or agent permissions.
+
+Decision: refresh only these transitive packages within their existing parent
+semver ranges. The lockfile changes 28 entries: sharp and its platform bindings
+to 0.35.5, its libvips bundles to 1.3.4, and source-map-js to 1.2.2. Direct
+dependencies, Next 16.3.6, Playwright 1.63.0 and all other dependency entries
+remain unchanged. No override, audit exclusion or severity threshold change
+is needed. This separately reviewable dependency fix accompanies the owner-
+authorized PR #201 update; it introduces no migration or product invariant.
+
+Consequences: native image processing and source-map handling run patched code
+and require renewed audit, runtime smoke checks, unit/static validation and CI.
+The security and merge gates retain their authority. A green PR still requires
+owner merge, full main CI and the exact merged SHA's full production gate before
+release. Application source, RPCs, schema, Part L rules, release coverage,
+browser locks, retry/worker settings and deadlines remain unchanged.

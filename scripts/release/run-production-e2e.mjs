@@ -1,10 +1,12 @@
-import { execFileSync, spawn } from "node:child_process";
+import { execFileSync } from "node:child_process";
 import { createHash, randomUUID } from "node:crypto";
 import { readFile, mkdir, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import pg from "pg";
+import { runBufferedChild } from "./production-e2e-child.mjs";
+import { createRunnerProgress } from "./production-e2e-progress.mjs";
 import {
   assertCandidate,
   assertLockedRuntime,
@@ -44,28 +46,17 @@ const secretValues = [
   env.DB_URL,
   decodeURIComponent(new URL(env.DB_URL).password),
 ].filter(Boolean);
-const scrub = (value) =>
-  secretValues
-    .reduce((text, secret) => text.replaceAll(secret, "[REDACTED]"), value)
-    .replace(/\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b/g, "[REDACTED JWT]");
-async function run(relativeCli, args, name) {
-  // Buffer before redacting so a credential split across output chunks cannot
-  // escape into a durable log. Never stream child output to the operator.
-  const result = await new Promise((resolve, reject) => {
-    const child = spawn(process.execPath, [path.join(root, relativeCli), ...args], {
-      cwd: root,
-      env,
-      stdio: ["ignore", "pipe", "pipe"],
-    });
-    const chunks = [];
-    child.stdout.on("data", (chunk) => chunks.push(chunk));
-    child.stderr.on("data", (chunk) => chunks.push(chunk));
-    child.once("error", reject);
-    child.once("close", (code) => resolve({ code, log: Buffer.concat(chunks).toString("utf8") }));
+const progress = createRunnerProgress();
+async function run(relativeCli, args, name, onProgress) {
+  await runBufferedChild({
+    root,
+    cli: path.join(root, relativeCli),
+    args,
+    env,
+    logPath: path.join(runDir, `${name}.log`),
+    secretValues,
+    onProgress,
   });
-  await writeFile(path.join(runDir, `${name}.log`), scrub(result.log), { flag: "wx" });
-  if (result.code !== 0)
-    throw new Error(`${name} failed; retained private diagnostics in ${runDir}.`);
 }
 const metadata = {
   version: 1,
@@ -139,8 +130,10 @@ try {
   env.KUT_RELEASE_REPORT_PATH = path.join(runDir, "report.json");
   metadata.build_started_at = new Date().toISOString();
   stage = "production-build";
+  progress.buildStarted();
   await run("node_modules/next/dist/bin/next", ["build"], "build");
   metadata.build_completed_at = new Date().toISOString();
+  progress.buildDone();
   metadata.build_id = (await readFile(path.join(root, ".next/BUILD_ID"), "utf8")).trim();
   stage = "pre-test-candidate-check";
   assertCandidate(root, sha);
@@ -150,6 +143,7 @@ try {
     "node_modules/playwright/cli.js",
     ["test", "--config", "playwright.release.config.ts"],
     "authenticated-e2e",
+    progress.project,
   );
   const report = await readFile(path.join(runDir, "report.json"));
   stage = "report-validation";

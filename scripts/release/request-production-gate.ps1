@@ -8,7 +8,8 @@
 #>
 [CmdletBinding()]
 param(
-  [Parameter(Mandatory)][ValidatePattern('^[a-fA-F0-9]{40}$')][string]$CandidateSha
+  [Parameter(Mandatory)][ValidatePattern('^[a-fA-F0-9]{40}$')][string]$CandidateSha,
+  [switch]$PassThru
 )
 
 Set-StrictMode -Version Latest
@@ -178,3 +179,6 @@ finally {
 Write-Host "Production gate passed for $CandidateSha."
 Write-Host "Evidence: $manifestPath"
 Write-Host 'No release approval was granted and no deployment was performed.'
+if ($PassThru) {
+  [pscustomobject]@{ result = 'passed'; candidate_sha = $CandidateSha; gate_manifest = $manifestPath }
+}

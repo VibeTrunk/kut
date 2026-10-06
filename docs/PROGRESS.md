@@ -5567,6 +5567,17 @@ inventory/removal remain subsequent separate slices.
 
 ## Safe production E2E progress (slice 3b) — 2026-10-06
 
+**Closeout:** merged and released through #201 on 2026-10-06 at
+`bfa07173c26cfe52058a96bd6e22e9a6eed4a845`, including ADR-131's bounded
+security fixes. The preparation/publication narrative below is historical.
+All seven exact-SHA main CI checks passed. The first production gate failed
+closed on a WebKit login Username-field timeout; one unchanged full rerun
+passed all 130 required authenticated tests with exactly two approved skips.
+Fresh backup and independent recovery, approval, evidence assertion, exact Git
+source deployment and production binding verification passed. The dated
+18:36:00.153 UTC binding observation and rollback are now in DEPLOYMENTS.
+That passing rerun does not diagnose or repair the WebKit timeout.
+
 Verified the ordinary checkout initially clean at released #200 SHA
 `d6c602b72fb28ce04656427464e9ec59573d16e0`, equal to the local origin/main
 ref, with real dependencies matching locked Next 16.3.6 and Playwright 1.63.0.
@@ -5676,3 +5687,81 @@ production release gate. No application source, RPC, schema, Part L invariant,
 release coverage, runtime/browser lock, retry/worker policy, deadline, hosted
 setting, backup or stack state changed. Protected inventory and private
 evidence remain preserved; newly created fix evidence is accounted separately.
+
+## One exact-SHA release-preparation command (slice 3c) — 2026-10-07
+
+Implemented `npm run release:prepare -- --candidate <sha> --pull-request <number>`
+locally, ADR-132. It verifies the actual owner merge and exact current main,
+then chains the existing preflight, full gate, approval and evidence assertion.
+It never switches candidates or retries a failed gate. Docs-only owner merges
+return `not_required`; an explicitly requested documentation release needs its
+own interactive full-SHA confirmation. Executable/configuration changes under
+`docs/` cannot use the exemption. No standing approval is fabricated.
+
+The gate's new optional `-PassThru` returns the manifest created by that run;
+all gate checks and its ordinary human output remain. Preparation rejects
+absent, failed, stale, skipped, cancelled, mismatched or tampered evidence,
+requeries authorization after the expensive gate, and binds gate/approval bytes
+with hashes between stages. Windows PowerShell 5.1 captures raw records
+privately and forwards only the existing safe build/project progress. Stage
+elapsed times are monotonic; stdout remains final machine-readable JSON.
+
+After passing assertion, it prints executable separate deployment and
+verification commands literally and includes them in the final JSON. It never
+evaluates those strings or performs a Vercel create request. The printed
+deployment rechecks authorization, hashes, assertion and exact project/GitHub
+linkage, then specifies the same Git SHA as both source ref and SHA. Existing
+CLI authentication stays private, with no credential arguments or raw response
+logging. Verification requires READY exact-SHA binding and a complete lookup.
+
+Verification passed: **62 unit files / 613 tests**, including **23 new focused
+cases** for order/early exits, candidate continuity, approval boundaries,
+docs-only behavior, missing/invalid/stale/tampered evidence, live progress and
+private-output capture. Real Windows PowerShell subprocesses exercise the
+adapter and actual emitted commands against fictional services, including
+refusal before the simulated external create step. Existing production
+evidence and progress regressions passed. After a final monotonic-progress
+adjustment, all 23 focused cases passed again. Ordinary-checkout formatting,
+lint, scoped TypeScript (345 files), policy parity and diff whitespace pass.
+Plain `verify:fast` still stops on **72 existing formatting issues** in the
+three preserved nested `work/` checkouts; no worktree or check was changed to
+obtain green. These are local tooling results, not exact-candidate release
+evidence. No broad production gate was run to test orchestration.
+
+Initial ordinary checkout/main was clean at released #201
+`bfa07173c26cfe52058a96bd6e22e9a6eed4a845`, equal to the local origin/main
+ref, with real dependencies. Node v24.18.0, Next 16.3.6 and Playwright 1.63.0
+match the existing locks. Bounded read-only GitHub checks, using supported
+per-command sandbox approval after restricted access failed, confirm the owner
+merge and that exact current remote main. At 2026-10-06T22:43:58.994Z
+(2026-10-07 00:43:58.994 Europe/Amsterdam), independent authenticated read-only
+Vercel verification still found READY `dpl_HqxpyME3xkaqDjeGpgoax3GBiW6V`, that
+exact SHA, bound to `kut.vibetrunk.com`, with complete candidate lookup.
+Docker availability remains unverified; no service was started or stopped.
+
+Carried #201's pending release record once into DEPLOYMENTS and updated
+ADR-130/131 and 3b's status to merged/released. The first failed gate remains
+recorded; its unchanged passing rerun is not a diagnosis or repair of the
+WebKit login timeout. The completed #197 timeline and #200/#201 releases were
+not repeated. The historical release record and this fresh read-only binding
+observation are separately dated.
+
+Preservation checks use all **507 explicit #199 baseline entries**, the #201
+final preservation record and a **609-entry first-verification snapshot**
+(including the new checker created immediately before that snapshot).
+The 505 unchanged baseline metadata entries, original backup-log prefix,
+archived original log/pointer hashes, authorized fresh pointer and all 32 older
+external backup files are preserved. All seven stash hashes and 17 registered
+worktrees remain; extra-worktree heads/directories are unchanged. Prior private
+evidence, recordings and pack-luck material remain, with subsequent evidence
+accounted separately. Metadata continuity does not certify every file's content.
+
+No commit, push, PR publication, release gate, production build, browser fixture,
+backup/export, deployment, stack change, hosted mutation, application/RPC/schema/
+Part L change, agent-permission change or machine-setting change occurred.
+Publication needs separate owner authorization. Browser investigation and
+worktree cleanup remain later work. Topic A is unresolved; Topic B/KB-037 remain
+monitoring only; reboot persistence remains unverified until the next owner reboot.
+The owner subsequently authorized commit, push and opening this slice's PR on
+2026-10-07. Merge remains the owner's decision; no release gate or deployment
+is authorized by this publication request.

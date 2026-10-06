@@ -7417,8 +7417,11 @@ The docs-only #199 closeout record accompanies this normal tooling slice.
 
 ## ADR-130 — Production E2E progress uses a separate safe control channel
 
-Date: 2026-10-06. Status: implemented and validated for slice 3b; the owner
-authorized commit, push and PR publication. Merge and release remain pending.
+Date: 2026-10-06. Status: merged and released in #201 on 2026-10-06 at exact
+SHA `bfa07173c26cfe52058a96bd6e22e9a6eed4a845`, after full main CI, the
+production gate, approval and evidence assertion. See DEPLOYMENTS. The first
+gate failed closed on a WebKit login timeout; its unchanged passing rerun is
+not a diagnosis or repair of that timeout.
 
 The production runner previously stayed silent until its final stdout JSON.
 The owner requested build and project progress during execution while keeping
@@ -7462,8 +7465,9 @@ setting changes. Slice 3c and browser/worktree investigations remain separate.
 
 ## ADR-131 — Narrow transitive security patches for PR #201
 
-Date: 2026-10-06. Status: implemented and validated locally; the owner
-authorized this PR #201 fix. Full CI, owner merge and release remain pending.
+Date: 2026-10-06. Status: merged and released with #201 on 2026-10-06 at
+`bfa07173c26cfe52058a96bd6e22e9a6eed4a845`. Full main CI and the exact-SHA
+gate passed before approval, assertion and deployment; see DEPLOYMENTS.
 
 PR #201's security check found high severity production dependency advisories
 GHSA-wq5f-xc86-pv6w (sharp's bundled librsvg) and GHSA-68fv-2mgg-jv7q
@@ -7488,3 +7492,60 @@ The security and merge gates retain their authority. A green PR still requires
 owner merge, full main CI and the exact merged SHA's full production gate before
 release. Application source, RPCs, schema, Part L rules, release coverage,
 browser locks, retry/worker settings and deadlines remain unchanged.
+
+## ADR-132 — Prepare one exact release and print a separate deployment handoff
+
+Date: 2026-10-07. Status: implemented and validated locally for slice 3c;
+the owner subsequently authorized commit, push and PR publication. Merge and
+the exact resulting SHA's gated release remain pending.
+
+The owner selected preflight → full production gate → approval → evidence
+assertion as the third independent orchestration slice. ADR-129 and ADR-130
+are merged/released through #200 and #201. The #197 timing prerequisite is
+complete; neither its investigation nor either completed release is repeated.
+
+Decision: `npm run release:prepare -- --candidate <sha> --pull-request <number>`
+pins one exact lowercase 40-character SHA. It verifies the actual owner merge,
+main base, resulting SHA/current remote main and complete merged diff. Markdown
+only merges return `not_required` without expensive work. Executable or
+configuration paths under `docs/` do not qualify; other documentation formats
+need operator review through the existing manual workflow. The conservative
+classification is separate from CI's docs-only PR convenience. An explicitly
+requested documentation release uses the optional `--explicit-release` and an
+interactive full-SHA confirmation of that per-change release/deployment request.
+Owner-merge releases retain ADR-124 authorization without another prompt.
+
+The existing read-only preflight, full gate, approval and assertion remain the
+authorities. A gate `-PassThru` returns the manifest just created, not a search
+for the newest prior passing file. Authorization is queried again after the
+gate and before approval. The adapter supplies the existing approval command's
+full-SHA confirmation only after verifying applicable authorization; its
+schema and `deployment_authorized: false` stay unchanged. Gate/approval hashes
+bind the stages, and assertion retains all underlying integrity/freshness checks.
+Changed main, missing, failed, skipped, cancelled, stale, mismatched or altered
+evidence stops the chain with nonzero status and no deployment command output.
+
+Windows PowerShell 5.1 uses a private capture adapter without changing Stop.
+Only the existing fixed build/project grammar leaves the child live. Raw
+records are captured and discarded; the underlying runner still buffers and
+redacts its private logs. Fixed orchestration progress uses stderr and the final
+machine-readable preparation result uses stdout. After assertion the executable
+handoff is also printed literally to stderr for copying. No coverage, runtime/browser
+lock, retries, workers, deadlines, fixture protection or skip exception changes.
+
+The command stops after successful evidence assertion. It only prints literal
+PowerShell/Node deployment and verification commands, never evaluates them.
+The printed separate deployment rechecks authorization, evidence hashes and
+assertion, then exact project/GitHub linkage. Its API request uses the exact
+Git SHA as both `ref` and `sha`; the existing installed official CLI supplies
+authentication privately. The separate verifier requires the existing checker's
+READY exact-SHA domain binding and complete candidate lookup. Neither command
+contains credentials or echoes raw API/CLI output. Adding deployment execution
+inside preparation requires a separate ADR and explicit owner approval.
+
+Focused verification uses fictional evidence, real PowerShell subprocesses and
+fictional service executables. It checks order, early exits, SHA continuity,
+authority, docs-only behavior, integrity, live progress, safe output and actual
+execution of the emitted commands. It does not run a broad production gate.
+The #201 release record accompanies this normal slice once. No application,
+RPC, schema, Part L invariant, agent permission or hosted setting changes.

@@ -5642,6 +5642,8 @@ a timeout; its eleven Windows cases still pass. CI identified PowerShell's
 explicit application lookup returning multiple Node paths, which were joined
 into one invalid executable name. The helper now selects the first PATH match;
 every PowerShell fixture includes and checks a second executable match.
-Linux compatibility is under verification. Dependency remediation is a
-separate change; the security gate
-remains enforced and this candidate is not eligible for release.
+Linux CI on `180df2b6688a02fce7ce9f215855898d7cd7e827` passed full
+`verify:fast`, all 60 files / 588 tests (including all eleven new cases), and
+the application build. The full Windows unit suite also passed again.
+Dependency remediation is a separate change; the security gate remains
+enforced and this candidate is not eligible for release.

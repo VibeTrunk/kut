@@ -23,6 +23,67 @@ deployment identity and domain-verification time; do not change the latest
 migration line when no migration was applied. Records accompany the next PR
 opened for other work, never a standalone record PR.
 
+## 2026-10-05 — gated release of read-only preflight #200 (ADR-124 / ADR-129)
+
+MartinFloris merged #200 at 15:38:21 UTC (17:38:21 Europe/Amsterdam), producing
+exactly `d6c602b72fb28ce04656427464e9ec59573d16e0`. The merged tree matches
+reviewed publication `7f9b17837e397a09384c75543b6301f51f64200a`. This tooling
+slice adds optional read-only release preflight and carries #199's closeout;
+no application, migration, RPC or Part L invariant changed.
+
+- Predeployment authenticated verification at 15:40:23.916 UTC found no
+  candidate deployments in a complete lookup. Production still bound to READY
+  #198, `dpl_8JpizqmeD24eeaZ9NC7sGBZoDZX9`, exact SHA
+  `7dafa40552654778acad88ece5fcc7abb6be500a`. The main auto-deployment hold
+  remained active in the candidate's vercel.json.
+- All seven required main CI checks passed for the exact merged SHA. The last
+  completed at 15:41:01 UTC; no required check was skipped. After starting the
+  existing full local stack, all ten read-only preflight checks passed in 6.669s.
+- Version-2 `gate-20261005-175432.json` passed at 15:54:32.775 UTC in the clean
+  ordinary checkout with real dependencies. Catalogue parity covered 87 KUT
+  migrations, aggregate SHA-256
+  `337b807448fd329e414a9c8c73fbffff6817e7a15be2e9748483cb601b3d25f5`.
+  Existing backup `kut-backup-20261005-121852.sql.enc`, created at 10:19:25.990
+  UTC, was within 24 hours and independently decrypted/hash-verified again.
+- The locked production runner ran 15:44:22.097–15:54:32.521 UTC (650.424s).
+  Its fresh build ran 15:44:24.392–15:44:58.423 UTC (34.031s). All 130 required
+  authenticated cases passed: Pixel 7 43, narrow Chromium 44, WebKit 43. Only
+  the two approved duplicate-device pack skips remained; zero retries and no
+  unexpected failures or weakened assertions.
+- The verified owner merge supplied release/deployment authorization. Approval
+  was recorded at 15:56:19.454 UTC; evidence assertion passed inside the
+  deployment step before the external create request. That step also rechecked
+  the owner merge, exact current main, project/repository linkage and prior
+  production binding.
+- Production deployment `dpl_AdhPmFay1HwVVaLNiCdJSy7fLoC8` was created from
+  the exact Git source SHA; its creation response was recorded at 15:56:56.452
+  UTC. READY and exact provenance were verified at 15:57:46.785 UTC.
+  Independent authenticated verification at 15:59:06.090 UTC (17:59:06.090
+  Europe/Amsterdam) returned `candidate_live` with complete candidate lookup
+  and confirmed `kut.vibetrunk.com` binds to that deployment and SHA. Public
+  `/` and `/login` returned HTTP 200 at 15:59:19.367 UTC.
+- Local read-only cleanup verification at 15:57:58.272 UTC found zero fixture
+  users, Players, active weeks, rotations or ownership instrumentation;
+  Midweek was disabled. Normal stack stop completed at 15:58:45.842 UTC with
+  data and backups preserved. No hosted database/function/secret/protection
+  mutation occurred; no hosted migration-list counts are claimed for this run.
+- Rollback reference is READY #198, deployment
+  `dpl_8JpizqmeD24eeaZ9NC7sGBZoDZX9`, SHA
+  `7dafa40552654778acad88ece5fcc7abb6be500a`. Rollback was not executed and
+  needs separate authorization.
+- Topic A remains unresolved; Topic B/KB-037 remain monitoring only; ADR-125
+  reboot persistence remains unverified. This release does not establish a repair.
+
+Private gate/approval and authenticated evidence are under
+`.release-evidence/gates/d6c602b72fb28ce04656427464e9ec59573d16e0/` and
+`.release-evidence/authenticated/d6c602b72fb28ce04656427464e9ec59573d16e0/`.
+Deployment/domain/smoke/cleanup records are under
+`.release-evidence/deployments/d6c602b72fb28ce04656427464e9ec59573d16e0/`.
+Gate SHA-256: `9ac9498984395bc8c0adde80c6664eb7e5b73b9eeb6aeee49f466fe376d2280c`.
+The binding observation above is dated #200 closeout evidence, not a fresh
+live-domain check during slice 3b. This record accompanies that normal slice;
+no release or deployment was repeated.
+
 ## 2026-10-05 — documentation-only merge of #199; intentional production lag (ADR-124 / ADR-126)
 
 MartinFloris merged #199 at 13:59:21 UTC (15:59:21 Europe/Amsterdam), producing

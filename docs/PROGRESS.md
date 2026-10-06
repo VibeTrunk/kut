@@ -5638,6 +5638,10 @@ migration policy and secret scanning, but exposed four Linux PowerShell fixture
 timeouts and two high production dependency audit findings in the unchanged
 lockfile (sharp and source-map-js). The focused subprocess harness now rejects
 early exits with fictional output redacted, rather than masking the cause with
-a timeout; its eleven Windows cases still pass. Linux compatibility is under
-verification. Dependency remediation is a separate change; the security gate
+a timeout; its eleven Windows cases still pass. CI identified PowerShell's
+explicit application lookup returning multiple Node paths, which were joined
+into one invalid executable name. The helper now selects the first PATH match;
+every PowerShell fixture includes and checks a second executable match.
+Linux compatibility is under verification. Dependency remediation is a
+separate change; the security gate
 remains enforced and this candidate is not eligible for release.

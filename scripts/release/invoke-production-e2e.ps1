@@ -7,7 +7,9 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $start = New-Object System.Diagnostics.ProcessStartInfo
-$start.FileName = (Get-Command node -CommandType Application -ErrorAction Stop).Source
+# Explicit Application lookup can return multiple PATH matches (notably on CI).
+# Preserve normal command precedence rather than joining paths into one filename.
+$start.FileName = (Get-Command node -CommandType Application -ErrorAction Stop | Select-Object -First 1).Source
 $runnerPath = Join-Path $PSScriptRoot 'run-production-e2e.mjs'
 $start.Arguments = '"' + $runnerPath + '" --candidate ' + $CandidateSha
 $start.WorkingDirectory = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)

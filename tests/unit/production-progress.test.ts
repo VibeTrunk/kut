@@ -363,6 +363,19 @@ describe("safe production E2E progress", () => {
       try {
         const scripts = path.join(directory, "scripts/release");
         await mkdir(scripts, { recursive: true });
+        // A second executable PATH match catches PowerShell returning an array
+        // of application paths. It must never be selected ahead of real Node.
+        const duplicateBin = path.join(directory, "duplicate-bin");
+        await mkdir(duplicateBin);
+        await writeFile(
+          path.join(duplicateBin, process.platform === "win32" ? "node.exe" : "node"),
+          "fictional executable that must never run",
+          { mode: 0o755 },
+        );
+        const fixtureEnv = {
+          ...process.env,
+          PATH: `${process.env.PATH}${path.delimiter}${duplicateBin}`,
+        };
         const helper = path.join(scripts, "invoke-production-e2e.ps1");
         await copyFile(path.join(root, "scripts/release/invoke-production-e2e.ps1"), helper);
         await writeFile(
@@ -379,13 +392,13 @@ describe("safe production E2E progress", () => {
         const wrapper = path.join(directory, "wrapper.ps1");
         await writeFile(
           wrapper,
-          `$ErrorActionPreference='Stop'\ntry { $json = & '${helper.replaceAll("'", "''")}' -CandidateSha ('a' * 40); $result = $json | ConvertFrom-Json; if ($result.result -ne 'passed' -or $ErrorActionPreference -ne 'Stop') { throw 'Invalid result or error policy' }; Write-Output 'JSON passed; Stop preserved' } catch { Write-Output ('Safe failure: ' + $_.Exception.Message.Replace('${secret}', '[REDACTED]').Replace('${jwt}', '[REDACTED JWT]')); exit 1 }`,
+          `$ErrorActionPreference='Stop'\ntry { if (@(Get-Command node -CommandType Application).Count -lt 2) { throw 'Duplicate executable fixture missing' }; $json = & '${helper.replaceAll("'", "''")}' -CandidateSha ('a' * 40); $result = $json | ConvertFrom-Json; if ($result.result -ne 'passed' -or $ErrorActionPreference -ne 'Stop') { throw 'Invalid result or error policy' }; Write-Output 'JSON passed; Stop preserved' } catch { Write-Output ('Safe failure: ' + $_.Exception.Message.Replace('${secret}', '[REDACTED]').Replace('${jwt}', '[REDACTED JWT]')); exit 1 }`,
         );
-        observed = observe(process.platform === "win32" ? "powershell.exe" : "pwsh", [
-          "-NoProfile",
-          "-File",
-          wrapper,
-        ]);
+        observed = observe(
+          process.platform === "win32" ? "powershell.exe" : "pwsh",
+          ["-NoProfile", "-File", wrapper],
+          fixtureEnv,
+        );
         await observed.until((text) => text.includes("event=started"));
         expect(observed.closed).toBe(false);
         await writeFile(path.join(directory, "continue"), "fictional fixture latch");

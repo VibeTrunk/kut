@@ -5647,3 +5647,32 @@ Linux CI on `180df2b6688a02fce7ce9f215855898d7cd7e827` passed full
 the application build. The full Windows unit suite also passed again.
 Dependency remediation is a separate change; the security gate remains
 enforced and this candidate is not eligible for release.
+
+## PR #201 dependency security remediation — 2026-10-06
+
+The owner requested that the failing checks be fixed and approved a one-time
+package-age exception after reviewing the risks. ADR-131 records its exact
+scope: sharp 0.35.5 and source-map-js 1.2.2, with matching sharp platform
+bindings and libvips 1.3.4 bundles. The npm-resolved lockfile update changes
+only those 28 transitive entries within existing ranges. Direct dependencies,
+Next 16.3.6, Playwright 1.63.0 and every unrelated dependency entry are unchanged.
+Neither hook, agent permission, audit threshold nor CI gate was weakened.
+
+After a fresh `npm ci`, the installed package files confirm the exact patched
+versions and the production audit reports **zero vulnerabilities**. Native
+PNG/WebP conversion and SVG rasterization pass with librsvg 2.63.2. A separate
+child with a five-second deadline verifies valid source maps, rejection of a
+billion-line indexed offset, and prompt completion for an accepted ten-million-
+line offset. These two focused regressions are now part of the normal unit
+suite so CI exercises both patches on Linux as well as local Windows.
+
+The complete unit suite passes **61 files / 590 tests**. Scoped formatting,
+lint, TypeScript (a new private 344-file config extending the unchanged root
+config), policy parity and whitespace checks pass. The existing local plain
+`verify:fast` limitation remains: 72 formatting issues in three preserved
+nested `work/` checkouts. No nested checkout or project check was changed.
+Final-head CI must pass before merge; this tooling validation is not the
+production release gate. No application source, RPC, schema, Part L invariant,
+release coverage, runtime/browser lock, retry/worker policy, deadline, hosted
+setting, backup or stack state changed. Protected inventory and private
+evidence remain preserved; newly created fix evidence is accounted separately.

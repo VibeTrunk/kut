@@ -7459,3 +7459,32 @@ verification uses installed Playwright with fictional browser-free cases and
 Windows PowerShell with delayed subprocesses; it is not a production gate.
 No application, RPC, schema, Part L invariant, agent permission or hosted
 setting changes. Slice 3c and browser/worktree investigations remain separate.
+
+## ADR-131 — Narrow transitive security patches for PR #201
+
+Date: 2026-10-06. Status: implemented and validated locally; the owner
+authorized this PR #201 fix. Full CI, owner merge and release remain pending.
+
+PR #201's security check found high severity production dependency advisories
+GHSA-wq5f-xc86-pv6w (sharp's bundled librsvg) and GHSA-68fv-2mgg-jv7q
+(source-map-js indexed source maps). The owner requested remediation and then
+explicitly approved a one-time exception to the 14-day package-age restriction
+for sharp 0.35.5, source-map-js 1.2.2 and sharp's matching binary/libvips packages.
+The exact exception followed review of the published patch versions, dates,
+maintainer metadata and risks; it supplies no standing permission for young
+packages and does not change either safety hook or agent permissions.
+
+Decision: refresh only these transitive packages within their existing parent
+semver ranges. The lockfile changes 28 entries: sharp and its platform bindings
+to 0.35.5, its libvips bundles to 1.3.4, and source-map-js to 1.2.2. Direct
+dependencies, Next 16.3.6, Playwright 1.63.0 and all other dependency entries
+remain unchanged. No override, audit exclusion or severity threshold change
+is needed. This separately reviewable dependency fix accompanies the owner-
+authorized PR #201 update; it introduces no migration or product invariant.
+
+Consequences: native image processing and source-map handling run patched code
+and require renewed audit, runtime smoke checks, unit/static validation and CI.
+The security and merge gates retain their authority. A green PR still requires
+owner merge, full main CI and the exact merged SHA's full production gate before
+release. Application source, RPCs, schema, Part L rules, release coverage,
+browser locks, retry/worker settings and deadlines remain unchanged.

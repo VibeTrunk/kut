@@ -236,6 +236,69 @@ may supply its exact-SHA confirmation from that verified authorization without
 asking the owner again. A failed gate stops deployment; changed candidates need
 their own passing evidence and authorized owner merge.
 
+### One release-preparation command (slice 3c / ADR-132)
+
+For a personally merged owner PR, the ordinary clean checkout can run the
+same preflight, full gate, approval and assertion through one command:
+
+```powershell
+npm run release:prepare -- --candidate <40-character-lowercase-sha> --pull-request <number>
+```
+
+Use the existing local-stack environment and central-catalogue setup above.
+The command does not start services, generate backups or export credentials.
+It verifies GitHub's actual owner (`MartinFloris`), merged PR, `main` base,
+exact merge SHA and current remote main, and reads the complete merged diff.
+A documentation-only merge returns `not_required` without a gate or approval.
+Executable/configuration changes under `docs/` cannot use that exception;
+the automatic exemption conservatively accepts only Markdown paths. Other
+documentation formats need the complete-diff operator review before choosing
+the separate manual workflow; CI's broader docs shortcut is not release authority.
+For an owner-requested documentation release, add `--explicit-release` in an
+interactive owner terminal and confirm that specific release/deployment request
+by typing its full SHA. This flag alone supplies no approval, and ordinary
+owner-merge releases need no extra prompt. The command deliberately refuses
+other merge identities or a changed main rather than inventing authority.
+
+The candidate never changes. Preflight must pass every existing check; the full
+gate returns only the new manifest it created, with no latest-file discovery or
+reuse of an earlier passing run. Authorization is queried again after the gate,
+before supplying the existing approval command's exact-SHA confirmation.
+Gate/approval hashes bind the stages, and the existing evidence assertion still
+validates E2E/report/inventory integrity and freshness. Missing, failed, stale,
+skipped, cancelled, mismatched, future-dated or altered evidence stops the chain.
+
+Fixed stage progress, the existing safe build/project progress, and the final
+executable handoff commands use stderr; stdout contains one final JSON result
+with the same commands as string fields. Raw PowerShell/native child records are
+captured privately and never echoed. Windows PowerShell 5.1 works without
+changing `ErrorActionPreference = 'Stop'`. Failure returns nonzero with fixed
+reasons and, for preflight failures, its fixed check/remedy vocabulary.
+
+`prepared` means evidence assertion passed, not that production changed.
+Its `commands.deployment` and `commands.verification` contain literal executable
+PowerShell here-strings piped to Node. Execute them separately only under the
+applicable owner merge or explicit per-change deployment instruction. The
+preparation command never evaluates either string, runs a Vercel create request,
+or installs anything. Adding deployment execution to it needs a separate ADR
+and explicit owner approval.
+
+The printed deployment command rechecks the same owner merge/current main,
+bound evidence hashes, full assertion and exact Vercel project/GitHub linkage
+before its separate API create request. It uses `gitSource` with both `ref` and
+`sha` equal to the candidate, rather than an upload or a mutable `main` ref.
+The installed official CLI uses its existing login; no credential enters an
+argument or log. API output stays buffered; only the created deployment ID and
+candidate are printed. The [Vercel create-deployment API](https://vercel.com/docs/rest-api/deployments/create-a-new-deployment)
+supports Git-source deployments, and [CLI API input](https://vercel.com/docs/cli/api)
+accepts the JSON request on stdin using `--input -`.
+The verification command uses the existing authenticated checker and requires
+`candidate_live`, the same SHA and a complete candidate lookup. Run it after
+Vercel is READY; an incomplete build/binding returns nonzero. Keep the final
+preparation/deployment/verification results as private release evidence and
+record the release in the next normal PR. No broad gate is needed just to test
+this orchestration: focused fictional-service/subprocess tests cover it.
+
 Approval remains a separate record created only after the gate passes:
 
 ```powershell

@@ -23,6 +23,83 @@ deployment identity and domain-verification time; do not change the latest
 migration line when no migration was applied. Records accompany the next PR
 opened for other work, never a standalone record PR.
 
+## 2026-10-06 — gated release of safe production E2E progress and security fixes #201
+
+MartinFloris merged https://github.com/VibeTrunk/kut/pull/201 at 2026-10-06T18:05:54Z, producing
+exactly `bfa07173c26cfe52058a96bd6e22e9a6eed4a845`. The merged tree matches reviewed publication
+`a9b145a0f5b0ce80551f01fa89ed9fe23536ed97` byte-for-byte. ADR-130 adds safe scalar progress on a
+separate channel while retaining JSON stdout and buffered/redacted private child output. ADR-131
+records the owner-authorized exception for sharp 0.35.5, source-map-js 1.2.2 and matching @img
+packages; hooks and security gates are unchanged. No application, RPC, schema, Part L,
+agent-permission or hosted-setting change occurred.
+
+- Predeployment authenticated verification at 2026-10-06T18:19:52.651Z found zero candidate
+  deployments with complete lookup. Production remained bound to READY #200, deployment
+  `dpl_AdhPmFay1HwVVaLNiCdJSy7fLoC8`, SHA `d6c602b72fb28ce04656427464e9ec59573d16e0`. The candidate
+  retains the main auto-deployment hold.
+- All seven required main CI checks passed for the exact merged SHA; the final check completed at
+  2026-10-06T18:07:48Z. No required check was skipped. The ordinary checkout is clean and uses real
+  node_modules. All ten optional read-only preflight checks passed before the gate.
+- A fresh encrypted backup `kut-backup-20261006-201225.sql.enc` was created at
+  2026-10-06T18:13:02.8577966Z. Original and gate-time independent recovery passed. Gate-time
+  recovery was verified at 2026-10-06T18:24:40.1236777Z; plaintext SHA-256
+  `7E2A15CE731D6EC52B664ECA4F2CA440DD187531034EE5C9AF63E95C20A86AC3`, stable locator
+  `backup-encryption-v1`.
+- The first full gate attempt failed closed at 2026-10-06T18:23:11.773Z: WebKit timed out waiting
+  for the login Username field in `poster-only layout and loading rows stay aligned`, before its
+  layout assertions. It had 126 passes, one unexpected timeout and five total skips including
+  unexecuted cases. No passing gate manifest or deployment was created. Raw failure artifacts remain
+  private. Local cleanup at 2026-10-06T18:24:17.472Z found zero fixture residue. This release does
+  not diagnose or repair that browser timeout.
+- One unchanged full rerun passed. Version-2 `gate-20261006-203342.json` passed at
+  2026-10-06T18:33:42.9535959Z. The production runner ran 2026-10-06T18:24:40.519Z to
+  2026-10-06T18:33:42.711Z; build 2026-10-06T18:24:42.028Z to 2026-10-06T18:24:54.215Z. Pixel 7: 43
+  passes / one approved duplicate-device skip; narrow Chromium: 44 passes / no skips; WebKit: 43
+  passes / one approved duplicate-device skip. Total: 130 required passes and exactly two approved
+  skips. Zero retries, one worker, locked Node v24.18.0, Next 16.3.6, Playwright 1.63.0, Chromium
+  revision 1243 and WebKit revision 2359; existing deadlines and fixture target guards remained
+  intact.
+- Build started/done and all project started/done progress arrived live before completion. Progress
+  pass counts match the final authenticated manifest. The first attempt emitted `stopped` with
+  accurate partial counts and left release blocked. Raw child/browser/fixture output was buffered
+  and redacted, never streamed for progress. Focused checks on Windows PowerShell 5.1 and Linux pwsh
+  passed in the reviewed PR; stdout JSON compatibility, output privacy, deadlines, failure behavior
+  and artifact hashes remain enforced.
+- Catalogue parity passed for 87 KUT migrations, aggregate SHA-256
+  `337b807448fd329e414a9c8c73fbffff6817e7a15be2e9748483cb601b3d25f5`. This is local/central
+  catalogue parity, not a newly queried hosted migration-list count.
+- The verified owner merge supplied release/deployment authorization under ADR-124. Approval was
+  recorded at 2026-10-06T18:34:03.6593705Z. Evidence assertion passed inside the deployment step
+  before its external create request. That step rechecked the owner merge, exact current main,
+  repository/project linkage and prior production binding.
+- Deployment `dpl_HqxpyME3xkaqDjeGpgoax3GBiW6V` was created from the exact Git source SHA at
+  2026-10-06T18:34:26.930Z. READY and source provenance were verified at 2026-10-06T18:35:19.602Z.
+  Independent authenticated domain verification at 2026-10-06T18:36:00.153Z (20:36:00.153
+  Europe/Amsterdam) returned `candidate_live` with complete lookup and bound `kut.vibetrunk.com` to
+  the deployment and candidate SHA. Public `/` and `/login` returned HTTP 200 at
+  2026-10-06T18:36:00.834Z.
+- Read-only fixture cleanup at 2026-10-06T18:34:01.394Z found zero fixture users, Players, active
+  weeks, rotations or ownership instrumentation; Midweek was disabled. Normal local stack stop
+  completed at 2026-10-06T18:34:40.041Z with data and backups preserved. No hosted database,
+  function, secret or protection mutation occurred.
+- Rollback reference is READY #200, `dpl_AdhPmFay1HwVVaLNiCdJSy7fLoC8`, exact SHA
+  `d6c602b72fb28ce04656427464e9ec59573d16e0`. Rollback was not executed and needs separate
+  authorization.
+- Topic A remains unresolved. Topic B/KB-037 remain monitoring only. ADR-125 reboot persistence
+  remains unverified. Slice 3c, browser investigation and worktree cleanup remain separate later
+  work.
+
+Private gate/approval and authenticated evidence are under the exact candidate's
+.release-evidence/gates/ and .release-evidence/authenticated/ directories.
+Gate SHA-256: 25230c5fd5f0ffaa8050e9b19a704d75b1f3c411c903befe03a6168665ac166a.
+Deployment/domain/smoke records are under .release-evidence/deployments/ for
+that SHA; operations and preservation records are under
+.release-evidence/operations/pr201-release-bfa07173c26cfe52058a96bd6e22e9a6eed4a845/.
+These are dated #201 observations, carried into the next normal slice (3c),
+not fresh live-domain checks during its local implementation. No release or
+deployment was repeated to prepare this record.
+
+
 ## 2026-10-05 — gated release of read-only preflight #200 (ADR-124 / ADR-129)
 
 MartinFloris merged #200 at 15:38:21 UTC (17:38:21 Europe/Amsterdam), producing

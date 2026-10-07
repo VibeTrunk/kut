@@ -5912,3 +5912,110 @@ deployment record. The unrelated Roadmap edit is excluded and preserved in a
 verified private archive and named stash at checkout closeout. Merge remains
 the owner's decision. This publication instruction does not authorize a
 release gate, deployment or hosted mutation.
+
+## Topic A monitoring decision and handoff reconciliation — 2026-10-07
+
+The owner accepted stopping dedicated Topic A diagnostics and moving it to
+monitoring (ADR-134). It remains unresolved. The demonstrated impact is
+intermittent browser-test/release reliability, with user impact unconfirmed;
+the Windows WebKit emulation does not establish a real-iPhone Safari incident.
+The latest diagnostic captures contained no recorded hot spell, so further
+blind reruns currently have low expected value. A related failure during
+ordinary authorized work or a matching user report triggers triage: retain
+the original evidence before clearing state, state one discriminating
+hypothesis, and cap diagnosis at 30 minutes per hypothesis. Coverage,
+assertions, 20-second preview waits, per-case budgets, zero retries, one
+worker, skip exceptions and fail-closed release gates stay unchanged.
+
+#203 merged at 2026-10-07T00:31:08Z and released exact SHA
+`6744656baa3f13140fc17fc304fb4404eb36cabe`. Its clean preparation retry
+passed ten preflight checks, the full gate, owner-merge approval and evidence
+assertion before a separate exact-Git-source deployment. All seven exact-SHA
+main checks passed. Actual inventory was 177: **175 required passes / exactly
+two approved skips**, zero retries, one worker. Authenticated verification at
+00:48:53.303 UTC (02:48:53.303 Europe/Amsterdam) found READY
+`dpl_9fn2BspBR34njGFEhuzMW6u1Zzq4` serving the exact SHA on
+`kut.vibetrunk.com`, with complete lookup. Public `/` and `/login` returned
+HTTP 200 during closeout. Fresh backup recovery and catalogue parity passed;
+no new backup or bookkeeping change was required. Fixture cleanup was clean;
+Supabase and Docker stopped normally with data retained. These are dated
+release observations, not fresh hosted checks during this documentation work.
+Carried the #203 release record once into DEPLOYMENTS alongside the monitoring
+decision and updated ADR-133's merged/released status.
+
+Reconciled the original 5 October Codex handoff: item 1 (#198), item 2 (#199),
+the #197 timeline prerequisite, item 3a (#200), 3b (#201), 3c (#202) and item 4
+(folded into 3a) are complete. Item 5's analysis, matrix split and native
+capture attempt are complete; its unresolved initiating cause now follows
+ADR-134 monitoring rather than an active diagnostic queue. Item 6's inventory
+and verified preservation are now complete; four individually approved
+removals are complete as recorded below. There are 13 registered worktrees,
+including the ordinary checkout. Repository relocation from OneDrive remains
+undecided. ADR-125 read-only persistence verification awaits
+the owner's next reboot. Topic B/KB-037 and the distinct #201 login failure
+retain their separate unresolved status; no additional diagnosis was run.
+
+The original private handoff and five-document monitoring diff are retained
+as history. The owner subsequently authorized updating and publishing this
+documentation slice before implementing the cleanup workflow. All nine
+stashes remain, including the seven original stashes and two Roadmap versions;
+their unrelated ideas were not incorporated. Historical recordings, private
+evidence, backup bookkeeping and older backups remain protected. No dedicated
+diagnosis, browser run, service start, release gate, deployment, hosted
+mutation, dependency or machine-setting change accompanies this publication.
+
+### Worktree inventory, preservation and four removals — 2026-10-07
+
+The read-only inventory covered all 16 extra worktrees against main #203,
+with GitHub PR history and content comparisons. Twelve branch tips matched
+merged PR heads and their aggregate patches; the four detached heads were
+main ancestors. Fifteen ancestry-only historical commits were retained.
+No unpublished committed feature delta was found. Fourteen extras were clean;
+two held local unfinished work, which remains untouched: the extra browser
+test in `kut-mm2-match` and the documentation/SQL edits in
+`sql-flake-validation-20261004`. Superseded committed content alone was not
+treated as proof that local files could be discarded.
+
+Three encrypted private archives passed independent recovery checks. They
+preserve committed trees/history, all nine stashes, the original five-document
+diff, identified local/private files and the Codex bookkeeping snapshot.
+Sensitive local files were checked without durable plaintext copies. Recovery
+still depends on the existing Windows account/machine credential: portable
+key custody, cross-machine recovery, off-device copies and complete OneDrive
+sync were not verified. Generated dependency/build cache contents were
+excluded; manual changes inside those caches were not certified. This work
+does not establish freshness of a production database backup.
+
+The owner individually approved `kut-dr3`, `kut-receipt-bom`,
+`repairs-docs-20261005` and `repairs-sql-20261005`. Normal Git removal attempts
+encountered Windows permission errors. The owner completed the exact folder
+and Git-record removals in Explorer; for the two repair folders, scoped helpers
+first removed only their links to the ordinary checkout's dependencies.
+The final read-only verification passed at 11:27:48.490 UTC, with a repeat
+check before documentation editing at 12:07:11.164 UTC. All four folders and
+their matching administration folders are absent. The twelve remaining extras,
+nine stashes, branch refs, private archives/evidence and older backups were
+unchanged. Ordinary dependencies passed metadata continuity and three sampled
+file-hash checks, not a complete hash of every dependency byte.
+
+There are now ten clean extras and two with local unfinished work. Their
+preservation plan is available for a later owner review; no further removal
+is approved. The Windows deletion cause remains unresolved: Git failed even
+in the owner's ordinary PowerShell, while Explorer succeeded. Permissions,
+directory handles and cloud-files integration have not been isolated. No
+global permission reset, protection change or repository relocation follows
+from that observation.
+
+Private source reports remain in `.release-evidence/worktree-inventory-20261007/`,
+`.release-evidence/worktree-preservation-20261007/` and
+`.release-evidence/worktree-removals-20261007/FINAL.md`. Earlier partial-removal
+records are historical; their old worktree counts do not describe today's
+state. Raw authenticated evidence and preservation archives are excluded from
+this documentation PR.
+
+The owner agreed the future workflow in ADR-135, including a short plain-language
+explanation for each cleanup type before approval and a plain completion
+report. Implementation remains planned in ROADMAP. Current hooks, command
+rules and filesystem permissions have not been changed; the next safety/tooling
+slice must prove enforcement and complete-operation behavior on disposable
+fixtures before any further real cleanup.

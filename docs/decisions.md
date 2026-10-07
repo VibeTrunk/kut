@@ -7555,10 +7555,12 @@ RPC, schema, Part L invariant, agent permission or hosted setting changes.
 
 ## ADR-133 — Attribute each completed-share matrix combination separately
 
-Date: 2026-10-07. Status: locally implemented and validated; the owner has
-authorized commit, push and PR publication. Merge and release remain pending.
-Topic A remains open. This is a test budget/attribution change,
-not an initiating-cause repair or a fix for a preview stuck for 20 seconds.
+Date: 2026-10-07. Status: merged in #203 at 2026-10-07T00:31:08Z and
+released at exact SHA `6744656baa3f13140fc17fc304fb4404eb36cabe` after
+the full gate, approval and evidence assertion. See DEPLOYMENTS. Topic A
+remains open; the owner selected monitoring only in ADR-134. This is a test
+budget/attribution change, not an initiating-cause repair or a fix for a
+preview stuck for 20 seconds.
 
 The completed-share regression previously spent one 90-second test budget on
 16 full navigations. Retained passing WebKit measurements of about 46–66
@@ -7743,3 +7745,124 @@ ordinary production-mode workload, retaining the failure before clearing
 state; map repeated module offsets with matching symbols if needed. This
 negative run does not justify a product change or another ruled-out stress
 experiment.
+
+## ADR-134 — Monitor Topic A and investigate a captured recurrence
+
+Date: 2026-10-07. Status: owner decision active; documentation publication authorized.
+
+The owner accepted stopping dedicated Topic A diagnostics and moving the
+unresolved WebKit "Drawing…" stalls / slow spells into monitoring. This
+supersedes the 5 October handoff's requirement to keep browser diagnosis
+ahead of item 6. Worktree content/preservation inventory can proceed; no
+initiating cause or root-cause repair is claimed.
+
+Assessment: the demonstrated impact is intermittent browser-test and release
+reliability, with user impact unconfirmed. Two historical production-mode
+release failures and a 20-second preview stall remain valid evidence. The
+Windows Playwright WebKit environment emulates an iPhone; it does not prove
+the same incident in real iPhone Safari. Playwright documents platform
+differences and recommends macOS for the closest Safari approximation:
+[browser documentation](https://playwright.dev/docs/browsers). There is
+insufficient evidence to classify Topic A as a major production incident.
+
+ADR-133 delivered attributable cases with all assertions retained. The
+native follow-up passed 76 WebKit diagnostic cases but captured no recorded
+hot spell, so its calm stacks cannot discriminate the remaining hypotheses.
+#203 then passed the complete release inventory: 175 required passes and
+exactly two approved duplicate-device skips, zero retries, one worker.
+These results do not establish absence or repair. Further dedicated reruns
+currently have low expected diagnostic value without a reproducible failure
+or a new observation that distinguishes the candidates.
+
+Decision and resumption criteria:
+
+- Keep Topic A open with monitoring only. Preserve recordings, failed runs,
+  exclusions and the validated capture method. Do not seek another reproduction
+  through broad reruns, repeat excluded stress probes or change machine settings.
+- A related failure during ordinary authorized test/release work, or a credible
+  matching user report, triggers triage. Preserve the original failure and
+  available timing/browser evidence before clearing state. Record real-device
+  browser/OS and surface when applicable; do not merge KB-037, Topic B or #201's
+  separate login timeout into Topic A without evidence.
+- State one discriminating hypothesis before any new diagnostic experiment,
+  within the applicable authorization. Limit diagnosis to 30 minutes per
+  hypothesis. If it produces no useful discriminator, record the result and
+  return to monitoring instead of extending an open-ended investigation.
+- Retain coverage, the 20-second preview wait, per-case 90-second budgets,
+  one worker, zero retries, exact skip exceptions and production deadlines.
+  A failed required release gate still stops deployment; monitoring grants
+  no waiver and a passing rerun is not a fix.
+
+Consequences: subsequent sessions can resume product work or item 6 without
+further dedicated browser profiling; its inventory is now complete. Topic B and
+KB-037 retain their existing monitoring-only decisions. ADR-125 persistence
+still awaits the owner's next reboot. No product, test, dependency, release
+control or machine setting changes accompany this documentation decision.
+
+## ADR-135 — Plan specific owner-approved cleanup for both agents
+
+Date: 2026-10-07. Status: owner-agreed direction; implementation planned.
+This documentation decision changes no active hooks, command rules or
+filesystem permissions. ROADMAP is the canonical implementation queue.
+
+The owner wants Codex and Claude to finish appropriate cleanup themselves
+after specific approval, while removal remains blocked without that approval.
+The completed inventory and independently verified preservation supported
+four individually approved worktree removals. Twelve extras remain protected,
+including two with local unfinished work; none has further removal approval.
+
+Normal Git removal ran but encountered Windows permission errors. Automatic
+approval review accepted those normal commands; no review rejection or local
+hook denial was observed for them. The owner's ordinary PowerShell also failed
+to finish a Git removal, while exact Explorer cleanup succeeded. Inspected
+permissions included inherited sandbox-account denies, an inherited Everyone
+delete-children denial and owner FullControl. These observations do not prove
+a single cause. Effective permissions, open handles and cloud-files integration
+remain unisolated. Do not infer that conversation approval overrides Windows
+access rules or that global permission resets or moving out of OneDrive are
+necessary or authorized.
+
+Decision for the future implementation slice:
+
+- Provide a shared inspect/plan/execute/resume helper with read-only planning
+  as the default. Preserve committed history and relevant local/private work,
+  and independently verify recovery before proposing removal. State exclusions
+  and any limits to recovery; do not describe missing preservation as safe.
+- Before asking for approval, give a short, easy, non-technical explanation
+  for each cleanup type: identify the actual items, explain what is removed
+  and why the evidence supports it, state what remains saved or untouched, and
+  mention practical downsides or uncertainty. Several items may be grouped
+  only when they share the cleanup type and preservation conditions. Finished
+  project copies, generated files, links to shared files and leftover Git
+  records each need their own explanation when present. A technical appendix
+  may carry exact paths and recovery receipts. Report completion plainly too.
+- Bind approval to an immutable plan and exact named paths, content/HEAD/index
+  state, link targets, operation and verified recovery evidence. Approval can
+  cover normal Git removal, explicitly listed safe link removal and exact
+  leftover-folder handling as one complete operation. Changed state or scope
+  invalidates execution for the affected items; unchanged approved work may
+  resume without repeating the same request.
+- Protect the ordinary checkout and shared dependencies, all branches/stashes,
+  private evidence and unspecified paths. Do not follow borrowed-dependency
+  links into their targets. Keep forced recursive deletion, forced cleans,
+  hard resets, force pushes, remote-branch deletion and broad pruning outside
+  this workflow. A wrapper around a blocked command is not an exception.
+- Require runtime approval for the exact execution operation. Agent-written
+  receipts, flags or environment variables do not independently establish
+  owner consent. Verify actual tool/hook coverage and supported configuration
+  for both installed agents; do not assume the current hook matcher covers
+  every tool or that unreadable payloads count as approval.
+- Prove refusal without approval, changed state, missing recovery evidence,
+  unsafe paths, dirty/untracked content, link handling and interrupted cleanup
+  on disposable fixtures. Do not test deletion on the twelve retained extras
+  or on protected source evidence. Establish the smallest supported filesystem
+  capability; report a managed-policy or Windows limitation honestly if it
+  persists. The helper cannot manufacture permission. Any machine-setting
+  adjustment needs a separate scoped owner decision after investigation.
+
+Consequences: implementation is a separate safety/tooling change after this
+documentation slice. Shared operational guidance belongs in CLAUDE.md, with
+AGENTS.md continuing to reference it; agent-specific configuration remains
+in the corresponding agent rules. This plan grants no new cleanup, publication,
+hosted mutation, release gate or deployment authorization. Topic A remains
+monitoring only under ADR-134.

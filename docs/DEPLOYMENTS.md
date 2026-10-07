@@ -23,6 +23,86 @@ deployment identity and domain-verification time; do not change the latest
 migration line when no migration was applied. Records accompany the next PR
 opened for other work, never a standalone record PR.
 
+## 2026-10-07 — gated release of attributable completed-share matrix #203
+
+The date in this heading is Europe/Amsterdam; the following exact timestamps
+are UTC. MartinFloris merged https://github.com/VibeTrunk/kut/pull/203 at
+2026-10-07T00:31:08Z, producing
+`6744656baa3f13140fc17fc304fb4404eb36cabe`. Its tree matches reviewed
+publication `0d28e4922fd5d750b9af2c11635ed844c3a52a7f`. ADR-133 splits the
+16 completed-share combinations into separately attributable cases, retaining
+every assertion and the original preview wait and per-case test budget.
+It does not diagnose or repair Topic A's initiating cause.
+
+- All seven exact-SHA main CI checks passed; the final required check completed
+  at 00:32:59 UTC. The main auto-deployment hold remained active. Predeployment
+  authenticated verification found zero candidate deployments with complete
+  lookup while production served #202.
+- The initial preflight stopped on an expanded unrelated Roadmap edit before
+  any full gate. After the owner confirmed editing was finished, both versions
+  were archived and parked in separate named stashes, preserving the original
+  seven. The clean retry passed all ten checks. The failed attempt remains
+  private; successful preparation is `prepare-retry-report.json`.
+- The #201 encrypted backup, created at 2026-10-06T18:13:02.8577966Z, remained
+  within 24 hours. Fresh independent cold recovery passed at
+  2026-10-07T00:36:51.8201811Z, plaintext SHA-256
+  `7E2A15CE731D6EC52B664ECA4F2CA440DD187531034EE5C9AF63E95C20A86AC3`,
+  stable locator `backup-encryption-v1`. No new backup, log append or pointer
+  change was needed. Catalogue parity passed for 87 local/central KUT
+  migrations, aggregate SHA-256
+  `337b807448fd329e414a9c8c73fbffff6817e7a15be2e9748483cb601b3d25f5`.
+  This is catalogue parity, not a newly queried hosted migration-list count.
+- One full gate passed at 2026-10-07T00:46:23.5709757Z,
+  `gate-20261007-024623.json`, SHA-256
+  `0d45f586ce448f4224d3b51878c96cd5e8d78f8a2bb3f0b5dc2cc9b2c8ca6d59`.
+  Runner: 00:36:52.196–00:46:23.296 UTC; fresh build:
+  00:36:53.847–00:37:10.988 UTC. Actual unfiltered inventory: 177 cases.
+  Pixel 7: 58 passes / one approved duplicate-device skip; narrow Chromium:
+  59 / zero; WebKit: 58 / one. Total: 175 required passes and exactly two
+  approved skips. Zero retries, one worker, Node v24.18.0, Next 16.3.6 and
+  Playwright 1.63.0. Locked browsers, deadlines and fixture protections were
+  unchanged. Live safe progress matched the integrity-checked final manifest.
+- The verified owner merge supplied authorization under ADR-124. Preparation
+  reverified it, recorded approval at 00:46:26.0627097 UTC and asserted
+  evidence. Preparation did not deploy. The separate deployment command
+  rechecked owner merge/current main, bound evidence hashes, assertion and
+  project/GitHub linkage before creating the exact Git-source candidate.
+- Deployment `dpl_9fn2BspBR34njGFEhuzMW6u1Zzq4` was created during
+  00:47:02.283–00:47:12.733 UTC. The first read-only binding observation was
+  unverified and remains preserved. Subsequent observation and separate
+  authenticated verification at 00:48:53.303 UTC
+  (02:48:53.303 Europe/Amsterdam) returned `candidate_live`, complete lookup
+  and READY exact-SHA binding for `kut.vibetrunk.com`. Public `/` and `/login`
+  returned HTTP 200 during closeout at 00:49:05.161 UTC.
+- Fixture cleanup was clean. Supabase stopped normally with data retained;
+  Docker Desktop stopped normally after verifying zero containers, restoring
+  its observed initial stopped state. All seven original stashes, both new
+  Roadmap stashes, 17 worktrees, historical recordings and older backups
+  remained preserved. No hosted migration, function, secret or protection
+  mutation occurred.
+- Rollback reference: READY #202, `dpl_EzHBdyKz9yyqPeqH39tEJY1vGDCv`, SHA
+  `700e4b1b4cad0071600b74e037bb050db539d14f`. Rollback was not executed.
+  Topic A remains unresolved and now follows the owner's monitoring-only
+  decision (ADR-134). #201's distinct WebKit login timeout remains unresolved;
+  Topic B/KB-037 remain monitoring only and ADR-125 reboot persistence unverified.
+
+Gate/approval and authenticated evidence remain under this exact SHA's private
+directories. Closeout and the original pending record remain under
+`.release-evidence/operations/pr203-release-6744656baa3f13140fc17fc304fb4404eb36cabe/`.
+This record accompanies the normal Topic A monitoring documentation slice once.
+These are dated release observations; no new live-domain check, gate or
+deployment was run to prepare this documentation. A documentation-only merge
+of this slice needs no release gate or deployment under the docs-only exception.
+Full main CI still runs under ADR-126. Production may then lag main by its
+documentation-only commit, with #203 the last verified production SHA.
+
+The same documentation slice also records completed worktree inventory,
+verified private preservation, four owner-approved removals and the planned
+approval-based cleanup workflow (ADR-135). Those local records do not create
+a new production release or certify a newer production backup. Private raw
+evidence and preservation archives are excluded from the PR. The owner reviews
+and merges the documentation PR; publication alone does not merge it.
+
 ## 2026-10-07 — gated release of exact-SHA release preparation #202
 
 The date in this heading is Europe/Amsterdam; the following exact timestamps

@@ -43,8 +43,11 @@ discussion below is retained as rationale, not a second conflicting instruction.
 - **blocked** — needs a product decision or an ADR before it can start
 - **partial** — some of it shipped; the open remainder is described
 - **shipped** — built and deployed; `PROGRESS.md` and the ADR log are canonical
+- **completed** — a non-release task is finished; its dated result is in PROGRESS
 - **declined** — considered and deliberately not doing; the reason is stated
 - **superseded** — replaced by a named successor, which carries on the idea
+- **monitoring** — an unresolved incident is retained; investigate on a related
+  recurrence or matching user report, rather than running dedicated diagnostics
 
 ## Priority — raised 2026-09-26
 
@@ -1127,6 +1130,22 @@ OVR: a weekly peer vote for the top 3 players of the week.
 Open questions: the boost formula and duration; 3rd-place tie-breaking;
 minimum turnout; public or secret votes; how the "In Form" card is minted,
 owned, and expired; abuse vectors (collusion, vote-trading).
+
+## Engineering follow-ups — 2026-10-07
+
+The 5 October Codex handoff's rule repair, shared guidance, #197 timeline,
+release orchestration 3a/3b/3c and access-diagnosis work are complete through
+#198–#202. The attributable browser matrix shipped in #203. ADR-134 ends
+dedicated Topic A diagnostics for now; item 6's inventory and preservation
+are complete. This table records follow-up scope, not publication or removal approval.
+
+| Item | Status | Notes / next step |
+|---|---|---|
+| Worktree content and preservation inventory (handoff item 6) | completed | Inventoried all 16 extras against #203 using content and read-only PR history. No unpublished committed feature delta was found; local unfinished/private content was separately preserved. Three encrypted archives passed independent recovery checks, including all nine stashes. Four individually approved removals are complete. Last verified count: 13 registered total, including the ordinary checkout, on 2026-10-07. Twelve extras remain: ten clean and two with local unfinished work. No further removal is approved. See PROGRESS for preservation limits and private evidence locators. |
+| Approval-based cleanup for Codex and Claude (ADR-135) | planned | Implement a shared inspect/plan/execute/resume workflow as a separate safety/tooling slice. Inspection is read-only by default; removal requires specific owner approval of named items and verified preservation. Give a short non-technical explanation for each cleanup type before approval: what goes, why its removal is supported, what remains saved, and any downside or uncertainty. Same-type items may be grouped only with matching preservation conditions. Keep broad destructive commands blocked; test on disposable fixtures, not the twelve retained extras. Prove actual runtime enforcement and filesystem capability before further cleanup. The Windows deletion failure remains unexplained; no permissions change or OneDrive relocation is authorized. |
+| Topic A — WebKit Drawing stalls / slow spells | monitoring | Open, initiating cause unresolved; intermittent test/release reliability impact demonstrated, real-user impact unconfirmed. Owner accepted monitoring on 2026-10-07 (ADR-134). Preserve and triage a related failure during ordinary authorized work or a matching user report. Any further experiment needs a discriminating hypothesis and a 30-minute time-box; retain assertions and fail-closed gates. No proactive reruns or profiling. |
+| Topic B / KB-037 | monitoring | Existing passive decisions remain: resume on recurrence and preserve the original failure before clearing state. Neither is established as sharing Topic A's cause. KB-037's canonical report/status stays in KNOWN_BUGS. |
+| Windows port-reservation persistence (ADR-125) | planned | Verify read-only after the owner's next reboot. No reboot has been confirmed for this check; do not repeat the port repair or alter exclusions now. |
 
 ## One-off open items
 

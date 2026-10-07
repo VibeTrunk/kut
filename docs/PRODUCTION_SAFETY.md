@@ -330,6 +330,56 @@ Supabase functions, secrets and branch-protection changes still require their
 own authorization. A passing postdeploy
 gate cannot retroactively establish predeployment ordering.
 
+## Browser incident monitoring (ADR-134)
+
+On 2026-10-07 the owner selected monitoring only for Topic A, the unresolved
+Windows WebKit Drawing stalls / slow spells. Dedicated diagnostics stop for
+now. The demonstrated impact is intermittent test/release reliability;
+matching real-user impact remains unconfirmed. ADR-133's matrix split and
+passing gates do not establish an initiating-cause repair.
+
+Continue ordinary authorized validation with all existing assertions,
+coverage, preview waits, worker/retry limits and production deadlines. A
+failed required gate still blocks deployment. Do not use retries or larger
+timeouts to make an incident disappear from release evidence.
+
+A related failure in ordinary work or a credible matching user report is
+the trigger to revisit diagnosis. Preserve the original failed run, trace
+and available timings before clearing state. Identify the browser, OS and
+affected surface for real-device reports. Keep Topic B's storage stall,
+KB-037's phone-preview report and #201's login timeout separate unless new
+evidence demonstrates a relationship.
+
+Before a new diagnostic experiment, state a hypothesis that distinguishes
+remaining candidates and use a 30-minute diagnosis time-box within the
+applicable authorization. Reuse the retained evidence and validated capture
+method where appropriate; no machine-setting change or native profiling is
+automatically authorized by monitoring. If no useful discriminator emerges,
+record the limitation and return to monitoring. Do not repeat excluded stress
+probes or run broad release gates solely to hunt a recurrence.
+
+## Planned approval-based cleanup (ADR-135)
+
+The owner selected a shared cleanup workflow for Codex and Claude; it has not
+been implemented. ROADMAP carries the implementation scope. Existing command
+guards, filesystem restrictions and per-change publication/production
+authorization remain active. Recording this decision supplies no new removal
+approval or permission to bypass a blocked command.
+
+The planned workflow defaults to read-only inspection and requires verified
+preservation plus specific owner approval of named cleanup items. Before
+approval, explain each cleanup type briefly in non-technical language: what
+will be removed, why the checks support removal, what remains saved or
+untouched, and any practical downside or unresolved uncertainty. Same-type
+items may share an explanation only when their preservation conditions match.
+Changed contents or scope require renewed review of the changed items.
+
+The four approved worktree removals are complete; twelve extras remain
+protected with no further removal approved. Windows deletion capability and
+actual enforcement for both installed agents must be proved in disposable
+fixtures before further real cleanup. Neither a receipt written by an agent
+nor a helper wrapper supplies owner consent or filesystem permission.
+
 ## Direct deployment verification and CLI access
 
 Check Vercel access at the start of release work, before promising a direct

@@ -1263,7 +1263,7 @@ test("admin can reach the mobile attendance finalization surface", async ({ page
 });
 
 // Last in this file and run once on the narrow Chromium project. It spends
-// 175 coins and adds cards; finally removes those cards so the later WebKit
+// 250 coins and adds cards; finally removes those cards so the later WebKit
 // project keeps the same picker inventory.
 test("a pack's summary names the slots it fills and the copies it adds (ADR-114)", async ({
   page,

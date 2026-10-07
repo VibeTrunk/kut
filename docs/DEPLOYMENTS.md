@@ -23,6 +23,65 @@ deployment identity and domain-verification time; do not change the latest
 migration line when no migration was applied. Records accompany the next PR
 opened for other work, never a standalone record PR.
 
+## 2026-10-07 — gated release of named-file cleanup guidance and guarded adapters #206
+
+MartinFloris merged https://github.com/VibeTrunk/kut/pull/206 at
+2026-10-07T20:49:44Z, producing exact candidate
+`53e0346b3263cb2766180968b061c61ad41b377f`. The owner merge authorized its
+gated Vercel production release under ADR-124; the owner separately approved
+starting the local services and creating a fresh encrypted backup. All times
+below are UTC. No migration, function, credential or protection change was
+performed. The shared ordinary-file workflow uses specific chat approval and
+existing narrow tools. Live worktree cleanup still lacks its trusted host
+connection; this deployment does not activate it or repair Windows deletion.
+
+- The ordinary checkout was clean at the exact merged SHA, matching remote
+  main. All seven required main checks passed. The automatic main deployment
+  hold remained configured; authenticated verification at 20:51:28.281 found
+  no candidate deployment, with complete lookup, while #205 remained live.
+- Initial preflight found Docker and the local stack stopped and the previous
+  backup older than 24 hours. After specific prerequisite approval, Docker
+  Desktop and the existing KUT test stack started; credentials remained only
+  in the release process environment, with the nonlocal fixture override absent.
+  All preflight checks then passed. Central parity passed for 87 KUT migrations,
+  aggregate SHA-256
+  `337b807448fd329e414a9c8c73fbffff6817e7a15be2e9748483cb601b3d25f5`.
+  No fresh hosted migration-list count was queried.
+- New `kut-backup-20261007-225516.sql.enc` passed independent cold verification
+  and became final at 20:55:56.4296758. Gate-time separate-process recovery
+  passed again at 20:57:05.3454808, plaintext SHA-256
+  `F4FAFFA0C74F3ECC9259F53A788BC4ABCA345946DDFA027BCCD16045A8B0C4CC`,
+  locator `backup-encryption-v1`. All 33 preexisting encrypted backups were
+  independently hash-checked unchanged. The backup covers hosted KUT schema/data;
+  account identities and storage objects retain the exclusions in BACKUP.md.
+- One full gate passed at 21:06:45.0748473,
+  `gate-20261007-230645.json`, SHA-256
+  `a0892a62ff585de0b7002c58e3668d8e9425edc677d1c49dc748b2da8db222a1`.
+  Authenticated E2E ran 20:57:06.425–21:06:44.845. All 175 required cases
+  passed: Pixel 7 (58), narrow Chromium (59), WebKit (58), with exactly the
+  two existing approved duplicate-device skips and zero retries. Assertions,
+  browser deadlines and monitoring-only treatment of Topic A were retained.
+- Preparation reverified owner authorization, recorded approval at
+  21:06:47.4934347 and passed evidence assertion. The separate deployment
+  command rechecked the owner merge/current main, evidence hashes, assertion
+  and exact Vercel project/GitHub linkage before creating the Git-source
+  production deployment for this exact SHA.
+- Deployment `dpl_9qVq9ZqpTRfDQt2fwwhQvg9JazNj` was independently verified
+  READY and bound to `kut.vibetrunk.com` at 21:09:00.582. Verification returned
+  `candidate_live`, the same SHA and complete candidate lookup. Public `/` and
+  `/login` returned HTTP 200 at 21:08:41.7609737.
+- The local KUT stack stopped normally with data retained; Docker Desktop
+  stopped after confirming zero running containers, restoring the initial
+  stopped state. Twelve extra worktrees, nine stashes, retained branches,
+  shared dependencies and protected evidence were preserved. No real cleanup,
+  stash application/drop, branch deletion or discard was performed.
+- Rollback reference: previously verified READY #205,
+  `dpl_3eA9zuiKDTZpUuudj6dPJ3GRwad6`, SHA
+  `3aa09ed0d9c9d8739d5fcb898e5b9f5188eac299`. Rollback was not executed.
+  Private release evidence is under
+  `.release-evidence/operations/pr206-release-53e0346/`. This release record
+  remains unpublished for the next PR opened for other work.
+
 ## 2026-10-07 — gated release of shared cleanup safety tooling #205
 
 MartinFloris merged https://github.com/VibeTrunk/kut/pull/205 at

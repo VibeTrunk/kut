@@ -31,7 +31,7 @@ export const ECONOMY = {
   // MIDWEEK_CHAMPION_TOTAL.
   midweekChampionTotal: 250,
   starterCoinGrant: 250,
-  basicPackPrice: 175,
+  basicPackPrice: 250,
   basicPackCardCount: 3,
   marketTaxPercent: 5,
   // Default market listing length, used when a seller expresses no preference.

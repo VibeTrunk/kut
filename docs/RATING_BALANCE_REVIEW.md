@@ -176,13 +176,13 @@ public popularity leaderboard. Caps limit collusion's payoff but do not prevent 
 - Example: 20 eligible linked attendees all submit → **1,000 extra coins**
   for that session, versus 5,000 attendance coins. Guests do not earn report
   coins through admin goal entry, and edits/corrections never pay twice.
-- Attendance plus reporting is 300 per session. With 175 packs that buys
-  1.714 packs over time, **71.4% more** than the former 250-income/250-price
-  combination. This is the cumulative effect of two requested changes, not
-  a 71.4% inflation measurement.
+- Attendance plus reporting is 300 per session. At the current 250-coin pack
+  price, that buys 1.2 packs over time, **20% more** than the former
+  250-income/250-price combination. The former 175-price estimate is superseded
+  by ADR-136; this is purchasing power, not an inflation measurement.
 
 The reward is balanced as a smaller, bounded participation faucet, but it and
-the cheaper pack must be reviewed together against current roster EV. Actual
+the pack price should be reviewed together against current roster EV. Actual
 economy equilibrium cannot be certified without live usage/roster inputs. No
 odds, discard formula, attendance award or requested price was silently changed.
 

@@ -158,8 +158,8 @@
     "attendance": 250,
     "completion": 50,
     "total": 300,
-    "packPrice": 175,
-    "packsPerReportingSession": 1.7142857142857142,
-    "increaseFromOriginalPercent": 71.42857142857142
+    "packPrice": 250,
+    "packsPerReportingSession": 1.2,
+    "increaseFromOriginalPercent": 20
   }
 }

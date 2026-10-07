@@ -47,9 +47,9 @@ Edit/Add goals actions require a reason and never impersonate form completion.
 | Admin session reports | [Full](adminreports-mobile.png) | [Render](adminreports-desktop.png) |
 | Admin goal correction | [Dialog](admin-goals-mobile.png) | Centered dialog |
 | Corrected goals, unchanged rewards | [Full](adminreports-corrected-mobile.png) | Same content |
-| 175-coin pack | [Full](packs-mobile.png) | [Render](packs-desktop.png) |
-| Pack confirmation | [Dialog](pack-confirm-mobile.png) | Centered dialog |
-| 174 coins: insufficient | [State](pack-insufficient-mobile.png) | Same content |
+| Original 175-coin pack design | [Full](packs-mobile.png) | [Render](packs-desktop.png) |
+| Original pack confirmation | [Dialog](pack-confirm-mobile.png) | Centered dialog |
+| Original 174-coin insufficient state | [State](pack-insufficient-mobile.png) | Same content |
 | Club Value | [Full](value-mobile.png) | [Render](value-desktop.png) |
 | Duplicate breakdown | [Full](copies-mobile.png) | Table + explanation |
 | Special scaffolding | [Full](editions-mobile.png) | [Render](editions-desktop.png) |

@@ -93,7 +93,7 @@ beforeAll(async () => {
     "insert into kut.profiles(id,display_name,role,player_id) values($1,'Feature Race','user',$3),($2,'Feature Low','user',null)",
     [fx.user, fx.low, fx.player],
   );
-  await admin.query("insert into kut.wallets(user_id,balance) values($1,500),($2,174)", [
+  await admin.query("insert into kut.wallets(user_id,balance) values($1,500),($2,249)", [
     fx.user,
     fx.low,
   ]);
@@ -104,11 +104,11 @@ afterAll(async () => {
 });
 
 describe("next-feature concurrency", () => {
-  it("opens one 175-coin pack for concurrent same-key retries", async () => {
+  it("opens one 250-coin pack for concurrent same-key retries", async () => {
     await Promise.all([begin(a, fx.user), begin(b, fx.user)]);
     const results = await Promise.all([
-      run(a, "select kut.open_pack('tfh-pack',175,$1) result", [fx.packKey]),
-      run(b, "select kut.open_pack('tfh-pack',175,$1) result", [fx.packKey]),
+      run(a, "select kut.open_pack('tfh-pack',250,$1) result", [fx.packKey]),
+      run(b, "select kut.open_pack('tfh-pack',250,$1) result", [fx.packKey]),
     ]);
     expect(results.every((r) => r.error === null)).toBe(true);
     // The race above runs on two *separate* clients, which is the point. These
@@ -123,13 +123,13 @@ describe("next-feature concurrency", () => {
       "select count(*)::int count from kut.pack_opening_cards where opening_id in(select id from kut.pack_openings where user_id=$1)",
       [fx.user],
     );
-    expect(opening.rows).toEqual([{ price_paid: "175" }]);
-    expect(wallet.rows[0].balance).toBe("325");
+    expect(opening.rows).toEqual([{ price_paid: "250" }]);
+    expect(wallet.rows[0].balance).toBe("250");
     expect(cards.rows[0].count).toBe(3);
   });
-  it("does not debit 174 coins or a stale quote", async () => {
+  it("does not debit 249 coins or a stale quote", async () => {
     await begin(a, fx.low);
-    const low = await run(a, "select kut.open_pack('tfh-pack',175,$1)", [
+    const low = await run(a, "select kut.open_pack('tfh-pack',250,$1)", [
       "30000000-0000-4000-8000-000000000032",
     ]);
     expect(low.error).not.toBeNull();
@@ -137,11 +137,11 @@ describe("next-feature concurrency", () => {
     const stale = await run(a, "select kut.open_pack('tfh-pack',999,$1) result", [
       "30000000-0000-4000-8000-000000000033",
     ]);
-    expect(stale.result?.rows[0].result).toMatchObject({ price_changed: true, current_price: 175 });
+    expect(stale.result?.rows[0].result).toMatchObject({ price_changed: true, current_price: 250 });
     expect(
       (await admin.query("select balance from kut.wallets where user_id=$1", [fx.low])).rows[0]
         .balance,
-    ).toBe("174");
+    ).toBe("249");
   });
   it("credits one report reward across a submit race", async () => {
     await admin.query(

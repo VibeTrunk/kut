@@ -7975,3 +7975,25 @@ test assertions and merge-gate requirements intact. The locally reachable HTTPS
 endpoint does not prove runner success; the corrected commit needs CI evidence.
 This narrow publication correction neither diagnoses Topic A nor changes the
 owner's machine, application, access mode or hosted settings.
+
+## ADR-136 — Basic packs cost 250 KUT Coins
+
+Date: 2026-10-07
+
+Status: Accepted
+
+Decision: raise the existing three-card Live-only TFH Pack price from 175 to
+250 KUT Coins. Keep its card count, rarity weights, quote check and replay
+behavior unchanged. The new price applies to future openings only; recorded
+`price_paid` values and immutable wallet ledger entries remain unchanged.
+
+Reason: the owner requested the new price. Against the existing local expected
+discard value of 87.46 coins per pack, 250 coins lowers the estimated expected
+discard return to 34.98% of price; it does not increase the pack's coin faucet.
+This is the existing local-roster estimate, not a fresh hosted-roster
+measurement.
+
+Consequences: `20261019000000_basic_pack_price_250.sql` updates the active pack
+definition. `ECONOMY.basicPackPrice`, the canonical build-spec amendment and
+current contract fixtures use 250. No opening history is repriced, and no
+hosted migration is applied by this change.

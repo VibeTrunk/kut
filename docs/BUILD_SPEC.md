@@ -5686,9 +5686,9 @@ implementation ADRs are ADR-055 through ADR-059.
 - **Club Value:** duplicate copies of the same edition contribute 100%, 20%,
   5%, then 0% of discard value. Selling or discarding still uses the full card
   value and is not discounted by this projection.
-- **Basic packs:** contain three Live cards and cost **175 coins**. The server
-  requires the caller's expected price and an idempotency key; stale quotes do
-  not debit a wallet.
+- **Basic packs:** contain three Live cards and cost **250 KUT Coins** (ADR-136).
+  The server requires the caller's expected price and an idempotency key; stale
+  quotes do not debit a wallet.
 - **Trading discovery:** a member may have at most 100 private wants and 30
   explicitly available owned copies. Discovery returns only the owner display
   name for a wanted available card and supports a channel-neutral conversation prompt;

@@ -13,8 +13,9 @@ the app now wins over the design where they disagree.
 
 **New feature design package (2026-09-05):** see
 [`features/README.md`](features/README.md) for wanted cards/trade matching,
-goals and kudos, 175-coin packs, duplicate Club Value and Special-edition
-scaffolding. It includes an interactive gallery and mobile/desktop renders.
+goals and kudos, historical 175-coin pack mockups (current price 250; ADR-136),
+duplicate Club Value and Special-edition scaffolding. It includes an
+interactive gallery and mobile/desktop renders.
 Those are proposed, unbuilt screens; the references below describe the older
 album/Chronicle/history design that has already shipped.
 

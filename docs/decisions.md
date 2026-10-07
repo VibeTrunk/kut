@@ -7495,9 +7495,12 @@ browser locks, retry/worker settings and deadlines remain unchanged.
 
 ## ADR-132 — Prepare one exact release and print a separate deployment handoff
 
-Date: 2026-10-07. Status: implemented and validated locally for slice 3c;
-the owner subsequently authorized commit, push and PR publication. Merge and
-the exact resulting SHA's gated release remain pending.
+Date: 2026-10-07. Status: merged in #202 at 2026-10-06T23:17:27Z
+(2026-10-07 Europe/Amsterdam) and released at exact resulting SHA
+`700e4b1b4cad0071600b74e037bb050db539d14f`. Main CI, one full gate,
+approval and evidence assertion passed before the separate deployment.
+The dated 2026-10-06T23:32:45.828Z domain observation is in DEPLOYMENTS.
+The local preparation and validation narrative below is historical.
 
 The owner selected preflight → full production gate → approval → evidence
 assertion as the third independent orchestration slice. ADR-129 and ADR-130
@@ -7549,3 +7552,194 @@ authority, docs-only behavior, integrity, live progress, safe output and actual
 execution of the emitted commands. It does not run a broad production gate.
 The #201 release record accompanies this normal slice once. No application,
 RPC, schema, Part L invariant, agent permission or hosted setting changes.
+
+## ADR-133 — Attribute each completed-share matrix combination separately
+
+Date: 2026-10-07. Status: locally implemented and validated; the owner has
+authorized commit, push and PR publication. Merge and release remain pending.
+Topic A remains open. This is a test budget/attribution change,
+not an initiating-cause repair or a fix for a preview stuck for 20 seconds.
+
+The completed-share regression previously spent one 90-second test budget on
+16 full navigations. Retained passing WebKit measurements of about 46–66
+seconds left little headroom. The owner's approved continuation orders the
+work as existing production-recording analysis, same-assertion matrix split,
+then a separately authorized native stack investigation.
+
+Decision: register one test per name length, completed surface and viewport:
+short/long names × week/index × 320/412/640/1280 px. Titles identify all three
+dimensions. Each case creates and completes its own evening, captures the
+original profile names, restores them in `finally`, and uses the unchanged
+`afterEach` evening teardown. The `finally` also covers partial name updates
+and sign-in failures. Every navigation, preview, download, geometry, rating
+link, label, toggle and overflow assertion is retained; the assertion body
+matches the original tokens. Each test retains the original 90-second budget,
+and the preview wait remains 20 seconds. Workers, retries, production runner
+deadlines, skip exceptions, inventory/report checks and product code are unchanged.
+
+Existing evidence was analysed before new browser execution. The retained
+gate/report references bind run `0479d19f-0e20-4c4a-8114-c204c8f3c4b7` to
+exact #195 SHA `ed3076cdf8a9ccb6d2f383d2ff754ac90cf4db6e`, with a passed
+`next start` production run. The sampler spans 2026-10-05 09:26:49.437–
+09:30:34.786 UTC (11:26:49.437–11:30:34.786 Europe/Amsterdam, UTC+2).
+Using the retained helper's network threshold (spell ≥0.3 cores, calm <0.1),
+five spell samples represent 5.196 seconds, 165 calm samples 171.244 seconds,
+and eight intermediate samples 8.313 seconds. Another 40.596 seconds of the
+225.349-second recording cannot be classified from valid network-thread
+deltas; they are not assumed calm.
+
+The observed spell is 09:28:49.756–09:28:54.952 UTC (11:28:49.756–
+11:28:54.952 Amsterdam). It overlaps the injected PNG-timeout test by 4.950
+seconds and the following sharing test by 0.236 seconds. The matrix begins
+later at 09:28:57.702 UTC and passes in 62.186 seconds. Timing association
+does not establish that either overlapping test triggered the spell, and
+does not overturn the existing stress-probe exclusions.
+
+Duration-weighted mean cores in classified intervals:
+
+| Process | Spell | Calm |
+|---|---:|---:|
+| WebKit network | 0.725 | 0.025 |
+| WebKit web | 0.709 | 0.330 |
+| WebKit GPU | 0.593 | 0.452 |
+| Playwright UI | 0.674 | 0.565 |
+
+The dominant spell threads are network PID/TID 17200/44788 (0.520 cores),
+web 24192/18848 (0.659), GPU 2652/44740 (0.421) and Playwright
+45704/32392 (0.620). Thread descriptions and module lookups are empty;
+these IDs do not identify functions or prove main-thread ownership.
+Across the 178 classified intervals, network correlations with UI/web/GPU
+are 0.112/0.404/0.087. The failed dev recording instead has 30 spell samples,
+31.091 seconds, and network/UI correlation 0.951; the passing dev recording
+has zero spell samples. Thus the strong UI correlation is not universal in
+this retained evidence. Playwright traffic, internal WebKit networking/IPC
+and GPU activity remain unproven candidates.
+
+Aligned probe requests use Unix UTC start timestamps, grouped by CPU interval,
+with the maximum latency per interval. During the five spell intervals,
+auth/rest/storage maxima are 30/30/31 ms; no overlapping request reaches
+500 ms. Network-versus-probe correlations are −0.013/−0.029/−0.011.
+All 5,690 responses per target in the longer monitor recording are HTTP 200.
+Its whole-record maxima (auth 484, rest 530, storage 2,017 ms) occur outside
+the CPU overlap and do not diagnose Topic B. The status probe does not fetch
+photos or test the original storage object/metadata path.
+
+Limits: the retained algorithm accepts thread-counter intervals between 0.2
+and 5 seconds and omits disappearing/new threads and invalid deltas. The
+gate recording has no malformed lines, but 15 decreasing counter deltas and
+12 out-of-range intervals are excluded. Samples are roughly one second
+(median 1.038 seconds); time-weighted durations are estimates, not exact
+onset/offset measurements. Historical recorder uncertainty is about ±25 ms,
+stall-monitor resolution about 15 ms and sampler cost about 0.1 core. No
+native stacks, phase-level request traces or initiating-cause proof follow
+from this scalar comparison. #201's Username-field timeout remains distinct.
+
+Validation on the local diff: actual enumeration gives 59 tests per project,
+177 total, with all 48 matrix cases and every other title preserved. Future
+unfiltered release inventory therefore requires 175 passes plus the existing
+two approved skips; that is an enumerated expectation, not a full-suite pass
+claim. The unchanged validator accepts the expanded inventory with fictional
+outcomes and refuses missing combinations, extra skips and retries. Focused
+`next start` execution runs the 48 matrix cases and the three existing pack
+device cases: 49 passes, exactly two approved skips, zero retries, one worker.
+Awaited private worker hooks verify names, archetypes, semantic week ownership
+and the enabled setting after every matrix case; all 48 restore correctly.
+Global teardown leaves zero fixture residue.
+
+Consequences: failures now identify a specific surface, width and name length,
+and a slow case no longer consumes the budget for subsequent combinations.
+Fresh fixture setup and sign-in add work: measured WebKit matrix time across
+the 16 cases is 99.384 seconds, with a 5.832-second median and 12.034-second
+maximum. This is not a speedup claim or a comparable timing experiment.
+Parallelism remains deferred: sequential restoration does not isolate shared
+global accounts for concurrent workers. No application, dependency, RPC,
+schema, Part L, agent-permission, hosted or machine-setting change occurred.
+
+At matrix validation, the proposed next diagnostic hypothesis was unexecuted:
+during a sustained slow spell, the hot network/UI threads will show repeated
+WebKit IPC/run-loop
+work or Playwright transport activity that can distinguish the remaining
+candidates. Capture native stacks for the live hot thread IDs, with matching
+sampler timestamps and a calm comparator, in a 30-minute hypothesis time-box.
+Agree the available capture method and profiling access separately; the prior
+WPR privilege failure is not permission to change machine settings now.
+Raw evidence stays private under `.release-evidence/topic-a-20261007-local/`.
+
+**Native diagnostic follow-up, 2026-10-07.** The owner separately authorized
+native profiling after automatic approval review rejected the initially
+ambiguous continuation. Installed WPR again failed with `0xc5585011`
+(profiling policy unavailable); it remained not recording. No profiling
+privilege or machine setting was changed. A narrower private collector used
+ordinary same-user process access, AMD64 thread context and serialized DbgHelp
+stack walking against newly started processes in the locked WebKit cache.
+It persisted CPU counters, module offsets and nearest symbols, with no memory
+dumps, arguments, credential output or remote symbol download. Six synthetic
+busy/sleeping-thread captures verified stack walking and restoration first:
+3–10 frames, 0.327–2.083 ms pauses, every resume count one, no watchdog firing.
+The collector restores its suspend increment in `finally`, with a separate
+200 ms watchdog; native stack walking can perturb the target. API contracts:
+[StackWalk64](https://learn.microsoft.com/en-us/windows/win32/api/dbghelp/nf-dbghelp-stackwalk64),
+[SuspendThread](https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-suspendthread),
+[SYMBOL_INFO](https://learn.microsoft.com/en-us/windows/win32/api/dbghelp/ns-dbghelp-symbol_info).
+
+The stated hypothesis was repeated WebKit networking/IPC/run-loop or
+Playwright transport stacks during a sustained network CPU spell, compared
+with calm. The bounded production-mode browser window was
+2026-10-07 00:08:26.480–00:14:47.993 UTC (02:08:26.480–02:14:47.993
+Europe/Amsterdam, UTC+2), inside the 30-minute hypothesis time-box.
+Locked Node v24.18.0, Next 16.3.6 and Playwright 1.63.0 were unchanged.
+The first fresh-build run repeated all 16 WebKit matrix cases three times:
+48 passes, zero retries/skips, one worker, all 48 restoration audits true.
+Its initial collector stopped on a PowerShell hashtable aggregation error;
+the original five unknown ticks, error log and failed diagnostic manifest
+are retained. Corrected capture restarted into a separate file spanning
+78.954 seconds near the run's end. The first run is not relabelled a complete
+capture merely because its browser tests passed.
+
+Because the retained historical spell preceded the matrix, one focused pass
+of the unchanged share-regression sequence followed, without added stress
+conditions. Actual enumeration gave 28 WebKit cases; all 28 passed with
+zero retries/skips and one worker. This reused the verified fresh local
+production build and had a complete 134.555-second collector recording.
+All 16 matrix restoration audits passed, and both runs' global teardown
+left zero fixture residue and disabled Midweek. These WebKit-only diagnostic
+runs do not exercise or alter the full runner's two duplicate-device skips.
+
+The two completed captures contain 211 ticks: 147 calm, nine intermediate,
+55 unknown and **zero recorded spell samples**. Estimated
+intervals total 148.619 calm seconds, 9.112 intermediate and 53.638 unknown;
+another 2.140 seconds are recording bookends, not classified intervals.
+Peak recorded network CPU was 0.139/0.171 cores for matrix/sequence capture,
+below the 0.3 spell threshold. Median tick spacing was 1.009/1.010 seconds.
+Ten calm stacks (two network, one web, one GPU and one UI per recording)
+were captured with no error or watchdog intervention and ten normal resumes.
+Their maximum pauses were 5.308/2.417 ms; total pauses were 22.831 ms.
+Symbol setup/resolution raised maximum whole-capture time to 240/312 ms.
+Collector process CPU was 5.641/8.094 seconds over 78.957/134.558 seconds
+of loop time; those totals also include its compilation/startup CPU.
+
+Conclusion: ordinary-access native capture works, but no hot-spell/calm
+comparison was obtained. Calm snapshots include waiting/run-loop frames,
+web rendering and UI crypto/WebCore frames; none identifies the initiating
+cause. Missing new/exited-thread deltas, unknown intervals, one-second
+sampling, capture delays and observer cost prevent treating non-recurrence
+as proof of absence or repair. No matching WebKit private PDBs were available;
+nearest export names with large displacements do not identify internal
+functions. The split also changes context/fixture lifetime, so these runs
+are not equivalent to the original combined matrix. Topic A and #201's
+separate login timeout remain open; existing exclusions are not reversed.
+
+Private evidence lives under
+`.release-evidence/topic-a-native-20261007-0003/` and
+`.release-evidence/topic-a-native-20261007-sequence/`. The sequence's existing
+fixed screenshot destination was archived before execution and restored
+by content hash afterward; the new authenticated screenshot stays private.
+Local Supabase and Docker stopped normally, with data retained and zero
+remaining containers. Historical recording hashes, backups, seven stashes,
+17 worktrees and the unrelated Roadmap edit remain preserved. No publication,
+release gate, hosted mutation or application/dependency/runner change occurred.
+Next: reuse this validated capture method when a slow spell recurs in the
+ordinary production-mode workload, retaining the failure before clearing
+state; map repeated module offsets with matching symbols if needed. This
+negative run does not justify a product change or another ruled-out stress
+experiment.

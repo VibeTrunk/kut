@@ -23,6 +23,69 @@ deployment identity and domain-verification time; do not change the latest
 migration line when no migration was applied. Records accompany the next PR
 opened for other work, never a standalone record PR.
 
+## 2026-10-07 — gated release of exact-SHA release preparation #202
+
+The date in this heading is Europe/Amsterdam; the following exact timestamps
+are UTC. MartinFloris merged https://github.com/VibeTrunk/kut/pull/202 at
+2026-10-06T23:17:27Z, producing
+`700e4b1b4cad0071600b74e037bb050db539d14f`. Its tree matches reviewed
+publication `8e7998a0926fa008b70b3405e4e0cecb809f54c2`. ADR-132 / slice 3c
+chains preflight, gate, approval and assertion, then prints separate deployment
+and verification commands. Preparation itself did not deploy.
+
+- All seven exact-SHA main CI checks passed; the final required check completed
+  at 2026-10-06T23:19:13Z. The ordinary checkout was clean with real
+  dependencies. All ten preflight checks passed. The main auto-deployment hold
+  remained active; authenticated predeployment verification found zero candidate
+  deployments with complete lookup while production served #201.
+- The #201 encrypted backup, created at 2026-10-06T18:13:02.8577966Z, remained
+  within 24 hours. Fresh independent recovery passed at
+  2026-10-06T23:21:10.1714523Z, plaintext SHA-256
+  `7E2A15CE731D6EC52B664ECA4F2CA440DD187531034EE5C9AF63E95C20A86AC3`,
+  stable locator `backup-encryption-v1`. No new backup, log append or pointer
+  change was needed. Catalogue parity passed for 87 local/central KUT
+  migrations, aggregate SHA-256
+  `337b807448fd329e414a9c8c73fbffff6817e7a15be2e9748483cb601b3d25f5`.
+  This is catalogue parity, not a newly queried hosted migration-list count.
+- One production gate passed at 2026-10-06T23:31:05.6330803Z,
+  `gate-20261007-013105.json`, SHA-256
+  `30c55f972c168ed5f65b0438668a25d5b0ca4206f6ab34e7656b75b4d2e10a8a`.
+  The runner ran 23:21:10.578Z–23:31:05.402Z; its fresh build ran
+  23:21:12.945Z–23:21:52.919Z. Pixel 7: 43 passes / one approved
+  duplicate-device skip; narrow Chromium: 44 / zero; WebKit: 43 / one.
+  Total: 130 required passes and exactly two approved skips. Zero retries,
+  one worker, Node v24.18.0, Next 16.3.6 and Playwright 1.63.0; locked browsers,
+  deadlines and fixture protections remained unchanged. Live safe progress
+  counts matched the final manifest. Raw diagnostics remain private.
+- The verified owner merge supplied authorization under ADR-124. Preparation
+  reverified it, recorded approval at 2026-10-06T23:31:07.9555124Z, asserted
+  evidence and printed executable separate commands. The agent executed them
+  separately. Deployment rechecked main, owner merge, evidence hashes/assertion
+  and project/GitHub linkage before its exact Git-source request.
+- Deployment `dpl_EzHBdyKz9yyqPeqH39tEJY1vGDCv` was created during
+  2026-10-06T23:31:26.009Z–23:31:37.321Z. Independent authenticated verification
+  at 2026-10-06T23:32:45.828Z (2026-10-07 01:32:45.828 Europe/Amsterdam)
+  returned `candidate_live`, complete lookup and READY exact-SHA binding for
+  `kut.vibetrunk.com`. Public `/` and `/login` returned HTTP 200 during closeout
+  at 2026-10-06T23:32:58.778Z.
+- Fixture cleanup was clean at 23:31:18.881Z. Normal local Supabase stop
+  retained data; Docker Desktop was subsequently stopped normally after
+  checking zero running containers. All seven stashes, 17 worktrees, prior
+  private evidence, pack-luck material and older backups remained preserved.
+  No hosted migration, function, secret or protection mutation occurred.
+- Rollback reference: READY #201, `dpl_HqxpyME3xkaqDjeGpgoax3GBiW6V`, SHA
+  `bfa07173c26cfe52058a96bd6e22e9a6eed4a845`. Rollback was not executed and
+  requires separate authorization. Topic A remains unresolved; this passing
+  release does not diagnose or repair #201's distinct WebKit login timeout.
+  Topic B/KB-037 remain monitoring only; ADR-125 reboot persistence is unverified.
+
+Gate/approval and authenticated evidence remain under this exact SHA's private
+directories. Closeout and the original pending record remain under
+`.release-evidence/operations/pr202-release-700e4b1b4cad0071600b74e037bb050db539d14f/`.
+This record accompanies the normal browser matrix slice once. These are dated
+#202 observations, not fresh live-domain checks during the browser work.
+No release gate or deployment was repeated to prepare this record.
+
 ## 2026-10-06 — gated release of safe production E2E progress and security fixes #201
 
 MartinFloris merged https://github.com/VibeTrunk/kut/pull/201 at 2026-10-06T18:05:54Z, producing

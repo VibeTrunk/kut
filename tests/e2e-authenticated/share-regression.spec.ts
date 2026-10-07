@@ -294,37 +294,39 @@ test("file sharing, cancellation, action errors and download fallback", async ({
   await tileGeometry(page);
 });
 
-test("share rows and rating links align with short and long names on both completed surfaces", async ({
-  page,
-}) => {
-  // Sixteen full navigations across four viewports on both surfaces.
-  test.setTimeout(90_000);
-  let week = "";
-  await database(async (client) => {
-    week = (await startFixtureEvening(client)).weekStart;
-    await advanceFixtureEvening(client, 180, { runWorker: true });
-  });
-  await signIn(page);
-  for (const long of [false, true]) {
-    const originals: { id: string; display_name: string }[] = [];
-    await database(async (client) => {
-      originals.push(
-        ...(
-          await client.query(
-            "select p.id, p.display_name from kut.profiles p join kut.midweek_entries e on e.user_id=p.id join kut.midweek_tournaments t on t.id=e.tournament_id where t.week_start=$1",
-            [week],
-          )
-        ).rows,
-      );
-      for (const row of originals)
-        await client.query("update kut.profiles set display_name = $2 where id = $1", [
-          row.id,
-          long ? "An exceptionally long fictional opponent name without truncation" : "A",
-        ]);
-    });
-    try {
-      for (const route of [`/midweek/${week}`, "/midweek"])
-        for (const width of [320, 412, 640, 1280]) {
+// Each case owns its page and completed evening. Keep the same assertions and
+// preview deadline; splitting the navigation budget does not repair Topic A.
+for (const long of [false, true])
+  for (const surface of ["week", "index"] as const)
+    for (const width of [320, 412, 640, 1280]) {
+      test(`share rows and rating links align: ${surface}, ${width}px, ${long ? "long" : "short"} names`, async ({
+        page,
+      }) => {
+        test.setTimeout(90_000);
+        let week = "";
+        await database(async (client) => {
+          week = (await startFixtureEvening(client)).weekStart;
+          await advanceFixtureEvening(client, 180, { runWorker: true });
+        });
+        const originals: { id: string; display_name: string }[] = [];
+        try {
+          await database(async (client) => {
+            originals.push(
+              ...(
+                await client.query(
+                  "select p.id, p.display_name from kut.profiles p join kut.midweek_entries e on e.user_id=p.id join kut.midweek_tournaments t on t.id=e.tournament_id where t.week_start=$1",
+                  [week],
+                )
+              ).rows,
+            );
+            for (const row of originals)
+              await client.query("update kut.profiles set display_name = $2 where id = $1", [
+                row.id,
+                long ? "An exceptionally long fictional opponent name without truncation" : "A",
+              ]);
+          });
+          await signIn(page);
+          const route = surface === "week" ? `/midweek/${week}` : "/midweek";
           await page.setViewportSize({ width, height: 900 });
           await page.goto(route);
           await previews(page);
@@ -381,18 +383,17 @@ test("share rows and rating links align with short and long names on both comple
           await expect(toggle).toHaveAttribute("aria-expanded", "false");
           await expect(block.locator("ul:visible")).toHaveCount(0);
           await noOverflow(page);
+        } finally {
+          await database(async (client) => {
+            for (const row of originals)
+              await client.query("update kut.profiles set display_name = $2 where id = $1", [
+                row.id,
+                row.display_name,
+              ]);
+          });
         }
-    } finally {
-      await database(async (client) => {
-        for (const row of originals)
-          await client.query("update kut.profiles set display_name = $2 where id = $1", [
-            row.id,
-            row.display_name,
-          ]);
       });
     }
-  }
-});
 
 test("poster-only layout and loading rows stay aligned", async ({ page }) => {
   await page.addInitScript(() => {

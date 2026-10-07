@@ -30,5 +30,10 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules"]
+  "exclude": [
+    "node_modules",
+    "work/fix-fixture-lifecycle",
+    "work/fix-production-gate",
+    "work/release-soft-graphite"
+  ]
 }

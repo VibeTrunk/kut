@@ -1,10 +1,9 @@
-#!/usr/bin/env node
-// Self-contained: never load policy from agent-editable application scripts.
-// Runtime coverage still requires an actual probe; rules are not owner consent.
-// Hooks use CommonJS because the runtime launches .cjs before project loading.
+// Hooks use CommonJS because both runtimes launch .cjs before project loading.
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const fs = require("node:fs");
 
+// Policy reference for review/tests only. Runtime hooks contain their own copy
+// and must never load this agent-editable file to make enforcement decisions.
 const dangers = [
   [/\brm\s+(-\S+\s+)*-\S*[rf]\S*[rf]?/i, "recursive or forced delete"],
   [/\bgit\s+push\b[^\n]*(?:--force\b|--force-with-lease\b|\s-f\b)/i, "force push"],
@@ -87,4 +86,3 @@ function run(agent) {
   if (result) process.stdout.write(JSON.stringify(result));
 }
 module.exports = { evaluate, run };
-if (require.main === module) run("codex");

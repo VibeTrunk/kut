@@ -1,84 +1,90 @@
 #!/usr/bin/env node
-/*
- * Safety hook: block a small set of destructive shell commands.
- * ---------------------------------------------------------------------------
- * Claude Code runs this as a PreToolUse hook before EVERY Bash / PowerShell
- * command (wired up in .claude/settings.json). It receives a JSON description
- * of the command on stdin. If the command matches one of the dangerous
- * patterns below, we tell Claude Code to DENY it — no matter what any prompt,
- * web page, or file tried to convince Claude to do. That's the whole point of
- * a hook: it's a rule Claude cannot talk its way past.
- *
- * .cjs (not .js): package.json sets "type": "module", so a plain .js file
- * here would be parsed as ESM and `require` would fail. .cjs forces CommonJS
- * regardless of that setting.
- *
- * This is intentionally short and readable. To adjust it, edit the DANGER list
- * below. To turn it off temporarily, open /hooks in Claude Code and disable it.
- *
- * Nothing here deletes or changes files. It only reads the proposed command
- * and answers "allow" (by staying silent) or "deny" (by printing a decision).
- */
+// Self-contained: never load policy from agent-editable application scripts.
+// Runtime coverage still requires an actual probe; rules are not owner consent.
+// Hooks use CommonJS because the runtime launches .cjs before project loading.
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const fs = require("node:fs");
 
-const fs = require("fs");
-
-// Read the hook payload from stdin. If anything is off, fail OPEN (allow) so a
-// bug in this script can never wedge your whole session.
-let raw = "";
-try {
-  raw = fs.readFileSync(0, "utf8");
-} catch {
-  process.exit(0);
-}
-
-let payload;
-try {
-  payload = JSON.parse(raw || "{}");
-} catch {
-  process.exit(0);
-}
-
-const command = (payload.tool_input && payload.tool_input.command) || "";
-
-// Each entry: [pattern to match, plain-English reason shown when blocked].
-// Patterns are case-insensitive and cover the usual "oops, it's gone" commands.
-const DANGER = [
-  [/\brm\s+(-\S+\s+)*-\S*[rf]\S*[rf]?/i,
-    "recursive/forced delete (rm -rf) — files are gone with no undo"],
-  [/\bgit\s+push\b[^\n]*(?:--force\b|--force-with-lease\b|\s-f\b)/i,
-    "force push — can permanently overwrite history on the remote"],
-  [/\bgit\s+push\b[^\n]*(?:--delete\b|\s:[A-Za-z0-9._/-]+)/i,
-    "deleting a remote branch"],
-  [/\bgit\s+reset\s+--hard\b/i,
-    "git reset --hard — throws away all uncommitted work"],
-  [/\bgit\s+clean\s+-\S*f/i,
-    "git clean -f — deletes untracked files permanently"],
-  [/\bgit\s+checkout\s+(--\s|\.$|\.\s)/i,
-    "git checkout -- / . — discards your uncommitted file changes"],
-  [/\b(?:curl|wget|iwr|irm|invoke-webrequest|invoke-restmethod)\b[^\n]*\|[^\n]*\b(?:sh|bash|pwsh|powershell|python|node|iex)\b/i,
-    "piping downloaded content straight into an interpreter (classic malware vector)"],
-  [/\biex\b[^\n]*\biwr\b|\biwr\b[^\n]*\|[^\n]*\biex\b|\binvoke-expression\b[^\n]*\binvoke-webrequest\b/i,
-    "Invoke-WebRequest piped into Invoke-Expression — the PowerShell curl-pipe-to-shell"],
-  [/\bremove-item\b[^\n]*-recurse[^\n]*-force|\bremove-item\b[^\n]*-force[^\n]*-recurse/i,
-    "Remove-Item -Recurse -Force — the PowerShell equivalent of rm -rf"],
+const dangers = [
+  [/\brm\s+(-\S+\s+)*-\S*[rf]\S*[rf]?/i, "recursive or forced delete"],
+  [/\bgit\s+push\b[^\n]*(?:--force\b|--force-with-lease\b|\s-f\b)/i, "force push"],
+  [/\bgit\s+push\b[^\n]*(?:--delete\b|\s:[A-Za-z0-9._/-]+)/i, "remote branch deletion"],
+  [/\bgit\s+reset\s+--hard\b/i, "hard reset"],
+  [/\bgit\s+clean\s+-\S*f/i, "forced git clean"],
+  [/\bgit\s+checkout\s+(--\s|\.$|\.\s)/i, "broad checkout discard"],
+  [
+    /\b(?:curl|wget|iwr|irm|invoke-webrequest|invoke-restmethod)\b[^\n]*\|[^\n]*\b(?:sh|bash|pwsh|powershell|python|node|iex)\b/i,
+    "download piped into interpreter",
+  ],
+  [
+    /\biex\b[^\n]*\biwr\b|\biwr\b[^\n]*\|[^\n]*\biex\b|\binvoke-expression\b[^\n]*\binvoke-webrequest\b/i,
+    "download executed directly",
+  ],
+  [
+    /\bremove-item\b[^\n]*-recurse[^\n]*-force|\bremove-item\b[^\n]*-force[^\n]*-recurse/i,
+    "forced recursive PowerShell deletion",
+  ],
+  [
+    /\bgit\b[^\n]*\bworktree\s+(?:remove|prune)\b/i,
+    "direct worktree removal or broad pruning; use the bounded cleanup review",
+  ],
+  [/\bgit\s+branch\s+-[dD]\b/i, "branch deletion is outside cleanup scope"],
 ];
 
-for (const [pattern, reason] of DANGER) {
-  if (pattern.test(command)) {
-    const decision = {
-      hookSpecificOutput: {
-        hookEventName: "PreToolUse",
-        permissionDecision: "deny",
-        permissionDecisionReason:
-          "Blocked by your local safety hook: " + reason +
-          ". If you genuinely want this, run it yourself in a terminal, or " +
-          "disable this hook via /hooks in Claude Code.",
-      },
-    };
-    process.stdout.write(JSON.stringify(decision));
-    process.exit(0);
+function decision(value, reason) {
+  return {
+    hookSpecificOutput: {
+      hookEventName: "PreToolUse",
+      permissionDecision: value,
+      permissionDecisionReason: reason,
+    },
+  };
+}
+function evaluate(raw, agent) {
+  if (agent !== "codex" && agent !== "claude")
+    return decision("deny", "Unsupported agent; no approval can be inferred.");
+  let payload;
+  try {
+    payload = JSON.parse(raw);
+  } catch {
+    return decision("deny", "Safety payload is unreadable; no consent can be inferred.");
   }
+  const supported = ["Bash", "PowerShell", "exec_command", "functions.exec_command"];
+  if (!payload || !supported.includes(payload.tool_name))
+    return decision(
+      "deny",
+      "Unsupported safety tool name; coverage must be established before proceeding.",
+    );
+  const input = payload.tool_input;
+  const command = input?.command ?? input?.cmd;
+  if (typeof command !== "string" || !command.trim())
+    return decision("deny", "Missing shell command; fail closed.");
+  for (const [pattern, reason] of dangers)
+    if (pattern.test(command))
+      return decision(
+        "deny",
+        "Repository safety policy blocks " + reason + ". A wrapper is not an exception.",
+      );
+  // Both agents deny the unavailable entry. Native prompt support is not consent.
+  if (/cleanup[\\/]execute-cleanup\.mjs/i.test(command)) {
+    return decision(
+      "deny",
+      "Named cleanup needs the complete plan, per-type explanations, independent recovery and specific owner consent. Real execution is not activated in this installation.",
+    );
+  }
+  if (/\bnpm\s+run\b[^\n]*cleanup[^\n]*(?:execute|remove|resume)/i.test(command))
+    return decision("deny", "Cleanup execution cannot inherit generic npm run permission.");
+  return null;
 }
 
-// No match → print nothing, exit 0 → Claude Code proceeds normally.
-process.exit(0);
+function run(agent) {
+  let result;
+  try {
+    result = evaluate(fs.readFileSync(0, "utf8"), agent);
+  } catch {
+    result = decision("deny", "Safety check could not read its input; fail closed.");
+  }
+  if (result) process.stdout.write(JSON.stringify(result));
+}
+module.exports = { evaluate, run };
+if (require.main === module) run("claude");

@@ -16,6 +16,10 @@ const eslintConfig = defineConfig([
     ".codex/**",
     ".release-evidence/**",
     ".private-backups/**",
+    // Independently tracked retained worktrees are outside this checkout's source.
+    "work/fix-fixture-lifecycle/**",
+    "work/fix-production-gate/**",
+    "work/release-soft-graphite/**",
   ]),
 ]);
 

@@ -1,5 +1,28 @@
 # Mirror the routine command permissions in .claude/settings.json.
 
+# ADR-135: exact cleanup execution requires a runtime permission decision.
+# This is not owner consent and cannot activate an unavailable executor.
+prefix_rule(
+    pattern = ["node", "scripts/cleanup/execute-cleanup.mjs"],
+    decision = "prompt",
+    justification = "Review the exact named plan, per-type explanations and independent recovery; no generic npm run permission applies.",
+    match = ["node scripts/cleanup/execute-cleanup.mjs plan.json"],
+)
+
+prefix_rule(
+    pattern = ["git", "worktree", "remove"],
+    decision = "forbidden",
+    justification = "Direct removal has no sealed full-operation contract; real cleanup remains inactive.",
+    match = ["git worktree remove old", "git worktree remove --force old"],
+)
+
+prefix_rule(
+    pattern = ["git", "worktree", "prune"],
+    decision = "forbidden",
+    justification = "Broad administration pruning is outside named cleanup scope.",
+    match = ["git worktree prune"],
+)
+
 prefix_rule(
     pattern = ["git", "status"],
     decision = "allow",

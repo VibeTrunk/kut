@@ -6019,3 +6019,140 @@ report. Implementation remains planned in ROADMAP. Current hooks, command
 rules and filesystem permissions have not been changed; the next safety/tooling
 slice must prove enforcement and complete-operation behavior on disposable
 fixtures before any further real cleanup.
+
+### Approval-based cleanup tooling — local review, 2026-10-07
+
+Reverified PR #204 as merged at
+`45d402de79f37eb3eeb98dd15767626eab3d3b83`, with remote main at that SHA and
+all required main CI jobs successful. The ordinary checkout was clean before
+creating `chore/approved-cleanup-workflow`. This entry describes an uncommitted
+review candidate, not a shipped or enabled cleanup feature.
+
+Added read-only inspection and immutable, individually scoped cleanup plans.
+Each plan explains removal of the project copy, any approved borrowed dependency
+shortcut, and matching Git records in plain language. The complete operation
+includes normal Git removal and strictly inventoried leftovers. Changed state or
+preservation invalidates only the affected item. No agent flag or receipt
+supplies independent owner consent. Shared Codex/Claude command guards retain
+broad destructive-command blocks and cover supported shell payload aliases.
+See `CLEANUP.md` for the contract and actual runtime limitations.
+
+Execution is restricted to freshly created disposable repositories. Their
+separate-process recovery checks, refusal cases and interruption tests pass;
+the real execution entry point always refuses. The current session does not
+prove live local-hook enforcement or offer an authenticated owner-consent and
+path-limited execution adapter. Claude's owner UI round trip is also unproven.
+Production encrypted recovery integration and cross-process approval/resume
+remain unimplemented. The Windows deletion cause remains unresolved; successful
+temporary-directory fixtures do not establish behavior in OneDrive.
+
+Final `npm run verify:fast -- -- --cache=false` passed policy consistency,
+formatting, lint, types and all 644 unit tests across 63 files, including 31
+cleanup tests. Formatting, lint and types now exclude only the three exact
+retained nested worktree directories already excluded by Git. No dependency,
+browser retry/budget, migration or application behavior changed. Tests updated
+the existing Vitest results cache and temporary-directory timestamp; the other
+metadata within the 25,822-entry dependency inventory and three sampled module
+hashes matched the retained baseline. This is not a complete dependency byte hash.
+An earlier npm argument attempt created a new `false` cache folder; that folder
+was preserved intact in the new private review evidence rather than deleted.
+
+Read-only preservation checks retain all twelve extra worktrees, nine stashes,
+owner branch refs, three encrypted archives, sealed source evidence, private
+files and older backups. Ordinary HEAD and the staged tree remain the exact
+merged main commit. No fresh decrypt or portable/off-device recovery claim was
+made. No real cleanup, stash operation, discard, branch deletion, service start,
+release gate, commit, push, PR, deployment, hosted mutation, ACL, machine/app
+setting change, relocation or dedicated Topic A diagnosis occurred. Private
+review records are in `.release-evidence/cleanup-implementation-20261007/`.
+Publication and further removals require separate scoped owner decisions.
+
+### Cleanup workflow follow-up — local review, 2026-10-07
+
+The owner's follow-up authorized continuing implementation, without approving
+removal of any real item. Added a read-only saved-plan checker with exact subset
+selection, independent per-item results and no execution/approval/force flags.
+Its unchanged result supplies neither recovery proof nor owner consent. Plain
+explanations now distinguish each cleanup type's practical cost and explicitly
+avoid treating clean Git status as proof of finished work.
+
+Disposable execution now saves authenticated progress checkpoints, re-reads them
+on resume and stops altered/missing records for the affected item. Authentication
+uses a private ephemeral session key, never persisted or printed. Checkpoints
+cannot restore consent after process restart. A lost Git result cannot authorize
+fallback deletion: remaining content/records stop that item, while verified
+total absence can report completion without repeating Git. Another unchanged
+approved fixture can continue. Malformed private JSON is reported without
+echoing its contents.
+
+The focused intermediate suite passed 38 tests. A subsequent typecheck caught
+two missing inferred callback types; an explicit review-result type fixed them.
+Final verification passed all five fast-check components and 653 unit tests
+across 63 files, including 40 cleanup tests. After the shell tool stopped
+starting commands and its previous sessions became inaccessible, the same
+authorized policy, format, lint, type and test commands were run directly through
+the available Node tool. Their durable log is retained in the new private review
+folder. Lost-session results are not counted as a pass. An unprivileged Node
+preservation attempt could not read Git state; the final check uses the ordinary
+scoped read-only access, without changing settings or permissions.
+
+Real execution remains disabled. This app's automatic command review is not
+independent owner consent, and the missing host approval/filesystem connection
+has not been proven. The unstable Codex transcript format was investigated and
+rejected as an approval API. No new approval flags, transcript-based authority,
+background service or app-setting change was introduced. Windows deletion's
+cause remains unresolved. No real cleanup or publication occurred; all original
+production, preservation and authorization boundaries remain in effect.
+
+The final scoped preservation check passed at 13:55:22.318 UTC, retaining all
+twelve extras, nine stashes, owner refs, archives and original evidence. A new
+Windows cache folder appeared in the checkout during direct Node verification;
+its attempted intact move into private review evidence was refused because its
+entries carry ReparsePoint attributes. It remains untouched and untracked; no
+guard exception or deletion was used. It is not an intended source change and
+requires a later scoped decision for further handling. Final documentation
+formatting and Git whitespace checks passed; HEAD and staged tree remain the
+exact merged main commit.
+
+### Prompt-injection review of cleanup guards — 2026-10-07
+
+The owner's question exposed a potential weakening in the uncommitted draft:
+runtime hooks imported policy from `scripts/safety/command-policy.cjs`, an
+ordinary editable file. For Codex this moved enforcement logic outside the
+protected `.codex` folder. Corrected both hooks to contain their guard logic
+directly; the shared module now serves only as a review/test reference.
+No actual exploitation was observed or claimed.
+
+A new disposable test puts an injected allow-all module beside copies of the
+actual hooks. Both hooks still deny dangerous/malformed inputs and never load
+that module. A second test checks the self-contained policies against the review
+reference. Full fast verification passed policy, formatting, lint, types and
+655 tests in 63 files, including 42 cleanup tests. No real cleanup or publication
+was authorized or performed. This closes the identified dependency weakness;
+it does not establish general prompt-injection immunity or live coverage of
+every tool in this session. Existing permissions and real-removal refusal remain.
+
+The owner's Codex/Claude parity requirement then aligned the unavailable cleanup
+entry: both hooks deny it, rather than Claude asking while Codex denies. Their
+guard bodies are identical apart from the final agent identifier, with explicit
+unknown-agent refusal. All 14 focused guard checks passed; the 29 unrelated
+cleanup execution cases were skipped in that focused run. Policy consistency,
+formatting, lint, types and whitespace checks also passed. This establishes
+matching configured decisions, not equal live tool coverage or filesystem
+protection across the two apps. No app-setting or permission change was made.
+
+### Cleanup tooling publication preparation — 2026-10-07
+
+The owner explicitly authorized committing and publishing this reviewed slice.
+Reverified #204 as merged and remote main unchanged at
+`45d402de79f37eb3eeb98dd15767626eab3d3b83`. Final local fast verification passed
+policy consistency, formatting, lint, types and all 656 unit tests in 63 files,
+including all 43 cleanup cases after the Codex/Claude parity edit.
+
+The scoped preservation check passed at 14:33:48.099 UTC: all twelve extra
+worktrees, nine stashes, owner refs, three encrypted archive hashes and original
+protected evidence remain intact. Its recorded dependency-cache and recovery
+limits still apply. The generated Windows cache files remain untouched and
+excluded from publication. Only the reviewed tooling, tests and guidance are
+being packaged. Real cleanup remains disabled; this publication instruction
+does not authorize merge, removal, a release gate, deployment or settings changes.

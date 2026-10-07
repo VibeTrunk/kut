@@ -3,7 +3,7 @@ create extension if not exists pgtap with schema extensions;
 set local search_path to extensions,kut,public;
 select plan(52);
 
-select is((select price from kut.pack_definitions where slug='tfh-pack'),175::bigint,'basic pack price is exactly 175');
+select is((select price from kut.pack_definitions where slug='tfh-pack'),250::bigint,'basic pack price is exactly 250');
 select has_function('kut','open_pack',array['text','bigint','uuid'],'pack opening requires an expected price');
 select is(kut.duplicate_edition_contribution(101,0),0::bigint,'zero copies contribute zero');
 select is(kut.duplicate_edition_contribution(101,5),126::bigint,'five copies contribute 100/20/5/0/0');

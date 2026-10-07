@@ -57,7 +57,7 @@ jobs:
           cache: npm
       - run: npm ci --prefer-offline --no-audit --no-fund
       - name: Skip the flaky azure.archive.ubuntu.com mirror
-        run: echo "http://archive.ubuntu.com/ubuntu" | sudo tee /etc/apt/apt-mirrors.txt
+        run: echo "https://archive.ubuntu.com/ubuntu" | sudo tee /etc/apt/apt-mirrors.txt
       - name: Install Playwright browsers
         timeout-minutes: 5
         run: npx playwright install --with-deps chromium

@@ -6257,3 +6257,19 @@ deployment record. The previous final fast result remains 691 passing tests in
 65 files; subsequent preparation changes only documentation. Real worktree
 activation remains blocked, and this instruction supplies no actual removal,
 host-setting, merge or deployment approval. Private evidence stays unpublished.
+
+### PR #206 browser-install transport correction — 2026-10-07
+
+Published the reviewed cleanup slice as commit
+`5f582f30b9c1bc2ed151a242bde2cf278813e3b8` in PR #206. Fast/build, database,
+migration, dependency and secret checks passed. Both initial CI and an unchanged
+failed-job retry timed out before browser tests: Ubuntu package downloads from
+the configured `http://archive.ubuntu.com/ubuntu` failed on port 80. The merge
+gate correctly refused incomplete E2E evidence.
+
+Changed only the existing CI mirror URL to HTTPS on the same official server.
+A read-only HTTPS request for its Noble InRelease returned HTTP 200 locally;
+runner verification remains required. Package identities, signature checks,
+browser/test commands, timeout, required jobs and gate behavior are unchanged.
+This edits repository CI configuration, not the owner's machine or hosted
+settings. No Topic A investigation, real cleanup or release was performed.

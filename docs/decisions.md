@@ -7964,3 +7964,14 @@ The owner subsequently accepted the current version: direct chat approval for
 ordinary files, with the worktree safeguards retained. Commit, push and PR
 publication were explicitly authorized separately. No further worktree
 relaxation, actual cleanup, merge or deployment is included in that instruction.
+
+### PR #206 CI transport correction — 2026-10-07
+
+Two CI attempts failed before E2E started because the existing Ubuntu mirror
+override could not connect to `archive.ubuntu.com` over HTTP. Use HTTPS for
+that same official archive in the ephemeral GitHub runner. Keep dependency and
+browser installation, signature verification, the five-minute install limit,
+test assertions and merge-gate requirements intact. The locally reachable HTTPS
+endpoint does not prove runner success; the corrected commit needs CI evidence.
+This narrow publication correction neither diagnoses Topic A nor changes the
+owner's machine, application, access mode or hosted settings.

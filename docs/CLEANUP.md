@@ -1,9 +1,42 @@
 # Specific owner-approved cleanup (ADR-135)
 
-Status, 7 October 2026: local review candidate. Inspection and immutable plans
-are implemented. The execution state machine is restricted to newly created
-disposable fixtures. **Real removal is unavailable.** No current worktree,
-stash, branch, archive or source evidence has removal approval from this slice.
+## Ordinary files: the simple workflow
+
+For ordinary named files, use the coding agent's existing filesystem/shell tool.
+Specific approval in the actual conversation is task authority. No consent
+server, host callback, signed token, approval file or special cleanup helper is
+needed. Tool permissions and Windows permissions still apply separately.
+
+1. Inspect the exact files without changing them. Explain what goes, why,
+   what stays saved or can be regenerated, and any downside. Independently
+   verify any preservation the explanation relies on before asking approval.
+2. Obtain the owner's specific approval of those named files in the chat.
+   An instruction to implement cleanup tooling does not approve deleting files.
+3. Recheck the paths, file types, contents and preservation. If anything changed,
+   stop only that item. Use the normal tool to remove only the unchanged approved
+   files. On Windows, use `Remove-Item -LiteralPath 'EXACT FILE' -ErrorAction Stop`
+   without recursive or force options. Remove a named empty directory only after
+   confirming it is empty and its removal is included in approval.
+4. Report what was removed, what remains, and any item that stopped. If the
+   original approval is still available in this conversation, unchanged work can
+   continue without another task approval. A local record alone cannot restore
+   missing owner authority.
+
+Never follow a shortcut into its destination, expand approval with a wildcard,
+remove shared dependencies, discard edits, or target a retained worktree,
+archive or protected evidence under this ordinary-file workflow. A Git worktree
+has additional Git records and preservation requirements; use the worktree
+workflow below. Broad destructive commands remain blocked. A wrapper around a
+denied command is not an exception.
+
+On 7 October 2026, an actual shell invocation removed one exact file in a newly
+created disposable directory. Its independently hash-verified copy and a second
+file remained unchanged. This establishes ordinary exact-file removal on this
+tool route. No owner file was tested and no live Claude round trip is claimed.
+
+## Worktree tooling status
+
+Status, 7 October 2026: local review candidate on updated main. Read-only inspection and plans remain the default. The real engine and encrypted recovery adapter now exist, with disposable-fixture tests. **Installed-agent activation remains blocked:** this managed session has no authenticated owner-decision callback or enforceable per-item filesystem connection; Claude's live callback is also unproven. No actual worktree has removal approval.
 
 ## Routine inspection
 
@@ -78,46 +111,27 @@ changed scope before asking again; unchanged items retain approval. No generic
 `npm run` allowance, agent receipt, JSON flag, environment variable or
 `--approved` switch independently proves owner consent.
 
-## Execution and interruption
+## Real execution and interruption
 
-The state machine has a capability minted only for a freshly created temporary
-Git repository. Simulated consent cannot authorize the owner's repository or
-any caller-provided directory. The real CLI always refuses, with no hidden
-receipt/environment enablement. This is a deliberate platform limitation,
-not a claim that agent approval is implemented end to end.
+A trusted host imports `executeCleanup` from `scripts/cleanup/execute-cleanup.mjs` and creates a runtime with `createHostRuntime`. This engine accepts real registered extras; it is independent of the old minted-fixture executor. A direct shell launch still refuses. There is no CLI adapter-path loader, approval flag, transcript reader, environment override or receipt that activates it.
 
-Fixture execution checks state and independent recovery before any mutation.
-It unlinks the listed shortcut and uses normal Git removal without force.
-Exact unchanged leftovers are checked against manifests: individual files by
-name, then empty directories. No forced recursive deletion, link traversal,
-broad prune or unspecified path. A Git/Windows refusal stops without fallback;
-permission errors do not authorize another interpreter or permission changes.
-Branches/stashes/index/ordinary HEAD are checked after execution.
+The host must provide an authenticated owner UI/chat event, live coverage checks for the selected agent, exact filesystem enforcement, exclusive execution and durable compare-and-swap storage for original decisions and progress. These callbacks are a **trust boundary**, not an authentication mechanism supplied by the library. Passing arbitrary functions or owner-looking JSON does not prove a trusted host. The fixture host is explicitly simulated and refuses owner repositories; its test key authenticates artificial progress only. No new owner-signing ceremony is required.
 
-Interrupted fixture work retains consent in memory and revalidates remaining
-state before resuming. Progress is recorded in new, non-overwriting checkpoint
-files, authenticated with an ephemeral session key that is never saved or
-printed. Missing/altered checkpoints stop execution, rather than invent progress
-or consent. Checkpoints are re-read on resume. Completed items are checked, not
-repeated; changed items stop while unaffected approved items continue. Saved
-flags do not mint consent. Process restart loses the capability: **no production durable authority
-or cross-session resume adapter exists yet**. A future host must recover the
-original independently authenticated owner event, without manufacturing consent
-or asking for another task decision for unchanged work. Any runtime capability
-prompt is separate from that owner task decision.
+Recovery runs before the first owner decision and again on resume. Each mutation rechecks the ordinary HEAD/index/refs/stashes, named boundaries and directory identities, current content/link destinations and evidence hashes. Dirty/untracked work stops even if archived. Only the listed shortcut is unlinked, followed by normal Git removal without force. A known success permits exact unchanged leftover files, then empty directories. A refusal is sticky; an unknown Git result permits completion only after the worktree, administration folder and registration are all absent. Remaining content never authorizes fallback.
 
-A lost Git subprocess result is explicitly uncertain. Remaining working or Git
-administration files stop that item without fallback deletion. If both named
-folders and the registration are already absent, it can report completion
-without repeating Git. A recorded Git refusal remains refused after interruption.
+The host retains the original event by item operation digest. An unchanged item resumes after a process restart without another task decision. Missing, altered or conflicting host progress stops that item; another unchanged item can continue. Runtime filesystem permission is separate and may need a fresh scoped grant. Records cannot create owner consent or certify successful Git execution.
 
-Report completion plainly: which named copies/shortcuts/records went, what
-remains saved/untouched, whether recovery passed and which part stopped.
-Never claim completion after partial deletion or failed preservation.
+## Encrypted preservation and recovery
+
+`node scripts/cleanup/preserve-cleanup.mjs` is read-only without arguments. Explicit `--target ABSOLUTE --archive NEW-ABSOLUTE --receipt NEW-ABSOLUTE` writes new evidence for a registered extra, never removes it. The new per-item archive contains bundled committed history, a pack of every available Git object (including unpublished reflog/index/dangling objects), and every inventoried working/administration file, including dirty, ignored and private bytes. Links are saved as metadata and never restored as active shortcuts. There are no implicit cache exclusions. Existing historical multi-item archives are unchanged; they are not silently treated as this new format.
+
+The KUTBKP01 worker independently retrieves a stable DPAPI credential locator. Passwords never enter arguments or logs; decryption feeds a separate Node recovery process through a private pipe. Recovery reconstructs the bundled history without source alternates, runs bundle verification and full strict Git fsck, checks the exact target HEAD and restores every listed file byte in fresh temporary directories. It deletes only its newly created scratch files/empty folders. A receipt locates evidence; every execution still performs fresh recovery. Existing archives are never overwritten. Failure removes only the new pending candidate after checking its identity; a replaced candidate is left untouched and reported as changed.
+
+The artificial Windows tests use disposable credential modules. One case retains the exact full-strength worker source; matrix cases reduce only the KDF work factor in their copied worker to keep state/resume checks bounded. Production retains 600,000 iterations, with no runtime override. They do not read/change the owner's credential store or certify live DPAPI access, portable custody, off-device copies, cross-machine recovery or complete OneDrive synchronization. The snapshot also saves unrelated available Git objects, which can make it larger; subprocess buffers are bounded at 512 MiB and oversized preservation fails closed. These limitations must be explained for actual proposed items.
 
 ## Installed runtime and smallest capability
 
-Observed versions: Codex CLI **0.160.1**, Claude Code **2.1.287**. The installed
+Observed versions: Codex CLI **0.162.0-alpha.2**, Claude Code **2.1.287**. The installed
 Codex `execpolicy check` supports `prompt` and `forbidden`. The narrowly named
 Node execution command is permission-required; direct removal/prune is forbidden.
 Claude repository settings have matching ask/deny rules. Both current hooks
@@ -222,3 +236,29 @@ controlled scoped filesystem proof, including cross-process resume, using only
 disposable fixtures. Protect the ordinary checkout, twelve retained extras,
 shared dependencies, refs, nine stashes, archives and original evidence.
 Publication and each further removal require scoped owner decisions.
+
+## Current continuation evidence — 7 October 2026
+
+Reverified #205 as merged at 14:55:36 UTC, with local/remote main still at `3aa09ed0d9c9d8739d5fcb898e5b9f5188eac299`. The new local branch preserves its unpublished deployment record. The shell coverage probe again executed harmless text the self-contained hook would deny; coverage is not established on that route. The active tool inventory has no `request_permissions`, app-server approval callback or Claude `canUseTool` connection. Static response-shape tests are not a live owner round trip.
+
+The proposed additional write scope is only the selected working folder and its matching `.git/worktrees/<id>` folder, with reads for the archive/receipt and no network access. Codex's installed schema supports explicit path entries, but this session cannot request/enforce that grant. Claude's permission callback does not by itself provide per-path OS enforcement. Neither agent may substitute a whole-repository grant or global access change. No production scope is proven.
+
+A fresh disposable Git repository under the ignored OneDrive evidence folder completed normal Git worktree removal. Its exact target was absent and the remaining disposable fixture was disposed. This is one successful probe; it does not diagnose the earlier failures on protected retained copies. An inherited-ACL read was confined to the new probe location. No ACL, setting, real worktree or protected evidence was changed. Private logs are under `.release-evidence/cleanup-enablement-local-20261007/`.
+
+The adapter continuation's local `npm run verify:fast` passed policy consistency, formatting, lint,
+types and all **690 tests in 65 files**, including **77 cleanup cases**. The new
+portable state-machine file uses a 60-second fixture budget; encrypted cases
+use 180 seconds. No retries or browser deadlines changed. Earlier failed runs
+remain recorded: a 20-second cleanup fixture timeout and an unrelated fictional
+progress-folder EBUSY both passed the focused rerun and final full run. This is
+Windows local evidence; current Linux CI and installed-agent activation were
+not run or proven. Nothing was committed, published, released or really removed
+at that check.
+
+The accepted ordinary-file workflow then passed all five fast-check components
+and **691 tests in 65 files**, including **78 cleanup cases**. The owner accepted
+this version with the worktree safeguards retained and separately authorized
+commit, push and PR publication. That authorization covers this tooling slice
+and the preserved #205 deployment record; it grants no approval to remove an
+actual item or relax the worktree host requirements. Publication does not
+establish live worktree activation or repair the unresolved Windows failure.

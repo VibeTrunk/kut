@@ -7,6 +7,11 @@ import { canonical, exists, key, noLinks, same, within } from "./paths.mjs";
 export const digest = (value) => createHash("sha256").update(value).digest("hex");
 export const objectDigest = (value) => digest(JSON.stringify(value));
 export const fileDigest = (value) => digest(fs.readFileSync(value));
+export const directoryIdentity = (value) => {
+  const stat = fs.lstatSync(noLinks(value));
+  if (!stat.isDirectory()) throw Error("directory_required");
+  return { device: stat.dev, inode: stat.ino };
+};
 
 export function git(root, args) {
   const result = spawnSync("git", ["--no-optional-locks", ...args], {
@@ -168,6 +173,11 @@ export function inspectTarget(repo, target, preservation = null) {
   const state = {
     path: target,
     admin,
+    identity: {
+      working: directoryIdentity(target),
+      administration: directoryIdentity(admin),
+      shared: directoryIdentity(shared),
+    },
     worktreeId: path.basename(admin),
     head: git(target, ["rev-parse", "HEAD"]),
     branch: registration.branch,

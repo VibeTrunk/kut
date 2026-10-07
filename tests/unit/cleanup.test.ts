@@ -620,6 +620,31 @@ describe("bounded cleanup fixtures (never real owner worktrees)", { timeout: 200
 });
 
 describe("shared agent hook payloads", () => {
+  it("permits ordinary literal file removal for both agents while retaining destructive denies", () => {
+    for (const agent of ["codex", "claude"]) {
+      const runtime = require(path.resolve(`.${agent}/hooks/block-dangerous-commands.cjs`));
+      for (const tool_name of ["PowerShell", "Bash", "exec_command", "functions.exec_command"]) {
+        const raw = JSON.stringify({
+          tool_name,
+          tool_input: {
+            cmd: "Remove-Item -LiteralPath 'C:\\named-folder\\one.txt' -ErrorAction Stop",
+          },
+        });
+        expect(runtime.evaluate(raw, agent)).toBeNull();
+        expect(
+          runtime.evaluate(
+            JSON.stringify({
+              tool_name,
+              tool_input: {
+                cmd: "Remove-Item old -Recurse -Force",
+              },
+            }),
+            agent,
+          ).hookSpecificOutput.permissionDecision,
+        ).toBe("deny");
+      }
+    }
+  });
   it("uses identical guard bodies and rejects unavailable cleanup equally for both agents", () => {
     const guards = ["codex", "claude"].map((agent) =>
       fs.readFileSync(`.${agent}/hooks/block-dangerous-commands.cjs`, "utf8"),

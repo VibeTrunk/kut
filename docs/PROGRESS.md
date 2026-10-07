@@ -6156,3 +6156,18 @@ limits still apply. The generated Windows cache files remain untouched and
 excluded from publication. Only the reviewed tooling, tests and guidance are
 being packaged. Real cleanup remains disabled; this publication instruction
 does not authorize merge, removal, a release gate, deployment or settings changes.
+
+### PR #205 CI fixture correction — 2026-10-07
+
+The first Linux fast check failed the borrowed-dependency shortcut interruption
+case; merge-gate consequently refused. The artificial repository ignored only
+`node_modules/`, which covers Windows junction directories but does not cover
+POSIX symlink entries. The helper correctly refused that untracked fixture.
+Changed only the fixture's ignore pattern to cover either representation and
+added explicit clean-status/executable assertions before its simulated approval.
+Dirty/untracked refusal and actual cleanup permissions remain unchanged. The
+first run's secret scan, E2E, database, migrations and dependency checks passed.
+
+Local fast verification of the correction passed policy, formatting, lint,
+types and all 656 unit tests in 63 files, including all 43 cleanup cases. No
+remaining real worktree or source evidence was used as a removal fixture.

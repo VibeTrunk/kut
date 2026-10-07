@@ -323,6 +323,10 @@ describe("bounded cleanup fixtures (never real owner worktrees)", { timeout: 200
       "junction",
     );
     const plan = planFor(fixture, [target]);
+    // CI uses POSIX symlinks; Windows uses junctions. Both must be ignored by
+    // the fixture without weakening refusal of genuinely untracked files.
+    expect(plan.items[0].status).toBe("");
+    expect(plan.items[0].executable).toBe(true);
     fixtureConsent(fixture, plan, [target]);
     const interrupted = await executeFixture(fixture, plan, [target], {
       verifyRecovery: recover,

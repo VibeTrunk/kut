@@ -32,7 +32,9 @@ export function newFixture() {
   fs.mkdirSync(root);
   fixtureGit(root, ["init", "-q"]);
   fs.writeFileSync(path.join(root, "content.txt"), "Disposable fixture, never owner data.\n");
-  fs.writeFileSync(path.join(root, ".gitignore"), "node_modules/\ncache/\n");
+  // A trailing slash excludes directories only; POSIX directory symlinks are
+  // separate Git entries. Ignore either representation in this artificial repo.
+  fs.writeFileSync(path.join(root, ".gitignore"), "node_modules\ncache/\n");
   fixtureGit(root, ["add", "content.txt", ".gitignore"]);
   fixtureGit(root, ["commit", "-q", "-m", "disposable fixture"]);
   fs.mkdirSync(path.join(root, "node_modules"));

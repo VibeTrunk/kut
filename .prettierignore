@@ -26,6 +26,11 @@ node_modules/
 /next-env.d.ts
 /tsconfig.tsbuildinfo
 
+# Independently tracked retained worktrees; never format their owner work here.
+/work/fix-fixture-lifecycle/
+/work/fix-production-gate/
+/work/release-soft-graphite/
+
 # Documentation is hand-wrapped prose. Reflowing BUILD_SPEC.md (4,783 lines)
 # and the decisions.md ADR log (2,714) would produce an unreviewable diff and
 # destroy the line history `git blame` gives those decision records.

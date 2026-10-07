@@ -19,6 +19,7 @@
     "test:db": "supabase test db",
     "policy:check": "node scripts/policy/sync-production-invariants.mjs",
     "policy:sync": "node scripts/policy/sync-production-invariants.mjs --write",
+    "cleanup:inspect": "node scripts/cleanup/plan-cleanup.mjs",
     "test:credential-store": "powershell -NoProfile -File scripts/test-kut-credential-store.ps1",
     "test:backup-pipeline": "powershell -NoProfile -File scripts/test-kut-backup-pipeline.ps1",
     "release:preflight": "node scripts/release/check-release-preflight.mjs",

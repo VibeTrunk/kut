@@ -7866,3 +7866,65 @@ AGENTS.md continuing to reference it; agent-specific configuration remains
 in the corresponding agent rules. This plan grants no new cleanup, publication,
 hosted mutation, release gate or deployment authorization. Topic A remains
 monitoring only under ADR-134.
+
+### Local cleanup implementation review amendment — 2026-10-07
+
+Prepared a separate local tooling slice based on merged #204. The default CLI
+inspects only; named immutable plans bind exact worktree/admin paths, HEAD/index,
+all local/ignored file hashes, dependency-link destinations, preservation
+locators/hashes/limits and separate plain-language explanations. Presence of an
+archive/receipt is not recovery proof. Dirty/untracked work cannot be forced away.
+
+Execution is restricted to freshly minted disposable repository capabilities.
+Separate-process fixture recovery restores history/file bytes; in-memory
+simulated consent exercises refusal, per-item invalidation and unchanged resume.
+The real execution CLI always refuses. No receipt, flag or environment variable
+enables real removal. This is a reviewable partial implementation, not an
+end-to-end production cleanup capability or new owner removal approval.
+
+The installed Codex policy checker validates prompt/forbidden rules; both hook
+entry files share fail-closed destructive-command decisions. Existing package-age
+checks remain as before. Official Codex docs map local unified exec to Bash, but
+exclude local hooks under cloud orchestration. A harmless actual exec command
+printed text that the existing regex would have denied if invoked: local hook
+coverage in this session is not established. Codex PreToolUse ask is unsupported;
+Claude supports ask, but its live permission round trip is not proven here.
+Automatic reviewer acceptance is not independent owner consent.
+
+The smallest proven deletion capability is fixture-only. Production activation,
+encrypted recovery integration and authenticated cross-process resume await a
+supported owner-consent/runtime interface plus bounded filesystem proof. No
+blanket .git access, Full Access, hook-trust/settings or ACL changes follow from
+this limitation. Windows deletion cause remains unresolved; temporary-directory
+tests do not establish the cause in OneDrive. CLEANUP.md records the contract
+and limitations. Existing production/publication boundaries remain unchanged.
+
+The owner's follow-up authorized further implementation, not removal of any
+actual item. Added read-only saved-plan rechecks and more precise per-type
+explanations: clean Git status does not prove completed work. Fixture progress
+checkpoints are authenticated by a private ephemeral session key, re-read on
+resume and never establish consent. They cannot restore authority after process
+restart. A lost Git result is recorded as uncertain; remaining files/records
+stop without fallback. Verified total absence can report completion without
+repeating Git. The documented Codex transcript format is unstable and is not
+adopted as an owner-consent API. The missing host connection is unfinished
+engineering, not a requested owner installation or an automatic-review exception.
+
+The owner's prompt-injection question exposed a regression in the uncommitted
+candidate: both runtime hooks imported guard logic from an ordinary writable
+application script. For Codex this moved enforcement out of the protected
+`.codex` boundary. Restored self-contained guard bodies in each agent's hook
+folder. The editable shared module is a review/test reference only. Tests
+replace it with an injected allow-all module beside disposable copies of the
+actual hooks; those hooks must still deny and never load the replacement.
+Policy parity checks cover the self-contained copies. This narrows that attack
+surface without enabling real cleanup, changing permissions or claiming that
+untrusted text cannot influence an agent. Live hook coverage remains unproven.
+
+The owner's parity requirement also aligns unavailable-cleanup decisions:
+both hooks now deny that entry, rather than Claude asking while Codex denies.
+Their bodies are identical except the final agent identifier; a parity check
+requires that and tests identical blocked outcomes. Unknown agents fail closed.
+App-specific permission wiring remains separate, and equal live enforcement or
+filesystem boundaries are not claimed without runtime proof. Real cleanup
+stays disabled for both.

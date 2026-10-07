@@ -221,6 +221,36 @@ silently "improve" a formula.
 
 ## Agent safety
 
+### Specific owner-approved cleanup (ADR-135)
+
+Follow [docs/CLEANUP.md](docs/CLEANUP.md) for the shared Codex/Claude workflow.
+Default to read-only inspection/planning. Before specific approval of named
+items, explain each cleanup type in plain language: what goes, why the checked
+evidence supports removal, what remains saved/untouched, and any downside or
+uncertainty. Group only the same type with matching preservation conditions.
+Completion reporting must be equally plain.
+
+Approval covers the complete exact operation: normal Git removal, explicitly
+listed safe dependency-link removal and narrowly specified leftover handling.
+Verify independent preservation first. Changed content, HEAD/index,
+paths/pointers, links, recovery evidence or scope invalidate only that item's
+approval. Unchanged approved work can resume without another task decision;
+agent-written records/flags never independently establish owner consent.
+Protect the ordinary checkout, shared dependencies, refs, stashes, archives,
+source evidence and unspecified paths. Broad destructive commands stay blocked;
+wrapping a blocked command is not an exception.
+
+The local review candidate implements inspection/plans, read-only saved-plan
+rechecks and fixture-only execution with authenticated progress checkpoints.
+A lost Git result cannot grant fallback deletion; remaining content stops the
+item. Checkpoints record progress and never supply owner consent. Real execution
+stays unavailable until independent owner
+consent, actual runtime coverage and scoped filesystem capability are proven
+on disposable fixtures. Rules/hooks alone are not runtime proof. Current tool
+coverage and Windows deletion behavior remain limitations; do not change ACLs,
+settings or repository location to bypass them. No plan/receipt/flag or this
+guidance grants real removal or publication approval.
+
 The repository's VibeTrunk safety scaffold is the shared authority —
 PreToolUse hooks block destructive commands and young (<14-day) npm
 packages; see `AGENTS.md` and `.claude/settings.json` /

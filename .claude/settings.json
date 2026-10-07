@@ -2,6 +2,10 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
 
   "permissions": {
+    "ask": [
+      "Bash(node scripts/cleanup/execute-cleanup.mjs *)",
+      "PowerShell(node scripts/cleanup/execute-cleanup.mjs *)"
+    ],
     "allow": [
       "Bash(git status)",
       "Bash(git status *)",
@@ -51,6 +55,10 @@
       "Grep"
     ],
     "deny": [
+      "Bash(git worktree remove *)",
+      "Bash(git worktree prune*)",
+      "PowerShell(git worktree remove *)",
+      "PowerShell(git worktree prune*)",
       "Bash(git push origin main*)",
       "Bash(git push * main)",
       "PowerShell(git push origin main*)",

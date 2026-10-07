@@ -5690,6 +5690,17 @@ evidence remain preserved; newly created fix evidence is accounted separately.
 
 ## One exact-SHA release-preparation command (slice 3c) — 2026-10-07
 
+**Closeout:** merged and released through #202, exact SHA
+`700e4b1b4cad0071600b74e037bb050db539d14f`. Owner merge was
+2026-10-06T23:17:27Z (2026-10-07 Europe/Amsterdam). All seven main CI
+checks and one full gate passed before approval, assertion and the separate
+deployment. The preparation command printed the commands and did not deploy.
+Authenticated verification at 2026-10-06T23:32:45.828Z found READY exact-SHA
+production binding with complete lookup; DEPLOYMENTS now carries that record.
+The #201 backup passed fresh independent recovery without a new backup or
+bookkeeping change. The preparation/publication narrative below is historical.
+This passing release does not diagnose Topic A or #201's WebKit login timeout.
+
 Implemented `npm run release:prepare -- --candidate <sha> --pull-request <number>`
 locally, ADR-132. It verifies the actual owner merge and exact current main,
 then chains the existing preflight, full gate, approval and evidence assertion.
@@ -5765,3 +5776,139 @@ monitoring only; reboot persistence remains unverified until the next owner rebo
 The owner subsequently authorized commit, push and opening this slice's PR on
 2026-10-07. Merge remains the owner's decision; no release gate or deployment
 is authorized by this publication request.
+
+## Attributable completed-share browser matrix / Topic A — 2026-10-07
+
+Completed the authorized local evidence analysis, test-only split and focused
+production-mode loopback validation (ADR-133). The checkout started on #202
+`700e4b1b4cad0071600b74e037bb050db539d14f`, with an existing ROADMAP edit
+preserved unchanged. #197's timeline and release slices 3a/3b/3c were not
+repeated. Carried #202's pending release record once into DEPLOYMENTS and
+updated ADR-132 / 3c to merged/released; those observations are dated
+2026-10-06 UTC / 2026-10-07 Amsterdam, not a fresh hosted audit here.
+
+Before new browser execution, inspected and reused `thread-summary.py` and
+`thread-by-id.py`, retaining their outputs and a duration-weighted analysis
+privately. Gate/report references verify the production recording's exact
+#195 SHA and run identity, rather than treating `ed3076c` as provenance by
+itself. The sampler spans 09:26:49.437–09:30:34.786 UTC on 5 October
+(11:26:49.437–11:30:34.786 Amsterdam). Of 225.349 recorded seconds,
+5.196 are observed spell, 171.244 calm, 8.313 intermediate and 40.596
+unclassifiable. Spell/calm network CPU is 0.725/0.025 cores. The spell ends
+at 09:28:54.952 UTC, before the matrix starts at 09:28:57.702 and passes
+in 62.186 seconds. It overlaps the preceding injected PNG-timeout/sharing
+tests; that is association, not a trigger diagnosis. Network/UI correlation
+is 0.112 here versus 0.951 in the failed dev recording. During the spell,
+aligned auth/rest/storage probes peak at 30/30/31 ms, without an overlapping
+500 ms stall. Detailed CPU/thread scalars, comparisons, sampling/coverage
+limits and the distinct #201 login failure are recorded in ADR-133.
+
+The matrix now registers all 16 short/long × week/index × 320/412/640/1280
+combinations separately. Each owns a completed evening and restores names
+inside `finally`, including partial-update/sign-in failure paths; the existing
+evening `afterEach` remains. Token comparison verifies the entire original
+assertion body, and helpers/other tests are unchanged. Every existing
+preview, download, geometry, rating-link, navigation, toggle and overflow
+check remains. The preview wait is still 20 seconds and each case keeps the
+original 90-second test budget. Production deadlines, zero retries, one
+worker, exact two-skip exception and fail-closed report/inventory checks are
+unchanged. This improves budgeting and attribution; Topic A is not repaired.
+
+Actual enumeration: 59 tests per project, 177 total, including 48 matrix
+cases across three projects. The full future expectation is 175 required
+passes and two approved skips, derived from enumeration. No full authenticated
+suite or release gate was run. The existing validator was checked against
+the actual expanded inventory with explicitly fictional outcomes, including
+negative controls for missing cases, extra skips and retries.
+
+Focused production-mode validation ran 2026-10-06T23:50:03.938Z–
+23:53:18.949Z (2026-10-07 01:50:03.938–01:53:18.949 Amsterdam), on a fresh
+local build with locked Node v24.18.0, Next 16.3.6 and Playwright 1.63.0.
+The 48 matrix cases plus the existing three pack-device cases passed with
+**49 passes / exactly two approved skips**, zero failures/flaky results,
+zero retries and one worker. Pixel 7: 16/1; narrow Chromium: 17/0;
+WebKit: 16/1. Awaited private read-only worker hooks verified names,
+archetypes, semantic week ownership and enabled-setting restoration after
+all 48 cases. Global teardown left zero fixture users, Players, active weeks,
+rotations or ownership schema, and restored disabled Midweek.
+
+WebKit case median/maximum were 5.832/12.034 seconds; the aggregate matrix
+time was 99.384 seconds because each case repeats setup and sign-in. This
+is not a speedup or a comparable performance experiment. Sequential
+restoration is not proof that shared accounts are safe for parallel workers.
+The local Supabase stack and Docker Desktop were started only for validation,
+then stopped normally with data retained and zero remaining containers.
+
+Scoped ordinary-checkout formatting, lint and TypeScript passed (336 explicit
+tracked TypeScript files), as did the complete **62-file / 613-test** unit
+suite and production build. Policy parity and diff whitespace passed.
+Plain `npm run verify:fast` again stopped on **72 existing formatting issues**
+in the three preserved nested `work/` checkouts. They were not edited and no
+check was weakened. Scoped validation is not a passing plain wrapper or a
+release certification.
+
+Preservation uses all 507 explicit #199 entries, #201's authorized backup
+bookkeeping archives/final record, and all 659 after-#202 snapshot entries.
+All seven stash hashes, 17 registered worktrees, older backups, private
+recordings and unrelated pack-luck material remain. Four original sampler/
+monitor recordings additionally have unchanged session content hashes.
+New evidence is separate and private; size/mtime continuity is not general
+content-integrity proof. No reset, cleanup, worktree removal, backup deletion,
+database reset, volume deletion or pointer restoration occurred.
+
+No commit, push, PR publication, release gate, deployment, hosted mutation,
+dependency/application/RPC/schema/Part L/agent-permission change or machine-
+setting change occurred. Topic B/KB-037 remain monitoring only; ADR-125
+reboot persistence remains unverified. The next proposed diagnostic is
+native hot-thread stack capture during a sustained spell, with a calm
+comparator and a 30-minute hypothesis time-box (ADR-133); it was not run and
+requires separate method/access authorization. This validated diff remains
+uncommitted for owner review.
+
+### 2026-10-07 — Topic A native diagnostic: method works, spell not reproduced
+
+After the owner's separate native-profiling authorization, WPR again failed
+with `0xc5585011`; no privilege or machine setting was changed. A private
+ordinary-access DbgHelp collector passed six synthetic busy/sleeping-thread
+checks, then captured only newly started processes in the locked WebKit cache.
+The stated hot-thread networking/IPC versus transport hypothesis is unchanged.
+
+Fresh-build production-mode WebKit matrix execution passed all 16 cases
+three times (**48 passes**, zero retries/skips, one worker). The initial
+collector failed on a PowerShell aggregation error; its failed manifest and
+partial recording remain. Corrected capture spanned 78.954 seconds near the
+run's end. One focused pass of the unchanged share-regression sequence then
+passed **28/28**, with complete 134.555-second capture and the same verified
+build. Both cleanups passed; all **64** matrix restoration audits passed.
+The browser hypothesis window was 00:08:26.480–00:14:47.993 UTC
+(02:08:26.480–02:14:47.993 Amsterdam), within its 30-minute time-box.
+These are diagnostic passes, not a full gate or two-skip validation.
+
+The completed captures contain **zero recorded ≥0.3-core network spells**:
+peak network CPU was 0.139/0.171 cores. Estimated intervals comprise
+148.619 calm seconds, 9.112 intermediate and 53.638 unknown, plus 2.140
+seconds of unclassified recording bookends. Ten calm native stacks had
+zero capture errors, normal resumes and no watchdog intervention; maximum
+pause was 5.308 ms. Sampling, missing thread deltas, incomplete initial
+coverage, observer cost and nearest-export symbol limits are explicit in
+ADR-133. No hot-spell comparison or initiating-cause diagnosis follows;
+Topic A and the separate #201 login timeout remain open.
+
+Evidence and authenticated artifacts remain private in the two
+`.release-evidence/topic-a-native-20261007-*` diagnostic directories.
+The pre-existing desktop screenshot was archived before the sequence and
+restored by hash afterward. Supabase and Docker stopped normally with data
+retained, zero containers, and their initial stopped state restored.
+Historical evidence, backups, seven stashes, 17 worktrees and the unrelated
+Roadmap edit are preserved. At diagnostic closeout the diff was uncommitted; no push,
+PR, release gate, deployment, hosted or product/dependency/runner change.
+Next useful evidence is a captured recurrence in the ordinary production-mode
+workload, rather than repeating the already excluded stress probes.
+
+The owner subsequently authorized publication of this slice on 2026-10-07:
+commit, feature-branch push and PR creation. The publication packages only the
+matrix test, this progress record, ADR-133 / ADR-132 closeout and #202's
+deployment record. The unrelated Roadmap edit is excluded and preserved in a
+verified private archive and named stash at checkout closeout. Merge remains
+the owner's decision. This publication instruction does not authorize a
+release gate, deployment or hosted mutation.

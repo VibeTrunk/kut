@@ -23,6 +23,73 @@ deployment identity and domain-verification time; do not change the latest
 migration line when no migration was applied. Records accompany the next PR
 opened for other work, never a standalone record PR.
 
+## 2026-10-07 — gated release of shared cleanup safety tooling #205
+
+MartinFloris merged https://github.com/VibeTrunk/kut/pull/205 at
+2026-10-07T14:55:36Z, producing exact candidate
+`3aa09ed0d9c9d8739d5fcb898e5b9f5188eac299`, and explicitly requested its
+production release. All timestamps below are UTC. This is agent safety tooling;
+no hosted migration, function, credential or protection change was performed.
+The shared inspection and disposable-fixture workflow is published, while
+real cleanup execution remains disabled. Deployment does not enable it or
+establish installed-agent tool coverage or a Windows deletion repair.
+
+- The ordinary checkout, local and remote main matched the candidate. All seven
+  exact-SHA required main CI checks passed; the last completed at 14:57:47.
+  The `main` automatic-deployment hold remained configured. Predeployment
+  authenticated verification at 15:00:54.421 found no candidate deployment,
+  with complete lookup, while production still served #203.
+- Seven generated Windows cache files made the initial checkout dirty. Their
+  paths were scoped to this repository and checked for redirecting links.
+  Independent copies were SHA-256 verified before moving the complete original
+  folder into private release evidence; all seven moved hashes matched. No
+  cache files were deleted. Twelve extra worktrees, nine stashes, branch refs,
+  shared dependencies, existing archives and protected evidence were retained.
+- Docker Desktop and the existing local KUT stack were started for the release.
+  All ten read-only preflight checks passed. Local test credentials were held
+  only in the process environment, with both target hosts checked as loopback.
+  Central parity passed for 87 KUT migrations, aggregate SHA-256
+  `337b807448fd329e414a9c8c73fbffff6817e7a15be2e9748483cb601b3d25f5`.
+  No fresh hosted migration-list count was queried.
+- The existing encrypted backup, created at 2026-10-06T18:13:02.8577966Z,
+  remained within 24 hours. Fresh separate-process recovery passed at
+  15:18:34.7195422, plaintext SHA-256
+  `7E2A15CE731D6EC52B664ECA4F2CA440DD187531034EE5C9AF63E95C20A86AC3`,
+  locator `backup-encryption-v1`. No new backup or backup-pointer change was
+  needed.
+- One full gate passed at 15:30:31.9468374,
+  `gate-20261007-173031.json`, SHA-256
+  `c74e2e0d2c8b76a729ff3bfa221e31473c3a1d56c1a6a70a7b351e5f8764cd06`.
+  The runner ran 15:18:35.906–15:30:31.477; its fresh build ran
+  15:18:37.825–15:19:12.198. All 175 required browser cases passed across
+  Pixel 7 (58), narrow Chromium (59) and WebKit (58), with exactly the two
+  existing approved duplicate-device skips. Zero retries, existing assertions
+  and deadlines, Node v24.18.0, Next 16.3.6 and Playwright 1.63.0 were retained.
+  A passing run does not resolve Topic A's initiating cause; monitoring remains
+  in effect under ADR-134.
+- Preparation reverified the owner merge/current main, recorded approval at
+  15:30:34.4828662 and passed evidence assertion. The separately executed
+  deployment command rechecked authorization, bound evidence, assertion and
+  Vercel project/GitHub linkage before creating an exact Git-source production
+  deployment. Preparation itself did not deploy.
+- Deployment `dpl_3eA9zuiKDTZpUuudj6dPJ3GRwad6` was verified READY and bound to
+  `kut.vibetrunk.com` at 15:32:08.762. The separate handoff verification at
+  15:32:51.540 returned `candidate_live`, the same exact SHA and complete
+  candidate lookup. Public `/` and `/login` both returned HTTP 200.
+- The local KUT stack was stopped normally with data retained. Docker Desktop
+  was stopped only after checking that no running containers remained, restoring
+  its initial stopped state. No real cleanup operation, stash application/drop,
+  branch deletion or discard was performed.
+- Rollback reference: previously verified READY #203,
+  `dpl_9fn2BspBR34njGFEhuzMW6u1Zzq4`, SHA
+  `6744656baa3f13140fc17fc304fb4404eb36cabe`. Rollback was not executed.
+
+Private preparation, deployment, binding verification, smoke checks and cache
+preservation remain under
+`.release-evidence/operations/pr205-release-3aa09ed/`; gate and authenticated
+evidence remain in their exact-SHA directories. This record stays local for
+the next PR opened for other work; no standalone record PR was published.
+
 ## 2026-10-07 — gated release of attributable completed-share matrix #203
 
 The date in this heading is Europe/Amsterdam; the following exact timestamps

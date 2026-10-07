@@ -7928,3 +7928,39 @@ requires that and tests identical blocked outcomes. Unknown agents fail closed.
 App-specific permission wiring remains separate, and equal live enforcement or
 filesystem boundaries are not claimed without runtime proof. Real cleanup
 stays disabled for both.
+
+### Real cleanup adapter continuation — 2026-10-07
+
+Status: real engine/recovery interfaces prepared for local review; installed-agent activation remains blocked. #205 actually merged to `3aa09ed0d9c9d8739d5fcb898e5b9f5188eac299`; fresh remote main still matches. Its production release did not activate cleanup. This separate branch retains the unpublished release record.
+
+The real entry now exports an engine for registered extras and trusted host adapters. It uses exact per-item operation contracts, cold recovery before owner approval, directory/content/link identities, scoped normal Git removal and narrow unchanged leftovers. The host owns original owner events, exclusive execution and durable compare-and-swap progress. Restart replays the original unchanged decision without another task request; refusals and unknown Git outcomes never authorize fallback. A direct shell launch cannot load consent from a receipt, transcript, flag, environment or arbitrary adapter file. Callback factories are a trust boundary, not a way to authenticate agent-written functions.
+
+New per-item preservation uses the existing KUTBKP01 cipher format and stable DPAPI locator, with independent decrypt/restore, exact local/ignored/private bytes and full bundled history verification. No existing historical archive is rewritten or silently adopted as the new format. Tests use only freshly minted fixtures and artificial credentials, not production credentials or retained evidence.
+
+Observed Codex is 0.162.0-alpha.2 and Claude is 2.1.287. The installed Codex schema supports explicit filesystem path entries and official APIs document owner callbacks; this managed tool inventory exposes neither. Automatic review is not an owner decision. A harmless actual shell probe ran text the local hook would deny. Claude callback/permission parsing is testable, but no live Claude owner round trip or scoped OS execution is established. Both runtime guard bodies stay self-contained and unchanged; static parity never certifies whole-app injection resistance. No cryptographic owner-signing ceremony, new service, app/global setting or blanket .git grant is introduced.
+
+One new disposable repository under the ignored OneDrive evidence directory completed normal Git removal. This disproves a universal inability at that location, not the previous protected-worktree failure or its cause. No real extra, dependency target, stash, branch, archive or original evidence was a removal probe. Remaining acceptance work is a supported trusted-host connection with live refusal/approval, tool and filesystem coverage proven separately for each installed agent. This task authorizes no publication or actual removal.
+
+### Simple named-file workflow — 2026-10-07
+
+The owner requested a simpler version. Ordinary exact-file removal uses existing
+tools after direct chat approval, independently verified preservation and a
+state/path recheck. It does not need a separate consent callback or helper.
+An actual shell-tool probe deleted one freshly created artificial file and
+retained its hash-verified copy and a second sentinel. Both self-contained agent
+guards permit that literal nonrecursive command; broad forced deletion stays
+denied. This is no approval for real files or retained worktrees.
+
+Automatic approval review rejected an attempted relaxation of the worktree
+engine's trusted-host requirements, citing lack of enforced owner authority and
+OS scope. That patch was not applied or retried through another tool. The engine,
+hooks and rules remain unchanged. A private concrete proposal describes moving
+authority to the actual chat and normal tool permissions, with all path/state/
+recovery checks retained and partial unknown Git leftovers still blocked. This
+relaxation requires an explicit decision following the rejection; ordinary-file
+capability is already available without it. No access mode or setting changed.
+
+The owner subsequently accepted the current version: direct chat approval for
+ordinary files, with the worktree safeguards retained. Commit, push and PR
+publication were explicitly authorized separately. No further worktree
+relaxation, actual cleanup, merge or deployment is included in that instruction.

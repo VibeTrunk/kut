@@ -6171,3 +6171,89 @@ first run's secret scan, E2E, database, migrations and dependency checks passed.
 Local fast verification of the correction passed policy, formatting, lint,
 types and all 656 unit tests in 63 files, including all 43 cleanup cases. No
 remaining real worktree or source evidence was used as a removal fixture.
+
+### Real cleanup adapters, unpublished review candidate — 2026-10-07
+
+Reverified #205's actual merge and remote main at
+`3aa09ed0d9c9d8739d5fcb898e5b9f5188eac299`. Prepared a separate local
+`chore/real-cleanup-adapters` branch; the existing 67-line unpublished deployment
+entry remains untouched. No commit, push, PR, release gate or deployment occurred.
+
+The real entry exports a registered-worktree execution engine and host response
+interfaces for Codex and Claude. Removal needs independent cold recovery and an
+original host owner decision for each exact operation. It uses normal Git,
+listed dependency shortcuts and only unchanged narrow leftovers. Dirty work,
+changed evidence/state, missing/tampered progress and uncertain Git outcomes stop
+affected items. Unchanged approval resumes through process restart. The host
+must enforce scope and durable progress; arbitrary callback functions are not
+authenticated consent or a sandbox. Standalone shell execution still refuses.
+
+New preservation saves every inventoried local/private file, bundled refs/HEAD
+and all available Git objects, including unpublished and staged objects. Separate
+processes retrieve the stable credential and decrypt/restore. Fresh recovery
+checks file bytes, object completeness, bundle integrity and strict fsck without
+source alternates. Failure removes only the newly created pending candidate;
+existing archives remain untouched. Tests use artificial credentials exclusively.
+
+Activation remains incomplete: this managed tool route has automatic review,
+without an owner-decision or per-item filesystem callback. A harmless shell
+probe again ran text the self-contained hook would deny. Claude's live tool,
+owner and OS scope coverage is also unproven. Installed versions are Codex
+0.162.0-alpha.2 and Claude 2.1.287. Existing hook guards, policy-injection/parity
+tests and broad destructive-command blocks are unchanged. No claim of general
+prompt-injection immunity or a new owner-signing ceremony is made.
+
+One freshly minted OneDrive fixture completed normal Git removal; its remaining
+disposable fixture was removed. This does not identify or repair the earlier
+Windows failure. All thirteen real registrations and nine stash hashes still
+match the handoff, apart from the ordinary checkout's new branch name. No real
+extra, shared dependency target, retained archive or original evidence was a
+removal probe. No service, ACL, app/hosted setting or repository location changed.
+
+The first full fast run passed policy/format/lint/types and 687 of 689 unit tests.
+A new portable cleanup case timed out at 20 seconds (21.5 seconds observed);
+its local fixture budget is now 60 seconds, with no retries/browser change. An
+existing progress test hit Windows EBUSY while disposing its fictional folder.
+Both files then passed unchanged behavior with one worker: 21 of 21 tests.
+Final `npm run verify:fast` passed all five components and 690 tests in 65 files,
+including 77 cleanup cases. The unit run took 371.60 seconds. It includes exact
+full-strength cold recovery and the unpublished-object completeness check.
+The final log and detailed boundary evidence are retained privately under
+`.release-evidence/cleanup-enablement-local-20261007/`; see CLEANUP.md for status.
+No migration or hosted mutation belongs to this slice. Live activation remains
+blocked for both agents; a passing fixture suite does not resolve that gap.
+
+### Simple ordinary-file cleanup — 2026-10-07
+
+Documented direct chat approval and normal literal-path filesystem commands for
+ordinary named files, separate from the guarded worktree helper. A real shell
+probe created an artificial file, independently copied/hash-verified it, removed
+only that file and confirmed the saved copy plus sentinel survived. No owner
+file or retained worktree was a test. Both self-contained guards permit the
+ordinary command and continue to deny forced recursive removal.
+
+Automatic approval review rejected the attempted worktree-core simplification
+because it removed mandatory host authorization/scope checks. No part of that
+patch was applied, and no alternate route was used to apply it. The exact
+proposed relaxation and its limits are reviewable privately in
+`.release-evidence/cleanup-enablement-local-20261007/SIMPLE-VERSION-REVIEW.md`.
+Existing edits and the deployment record remain preserved; no publication,
+settings change, service start or real cleanup occurred.
+
+Final `npm run verify:fast` passed policy consistency, formatting, lint, types
+and 691 unit tests in 65 files, including 78 cleanup cases. Unit duration was
+384.93 seconds; output is `verify-fast-simple-files.log` in the private directory
+above. No worktree-core change was applied during that run. The explicit owner
+decision about the proposed worktree relaxation remains pending.
+
+### Cleanup slice publication preparation — 2026-10-07
+
+The owner accepted the ordinary-file workflow with the worktree safeguards
+retained, then explicitly authorized commit, push and opening its PR. Reverified
+remote main and #205's merged SHA at
+`3aa09ed0d9c9d8739d5fcb898e5b9f5188eac299`. The complete tooling/test/guidance
+slice was reviewed for publication, including the unchanged 67-line #205
+deployment record. The previous final fast result remains 691 passing tests in
+65 files; subsequent preparation changes only documentation. Real worktree
+activation remains blocked, and this instruction supplies no actual removal,
+host-setting, merge or deployment approval. Private evidence stays unpublished.

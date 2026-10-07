@@ -224,6 +224,14 @@ silently "improve" a formula.
 ### Specific owner-approved cleanup (ADR-135)
 
 Follow [docs/CLEANUP.md](docs/CLEANUP.md) for the shared Codex/Claude workflow.
+For ordinary named files, the owner's direct approval in this conversation is
+task authority: inspect, explain and independently verify preservation, obtain
+specific approval, recheck, then use the existing tool for only those files.
+No new host callback or consent system is needed for ordinary file deletion.
+Use literal paths and no recursive/force options; keep tool/Windows permissions.
+The guarded Git-worktree helper below has separate requirements. Do not apply
+the ordinary-file workflow to retained worktrees, shared dependencies or
+protected evidence. Tooling implementation permission is not removal approval.
 Default to read-only inspection/planning. Before specific approval of named
 items, explain each cleanup type in plain language: what goes, why the checked
 evidence supports removal, what remains saved/untouched, and any downside or
@@ -240,16 +248,16 @@ Protect the ordinary checkout, shared dependencies, refs, stashes, archives,
 source evidence and unspecified paths. Broad destructive commands stay blocked;
 wrapping a blocked command is not an exception.
 
-The local review candidate implements inspection/plans, read-only saved-plan
-rechecks and fixture-only execution with authenticated progress checkpoints.
+The local review candidate implements inspection/plans, a real registered-worktree
+engine, encrypted independent recovery and trusted-host execution/resume adapters.
 A lost Git result cannot grant fallback deletion; remaining content stops the
-item. Checkpoints record progress and never supply owner consent. Real execution
-stays unavailable until independent owner
-consent, actual runtime coverage and scoped filesystem capability are proven
-on disposable fixtures. Rules/hooks alone are not runtime proof. Current tool
-coverage and Windows deletion behavior remain limitations; do not change ACLs,
-settings or repository location to bypass them. No plan/receipt/flag or this
-guidance grants real removal or publication approval.
+item. Host progress records never supply owner consent. Installed-agent activation
+remains blocked: this managed route exposes automatic review without an owner
+decision/scoped-filesystem callback, and Claude's live round trip is unproven.
+Disposable simulated-host tests do not prove installed coverage. Standalone shell
+execution refuses rather than loading an agent-written approval. No plan/record/
+flag or this guidance grants real removal or publication approval. Windows
+deletion's cause remains unresolved; no ACL/settings/location bypass is allowed.
 
 The repository's VibeTrunk safety scaffold is the shared authority —
 PreToolUse hooks block destructive commands and young (<14-day) npm

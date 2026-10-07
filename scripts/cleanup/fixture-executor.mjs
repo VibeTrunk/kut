@@ -26,8 +26,10 @@ function fixtureGit(root, args) {
   if (result.status !== 0) throw Error("fixture_git_failed");
 }
 
-export function newFixture() {
-  const base = fs.mkdtempSync(path.join(os.tmpdir(), "kut-cleanup-fixture-"));
+export function newFixture({ parent = os.tmpdir() } = {}) {
+  // Still creates a new capability; never accepts an existing repository.
+  noLinks(parent);
+  const base = fs.mkdtempSync(path.join(parent, "kut-cleanup-fixture-"));
   const root = path.join(base, "ordinary");
   fs.mkdirSync(root);
   fixtureGit(root, ["init", "-q"]);

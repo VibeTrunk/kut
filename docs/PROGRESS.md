@@ -6342,3 +6342,41 @@ component's markup and the built CSS, puts "+254 FLUT" 3.6px inside the
 padding at 320. The final `rg` audit leaves only comments, test names, two
 allowlisted diagnostic prefixes, a database error string used as test input,
 and the adapter's registry.
+
+### PR #208 security check: Next.js 16.3.8 (ADR-138) — 2026-10-09
+
+CI's `security` job failed on six new high-severity Next.js advisories covering
+16.0.0–16.3.7. It did not come from the FLUT change; `main` would fail the same
+way. The owner approved a one-time package-age exception for `next`,
+`eslint-config-next` and `@next/*` 16.3.8, to be applied inside #208. The two
+direct pins moved to 16.3.8, and a bare install changed exactly 12 lockfile
+entries, all in that set. The production audit (high threshold) now reports
+zero vulnerabilities. `verify:fast` (730 tests in 67 files) and the production
+build pass on Next 16.3.8.
+
+The first authenticated run on 16.3.8 passed Pixel 7 and 320 but failed 13
+WebKit cases, none of which failed on 16.3.6 the day before. All 13 had the
+same symptom: after a tap, the page did not reach the next URL in time, or
+rows and elements did not appear. A WebKit-only rerun on the same tree passed
+all 58 cases plus the approved skip, including the 13, which first looked like
+the monitored slow-spell pattern (Topic A, ADR-134). Assertions, timeouts and
+skips were not changed at any point.
+
+A second full dev-server run on 16.3.8 again failed only WebKit, with 4 cases
+and the same symptoms. That made a control necessary. With the committed
+16.3.6 restored from the lockfile and nothing else changed, the full dev-server
+suite passed: 175 cases, the two approved skips and all 58 WebKit cases, in 14.7
+minutes. The two 16.3.8 dev-server runs took 18.2 and 16.2 minutes. Next
+16.3.8's dev server therefore most likely slows WebKit enough to break this
+suite; the evidence does not point to Topic A.
+
+The release gate does not use the dev server. It builds the app and serves it
+with `next start` on 127.0.0.1:3101. A fresh 16.3.8 production build, run the
+same way with the gate's environment, passed the full authenticated suite:
+175 cases, the two approved skips, all 58 WebKit cases, no failures, in 8.9
+minutes. This was not a gate run (the tree was uncommitted and no candidate SHA
+was recorded). Every run's logs and failure artefacts are preserved privately
+under `.release-evidence/next-16.3.8-webkit-20261009/`. The owner then had 16.3.8
+published in #208. Until a later Next release fixes the dev-server slowdown,
+treat a local dev-server WebKit failure in that suite as a known risk on 16.3.8,
+and confirm it with a production-mode run before judging the code.

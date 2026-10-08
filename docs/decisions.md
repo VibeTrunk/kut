@@ -8082,3 +8082,47 @@ FLUT Coins. The favicon, `icon.svg` and `apple-icon.png` come from
 downloads are named `flut-midweek-…png`. Historical ADRs, migrations,
 deployment records and older design packages keep the name they were written
 with.
+
+## ADR-138 — Next.js 16.3.8 for the high-severity Next advisories (PR #208)
+
+Date: 2026-10-09
+
+Status: Accepted
+
+PR #208's `security` check (`npm audit --omit=dev --audit-level=high`) failed
+on six new high-severity advisories covering `next` 16.0.0–16.3.7:
+GHSA-3w37-wq28-93x7, GHSA-4jqv-mc3x-m676, GHSA-39w2-rjm5-chcv,
+GHSA-f87g-xv8r-7p7x, GHSA-mcj8-r9mp-w47p and GHSA-cjq9-62q9-8jv4. The cause
+was the pinned Next 16.3.6, not the PR, so `main` and every other PR failed the
+same way. Dependabot's 16.3.7 (#162) is still inside the vulnerable range.
+
+The patched 16.3.8 was published by `vercel-release-bot` on 2026-09-30, eight
+days earlier, so the 14-day package-age guard blocked it until 2026-10-14. The
+owner chose to fix it now and inside #208. The owner explicitly approved a
+one-time exception to the package-age restriction. It covers `next`,
+`eslint-config-next` and the matching `@next/*` packages, all at 16.3.8. It
+grants no standing permission for young packages and changes neither safety
+hook nor agent permissions.
+
+Decision: pin `next` and `eslint-config-next` to exactly 16.3.8 in
+`package.json`, and let a bare install resolve the lockfile. The lockfile
+changes only the version, resolved URL and integrity of 12 entries: `next`,
+`eslint-config-next`, `@next/env`, `@next/eslint-plugin-next` and the eight
+`@next/swc-*` binaries. No other package moves. The audit threshold, CI jobs
+and gates are unchanged, and there is no override or audit exclusion.
+
+Consequences: the production audit reports zero vulnerabilities. The patch
+ships in the same squash commit as the FLUT branding, so reverting one reverts
+the other; the owner accepted that to keep a single gate and deployment. The
+merged SHA still needs full main CI and its exact-SHA production gate before
+release.
+
+Verification on 16.3.8, 2026-10-09: public Chromium E2E passed 28 of 28. The
+authenticated suite against a production build served with `next start`, as
+the gate runs it, passed 175 cases with the two approved skips. Against
+`next dev`, two full runs failed only WebKit cases (13, then 4). A control run
+on 16.3.6 in the same conditions passed. So 16.3.8's dev server most likely
+slows WebKit in this suite, while the production server the gate and members
+use does not. The local dev-server suite is therefore less reliable on 16.3.8
+until a later Next release; confirm a dev-server WebKit failure in production
+mode before judging the code.

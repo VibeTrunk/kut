@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth/user";
+import { BRAND } from "@/lib/brand";
 import { createClient } from "@/lib/supabase/server";
 
 export type CheckInState = { ok: true; message: string } | { ok: false; error: string } | null;
@@ -41,7 +42,7 @@ export async function checkInInjury(
   return result?.checked_in
     ? {
         ok: true,
-        message: `Checked in: +${result.amount ?? 100} KUT Coins and your card is protected this week.`,
+        message: `Checked in: +${result.amount ?? 100} ${BRAND.currency} and your card is protected this week.`,
       }
     : { ok: true, message: "You had already checked in for that week." };
 }

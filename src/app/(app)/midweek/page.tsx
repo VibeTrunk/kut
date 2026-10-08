@@ -301,7 +301,7 @@ export default async function MidweekPage({
         {strip && <LastWeek view={strip} />}
         <MidweekPageHead
           kicker={`Midweek Madness · ${formatDayDate(lockAt)}`}
-          lede={`Five of your cards, one knockout, Wednesday night. Every match you win pays KUT Coins; the champion takes ${MIDWEEK.championTotal} in all.`}
+          lede={`Five of your cards, one knockout, Wednesday night. Every match you win pays FLUT Coins; the champion takes ${MIDWEEK.championTotal} in all.`}
           title="Pick your five"
         />
         <MidweekLockLine lockAt={lockAt} now={nowIso} />

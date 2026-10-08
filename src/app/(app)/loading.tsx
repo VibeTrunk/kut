@@ -10,7 +10,7 @@ export default function AppLoading() {
             <div className="h-64 rounded-3xl bg-panel" />
             <div className="h-64 rounded-3xl bg-panel" />
           </div>
-          <span className="sr-only">Loading KUT...</span>
+          <span className="sr-only">Loading FLUT...</span>
         </div>
       </div>
     </main>

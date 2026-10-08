@@ -1,9 +1,10 @@
 import { AuthApiError, AuthRetryableFetchError } from "@supabase/supabase-js";
+import { BRAND } from "@/lib/brand";
 import { describe, expect, it } from "vitest";
 import { signInErrorMessage } from "@/lib/auth/sign-in-error";
 
 const credentials = "Sign-in failed. Check your username and password.";
-const unreachable = "Couldn't reach KUT. Check your connection and try again.";
+const unreachable = `Couldn't reach ${BRAND.shortName}. Check your connection and try again.`;
 
 describe("sign-in error message (KB-039)", () => {
   it("blames the credentials only when Auth rejected them", () => {

@@ -13,7 +13,7 @@ export function MidweekCalls({
   coins,
 }: {
   records: readonly CallRecord[];
-  /** The weekly line, `You called 2 of 3 right: +4 KUT Coins.` */
+  /** The weekly line, `You called 2 of 3 right: +4 FLUT Coins.` */
   line: string;
   coins: number;
 }) {

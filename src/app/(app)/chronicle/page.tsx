@@ -12,7 +12,7 @@ type Week = {
   goal_count: number;
 };
 
-export const metadata = { title: "KUT Chronicle" };
+export const metadata = { title: "FLUT Chronicle" };
 
 export default async function ChronicleIndexPage() {
   await requireUser();
@@ -28,7 +28,7 @@ export default async function ChronicleIndexPage() {
     return (
       <main className="board-ground min-h-screen p-5 text-ink sm:p-10">
         <section className="mx-auto max-w-3xl py-8">
-          <h1 className="display text-5xl">KUT Chronicle</h1>
+          <h1 className="display text-5xl">FLUT Chronicle</h1>
           <p className="mt-8 text-ink-dim">The first issue arrives when a session is published.</p>
         </section>
       </main>
@@ -39,7 +39,7 @@ export default async function ChronicleIndexPage() {
       <section className="mx-auto max-w-3xl space-y-12 py-4 sm:py-8">
         <header className="border-y-4 border-brass py-5">
           <div className="flex items-end justify-between gap-4">
-            <h1 className="display text-5xl sm:text-6xl">KUT Chronicle</h1>
+            <h1 className="display text-5xl sm:text-6xl">FLUT Chronicle</h1>
             <p className="text-right text-2xl font-black tabular-nums text-brass">
               {weeks.length}
               <span className="block text-[0.6rem] uppercase tracking-[0.15em] text-ink-faint">

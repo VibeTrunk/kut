@@ -4,7 +4,7 @@ import { useState } from "react";
 
 export function CopyMessageButton({ owner, card }: { owner: string; card: string }) {
   const [status, setStatus] = useState<"idle" | "copied" | "fallback">("idle");
-  const message = `Hi ${owner}, I saw you're open to trading your ${card} card on KUT. Shall we agree a trade?`;
+  const message = `Hi ${owner}, I saw you're open to trading your ${card} card on FLUT. Shall we agree a trade?`;
 
   async function copy() {
     try {

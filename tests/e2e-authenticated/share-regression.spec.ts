@@ -280,7 +280,7 @@ test("file sharing, cancellation, action errors and download fallback", async ({
         .__sharedPng,
   );
   expect(shared).toEqual({
-    name: "kut-midweek-17-jan-champion.png",
+    name: "flut-midweek-17-jan-champion.png",
     type: "image/png",
     bytes: expect.any(Number),
   });
@@ -290,7 +290,7 @@ test("file sharing, cancellation, action errors and download fallback", async ({
   );
   const download = page.waitForEvent("download");
   await share.click();
-  expect((await download).suggestedFilename()).toBe("kut-midweek-17-jan-champion.png");
+  expect((await download).suggestedFilename()).toBe("flut-midweek-17-jan-champion.png");
   await tileGeometry(page);
 });
 

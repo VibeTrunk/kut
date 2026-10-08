@@ -82,7 +82,7 @@ export default async function PlayerDirectoryPage({ searchParams }: PlayerDirect
         <CompeteTabs />
         <header className="space-y-3">
           <p className="text-[0.7rem] font-extrabold uppercase tracking-[0.26em] text-brass">
-            KUT roster
+            FLUT roster
           </p>
           <h1 className="display text-3xl sm:text-6xl">Players</h1>
           <p className="hidden max-w-2xl text-base leading-relaxed text-ink-dim sm:block">

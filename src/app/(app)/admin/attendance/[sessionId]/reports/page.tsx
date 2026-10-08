@@ -112,7 +112,7 @@ export default async function AdminReportsPage({ params }: Props) {
               <li>
                 {pending === 0
                   ? "Nobody is still pending."
-                  : `The ${pending} still pending can no longer submit, and no longer earn the 50 KUT Coins for it.`}
+                  : `The ${pending} still pending can no longer submit, and no longer earn the 50 FLUT Coins for it.`}
               </li>
               <li>
                 Kudos are only recognised when at least three members submitted a report with

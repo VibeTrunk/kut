@@ -54,7 +54,7 @@ export function ResetPasswordForm({ accounts }: { accounts: Account[] }) {
           type="password"
         />
         <span className="block text-sm text-ink-faint">
-          Use at least 12 characters. It is never stored in KUT’s database or audit log.
+          Use at least 12 characters. It is never stored in FLUT’s database or audit log.
         </span>
       </label>
       <label className="block space-y-2">

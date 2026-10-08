@@ -93,7 +93,7 @@ export default async function EconomyPage() {
                   <div className="flex items-start justify-between gap-4">
                     <div>
                       <p className="text-xs font-black uppercase tracking-[0.16em] text-brass">
-                        {pack.cards_per_pack} cards · {pack.price} KUT Coins
+                        {pack.cards_per_pack} cards · {pack.price} FLUT Coins
                       </p>
                       <h2 className="mt-1 text-2xl font-black">{pack.title}</h2>
                     </div>

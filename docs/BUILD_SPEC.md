@@ -18,6 +18,13 @@
 > read every "TFH Ultimate Cards" / "TFH Cards" / `tfh.vibetrunk.com` below
 > as this project. See `docs/decisions.md` for the rest of the naming
 > decision.
+>
+> **Renamed 2026-10-08 (ADR-137):** the public game is now **FLUT — Football
+> League Ultimate Team**, and its currency is **FLUT Coins**. Read "KUT",
+> "Kelderklasse Ultimate Team" and "KUT Coins" anywhere below as FLUT,
+> Football League Ultimate Team and FLUT Coins. Internal names (the repo, the
+> Supabase schema `kut`, the Vercel project, `kut.vibetrunk.com` until the
+> domain slice) are unchanged.
 
 ---
 

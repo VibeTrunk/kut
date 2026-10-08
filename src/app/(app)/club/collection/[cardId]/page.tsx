@@ -231,7 +231,7 @@ export default async function CardDetailPage({ params, searchParams }: CardPageP
                   Discard payout
                 </dt>
                 <dd className="mt-1.5 text-lg font-black tabular-nums">
-                  {card.discard_value} KUT Coins
+                  {card.discard_value} FLUT Coins
                 </dd>
               </div>
               <div>

@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth/admin";
 import { ECONOMY } from "@/game/economy";
+import { BRAND } from "@/lib/brand";
+import { presentServerText } from "@/lib/notification-copy";
 import { createServiceClient } from "@/lib/supabase/service";
 import { createClient } from "@/lib/supabase/server";
 import { isUuid } from "@/lib/uuid";
@@ -27,11 +29,11 @@ function mapRpcError(error: { message: string; code?: string }): string {
   if (error.code === "P0002") return "That account or player no longer exists.";
   if (error.code === "22023") {
     if (error.message.includes("per-adjustment limit")) {
-      return `That is over the ${ECONOMY.adminWalletAdjustMax.toLocaleString("en-GB")} KUT Coins per-adjustment limit.`;
+      return `That is over the ${ECONOMY.adminWalletAdjustMax.toLocaleString("en-GB")} ${BRAND.currency} per-adjustment limit.`;
     }
     if (error.message.includes("non-zero amount")) return "Enter a non-zero amount.";
     if (error.message.includes("reason of 1 to 200")) return "Enter a reason (1–200 characters).";
-    return error.message;
+    return presentServerText(error.message);
   }
   if (error.code === "P0001") {
     if (error.message.includes("already linked"))
@@ -45,7 +47,7 @@ function mapRpcError(error: { message: string; code?: string }): string {
     if (error.message.includes("completed market trades")) {
       return "This account has completed market trades — disable it instead of deleting.";
     }
-    return error.message;
+    return presentServerText(error.message);
   }
   return "Something went wrong. Please try again.";
 }
@@ -107,7 +109,7 @@ export async function manageAccount(
     if (Math.abs(amount) > ECONOMY.adminWalletAdjustMax) {
       return {
         ok: false,
-        error: `Keep it within ${ECONOMY.adminWalletAdjustMax.toLocaleString("en-GB")} KUT Coins per adjustment.`,
+        error: `Keep it within ${ECONOMY.adminWalletAdjustMax.toLocaleString("en-GB")} ${BRAND.currency} per adjustment.`,
       };
     }
     const reason = String(formData.get("reason") ?? "").trim();
@@ -126,7 +128,7 @@ export async function manageAccount(
       (row?.amount ?? amount) > 0 ? `+${row?.amount ?? amount}` : String(row?.amount ?? amount);
     return {
       ok: true,
-      message: `${row?.display_name ?? "Account"} wallet adjusted ${signed} KUT Coins (new balance ${row?.balance ?? "?"}).`,
+      message: `${row?.display_name ?? "Account"} wallet adjusted ${signed} ${BRAND.currency} (new balance ${row?.balance ?? "?"}).`,
     };
   }
 
@@ -139,7 +141,7 @@ export async function manageAccount(
     if (Math.abs(amount) > ECONOMY.adminWalletAdjustMax) {
       return {
         ok: false,
-        error: `Keep it within ${ECONOMY.adminWalletAdjustMax.toLocaleString("en-GB")} KUT Coins per adjustment.`,
+        error: `Keep it within ${ECONOMY.adminWalletAdjustMax.toLocaleString("en-GB")} ${BRAND.currency} per adjustment.`,
       };
     }
     const reason = String(formData.get("reason") ?? "").trim();
@@ -161,14 +163,14 @@ export async function manageAccount(
     if (row?.already_processed) {
       return {
         ok: true,
-        message: `Already granted with this request (balance ${row?.balance ?? "?"} KUT Coins).`,
+        message: `Already granted with this request (balance ${row?.balance ?? "?"} ${BRAND.currency}).`,
       };
     }
     const signed =
       (row?.amount ?? amount) > 0 ? `+${row?.amount ?? amount}` : String(row?.amount ?? amount);
     return {
       ok: true,
-      message: `You granted yourself ${signed} KUT Coins (new balance ${row?.balance ?? "?"}).`,
+      message: `You granted yourself ${signed} ${BRAND.currency} (new balance ${row?.balance ?? "?"}).`,
     };
   }
 

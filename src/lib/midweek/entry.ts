@@ -12,6 +12,7 @@
 import { archetypeLabel } from "@/game/archetypes";
 import { MIDWEEK } from "@/game/midweek/config";
 import { scheduleFor } from "@/game/midweek/schedule";
+import { BRAND } from "@/lib/brand";
 import type { CompeteStatus } from "@/lib/nav/routes";
 
 const AMS = "Europe/Amsterdam";
@@ -455,10 +456,10 @@ export function lastWeekSummary(input: {
 }): string {
   const coins = input.rewards.reduce((sum, row) => sum + Number(row.amount), 0);
   const champion = input.championName ? ` ${input.championName} won it.` : "";
-  if (input.isChampion) return `You won it! +${coins} KUT Coins.`;
+  if (input.isChampion) return `You won it! +${coins} ${BRAND.currency}.`;
   if (input.rewards.length > 0) {
     const furthestWon = Math.max(...input.rewards.map((row) => row.round_no));
-    return `You reached ${stageName(furthestWon + 1, input.rounds)}. +${coins} KUT Coins.${champion}`;
+    return `You reached ${stageName(furthestWon + 1, input.rounds)}. +${coins} ${BRAND.currency}.${champion}`;
   }
   return input.entered ? `You went out in round 1.${champion}` : `You sat it out.${champion}`;
 }
@@ -520,7 +521,7 @@ export function squadSaveError(code: string | undefined, message: string | undef
     return "Squads are locked. The five you saved before the lock is the one that plays.";
   }
   if (code === "P0002") return "There's no Midweek Madness week open to pick for right now.";
-  if (code === "42501") return "Only active KUT members can take part.";
+  if (code === "42501") return `Only active ${BRAND.shortName} members can take part.`;
   return "Something went wrong. Please try again.";
 }
 

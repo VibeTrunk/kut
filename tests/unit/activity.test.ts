@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { BRAND } from "@/lib/brand";
 import {
   activityKindLabel,
   describeActivity,
@@ -29,20 +30,20 @@ describe("describeActivity", () => {
 
   it("describes a coins-only trade with both parties and the coin amount", () => {
     expect(describeActivity({ ...base, kind: "trade" })).toBe(
-      "Teize traded Steffen to Michael for 137 KUT Coins.",
+      `Teize traded Steffen to Michael for 137 ${BRAND.currency}.`,
     );
   });
 
   // ADR-073: the whole consideration, not just the coin leg.
   it("names a single card offered back alongside the coins", () => {
     expect(describeActivity({ ...base, kind: "trade", offered_card_names: ["Freek"] })).toBe(
-      "Teize traded Steffen to Michael for 137 KUT Coins plus Freek.",
+      `Teize traded Steffen to Michael for 137 ${BRAND.currency} plus Freek.`,
     );
   });
 
   it("joins two offered cards with 'and'", () => {
     expect(describeActivity({ ...base, kind: "trade", offered_card_names: ["Freek", "Jan"] })).toBe(
-      "Teize traded Steffen to Michael for 137 KUT Coins plus Freek and Jan.",
+      `Teize traded Steffen to Michael for 137 ${BRAND.currency} plus Freek and Jan.`,
     );
   });
 
@@ -53,12 +54,12 @@ describe("describeActivity", () => {
         kind: "trade",
         offered_card_names: ["Freek", "Jan", "Pieter"],
       }),
-    ).toBe("Teize traded Steffen to Michael for 137 KUT Coins plus Freek, Jan and Pieter.");
+    ).toBe(`Teize traded Steffen to Michael for 137 ${BRAND.currency} plus Freek, Jan and Pieter.`);
   });
 
   it("ignores an empty offered-card array rather than rendering a dangling 'plus'", () => {
     expect(describeActivity({ ...base, kind: "trade", offered_card_names: [] })).toBe(
-      "Teize traded Steffen to Michael for 137 KUT Coins.",
+      `Teize traded Steffen to Michael for 137 ${BRAND.currency}.`,
     );
   });
 
@@ -76,7 +77,7 @@ describe("describeActivity", () => {
       card_name: null,
       amount: null,
     });
-    expect(sentence).toBe("A member traded a card to a member for 0 KUT Coins.");
+    expect(sentence).toBe(`A member traded a card to a member for 0 ${BRAND.currency}.`);
   });
 });
 

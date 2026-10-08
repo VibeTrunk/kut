@@ -75,7 +75,7 @@ export function LinksTable({
               <p className="mt-1 text-sm text-ink-dim">
                 Username: {account.username ?? "—"} · Linked player:{" "}
                 {account.linked_player_name ?? "not linked"} · Wallet:{" "}
-                {account.wallet_balance.toLocaleString("en-GB")} KUT Coins
+                {account.wallet_balance.toLocaleString("en-GB")} FLUT Coins
               </p>
 
               <div className="mt-3 flex flex-wrap gap-2">
@@ -269,7 +269,7 @@ export function LinksTable({
         Linking connects a member&rsquo;s account to a player card so they earn attendance coins and
         can edit that card; it does <strong>not</strong> back-pay coins for sessions before the
         link. <strong>Adjust coins</strong>
-        credits or claws back KUT Coins (audited, never below zero, max{" "}
+        credits or claws back FLUT Coins (audited, never below zero, max{" "}
         {(100_000).toLocaleString("en-GB")} per adjustment). <strong>Grant myself coins</strong> is
         the same tool for a superadmin&rsquo;s own wallet — same rules and cap, but never sends
         yourself a notification. <strong>Reset club</strong> wipes wallet, cards, pack history and

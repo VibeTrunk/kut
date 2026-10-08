@@ -21,6 +21,12 @@ const eslintConfig = defineConfig([
     "work/fix-production-gate/**",
     "work/release-soft-graphite/**",
   ]),
+  {
+    // Design-package build scripts written as CommonJS (design/flut/build)
+    // load their tools with require(); that is the module system, not a lapse.
+    files: ["design/**/*.cjs"],
+    rules: { "@typescript-eslint/no-require-imports": "off" },
+  },
 ]);
 
 export default eslintConfig;

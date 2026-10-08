@@ -70,8 +70,8 @@ export function OpenPackForm({
             {isPending
               ? "Opening…"
               : affordable
-                ? `Open for ${quotedPrice} KUT Coins`
-                : `Need ${quotedPrice - balance} more KUT Coins`}
+                ? `Open for ${quotedPrice} FLUT Coins`
+                : `Need ${quotedPrice - balance} more FLUT Coins`}
           </button>
           <p className="text-xs font-bold text-ink-faint">
             {affordable
@@ -99,8 +99,8 @@ export function OpenPackForm({
               {title}
             </h3>
             <p className="mt-3 text-sm leading-relaxed text-ink-dim">
-              Spend <strong className="text-ink">{quotedPrice} KUT Coins</strong> for {cardsPerPack}{" "}
-              server-selected Live Cards? Duplicates can happen.
+              Spend <strong className="text-ink">{quotedPrice} FLUT Coins</strong> for{" "}
+              {cardsPerPack} server-selected Live Cards? Duplicates can happen.
             </p>
             <div className="mt-6 grid grid-cols-2 gap-3">
               <button

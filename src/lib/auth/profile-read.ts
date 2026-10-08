@@ -4,7 +4,7 @@
 // made a transient database-API failure look like being signed out, with no
 // message and no log line (KB-040). It throws instead, so the route error
 // page offers "Try again", and logs the PostgREST code for the operator.
-export const MEMBERSHIP_READ_FAILED = "Could not verify your KUT membership.";
+export const MEMBERSHIP_READ_FAILED = "Could not verify your FLUT membership.";
 
 export function enabledProfile<T extends { is_disabled: boolean }>(
   response: { data: T | null; error: { code: string } | null },

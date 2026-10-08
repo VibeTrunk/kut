@@ -1,4 +1,5 @@
 import { formatDate } from "@/lib/format";
+import { BRAND } from "@/lib/brand";
 
 // Club-wide activity feed, rendered as a section at the bottom of Home.
 // Backed by the read-only `kut.activity_feed` view (ADR-038); ADR-039 moved
@@ -53,7 +54,7 @@ function joinNames(names: string[]): string {
 }
 
 export function describeActivity(row: ActivityRow): string {
-  const coins = (n: number | null) => `${n ?? 0} KUT Coins`;
+  const coins = (n: number | null) => `${n ?? 0} ${BRAND.currency}`;
   switch (row.kind) {
     case "sale":
       return `${row.actor_name ?? "A member"} sold ${row.card_name ?? "a card"} to ${row.counterparty_name ?? "a member"} for ${coins(row.amount)}.`;

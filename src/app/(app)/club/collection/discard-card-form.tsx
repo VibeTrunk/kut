@@ -23,7 +23,7 @@ export function DiscardCardForm({ cardId, discardValue }: DiscardCardFormProps) 
   function confirmDiscard(event: React.FormEvent<HTMLFormElement>) {
     if (
       !window.confirm(
-        `Discard this card permanently for ${discardValue} KUT Coins? This cannot be undone.`,
+        `Discard this card permanently for ${discardValue} FLUT Coins? This cannot be undone.`,
       )
     ) {
       event.preventDefault();
@@ -49,7 +49,7 @@ export function DiscardCardForm({ cardId, discardValue }: DiscardCardFormProps) 
         disabled={isPending}
         type="submit"
       >
-        {isPending ? "Discarding..." : `Discard for ${discardValue} KUT Coins`}
+        {isPending ? "Discarding..." : `Discard for ${discardValue} FLUT Coins`}
       </button>
     </form>
   );

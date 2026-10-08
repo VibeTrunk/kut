@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <title>FLUT</title>
+  <!-- The app's shield (.clip-pennant: 50% 0, 100% 38%, 82% 100%, 18% 100%, 0 38%) in brass, with an F cut in board-deep ink. -->
+  <path fill="#e0ac4a" d="M16 0 32 12.16 26.24 32H5.76L0 12.16Z"/>
+  <path fill="#1c150a" d="M11 10h10.5v3.75H15.5v2.75h5v3.5h-5V27H11Z"/>
+</svg>

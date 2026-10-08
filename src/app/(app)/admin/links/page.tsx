@@ -62,9 +62,9 @@ export default async function AccountLinksPage() {
         <header className="space-y-3">
           <h1 className="text-4xl font-black tracking-tight">Accounts</h1>
           <p className="text-ink-dim">
-            Connect a member&rsquo;s account to their TFH player card, adjust their KUT Coins, reset
-            their club, disable an account, or permanently delete one. Members are normally linked
-            automatically when they claim an invite.
+            Connect a member&rsquo;s account to their TFH player card, adjust their FLUT Coins,
+            reset their club, disable an account, or permanently delete one. Members are normally
+            linked automatically when they claim an invite.
           </p>
         </header>
         <LinksTable

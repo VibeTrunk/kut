@@ -22,7 +22,7 @@ export async function buyListing(_state: BuyState, formData: FormData): Promise<
     .rpc("buy_listing", { p_listing_id: listingId, p_idempotency_key: idempotencyKey });
   if (error || !data || typeof data !== "object" || !("price" in data))
     return {
-      error: "This listing could not be bought. It may have sold or you may need more KUT Coins.",
+      error: "This listing could not be bought. It may have sold or you may need more FLUT Coins.",
     };
   const price = Number(data.price);
   if (!Number.isSafeInteger(price) || price < 1)
@@ -42,7 +42,7 @@ export async function proposeOffer(_state: OfferState, formData: FormData): Prom
 
   const offeredCoins = Number(formData.get("offeredCoins") ?? 0);
   if (!Number.isSafeInteger(offeredCoins) || offeredCoins < 0)
-    return { error: "Enter a whole number of KUT Coins to offer (0 or more)." };
+    return { error: "Enter a whole number of FLUT Coins to offer (0 or more)." };
 
   const offeredCardIds = formData
     .getAll("cardId")
@@ -53,7 +53,7 @@ export async function proposeOffer(_state: OfferState, formData: FormData): Prom
     return { error: `An offer can include at most ${ECONOMY.tradeOfferMaxCards} cards.` };
   }
   if (offeredCoins === 0 && uniqueCardIds.length === 0) {
-    return { error: "Offer at least some KUT Coins or one card." };
+    return { error: "Offer at least some FLUT Coins or one card." };
   }
 
   const supabase = await createClient();

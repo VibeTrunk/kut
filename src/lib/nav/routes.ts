@@ -120,7 +120,7 @@ export const PRIMARY_TABS: readonly RouteEntry[] = [
 export const ACCOUNT_ROUTES: readonly RouteEntry[] = [
   { key: "settings", href: "/settings", label: "Settings" },
   { key: "card", href: "/settings/card", label: "My card" },
-  { key: "how", href: "/how-it-works", label: "How KUT works" },
+  { key: "how", href: "/how-it-works", label: "How FLUT works" },
   { key: "admin", href: "/admin/attendance", label: "Admin", owns: ["/admin"], adminOnly: true },
 ];
 

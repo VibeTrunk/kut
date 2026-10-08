@@ -132,7 +132,7 @@ export default async function ListingPage({ params }: ListingPageProps) {
                 <IconCoin aria-hidden="true" className="h-6 w-6" />
                 {listing.price.toLocaleString()}
                 <span className="text-xs font-extrabold uppercase tracking-[0.16em] text-ink-dim">
-                  KUT Coins
+                  FLUT Coins
                 </span>
               </p>
               {/* The price's floor (KB-027): what the card pays out if discarded,
@@ -145,7 +145,7 @@ export default async function ListingPage({ params }: ListingPageProps) {
                     <span className="flex items-center gap-1 font-black tabular-nums text-ink">
                       <IconCoin aria-hidden="true" className="h-3.5 w-3.5 text-brass" />
                       {listing.discard_value.toLocaleString()}
-                      <span className="sr-only">KUT Coins</span>
+                      <span className="sr-only">FLUT Coins</span>
                     </span>
                   </p>
                   <p className="text-xs text-ink-faint">

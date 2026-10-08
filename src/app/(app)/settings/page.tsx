@@ -89,7 +89,7 @@ export default async function SettingsPage() {
           className="group flex min-h-16 items-center justify-between rounded-2xl border border-line/60 bg-panel/60 px-6 py-4 hover:border-brass/60"
           href="/how-it-works"
         >
-          <span className="font-black">How KUT works</span>
+          <span className="font-black">How FLUT works</span>
           <span aria-hidden="true" className="text-brass">
             &rarr;
           </span>

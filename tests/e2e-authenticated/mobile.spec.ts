@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
 import { Client } from "pg";
+import { BRAND } from "../../src/lib/brand";
 import { assertLocalTarget } from "../support/local-target";
 import {
   advanceFixtureEvening,
@@ -145,7 +146,7 @@ async function resetMidweek(username: string) {
 
 test("member can sign in and use core mobile routes", async ({ page }) => {
   await signIn(page, "release_member");
-  await expect(page.getByRole("heading", { name: "This week in KUT" })).toBeVisible({
+  await expect(page.getByRole("heading", { name: `This week in ${BRAND.shortName}` })).toBeVisible({
     timeout: 15_000,
   });
   await expectNoHorizontalOverflow(page);
@@ -916,7 +917,9 @@ test.describe("Midweek Madness calls (D, ADR-118)", () => {
     const block = page.getByRole("region", { name: "Call the winners" });
     await expect(block).toBeVisible();
     await expect(
-      block.getByText(/^\+\d+ KUT Coins a correct pick · paid after the final$/),
+      block.getByText(
+        new RegExp(`^\\+\\d+ ${BRAND.currency} a correct pick · paid after the final$`),
+      ),
     ).toBeVisible();
     await expectNoHorizontalOverflow(page);
 
@@ -1050,11 +1053,11 @@ test.describe("Midweek Madness share images (F8, ADR-120)", () => {
     await block.getByRole("button", { name: "Share" }).first().click();
     await expect
       .poll(() => page.evaluate(() => (window as unknown as { __shared: string[] }).__shared))
-      .toEqual([expect.stringMatching(/^kut-midweek-17-jan-champion\.png image\/png \d+$/)]);
+      .toEqual([expect.stringMatching(/^flut-midweek-17-jan-champion\.png image\/png \d+$/)]);
 
     const download = page.waitForEvent("download");
     await block.getByRole("button", { name: "Save image" }).nth(1).click();
-    expect((await download).suggestedFilename()).toBe("kut-midweek-17-jan-release-member.png");
+    expect((await download).suggestedFilename()).toBe("flut-midweek-17-jan-release-member.png");
     await expect(
       block.getByText(/is in your downloads\. Drop it into the group chat\.$/),
     ).toBeVisible();
@@ -1079,7 +1082,7 @@ test.describe("Midweek Madness share images (F8, ADR-120)", () => {
       const download = page.waitForEvent("download");
       await block.getByRole("button", { name: "Download" }).first().click();
       const saved = await download;
-      expect(saved.suggestedFilename()).toBe("kut-midweek-17-jan-champion.png");
+      expect(saved.suggestedFilename()).toBe("flut-midweek-17-jan-champion.png");
       const bytes = readFileSync(await saved.path());
       expect(bytes.subarray(1, 4).toString()).toBe("PNG");
       expect(pngSize(bytes)).toEqual([1080, 1350]);
@@ -1099,18 +1102,22 @@ test.describe("Home and Messages (F4, ADR-114)", () => {
   test("Home leads with what's due: a short header, the now stack, two tiles", async ({ page }) => {
     await resetMidweek("release_member");
     await signIn(page, "release_member");
-    await expect(page.getByRole("heading", { level: 1, name: "This week in KUT" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { level: 1, name: `This week in ${BRAND.shortName}` }),
+    ).toBeVisible();
     const now = page.getByRole("region", { name: "Now" });
     await expect(
       now.getByRole("link", { name: /^Midweek Madness · .*Pick your five/ }),
     ).toBeVisible();
-    // The KUT Coins tile went: the coin pill shows the balance.
+    // The coins tile went: the coin pill shows the balance.
     await expect(page.getByText("Wallet balance")).toHaveCount(0);
     await expect(page.getByRole("link", { name: /^Club Value .* See the maths →$/ })).toBeVisible();
     await expect(page.getByRole("link", { name: /^Rank .* Standings →$/ })).toBeVisible();
     await expect(page.getByRole("heading", { level: 2, name: "Top risers" })).toBeVisible();
     await expect(page.getByRole("link", { name: "This week’s Chronicle →" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "New here? How KUT works →" })).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: `New here? How ${BRAND.shortName} works →` }),
+    ).toBeVisible();
     await expectNoHorizontalOverflow(page);
 
     await page.setViewportSize({ width: 1440, height: 900 });
@@ -1272,7 +1279,9 @@ test("a pack's summary names the slots it fills and the copies it adds (ADR-114)
   await signIn(page, "release_member");
   await page.goto("/club/packs");
   try {
-    await page.getByRole("button", { name: /^Open for \d+ KUT Coins$/ }).click();
+    await page
+      .getByRole("button", { name: new RegExp(`^Open for \\d+ ${BRAND.currency}$`) })
+      .click();
     await page.getByRole("button", { name: /^Pay \d+$/ }).click();
     // The first opening on a dev server compiles the reveal page.
     await expect(page).toHaveURL(/\/club\/packs\/[0-9a-f-]{36}$/, { timeout: 30_000 });

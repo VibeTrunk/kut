@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Chronicle mastheads, 320</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&amp;family=Instrument+Serif&amp;display=swap">
+<style>
+body{margin:0;background:#0b0a07}
+a{color:#e0ac4a;text-decoration:none}a:hover{text-decoration:underline}
+.serif{font-family:'Instrument Serif',Georgia,serif;font-weight:400;line-height:.94;letter-spacing:-.012em;text-wrap:pretty}
+.note{font-size:12px;font-weight:600;line-height:1.5;color:#8fb0c2}
+.cap{font-size:10.4px;font-weight:800;text-transform:uppercase;color:#8a8072}
+</style>
+</helmet>
+<div style="width:320px;height:760px;box-sizing:border-box;padding:20px;display:flex;flex-direction:column;gap:28px;background:radial-gradient(120% 78% at 50% -8%,#221c13 0%,#15130f 46%,#0b0a07 100%);color:#f4efe3;font-family:Archivo,sans-serif">
+  <section style="display:flex;flex-direction:column;gap:10px">
+    <p class="note" style="margin:0">/chronicle</p>
+    <header style="border-top:4px solid #e0ac4a;border-bottom:4px solid #e0ac4a;padding:20px 0">
+      <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:16px">
+        <h1 class="serif" style="margin:0;font-size:48px">FLUT Chronicle</h1>
+        <p style="margin:0;text-align:right;font-size:24px;font-weight:900;font-variant-numeric:tabular-nums;color:#e0ac4a">14<span style="display:block;font-size:9.6px;letter-spacing:.15em;text-transform:uppercase;color:#8a8072">issues</span></p>
+      </div>
+      <p class="cap" style="margin:16px 0 0;letter-spacing:.2em">One issue per football week · Terrible Football Haarlem</p>
+    </header>
+  </section>
+
+  <section style="display:flex;flex-direction:column;gap:10px">
+    <p class="note" style="margin:0">/chronicle/[week]</p>
+    <a href="#" style="font-size:14px;font-weight:700">← All issues</a>
+    <header style="border-top:4px solid #e0ac4a;border-bottom:4px solid #e0ac4a;padding:20px 0">
+      <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:16px">
+        <h1 class="serif" style="margin:0;font-size:48px">FLUT Chronicle</h1>
+        <p style="margin:0;text-align:right;font-weight:900;color:#e0ac4a">Week of 28 September</p>
+      </div>
+      <p class="cap" style="margin:16px 0 0;letter-spacing:.18em">28 September – 4 October 2026</p>
+    </header>
+  </section>
+
+  <div style="display:grid;gap:8px;border:1px dashed #3a5866;border-radius:12px;padding:12px">
+    <p class="note" style="margin:0">Both mastheads already break after "KUT" at 320, and they break after "FLUT" in the same place. No change is needed.</p>
+    <p class="note" style="margin:0">The extra letter moves the one-line threshold from 336 to 352px on the index and from about 480 to 500px on an issue. So 336–351px phones now get two lines on the index, as 320 does today.</p>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":320,"height":760}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

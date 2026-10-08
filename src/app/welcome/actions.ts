@@ -21,7 +21,7 @@ export async function markStarterOpened(): Promise<StarterOpenResult> {
 
   const cards = await loadStarterCards(supabase);
 
-  // No revalidatePath here: the reveal runs client-side and "Enter KUT" links
+  // No revalidatePath here: the reveal runs client-side and "Enter FLUT" links
   // to "/" (a dynamic route, not cached). Revalidating the root layout would
   // re-run this /welcome page, whose guard would then redirect to "/" mid-reveal.
   return { ok: true, cards };

@@ -28,7 +28,7 @@ export default function GlobalError({
                 textTransform: "uppercase",
               }}
             >
-              KUT
+              FLUT
             </p>
             <h1>Something went wrong</h1>
             <p>Please retry this page. If the problem continues, contact an administrator.</p>

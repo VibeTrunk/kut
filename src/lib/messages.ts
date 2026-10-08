@@ -72,7 +72,7 @@ export type TargetLookups = {
  * has none, which the row shows by leaving out its arrow:
  *
  * - Midweek result → that week's bracket;
- * - a sale → the wallet: KUT has no wallet page, and Club Value opens with the
+ * - a sale → the wallet: FLUT has no wallet page, and Club Value opens with the
  *   balance; a purchase → the card, while the member still owns it;
  * - a trade offer or its answer → Offers. HANDOFF sends an answer to the
  *   listing, but by the time an offer is answered, expired or cancelled the

@@ -209,14 +209,14 @@ export default async function CollectionPage({ searchParams }: CollectionPagePro
           Number.isSafeInteger(Number(query.discard)) &&
           Number(query.discard) > 0 && (
             <p className="rounded-2xl border border-moss-line/40 bg-moss-bg/50 p-4 font-bold text-moss">
-              Card discarded. {query.discard} KUT Coins were added to your wallet.
+              Card discarded. {query.discard} FLUT Coins were added to your wallet.
             </p>
           )}
         {query.purchase &&
           Number.isSafeInteger(Number(query.purchase)) &&
           Number(query.purchase) > 0 && (
             <p className="rounded-2xl border border-moss-line/40 bg-moss-bg/50 p-4 font-bold text-moss">
-              Purchase complete. {query.purchase} KUT Coins were paid and the card is now in your
+              Purchase complete. {query.purchase} FLUT Coins were paid and the card is now in your
               collection.
             </p>
           )}

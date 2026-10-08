@@ -287,7 +287,7 @@ function roundRect(ctx: Ctx, x: number, y: number, w: number, h: number, r: numb
   }
 }
 
-/** KUT's shield: `polygon(50% 0, 100% 38%, 82% 100%, 18% 100%, 0 38%)`. */
+/** FLUT's shield: `polygon(50% 0, 100% 38%, 82% 100%, 18% 100%, 0 38%)`. */
 function shield(ctx: Ctx, x: number, y: number, w: number, h: number, color: string) {
   ctx.save();
   ctx.fillStyle = color;
@@ -552,7 +552,7 @@ function drawDisc(
 function drawTop(ctx: Ctx, assets: ShareAssets, top: string) {
   shield(ctx, M, 72, 34, 34, C.brass);
   font(ctx, assets, 900, 44);
-  text(ctx, "KUT", M + 46, 106, { color: C.ink });
+  text(ctx, "FLUT", M + 46, 106, { color: C.ink, track: -0.02, size: 44 });
   font(ctx, assets, 800, 26);
   text(ctx, top.toUpperCase(), SHARE_WIDTH - M, 100, {
     color: C.brass,
@@ -712,7 +712,7 @@ export function drawMyNight(ctx: Ctx, data: MyNightData, assets: ShareAssets) {
   text(ctx, coins, M, 405, { color: C.brass });
   const coinsWidth = ctx.measureText(coins).width;
   font(ctx, assets, 800, 34);
-  text(ctx, "KUT Coins", M + coinsWidth + 16, 405, { color: C.inkDim });
+  text(ctx, "FLUT Coins", M + coinsWidth + 16, 405, { color: C.inkDim });
   drawTiles(ctx, assets, data.tiles, 467, 138, 28);
   drawKicker(ctx, assets, data.fiveLabel, 664, C.inkFaint, 22);
   drawFive(ctx, assets, data.cards, 689, data.best);

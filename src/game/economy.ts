@@ -2,7 +2,7 @@
  * Canonical economy constants (BUILD_SPEC.md Part 145).
  *
  * Every value the economy actually enforces lives in SQL; these mirror them so
- * display copy (the "How KUT works" page, the Club Value breakdown) stays in
+ * display copy (the "How FLUT works" page, the Club Value breakdown) stays in
  * sync with the rules. If a value changes here it must also change in the
  * relevant migration and in BUILD_SPEC Part 145.
  *

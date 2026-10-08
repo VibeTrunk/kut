@@ -1,5 +1,13 @@
 # Design reference — album, Chronicle, rating history
 
+**FLUT rebrand (2026-10-08):** KUT becomes FLUT, Football League Ultimate
+Team. The marks, login and welcome lockup, favicon and app icons, share-image
+text sizes and fit checks are in
+[`../../design/flut/HANDOFF.md`](../../design/flut/HANDOFF.md). It supersedes
+the branding drawn in every older package below; those packages stay as they
+are. It was approved by the owner on 2026-10-08 and built in PR
+`feat/flut-branding` (ADR-137).
+
 **Groundmasters Special edition (2026-09-30):** five proposed card directions
 in [`../../design/groundmasters/README.md`](../../design/groundmasters/README.md).
 Not built and no direction chosen; the rules and open decisions are in

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { BRAND } from "@/lib/brand";
 import { describeFoldedActivity, foldActivity, type ActivityRow } from "@/lib/activity";
 import { checkInClosesAt, orderNowCards } from "@/lib/home/now";
 import {
@@ -70,7 +71,9 @@ describe("Club activity folds a member's pack openings (ADR-114)", () => {
       [null, 1, "t2"],
     ]);
     expect(describeFoldedActivity(folded[0])).toBe("Member B opened 3 packs.");
-    expect(describeFoldedActivity(folded[1])).toBe("Sophie D. opened a pack (100 KUT Coins).");
+    expect(describeFoldedActivity(folded[1])).toBe(
+      `Sophie D. opened a pack (100 ${BRAND.currency}).`,
+    );
     expect(foldActivity(rows, 2)).toHaveLength(2);
   });
 });

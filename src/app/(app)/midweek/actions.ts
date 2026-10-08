@@ -68,7 +68,7 @@ export async function setMidweekOptOut(
       ok: false,
       error:
         error.code === "42501"
-          ? "Only active KUT members can take part."
+          ? "Only active FLUT members can take part."
           : "Something went wrong. Please try again.",
     };
   }

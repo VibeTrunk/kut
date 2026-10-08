@@ -1,5 +1,6 @@
 import type { LiveCardPlayer } from "@/components/live-card";
 import { archetypeLabel } from "@/game/archetypes";
+import { BRAND } from "@/lib/brand";
 import { formatDayDate, formatDayMonth } from "./entry";
 import {
   fieldCounts,
@@ -90,9 +91,9 @@ const slug = (text: string) =>
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
 
-/** `kut-midweek-7-oct-champion.png`, `kut-midweek-7-oct-sanne.png`. */
+/** `flut-midweek-7-oct-champion.png`, `flut-midweek-7-oct-sanne.png`. */
 export function shareFileName(lockAt: string, who: "champion" | string): string {
-  return `kut-midweek-${slug(formatDayMonth(lockAt))}-${who === "champion" ? "champion" : slug(who) || "night"}.png`;
+  return `${BRAND.shortName.toLowerCase()}-midweek-${slug(formatDayMonth(lockAt))}-${who === "champion" ? "champion" : slug(who) || "night"}.png`;
 }
 
 function surname(name: string) {

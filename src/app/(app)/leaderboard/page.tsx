@@ -52,11 +52,11 @@ export default async function LeaderboardPage() {
         <CompeteTabs />
         <header className="space-y-3">
           <p className="text-[0.7rem] font-extrabold uppercase tracking-[0.26em] text-brass">
-            KUT standings
+            FLUT standings
           </p>
           <h1 className="display text-3xl sm:text-6xl">Standings</h1>
           <p className="max-w-2xl text-base leading-relaxed text-ink-dim">
-            Club Value is your KUT Coins, plus the discard value of every unburned card you own,
+            Club Value is your FLUT Coins, plus the discard value of every unburned card you own,
             plus your linked player&rsquo;s Live-card value counted 4&times;.{" "}
             <Link className="font-bold text-brass hover:underline" href="/club/value">
               See the full breakdown

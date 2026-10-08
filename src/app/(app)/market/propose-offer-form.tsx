@@ -69,7 +69,7 @@ export function ProposeOfferForm({
           className="block text-xs font-bold uppercase tracking-[0.12em] text-ink-faint"
           htmlFor={`offer-coins-${listingId}`}
         >
-          KUT Coins
+          FLUT Coins
         </label>
         <input
           className="mt-1 min-h-11 w-full rounded-lg border border-line bg-panel px-3 font-bold tabular-nums"

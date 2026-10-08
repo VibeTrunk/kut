@@ -22,10 +22,10 @@ export function BuyListingForm({
     return formAction(data);
   }
   // The market grid is two columns on a phone (KB-006), so this label has to fit a
-  // ~160px button — "Buy for 1250 KUT Coins" does not. The coin glyph carries the
+  // ~160px button — "Buy for 1250 FLUT Coins" does not. The coin glyph carries the
   // currency instead, and the full sentence stays in `aria-label` so a screen
   // reader still hears it whole.
-  const label = canAfford ? `Buy for ${price} KUT Coins` : `Need ${price} KUT Coins`;
+  const label = canAfford ? `Buy for ${price} FLUT Coins` : `Need ${price} FLUT Coins`;
   return (
     <form action={action}>
       <input name="listingId" type="hidden" value={listingId} />

@@ -49,7 +49,7 @@ export function ClaimInviteForm({ token }: { token: string }) {
         disabled={isPending}
         type="submit"
       >
-        {isPending ? "Creating account…" : "Create KUT account"}
+        {isPending ? "Creating account…" : "Create FLUT account"}
       </button>
     </form>
   );

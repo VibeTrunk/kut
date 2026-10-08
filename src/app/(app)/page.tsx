@@ -109,7 +109,7 @@ export default async function Home() {
   ]);
 
   if (profileError) {
-    throw new Error("Could not verify your KUT membership.");
+    throw new Error("Could not verify your FLUT membership.");
   }
   if (!profile || profile.is_disabled) {
     redirect("/login");
@@ -206,7 +206,7 @@ export default async function Home() {
           className={`group ${NOW_CARD} ${NOW_BRASS}`}
           href={`/sessions/${openReport.session_id}/report`}
         >
-          <span className={NOW_KICKER}>Your report &middot; +50 KUT Coins</span>
+          <span className={NOW_KICKER}>Your report &middot; +50 FLUT Coins</span>
           <span className="flex items-center justify-between gap-2.5">
             <span className="display text-2xl sm:text-3xl">
               {openReport.report_status === "submitted"
@@ -248,7 +248,7 @@ export default async function Home() {
           <p className="text-[0.7rem] font-extrabold uppercase tracking-[0.26em] text-brass">
             Terrible Football Haarlem
           </p>
-          <h1 className="display text-[30px] sm:text-5xl lg:text-6xl">This week in KUT</h1>
+          <h1 className="display text-[30px] sm:text-5xl lg:text-6xl">This week in FLUT</h1>
         </header>
 
         {nowCards.length > 0 && (
@@ -272,7 +272,7 @@ export default async function Home() {
           </p>
         )}
 
-        {/* The KUT Coins tile went: the coin pill in the bar shows the balance
+        {/* The FLUT Coins tile went: the coin pill in the bar shows the balance
             (UX review). Club Value and Rank read as links, and opening a pack
             is the page's own action, full width on a phone. */}
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
@@ -405,7 +405,7 @@ export default async function Home() {
           )}
           <p className="text-sm">
             <Link className="font-bold text-brass hover:underline" href="/how-it-works">
-              New here? How KUT works &rarr;
+              New here? How FLUT works &rarr;
             </Link>
           </p>
         </section>

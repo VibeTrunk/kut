@@ -20,11 +20,20 @@ source_db() {
 
 source_db -U postgres < "$here/selftest-fixture.sql"
 source_db -U postgres < "$here/kut-backup-role.sql"
+# Which of these exist depends on the services the stack was started with.
 source_db -U supabase_admin <<'SQL'
-revoke all on all tables in schema net from public;
-revoke all on all sequences in schema net from public;
-revoke usage on schema net from public;
-revoke connect, temporary on database _supabase from public;
+do $$
+begin
+  if exists (select from pg_namespace where nspname = 'net') then
+    revoke all on all tables in schema net from public;
+    revoke all on all sequences in schema net from public;
+    revoke usage on schema net from public;
+  end if;
+  if exists (select from pg_database where datname = '_supabase') then
+    revoke connect, temporary on database _supabase from public;
+  end if;
+end
+$$;
 SQL
 
 password=$(od -An -N16 -tx1 /dev/urandom | tr -d ' \n')

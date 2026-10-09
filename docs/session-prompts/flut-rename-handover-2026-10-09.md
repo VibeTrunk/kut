@@ -2,8 +2,9 @@
 
 Slices 1–4 of the KUT → FLUT rename are live: the in-app branding (#208), the
 `flut.vibetrunk.com` domain and redirect (#210) and the vibetrunk.com listing
-(home #5). This note is for the owner and the next agent session that continues
-the rename: slice 5 and the optional template migration. It starts with the
+(home #5). Slice 5 was declined. This note is for the owner and any later
+session that picks up the one optional item left: the server template
+migration. It starts with the
 slice 1 picture, then dated status updates below. ADR-137 holds the
 decisions, and ROADMAP "FLUT rename — remaining slices" tracks the status.
 
@@ -93,9 +94,18 @@ What shipped in #208:
   `docs/dedupe-agent-safety-docs`) are for the owner to delete. The kut docs
   PR `docs/flut-slice-4` carries the #210 record and the slice 4 notes. It is
   documentation-only, so production stays at `b371932`.
-- **Still open:** slice 5 (307 → 308) and the optional server template
-  migration, each needing its own authorization, plus the check that a new
-  invite link starts with `https://flut.`.
+- **Closing state, after #211 merged (`d0d4cd4`):**
+  - Full main CI passed on `d0d4cd4`. Production stays at `b371932`
+    (`candidate_not_live` for `d0d4cd4` at 10:48:02Z, legacy redirect still
+    verified).
+  - The owner confirmed that a newly created invite link starts with
+    `https://flut.vibetrunk.com`.
+  - The owner deleted the merged local branches.
+  - The owner declined slice 5, so the redirect stays a 307 (ADR-139
+    amendment).
+  - That leaves only the optional server template migration, which needs its
+    own authorization. These closing notes are unpublished; they go into the
+    next PR for other work.
 - Slice 3 as built: on `feat/flut-domain` (ADR-139). It has the 307 in
   `next.config.ts`, the checker on `flut.` with the legacy-binding check and
   the live redirect probe, a verification command that requires the probe,
@@ -169,10 +179,12 @@ blurb "Collectible football cards for TFH — showing up matters." ROADMAP's
 out-of-date "home tools-grid blurb" one-off item and its decisions.md "Open
 items" entry were removed in `docs/flut-slice-4`.
 
-### Slice 5 — 308
+### Slice 5 — 308 (declined)
 
-Change the redirect from 307 to 308 once the owner accepts the new domain in
-production.
+The plan was to change the redirect from 307 to 308 once the owner accepted
+the new domain in production. The owner declined this on 2026-10-09 (ADR-139
+amendment). Members see no difference, search ranking does not matter here,
+and the 307 keeps a rollback immediate.
 
 ### Optional — server template migration
 

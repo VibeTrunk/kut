@@ -8,10 +8,10 @@ Ultimate Team) until 2026-10-08 (ADR-137). The repository, the Supabase
 schema `kut` and the Vercel project keep the old name; the old
 `kut.vibetrunk.com` address redirects to `flut.vibetrunk.com` (ADR-139).
 
-Start with [`CLAUDE.md`](CLAUDE.md) for project context, then
+Start with [`AGENTS.md`](AGENTS.md) for project context, then
 [`docs/README.md`](docs/README.md) — the documentation map: what each document
-is for and the order to read them (`BUILD_SPEC.md`, `PROGRESS.md`,
-`decisions.md`, then `ROADMAP.md` for what's next).
+is for. Grep `BUILD_SPEC.md`, `decisions.md` and the other docs for the area
+you are changing instead of reading them in full.
 
 ## Status
 
@@ -29,9 +29,9 @@ migrations are catalogued and deployed only from the central
 ## Current foundation
 
 KUT now has a Next.js application, local Supabase configuration, Vitest,
-Playwright, database smoke testing, and CI. Read [CLAUDE.md](CLAUDE.md),
-[docs/BUILD_SPEC.md](docs/BUILD_SPEC.md), and [docs/PROGRESS.md](docs/PROGRESS.md)
-before implementation work.
+Playwright, database smoke testing, and CI. Read [AGENTS.md](AGENTS.md) and the
+relevant sections of [docs/BUILD_SPEC.md](docs/BUILD_SPEC.md) before
+implementation work.
 
 ## Local development
 

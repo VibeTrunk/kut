@@ -6417,3 +6417,36 @@ and a preview hostname returned 200; `/_next/static` is served before
 redirects. Against live production, the new checker reported
 `candidate_live` with both bindings and `legacy_redirect` unverified (404),
 as expected before this release.
+
+## FLUT rename, slice 4: the VibeTrunk home listing — 2026-10-09
+
+Slice 3 went live as #210 (`b371932`, `dpl_EXNx6zGYJAR3qgQe8dggvh54L9wP`);
+its gated-release record is in `DEPLOYMENTS.md`. Before slice 4 began, the
+checker again reported `candidate_live` on `flut.vibetrunk.com` with
+`legacy_redirect` verified (307).
+
+**Slice 4 (`VibeTrunk/home` #5, merged by the owner at 10:23:42Z as
+`600d958`).** The only change is the KUT entry in `src/data/tools.ts`. Its
+name is now `FLUT`, its blurb is "Collectible football cards for TFH — showing
+up matters." (56 characters) and its URL is `https://flut.vibetrunk.com`. Its
+status stays `live`, and Cogitster is unchanged. Home adds no new coupling to
+kut. Before the edit, the sibling checkout was moved, fast-forward only, from
+the squash-merged `feat/kut-live` (remote gone, tree identical to `main`) to
+`main`. Only the owner deletes old local branches there.
+
+Home's Vercel project `home` is linked to GitHub with production branch `main`
+and has no deployment hold, so the merge deployed the page:
+`dpl_9jeSQ31CEwpe5LmBrhYbPsgHxEQT` was READY at `600d958` within seconds.
+Before the merge, `npm run check` (0 errors, warnings or hints) and
+`npm run build` passed. A local preview at 1280 and 390 px showed card №02 as
+FLUT with the new blurb and link, the same height as Cogitster. Afterwards, a
+read-only check of `https://vibetrunk.com` found the FLUT card linking to
+`https://flut.vibetrunk.com`, which returned 200.
+
+kut docs: ROADMAP marks slice 4 done and drops the out-of-date "home
+tools-grid blurb" one-off item, which decisions.md "Open items" also no longer
+lists. The handover is updated. This PR is documentation-only, so kut
+production stays at `b371932` (ADR-124 amendment of 2026-10-05; see
+`DEPLOYMENTS.md`). Still open: slice 5 (307 → 308), the optional server
+template migration, and checking that a new invite link starts with
+`https://flut.`.

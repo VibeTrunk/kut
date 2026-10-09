@@ -122,6 +122,11 @@ other external mutations need their own written instruction.
   blacked out the Chronicle (KB-013).
 - The backup tier follows what a migration can do: anything data-changing gets
   a fresh cold-verified backup.
+- **Start-up check:** the nightly backup (ADR-141, `docs/BACKUP.md`) can fail
+  to start without any email. At the start of a session, run
+  `gh run list -w backup.yml -s success -L 1 --json createdAt`. Warn the owner
+  if the last success is older than 36 hours, or if there is none once the
+  backup has been set up.
 
 ## Agent safety
 

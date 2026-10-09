@@ -23,6 +23,21 @@ deployment identity and domain-verification time; do not change the latest
 migration line when no migration was applied. Records accompany the next PR
 opened for other work, never a standalone record PR.
 
+## 2026-10-09 — CI-only process reset S3 (ADR-140, ADR-141); production stays at `b371932`
+
+The `chore/process-reset-s3-backup` PR (reset session S3, VibeTrunk/kut#212)
+adds the nightly encrypted `kut` backup: `.github/workflows/backup.yml`, the
+`kut-backup` composite action, `.github/backup-recipient.txt` (an age public
+key), and the scripts and SQL under `scripts/ci/backup/`. It also adds
+ADR-141, a `docs/BACKUP.md` section and an `AGENTS.md` start-up check. Its
+complete diff stays inside `.github/**`, `scripts/ci/**` and documentation, so
+under ADR-140 it is a CI-only merge: no release gate and no production
+deployment. Full main CI still runs on the merged SHA (ADR-126). Production
+intentionally lags `main` by this commit and stays at
+`b371932b0690ed9c87d2e37b1692de134bdecc38` (#210). Automatic main deployment
+remains held. The `kut_backup` role, the `backup` environment and its secrets
+are owner-run hosted steps outside this PR.
+
 ## 2026-10-09 — CI-only process reset S2 (ADR-140); production stays at `b371932`
 
 The `test/process-reset-s2` PR (reset session S2, VibeTrunk/kut#212) adds the

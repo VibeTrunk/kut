@@ -1,0 +1,114 @@
+name: backup
+
+# Nightly encrypted backup of schema kut (ADR-141). The nightly job connects
+# as the read-only kut_backup role through the Supabase Session pooler, from
+# the `backup` environment (branch main only). Pull requests that touch the
+# backup run the same pipeline against a throwaway local source instead, with
+# no secrets. A failed run emails the owner through GitHub's Actions
+# notifications; the agents' start-up check covers runs that never start.
+
+on:
+  schedule:
+    - cron: '17 3 * * *'
+  workflow_dispatch:
+  workflow_call:
+  pull_request:
+    paths:
+      - .github/workflows/backup.yml
+      - .github/actions/kut-backup/**
+      - .github/backup-recipient.txt
+      - scripts/ci/backup/**
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backup-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  NODE_VERSION: '24'
+
+jobs:
+  backup:
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: backup
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci --prefer-offline --no-audit --no-fund
+      - uses: ./.github/actions/kut-backup
+        env:
+          PGHOST: ${{ secrets.KUT_BACKUP_PGHOST }}
+          PGPORT: '5432'
+          PGUSER: ${{ secrets.KUT_BACKUP_PGUSER }}
+          PGPASSWORD: ${{ secrets.KUT_BACKUP_PGPASSWORD }}
+          PGSSLMODE: require
+        with:
+          source: hosted
+          recipients-file: .github/backup-recipient.txt
+          retention-days: 30
+
+  selftest:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci --prefer-offline --no-audit --no-fund
+      - name: Install age
+        run: |
+          echo "https://archive.ubuntu.com/ubuntu" | sudo tee /etc/apt/apt-mirrors.txt > /dev/null
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq --no-install-recommends age > /dev/null
+      # A throwaway key: the self-test must be able to decrypt what it wrote.
+      - name: Make a throwaway age key
+        run: |
+          set -euo pipefail
+          age-keygen -o "$RUNNER_TEMP/selftest-key.txt" 2> /dev/null
+          age-keygen -y "$RUNNER_TEMP/selftest-key.txt" > "$RUNNER_TEMP/selftest-recipient.txt"
+      - name: Start the throwaway source stack
+        run: npx supabase start -x gotrue,realtime,imgproxy,mailpit,postgrest,postgres-meta,studio,edge-runtime,logflare,vector,supavisor > /dev/null
+      - name: Load the fictional fixture and create kut_backup
+        run: scripts/ci/backup/selftest-source.sh
+      - uses: ./.github/actions/kut-backup
+        with:
+          source: selftest
+          recipients-file: ${{ runner.temp }}/selftest-recipient.txt
+          retention-days: 1
+      - name: Decrypt and check the plaintext hash
+        run: |
+          set -euo pipefail
+          cd "$BACKUP_WORK/out"
+          name="kut-backup-$BACKUP_STAMP"
+          age -d -i "$RUNNER_TEMP/selftest-key.txt" -o "$name.tar" "$name.tar.age"
+          sha256sum -c "$name.tar.sha256"
+          test "$(tar -tf "$name.tar" | sort | tr '\n' ' ')" = 'kut.dump manifest.json '
+          rm -- "$name.tar"
+      # TEMPORARY, removed before merge (S3 verification 2): a synthetic
+      # failing row carrying a marker goes through the backup's logging path.
+      # The marker is built at run time, so it appears in this log only if
+      # the logging leaks.
+      - name: Log canary
+        run: |
+          set -euo pipefail
+          marker=$(printf '%s' 'czMtbG9nLWNhbmFyeS1tYXJrZXI=' | base64 -d)
+          export BACKUP_PRIVATE_LOG="$RUNNER_TEMP/canary-log.txt"
+          : > "$BACKUP_PRIVATE_LOG"
+          . scripts/ci/backup/lib.sh
+          code=0
+          run_step canary docker exec -i supabase_db_kut psql "${PSQL_FLAGS[@]}" -U postgres -d postgres \
+            -c 'create temp table canary (v text check (v is null))' \
+            -c "insert into canary values ('$marker')" || code=$?
+          test "$code" -ne 0
+          grep -q "$marker" "$BACKUP_PRIVATE_LOG"
+          echo "canary: the failing row reached the private log only"

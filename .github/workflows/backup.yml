@@ -94,21 +94,3 @@ jobs:
           sha256sum -c "$name.tar.sha256"
           test "$(tar -tf "$name.tar" | sort | tr '\n' ' ')" = 'kut.dump manifest.json '
           rm -- "$name.tar"
-      # TEMPORARY, removed before merge (S3 verification 2): a synthetic
-      # failing row carrying a marker goes through the backup's logging path.
-      # The marker is built at run time, so it appears in this log only if
-      # the logging leaks.
-      - name: Log canary
-        run: |
-          set -euo pipefail
-          marker=$(printf '%s' 'czMtbG9nLWNhbmFyeS1tYXJrZXI=' | base64 -d)
-          export BACKUP_PRIVATE_LOG="$RUNNER_TEMP/canary-log.txt"
-          : > "$BACKUP_PRIVATE_LOG"
-          . scripts/ci/backup/lib.sh
-          code=0
-          run_step canary docker exec -i supabase_db_kut psql "${PSQL_FLAGS[@]}" -U postgres -d postgres \
-            -c 'create temp table canary (v text check (v is null))' \
-            -c "insert into canary values ('$marker')" || code=$?
-          test "$code" -ne 0
-          grep -q "$marker" "$BACKUP_PRIVATE_LOG"
-          echo "canary: the failing row reached the private log only"

@@ -183,6 +183,8 @@ powershell -NoProfile -File scripts/release/request-production-gate.ps1 `
 The gate reads GitHub check evidence for that SHA, checks byte-identical central
 migration catalogue parity, requires a cold-verified backup less than 24 hours
 old, and freshly decrypts and hash-checks that ciphertext in another process.
+For a merge-authorized release, the owner's merge also covers taking that fresh
+backup; it needs no separate approval (ADR-124, owner amendment of 2026-10-09).
 It invokes `scripts/release/run-production-e2e.mjs --candidate <sha>`, which
 verifies installed Next/Playwright versions against the lockfile, provisions
 Chromium and WebKit, builds the candidate afresh and starts an owned production
@@ -389,15 +391,26 @@ deployment audit:
 node scripts/release/check-vercel-deployment.mjs --candidate <40-character-sha>
 ```
 
-The read-only checker resolves `kut.vibetrunk.com` to its bound Vercel deployment,
-checks the project, production target, ready state and exact Git SHA, and reads
-candidate deployments separately. A successful preview or an unpromoted ready
-build is not proof of what the production domain serves. CLI list rows without
-IDs are resolved by their validated Vercel hostname through the authenticated
-deployment API, with project and commit provenance checked against the list row.
-Re-reading the domain
-binding detects reassignment during the check. A partial candidate-history page
-is identified as incomplete. No release approval or deployment is authorized.
+The read-only checker resolves `flut.vibetrunk.com` to its bound Vercel
+deployment, checks the project, production target, ready state and exact Git
+SHA, and reads candidate deployments separately. The legacy `kut.vibetrunk.com`
+alias must belong to the same project and bind the same deployment. Neither
+alias may carry a Vercel-level redirect: the app redirects the legacy host
+(ADR-139). A successful preview or an unpromoted ready build is not proof of
+what the production domain serves. CLI list rows without IDs are resolved by
+their validated Vercel hostname through the authenticated deployment API, with
+project and commit provenance checked against the list row.
+
+The checker then requests one fixed path on the legacy host without following
+redirects. It reports `legacy_redirect.verified` only for a 307 or 308 whose
+`Location` is the same path and query on `https://flut.vibetrunk.com`. Any
+other status, location or a network failure is reported with a reason, not
+thrown, because production before the release that adds the redirect rightly
+has none. Re-reading both bindings afterwards detects reassignment during the
+check. A partial candidate-history page is identified as incomplete. The
+printed post-deployment verification command requires `candidate_live`, a
+complete lookup and a verified legacy redirect. No release approval or
+deployment is authorized.
 
 Authentication failures produce `unverified`, never a deployment conclusion.
 The operator can run `node scripts/release/check-vercel-deployment.mjs --login`

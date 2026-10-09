@@ -7198,6 +7198,16 @@ evidence is inherited and no unreleased executable change is waived.
 Deployment records accompany the next PR for other work, never a standalone
 record PR. The #196/#197/#198 records were published once in #199.
 
+**Owner amendment, 2026-10-09:** asked whether the gate's fresh backup needs
+its own approval, the owner answered "Yes, make it a general rule" that it
+does not, as for #208. The owner's merge authorization therefore covers taking
+the fresh cold-verified backup that the gate requires for that release. It is
+a read-only hosted dump, made only as a gate prerequisite. Every backup
+requirement still applies: separate-process cold verification, the 24-hour
+freshness check and fail-closed handling. A backup for a hosted migration, or
+for any purpose other than a merge-authorized release, keeps its own runbook and
+approval.
+
 The first release under this instruction is merged #189 at
 `13bf6ad5e821532debe5c4237df75bcc54cc5b57`. Its full gate passed before the
 authorized Vercel deployment. Direct verification exposed CLI list rows that
@@ -8126,3 +8136,60 @@ slows WebKit in this suite, while the production server the gate and members
 use does not. The local dev-server suite is therefore less reliable on 16.3.8
 until a later Next release; confirm a dev-server WebKit failure in production
 mode before judging the code.
+
+## ADR-139 — flut.vibetrunk.com is the primary domain; the app redirects the legacy host
+
+Date: 2026-10-09
+
+Status: Accepted (ADR-137 slices 2 and 3)
+
+Context: slice 2 was done on 2026-10-09. The owner attached
+`flut.vibetrunk.com` to the Vercel project `kut`, added its CNAME in Porkbun
+(which serves the `vibetrunk.com` DNS) and set Production `APP_URL` to
+`https://flut.vibetrunk.com`. A read-only check found both hosts on the same
+production deployment, with a valid certificate for the new host and no
+Vercel-level redirect on either.
+
+Decision: `next.config.ts` redirects every path on the exact host
+`kut.vibetrunk.com` to the same path and query on
+`https://flut.vibetrunk.com`. It uses 307 until the owner accepts the new
+domain in production, then 308 (slice 5). It is the first redirect rule, so a
+legacy request leaves the old host before any other rule. Next anchors the
+host pattern and ignores case and port. Preview, local and `flut.` hosts are
+untouched. The redirect lives in the app, not in Vercel's domain settings. It
+ships, and rolls back, with the deployment, and it goes through the gate like
+any other code. Both aliases keep binding the same deployment.
+
+The release checker moves to `flut.vibetrunk.com`. It also requires the
+legacy alias to belong to the project, bind the same deployment and carry no
+Vercel redirect. It re-reads both bindings at the end. It probes the redirect
+live: one fixed path and query on the legacy host, with redirects not
+followed. It reports `legacy_redirect.verified` only for a 307 or 308 to that
+same path and query on the new host. Before this release production has no
+redirect, so a failed probe is reported, not thrown. The printed
+post-deployment verification command requires a verified redirect, so this
+release itself cannot be recorded as verified without it.
+
+Consequences:
+
+- Sign-in cookies stay per host (ADR-137), so every member signs in again on
+  the new host. Announce this first. Never cut over on a Midweek Wednesday
+  evening (lock 20:00 Amsterdam).
+- Old invite links (`/invite/<token>`) and shared bracket links keep working
+  through the redirect. New invites use `APP_URL`, which only takes effect in
+  deployments built after it was set, the first being this release.
+- `/_next/static` files are served before redirects. A tab still open on the
+  old host keeps its scripts until it navigates, and is then redirected.
+- No app flow uses a Supabase Auth redirect: sign-in is by password, resets
+  are admin-assisted and invites are app URLs. So the shared redirect
+  allow-list needs no `flut.` entry, and the shared Site URL is unchanged.
+- No migration, RPC, payload or economy change. Rollback means promoting
+  #208's deployment, which removes the redirect. Both hosts keep serving it.
+
+Verification: a production build served with `next start` returned 307 to the
+matching `flut.` URL for `/`, `/login`, `/invite/…`, `/favicon.ico`, the
+probe path, `/club/midweek/…` and a POST, all with query strings kept. It
+returned 200 for `flut.`, `127.0.0.1` and a preview hostname. Run against
+live production (`f23ee2a`), the new checker gave `candidate_live` for both
+bindings and `legacy_redirect` unverified (404), as expected before this
+release.

@@ -66,7 +66,7 @@ else process.exit(1);`,
   );
   writeFileSync(
     path.join(scripts, "check-vercel-deployment.mjs"),
-    `console.log(JSON.stringify({result:'candidate_live',candidate_sha:${JSON.stringify(sha)},candidate_lookup_complete:true}));`,
+    `console.log(JSON.stringify({result:'candidate_live',candidate_sha:${JSON.stringify(sha)},candidate_lookup_complete:true,legacy_redirect:{verified:true,status:307}}));`,
   );
   const commands = handoffCommands(dir, { sha, authorization: auth, gate, approval });
   const invoke = (command: string) => {
@@ -92,7 +92,13 @@ else process.exit(1);`,
   expect(readFileSync(log, "utf8")).toBe("assertion\nPOST\n");
   writeFileSync(
     path.join(scripts, "check-vercel-deployment.mjs"),
-    `console.log(JSON.stringify({result:'candidate_not_live',candidate_sha:${JSON.stringify(sha)},candidate_lookup_complete:true}));`,
+    `console.log(JSON.stringify({result:'candidate_not_live',candidate_sha:${JSON.stringify(sha)},candidate_lookup_complete:true,legacy_redirect:{verified:true,status:307}}));`,
+  );
+  expect(invoke(commands.verification).status).not.toBe(0);
+  // The candidate is live, but the legacy host does not redirect to the new one.
+  writeFileSync(
+    path.join(scripts, "check-vercel-deployment.mjs"),
+    `console.log(JSON.stringify({result:'candidate_live',candidate_sha:${JSON.stringify(sha)},candidate_lookup_complete:true,legacy_redirect:{verified:false,reason:'unexpected_status',status:200}}));`,
   );
   expect(invoke(commands.verification).status).not.toBe(0);
 }, 30000);

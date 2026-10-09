@@ -133,8 +133,12 @@ npm run test:e2e:authenticated
 
 Export `API_URL`, `ANON_KEY`, `SERVICE_ROLE_KEY` and `DB_URL` from the local
 Supabase stack without logging their values. Both fixture targets must be
-loopback. The suite runs Chromium at 320 px and Pixel 7 sizes and WebKit at
-an iPhone size; browser emulation does not replace a reported-device check.
+loopback. The suite runs Chromium at Pixel 7 size, the tests tagged `@narrow`
+at 320 px, and WebKit at an iPhone size; browser emulation does not replace a
+reported-device check. Locally it uses the dev server. CI's
+`e2e-authenticated` job runs the two Chromium projects on a production build
+(`next build`, then `next start`) against the runner's own local stack, and
+the manual `e2e-webkit` workflow runs WebKit the same way.
 
 ## Operations
 

@@ -1,0 +1,32 @@
+name: e2e-webkit
+
+# Optional, manual WebKit run of the authenticated suite on the production
+# build. Not part of merge-gate: WebKit no longer blocks a merge (owner
+# decision in the process reset, #212), but
+# it stays useful as a second browser engine before or after a risky change.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: '24'
+
+jobs:
+  e2e-webkit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci --prefer-offline --no-audit --no-fund
+      - uses: ./.github/actions/authenticated-e2e
+        with:
+          browser: webkit
+          projects: authenticated-webkit
+          artifact-name: e2e-webkit-results

@@ -5,6 +5,7 @@ import {
   advanceFixtureEvening,
   COMPLETED_WEEK,
   endFixtureEvening,
+  FIXTURE_PHOTO,
   startFixtureEvening,
 } from "./midweek-fixture";
 
@@ -96,7 +97,7 @@ for (const version of ["older", "newer"] as const) {
     await database(async (client) => {
       await client.query(
         "update kut.players set photo_path = $1 where id = '00000097-0000-4000-8000-000000010005'",
-        ["players/920069c8-43ac-4278-ae15-0373604696cb/profile.webp"],
+        [FIXTURE_PHOTO],
       );
     });
     try {
@@ -558,7 +559,7 @@ for (const delayed of [false, true]) {
     await database(async (client) => {
       await client.query(
         "update kut.players set photo_path=$1 where id='00000097-0000-4000-8000-000000010005'",
-        ["players/920069c8-43ac-4278-ae15-0373604696cb/profile.webp"],
+        [FIXTURE_PHOTO],
       );
     });
     try {

@@ -48,6 +48,14 @@ const PLAYERS = [
 export const COMPLETED_WEEK = "2001-01-15";
 const COMPLETED_LOCK = "2001-01-17T19:00:00.000Z";
 
+/**
+ * A Storage object in the private `player-photos` bucket that the share tests
+ * point a fixture Player at, so the canvas draws a real CORS-fetched photo.
+ * The global setup uploads `tests/fixtures/player-photo.webp` (a synthetic
+ * silhouette) there when the object is missing, as on a fresh CI stack.
+ */
+export const FIXTURE_PHOTO = "players/920069c8-43ac-4278-ae15-0373604696cb/profile.webp";
+
 type Kind = "1" | "2" | "3" | "4" | "5" | "6";
 /** 1 Players, 2 editions, 3 release_member's cards, 4 fixture members, 5 their cards, 6 season and session. */
 const id = (kind: Kind, n: string) => `${PREFIX}0000000${kind}00${n}`;

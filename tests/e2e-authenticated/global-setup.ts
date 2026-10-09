@@ -1,7 +1,9 @@
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import { createClient } from "@supabase/supabase-js";
 import { Client } from "pg";
 import { assertLocalTarget } from "../support/local-target";
-import { removeMidweekFixture, seedMidweekFixture } from "./midweek-fixture";
+import { FIXTURE_PHOTO, removeMidweekFixture, seedMidweekFixture } from "./midweek-fixture";
 
 const users = [
   {
@@ -44,6 +46,15 @@ export default async function globalSetup() {
       }
     }
   };
+
+  // Never overwrite: a local stack may already hold its own copy.
+  const photo = await admin.storage
+    .from("player-photos")
+    .upload(FIXTURE_PHOTO, readFileSync(path.join(__dirname, "../fixtures/player-photo.webp")), {
+      contentType: "image/webp",
+      upsert: false,
+    });
+  if (photo.error && !/exists/i.test(photo.error.message)) throw photo.error;
 
   const database = new Client({ connectionString: databaseUrl });
   await database.connect();

@@ -10,6 +10,10 @@ if (!process.env.KUT_RELEASE_RUN_DIR || !process.env.KUT_RELEASE_CANDIDATE) {
 
 export default defineConfig({
   ...authenticated,
+  // The release report must cover every test on every project
+  // (scripts/release/production-e2e-contract.mjs), so the 320 project here
+  // runs the full suite rather than only the @narrow tests.
+  projects: authenticated.projects?.map((project) => ({ ...project, grep: undefined })),
   retries: 0,
   forbidOnly: true,
   workers: 1,

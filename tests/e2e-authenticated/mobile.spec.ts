@@ -7,6 +7,7 @@ import {
   advanceFixtureEvening,
   COMPLETED_WEEK,
   endFixtureEvening,
+  FIXTURE_PHOTO,
   resetMidweekMember,
   setWeekArchetype,
   startFixtureEvening,
@@ -144,7 +145,7 @@ async function resetMidweek(username: string) {
   await withDatabase((database) => resetMidweekMember(database, username));
 }
 
-test("member can sign in and use core mobile routes", async ({ page }) => {
+test("member can sign in and use core mobile routes", { tag: "@narrow" }, async ({ page }) => {
   await signIn(page, "release_member");
   await expect(page.getByRole("heading", { name: `This week in ${BRAND.shortName}` })).toBeVisible({
     timeout: 15_000,
@@ -213,51 +214,53 @@ test.describe("Midweek Madness entry (PR 7)", () => {
     await expect(competeTab(page)).toHaveAccessibleName("Compete");
   });
 
-  test("the picker filters by archetype, keeps Save in reach, and names a coming archetype (KB-028/029)", async ({
-    page,
-  }) => {
-    await withDatabase((database) => setWeekArchetype(database, "Winger Fixture", "goalkeeper"));
-    await signIn(page, "release_member");
-    await page.goto("/midweek");
-    await expect(page.getByText(/^Squads lock /)).toBeVisible();
-    // KB-028 in the phone list: the week's archetype, and the change in words.
-    await expect(
-      page.getByText("Goalkeeper this week, Speedster from next").filter({ visible: true }),
-    ).toHaveCount(1);
+  test(
+    "the picker filters by archetype, keeps Save in reach, and names a coming archetype (KB-028/029)",
+    { tag: "@narrow" },
+    async ({ page }) => {
+      await withDatabase((database) => setWeekArchetype(database, "Winger Fixture", "goalkeeper"));
+      await signIn(page, "release_member");
+      await page.goto("/midweek");
+      await expect(page.getByText(/^Squads lock /)).toBeVisible();
+      // KB-028 in the phone list: the week's archetype, and the change in words.
+      await expect(
+        page.getByText("Goalkeeper this week, Speedster from next").filter({ visible: true }),
+      ).toHaveCount(1);
 
-    // The archetype filter is instant; Goalkeepers counts the week's archetype.
-    const filter = page.getByRole("group", { name: "Filter your cards by archetype" });
-    await filter.getByRole("button", { name: "Goalkeepers 2" }).click();
-    await expect(filter.getByRole("button", { name: "Goalkeepers 2" })).toHaveAttribute(
-      "aria-pressed",
-      "true",
-    );
-    await expect(page.getByRole("button", { name: PICK_BUTTON })).toHaveCount(2);
-    await filter.getByRole("button", { name: /^All / }).click();
-    await expect(page.getByRole("button", { name: PICK_BUTTON })).toHaveCount(5);
+      // The archetype filter is instant; Goalkeepers counts the week's archetype.
+      const filter = page.getByRole("group", { name: "Filter your cards by archetype" });
+      await filter.getByRole("button", { name: "Goalkeepers 2" }).click();
+      await expect(filter.getByRole("button", { name: "Goalkeepers 2" })).toHaveAttribute(
+        "aria-pressed",
+        "true",
+      );
+      await expect(page.getByRole("button", { name: PICK_BUTTON })).toHaveCount(2);
+      await filter.getByRole("button", { name: /^All / }).click();
+      await expect(page.getByRole("button", { name: PICK_BUTTON })).toHaveCount(5);
 
-    // Unsaved changes on a phone: one compact row stays above the tab bar.
-    await page.getByRole("button", { name: /: Striker Fixture$/ }).click();
-    await expect(page.getByRole("status").filter({ hasText: "Unsaved changes" })).toBeVisible();
-    await page.getByRole("button", { name: /: Engine Fixture$/ }).scrollIntoViewIfNeeded();
-    await expect(page.getByRole("button", { name: "Save your five" })).toBeInViewport();
-    await expectNoHorizontalOverflow(page);
+      // Unsaved changes on a phone: one compact row stays above the tab bar.
+      await page.getByRole("button", { name: /: Striker Fixture$/ }).click();
+      await expect(page.getByRole("status").filter({ hasText: "Unsaved changes" })).toBeVisible();
+      await page.getByRole("button", { name: /: Engine Fixture$/ }).scrollIntoViewIfNeeded();
+      await expect(page.getByRole("button", { name: "Save your five" })).toBeInViewport();
+      await expectNoHorizontalOverflow(page);
 
-    // From lg: the card face says what the Player plays from next week, and
-    // the team sheet says it under the card.
-    await page.setViewportSize({ width: 1440, height: 900 });
-    await expect(page.getByText("Speedster from next week").filter({ visible: true })).toHaveCount(
-      1,
-    );
-    await page.getByRole("button", { name: /: Winger Fixture$/ }).click();
-    await expect(
-      page.getByText("Goalkeeper this week, Speedster from next").filter({ visible: true }),
-    ).toHaveCount(1);
-    await expect(page.getByText("Speedster from next week").filter({ visible: true })).toHaveCount(
-      2,
-    );
-    await expectNoHorizontalOverflow(page);
-  });
+      // From lg: the card face says what the Player plays from next week, and
+      // the team sheet says it under the card.
+      await page.setViewportSize({ width: 1440, height: 900 });
+      await expect(
+        page.getByText("Speedster from next week").filter({ visible: true }),
+      ).toHaveCount(1);
+      await page.getByRole("button", { name: /: Winger Fixture$/ }).click();
+      await expect(
+        page.getByText("Goalkeeper this week, Speedster from next").filter({ visible: true }),
+      ).toHaveCount(1);
+      await expect(
+        page.getByText("Speedster from next week").filter({ visible: true }),
+      ).toHaveCount(2);
+      await expectNoHorizontalOverflow(page);
+    },
+  );
 
   test("the plusses count follows the five: no count without a Goalkeeper, a short line and its factor, then balanced", async ({
     page,
@@ -406,38 +409,42 @@ test.describe("Compete (ADR-107)", () => {
 });
 
 test.describe("Midweek Madness results (PR 8)", () => {
-  test("a completed week's bracket and a match report fit the screen", async ({ page }) => {
-    await signIn(page, "release_member");
+  test(
+    "a completed week's bracket and a match report fit the screen",
+    { tag: "@narrow" },
+    async ({ page }) => {
+      await signIn(page, "release_member");
 
-    // The picker carries last week's result with the way to its bracket.
-    await page.goto("/midweek");
-    await expect(page.getByRole("heading", { name: "Pick your five" })).toBeVisible();
-    await page.getByRole("link", { name: "Bracket →" }).click();
-    await expect(page).toHaveURL(new RegExp(`/midweek/${COMPLETED_WEEK}$`));
+      // The picker carries last week's result with the way to its bracket.
+      await page.goto("/midweek");
+      await expect(page.getByRole("heading", { name: "Pick your five" })).toBeVisible();
+      await page.getByRole("link", { name: "Bracket →" }).click();
+      await expect(page).toHaveURL(new RegExp(`/midweek/${COMPLETED_WEEK}$`));
 
-    await expect(page.getByRole("heading", { level: 1, name: /won it$/ })).toBeVisible();
-    await expect(page.getByRole("navigation", { name: "Jump to" })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Final", exact: true })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Who picked whom" })).toBeVisible();
-    await expect(page.getByText("✓ Matches the seal.")).toBeAttached();
-    await expectNoHorizontalOverflow(page);
+      await expect(page.getByRole("heading", { level: 1, name: /won it$/ })).toBeVisible();
+      await expect(page.getByRole("navigation", { name: "Jump to" })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "Final", exact: true })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "Who picked whom" })).toBeVisible();
+      await expect(page.getByText("✓ Matches the seal.")).toBeAttached();
+      await expectNoHorizontalOverflow(page);
 
-    // release_member's own path is marked, and a played match opens its report.
-    await expect(page.getByText("You", { exact: true }).first()).toBeVisible();
-    await page
-      .getByRole("link", { name: /^Match report: / })
-      .first()
-      .click();
-    await expect(page).toHaveURL(new RegExp(`/midweek/${COMPLETED_WEEK}/match/[0-9a-f-]{36}$`));
-    await expect(page.getByRole("heading", { name: "How it went" })).toBeVisible();
-    await expect(page.getByRole("list", { name: "Key moments" })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Why" })).toBeVisible();
-    await expect(page.getByRole("img", { name: /^Before kick-off: / })).toBeVisible();
-    await expectNoHorizontalOverflow(page);
-    await expectTeamColours(page);
+      // release_member's own path is marked, and a played match opens its report.
+      await expect(page.getByText("You", { exact: true }).first()).toBeVisible();
+      await page
+        .getByRole("link", { name: /^Match report: / })
+        .first()
+        .click();
+      await expect(page).toHaveURL(new RegExp(`/midweek/${COMPLETED_WEEK}/match/[0-9a-f-]{36}$`));
+      await expect(page.getByRole("heading", { name: "How it went" })).toBeVisible();
+      await expect(page.getByRole("list", { name: "Key moments" })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "Why" })).toBeVisible();
+      await expect(page.getByRole("img", { name: /^Before kick-off: / })).toBeVisible();
+      await expectNoHorizontalOverflow(page);
+      await expectTeamColours(page);
 
-    await expectMatchPageWhy(page);
-  });
+      await expectMatchPageWhy(page);
+    },
+  );
 
   test("on a 1440 px desktop a match report puts the Why beside the story", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
@@ -594,51 +601,59 @@ test.describe("Midweek Madness evening from the lock (F5, ADR-113)", () => {
     await withDatabase(endFixtureEvening);
   });
 
-  test("from the lock: the draw, every five, kick-off times and the bracket", async ({ page }) => {
-    await resetMidweek("release_member");
-    let weekStart = "";
-    await withDatabase(async (database) => {
-      ({ weekStart } = await startFixtureEvening(database));
-    });
-    await signIn(page, "release_member");
-    await page.goto("/midweek");
+  test(
+    "from the lock: the draw, every five, kick-off times and the bracket",
+    { tag: "@narrow" },
+    async ({ page }) => {
+      await resetMidweek("release_member");
+      let weekStart = "";
+      await withDatabase(async (database) => {
+        ({ weekStart } = await startFixtureEvening(database));
+      });
+      await signIn(page, "release_member");
+      await page.goto("/midweek");
 
-    await expect(page.getByRole("heading", { level: 1, name: "The draw is out" })).toBeVisible();
-    await expect(eveningClock(page)).toHaveAccessibleName(
-      // The first round after the lock, named from the end ("Quarters" with 5–8 entrants).
-      /locked; [\w ]+ \d\d:\d\d, next, you're in;/,
-    );
-    await expect(page.getByRole("heading", { name: "Your first match" })).toBeVisible();
-    // release_member's auto squad, and one or two opponents' fives, from the lock.
-    const fives = page.getByRole("region", { name: /’s five$/ });
-    expect(await fives.count()).toBeGreaterThanOrEqual(2);
-    await expect(fives.first().getByText("Auto squad")).toBeVisible();
-    await expect(page.getByText(/^Form, pick boost and the chances before kick-off/)).toBeVisible();
-    await expect(
-      page.getByRole("heading", { level: 2, name: /^(Round 1|Quarter-finals|Semi-finals)$/ }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole("group", { name: /, kick-off \d\d:\d\d\.$|has a bye, which counts/ }).first(),
-    ).toBeVisible();
-    // Nothing is played yet: no full-time row, no report link.
-    await expect(page.getByRole("link", { name: /^Match report: / })).toHaveCount(0);
-    await expectNoHorizontalOverflow(page);
-    // KB-034: with `Live` on Midweek, Compete's tabs stay inside the page's
-    // 20 px gutter, which the page-width check alone can't see.
-    const tabs = await page.getByRole("navigation", { name: "Compete" }).boundingBox();
-    expect(tabs!.x + tabs!.width).toBeLessThanOrEqual(page.viewportSize()!.width - 19);
-    await expectClockPinned(page);
+      await expect(page.getByRole("heading", { level: 1, name: "The draw is out" })).toBeVisible();
+      await expect(eveningClock(page)).toHaveAccessibleName(
+        // The first round after the lock, named from the end ("Quarters" with 5–8 entrants).
+        /locked; [\w ]+ \d\d:\d\d, next, you're in;/,
+      );
+      await expect(page.getByRole("heading", { name: "Your first match" })).toBeVisible();
+      // release_member's auto squad, and one or two opponents' fives, from the lock.
+      const fives = page.getByRole("region", { name: /’s five$/ });
+      expect(await fives.count()).toBeGreaterThanOrEqual(2);
+      await expect(fives.first().getByText("Auto squad")).toBeVisible();
+      await expect(
+        page.getByText(/^Form, pick boost and the chances before kick-off/),
+      ).toBeVisible();
+      await expect(
+        page.getByRole("heading", { level: 2, name: /^(Round 1|Quarter-finals|Semi-finals)$/ }),
+      ).toBeVisible();
+      await expect(
+        page
+          .getByRole("group", { name: /, kick-off \d\d:\d\d\.$|has a bye, which counts/ })
+          .first(),
+      ).toBeVisible();
+      // Nothing is played yet: no full-time row, no report link.
+      await expect(page.getByRole("link", { name: /^Match report: / })).toHaveCount(0);
+      await expectNoHorizontalOverflow(page);
+      // KB-034: with `Live` on Midweek, Compete's tabs stay inside the page's
+      // 20 px gutter, which the page-width check alone can't see.
+      const tabs = await page.getByRole("navigation", { name: "Compete" }).boundingBox();
+      expect(tabs!.x + tabs!.width).toBeLessThanOrEqual(page.viewportSize()!.width - 19);
+      await expectClockPinned(page);
 
-    await page.getByRole("link", { name: "Full bracket →" }).click();
-    await expect(page).toHaveURL(new RegExp(`/midweek/${weekStart}$`));
-    await expect(page.getByRole("heading", { level: 1, name: "The bracket" })).toBeVisible();
-    await expect(eveningClock(page)).toBeVisible();
-    const jump = page.getByRole("navigation", { name: "Jump to" });
-    await expect(jump.getByRole("link", { name: /^Your match · R\d \d\d:\d\d$/ })).toBeVisible();
-    await expect(page.getByText(/^Kick-off \d\d:\d\d$/).first()).toBeVisible();
-    await expect(page.getByText(/^Winner(,| of) /).first()).toBeVisible();
-    await expectNoHorizontalOverflow(page);
-  });
+      await page.getByRole("link", { name: "Full bracket →" }).click();
+      await expect(page).toHaveURL(new RegExp(`/midweek/${weekStart}$`));
+      await expect(page.getByRole("heading", { level: 1, name: "The bracket" })).toBeVisible();
+      await expect(eveningClock(page)).toBeVisible();
+      const jump = page.getByRole("navigation", { name: "Jump to" });
+      await expect(jump.getByRole("link", { name: /^Your match · R\d \d\d:\d\d$/ })).toBeVisible();
+      await expect(page.getByText(/^Kick-off \d\d:\d\d$/).first()).toBeVisible();
+      await expect(page.getByText(/^Winner(,| of) /).first()).toBeVisible();
+      await expectNoHorizontalOverflow(page);
+    },
+  );
 
   test("between rounds: results at full time, the next kick-offs and your night", async ({
     page,
@@ -1000,12 +1015,11 @@ test.describe("Midweek Madness calls (D, ADR-118)", () => {
 test.describe("Midweek Madness share images (F8, ADR-120)", () => {
   // One fixture Player of the champion's five gets a real local photo, so the
   // canvas draws a photo fetched from Storage; a tainted canvas couldn't export.
-  const PHOTO = "players/920069c8-43ac-4278-ae15-0373604696cb/profile.webp";
   test.beforeEach(async () => {
     await withDatabase(async (database) => {
       await database.query(
         "update kut.players set photo_path = $1 where display_name = 'Engine Fixture'",
-        [PHOTO],
+        [FIXTURE_PHOTO],
       );
     });
   });
@@ -1020,48 +1034,50 @@ test.describe("Midweek Madness share images (F8, ADR-120)", () => {
   /** A PNG's width and height, from its IHDR chunk. */
   const pngSize = (bytes: Buffer) => [bytes.readUInt32BE(16), bytes.readUInt32BE(20)];
 
-  test("on a phone, both images draw at 1080 × 1350 and Share hands the PNG to the share sheet", async ({
-    page,
-  }) => {
-    await page.addInitScript(() => {
-      const record = window as unknown as { __shared?: string[] };
-      record.__shared = [];
-      Object.defineProperty(navigator, "canShare", { value: () => true, configurable: true });
-      Object.defineProperty(navigator, "share", {
-        value: async (data: { files: File[] }) => {
-          record.__shared!.push(
-            `${data.files[0].name} ${data.files[0].type} ${data.files[0].size}`,
-          );
-        },
-        configurable: true,
+  test(
+    "on a phone, both images draw at 1080 × 1350 and Share hands the PNG to the share sheet",
+    { tag: "@narrow" },
+    async ({ page }) => {
+      await page.addInitScript(() => {
+        const record = window as unknown as { __shared?: string[] };
+        record.__shared = [];
+        Object.defineProperty(navigator, "canShare", { value: () => true, configurable: true });
+        Object.defineProperty(navigator, "share", {
+          value: async (data: { files: File[] }) => {
+            record.__shared!.push(
+              `${data.files[0].name} ${data.files[0].type} ${data.files[0].size}`,
+            );
+          },
+          configurable: true,
+        });
       });
-    });
-    await signIn(page, "release_member");
-    await page.goto(`/midweek/${COMPLETED_WEEK}`);
-    const block = page.getByRole("region", { name: "Share the night" });
-    await expect(block).toBeVisible();
-    for (const name of ["Preview: The champion poster", "Preview: Your night"]) {
-      const preview = block.getByRole("img", { name });
-      await expect(preview).toBeVisible({ timeout: 15_000 });
-      expect(
-        await preview.evaluate((img: HTMLImageElement) => [img.naturalWidth, img.naturalHeight]),
-      ).toEqual([1080, 1350]);
-    }
-    await expect(block.getByText(/^Both show managers’ and Players’ names/)).toBeVisible();
-    await expectNoHorizontalOverflow(page);
+      await signIn(page, "release_member");
+      await page.goto(`/midweek/${COMPLETED_WEEK}`);
+      const block = page.getByRole("region", { name: "Share the night" });
+      await expect(block).toBeVisible();
+      for (const name of ["Preview: The champion poster", "Preview: Your night"]) {
+        const preview = block.getByRole("img", { name });
+        await expect(preview).toBeVisible({ timeout: 15_000 });
+        expect(
+          await preview.evaluate((img: HTMLImageElement) => [img.naturalWidth, img.naturalHeight]),
+        ).toEqual([1080, 1350]);
+      }
+      await expect(block.getByText(/^Both show managers’ and Players’ names/)).toBeVisible();
+      await expectNoHorizontalOverflow(page);
 
-    await block.getByRole("button", { name: "Share" }).first().click();
-    await expect
-      .poll(() => page.evaluate(() => (window as unknown as { __shared: string[] }).__shared))
-      .toEqual([expect.stringMatching(/^flut-midweek-17-jan-champion\.png image\/png \d+$/)]);
+      await block.getByRole("button", { name: "Share" }).first().click();
+      await expect
+        .poll(() => page.evaluate(() => (window as unknown as { __shared: string[] }).__shared))
+        .toEqual([expect.stringMatching(/^flut-midweek-17-jan-champion\.png image\/png \d+$/)]);
 
-    const download = page.waitForEvent("download");
-    await block.getByRole("button", { name: "Save image" }).nth(1).click();
-    expect((await download).suggestedFilename()).toBe("flut-midweek-17-jan-release-member.png");
-    await expect(
-      block.getByText(/is in your downloads\. Drop it into the group chat\.$/),
-    ).toBeVisible();
-  });
+      const download = page.waitForEvent("download");
+      await block.getByRole("button", { name: "Save image" }).nth(1).click();
+      expect((await download).suggestedFilename()).toBe("flut-midweek-17-jan-release-member.png");
+      await expect(
+        block.getByText(/is in your downloads\. Drop it into the group chat\.$/),
+      ).toBeVisible();
+    },
+  );
 
   test("on a desktop, Download saves the PNG", async ({ browser }) => {
     // Playwright passes the project's phone options on; a desktop has a mouse.
@@ -1099,36 +1115,42 @@ test.describe("Home and Messages (F4, ADR-114)", () => {
     await withDatabase(endFixtureEvening);
   });
 
-  test("Home leads with what's due: a short header, the now stack, two tiles", async ({ page }) => {
-    await resetMidweek("release_member");
-    await signIn(page, "release_member");
-    await expect(
-      page.getByRole("heading", { level: 1, name: `This week in ${BRAND.shortName}` }),
-    ).toBeVisible();
-    const now = page.getByRole("region", { name: "Now" });
-    await expect(
-      now.getByRole("link", { name: /^Midweek Madness · .*Pick your five/ }),
-    ).toBeVisible();
-    // The coins tile went: the coin pill shows the balance.
-    await expect(page.getByText("Wallet balance")).toHaveCount(0);
-    await expect(page.getByRole("link", { name: /^Club Value .* See the maths →$/ })).toBeVisible();
-    await expect(page.getByRole("link", { name: /^Rank .* Standings →$/ })).toBeVisible();
-    await expect(page.getByRole("heading", { level: 2, name: "Top risers" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "This week’s Chronicle →" })).toBeVisible();
-    await expect(
-      page.getByRole("link", { name: `New here? How ${BRAND.shortName} works →` }),
-    ).toBeVisible();
-    await expectNoHorizontalOverflow(page);
+  test(
+    "Home leads with what's due: a short header, the now stack, two tiles",
+    { tag: "@narrow" },
+    async ({ page }) => {
+      await resetMidweek("release_member");
+      await signIn(page, "release_member");
+      await expect(
+        page.getByRole("heading", { level: 1, name: `This week in ${BRAND.shortName}` }),
+      ).toBeVisible();
+      const now = page.getByRole("region", { name: "Now" });
+      await expect(
+        now.getByRole("link", { name: /^Midweek Madness · .*Pick your five/ }),
+      ).toBeVisible();
+      // The coins tile went: the coin pill shows the balance.
+      await expect(page.getByText("Wallet balance")).toHaveCount(0);
+      await expect(
+        page.getByRole("link", { name: /^Club Value .* See the maths →$/ }),
+      ).toBeVisible();
+      await expect(page.getByRole("link", { name: /^Rank .* Standings →$/ })).toBeVisible();
+      await expect(page.getByRole("heading", { level: 2, name: "Top risers" })).toBeVisible();
+      await expect(page.getByRole("link", { name: "This week’s Chronicle →" })).toBeVisible();
+      await expect(
+        page.getByRole("link", { name: `New here? How ${BRAND.shortName} works →` }),
+      ).toBeVisible();
+      await expectNoHorizontalOverflow(page);
 
-    await page.setViewportSize({ width: 1440, height: 900 });
-    await page.reload();
-    await expect(now.getByRole("link", { name: /Pick your five/ })).toBeVisible();
-    const tile = await page.getByRole("link", { name: /^Club Value/ }).boundingBox();
-    const pack = await page.getByRole("link", { name: "Open a pack" }).boundingBox();
-    // From `sm` the two tiles and the pack button share one row.
-    expect(Math.abs(tile!.y - pack!.y)).toBeLessThan(2);
-    await expectNoHorizontalOverflow(page);
-  });
+      await page.setViewportSize({ width: 1440, height: 900 });
+      await page.reload();
+      await expect(now.getByRole("link", { name: /Pick your five/ })).toBeVisible();
+      const tile = await page.getByRole("link", { name: /^Club Value/ }).boundingBox();
+      const pack = await page.getByRole("link", { name: "Open a pack" }).boundingBox();
+      // From `sm` the two tiles and the pack button share one row.
+      expect(Math.abs(tile!.y - pack!.y)).toBeLessThan(2);
+      await expectNoHorizontalOverflow(page);
+    },
+  );
 
   test("during the evening the live card leads Home, as it stood at page load", async ({
     page,
@@ -1262,53 +1284,59 @@ test("admin can reach the Midweek controls", async ({ page }) => {
   await expectNoHorizontalOverflow(page);
 });
 
-test("admin can reach the mobile attendance finalization surface", async ({ page }) => {
-  await signIn(page, "release_admin");
-  await page.goto("/admin/attendance");
-  await expect(page.getByRole("heading", { name: "Record attendance" })).toBeVisible();
-  await expectNoHorizontalOverflow(page);
-});
+test(
+  "admin can reach the mobile attendance finalization surface",
+  { tag: "@narrow" },
+  async ({ page }) => {
+    await signIn(page, "release_admin");
+    await page.goto("/admin/attendance");
+    await expect(page.getByRole("heading", { name: "Record attendance" })).toBeVisible();
+    await expectNoHorizontalOverflow(page);
+  },
+);
 
 // Last in this file and run once on the narrow Chromium project. It spends
 // 250 coins and adds cards; finally removes those cards so the later WebKit
 // project keeps the same picker inventory.
-test("a pack's summary names the slots it fills and the copies it adds (ADR-114)", async ({
-  page,
-}, testInfo) => {
-  test.skip(testInfo.project.name !== "authenticated-320", "runs once on narrow Chromium");
-  await signIn(page, "release_member");
-  await page.goto("/club/packs");
-  try {
-    await page
-      .getByRole("button", { name: new RegExp(`^Open for \\d+ ${BRAND.currency}$`) })
-      .click();
-    await page.getByRole("button", { name: /^Pay \d+$/ }).click();
-    // The first opening on a dev server compiles the reveal page.
-    await expect(page).toHaveURL(/\/club\/packs\/[0-9a-f-]{36}$/, { timeout: 30_000 });
-    await page.getByRole("button", { name: "Skip all" }).click();
-    await expect(page.getByRole("heading", { name: "Your new Live Cards" })).toBeVisible();
-    await expect(
-      page.getByText(/^(No new Players|\d+ new Players?)\. Album \d+ \/ \d+\.$/),
-    ).toBeVisible();
-    await expect(
-      page.getByText(/^(New · fills slot \d+|×\d+ · discards for \d+)$/).first(),
-    ).toBeVisible();
-    await expectNoHorizontalOverflow(page);
-  } finally {
-    // An opening restricts deleting its member, and a card it drew of a
-    // fixture Player restricts deleting the fixture: the teardown needs both gone.
-    // The member is recreated every run, so its openings are this test's, also
-    // when the reveal page never loaded.
-    await withDatabase(async (database) => {
-      const openings = `select o.id from kut.pack_openings o join auth.users u on u.id = o.user_id
+test(
+  "a pack's summary names the slots it fills and the copies it adds (ADR-114)",
+  { tag: "@narrow" },
+  async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== "authenticated-320", "runs once on narrow Chromium");
+    await signIn(page, "release_member");
+    await page.goto("/club/packs");
+    try {
+      await page
+        .getByRole("button", { name: new RegExp(`^Open for \\d+ ${BRAND.currency}$`) })
+        .click();
+      await page.getByRole("button", { name: /^Pay \d+$/ }).click();
+      // The first opening on a dev server compiles the reveal page.
+      await expect(page).toHaveURL(/\/club\/packs\/[0-9a-f-]{36}$/, { timeout: 30_000 });
+      await page.getByRole("button", { name: "Skip all" }).click();
+      await expect(page.getByRole("heading", { name: "Your new Live Cards" })).toBeVisible();
+      await expect(
+        page.getByText(/^(No new Players|\d+ new Players?)\. Album \d+ \/ \d+\.$/),
+      ).toBeVisible();
+      await expect(
+        page.getByText(/^(New · fills slot \d+|×\d+ · discards for \d+)$/).first(),
+      ).toBeVisible();
+      await expectNoHorizontalOverflow(page);
+    } finally {
+      // An opening restricts deleting its member, and a card it drew of a
+      // fixture Player restricts deleting the fixture: the teardown needs both gone.
+      // The member is recreated every run, so its openings are this test's, also
+      // when the reveal page never loaded.
+      await withDatabase(async (database) => {
+        const openings = `select o.id from kut.pack_openings o join auth.users u on u.id = o.user_id
         where u.email = 'release_member@users.kut.local'`;
-      const cards = await database.query<{ card_id: string }>(
-        `delete from kut.pack_opening_cards where opening_id in (${openings}) returning card_id`,
-      );
-      await database.query(`delete from kut.pack_openings where id in (${openings})`);
-      await database.query("delete from kut.user_cards where id = any($1::uuid[])", [
-        cards.rows.map((row) => row.card_id),
-      ]);
-    });
-  }
-});
+        const cards = await database.query<{ card_id: string }>(
+          `delete from kut.pack_opening_cards where opening_id in (${openings}) returning card_id`,
+        );
+        await database.query(`delete from kut.pack_openings where id in (${openings})`);
+        await database.query("delete from kut.user_cards where id = any($1::uuid[])", [
+          cards.rows.map((row) => row.card_id),
+        ]);
+      });
+    }
+  },
+);

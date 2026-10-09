@@ -23,6 +23,26 @@ deployment identity and domain-verification time; do not change the latest
 migration line when no migration was applied. Records accompany the next PR
 opened for other work, never a standalone record PR.
 
+## 2026-10-09 — CI-only process reset S2 (ADR-140); production stays at `b371932`
+
+The `test/process-reset-s2` PR (reset session S2, VibeTrunk/kut#212) adds the
+`e2e-authenticated` job to `verify.yml` and makes it a `merge-gate`
+requirement. The job runs the authenticated suite on a production build
+against the runner's local stack. The PR also adds a shared composite action,
+a manual `e2e-webkit` workflow, the Playwright config changes, `@narrow` test
+tags, a synthetic fixture photo, and this note and a README paragraph. Its
+complete diff stays inside `.github/**`, `tests/**`, `playwright*.config.ts`
+and documentation, so under ADR-140 it is a CI-only merge: no release gate and
+no production deployment. Full main CI still runs on the merged SHA (ADR-126).
+Production intentionally lags `main` by this commit and stays at
+`b371932b0690ed9c87d2e37b1692de134bdecc38` (#210). Automatic main deployment
+remains held.
+
+- **The local gate is unchanged:** `playwright.release.config.ts` drops the
+  `@narrow` filter, so the emergency route still runs all three projects in
+  full (177 cases).
+- **Rollback:** none needed; revert the PR through a PR.
+
 ## 2026-10-09 — documentation-only process reset S1 (ADR-140); production stays at `b371932` (ADR-124 / ADR-126)
 
 The `docs/process-reset-s1` PR (reset session S1, tracking issue

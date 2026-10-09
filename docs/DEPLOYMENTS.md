@@ -41,6 +41,11 @@ remains held.
 - **The local gate is unchanged:** `playwright.release.config.ts` drops the
   `@narrow` filter, so the emergency route still runs all three projects in
   full (177 cases).
+- **Linux quarantine (owner decision):** six Pixel 7 cases pass on Windows but
+  fail every time on the Linux runner. They are `fixme` on Linux only, with
+  KB-041 (#215, share-image fonts without Arial, likely Android too) and KB-042
+  (#216, bracket-line geometry and the focused factor tooltip). The Windows
+  gate still runs them until S4.
 - **Rollback:** none needed; revert the PR through a PR.
 
 ## 2026-10-09 — documentation-only process reset S1 (ADR-140); production stays at `b371932` (ADR-124 / ADR-126)

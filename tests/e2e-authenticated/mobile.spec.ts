@@ -412,7 +412,11 @@ test.describe("Midweek Madness results (PR 8)", () => {
   test(
     "a completed week's bracket and a match report fit the screen",
     { tag: "@narrow" },
-    async ({ page }) => {
+    async ({ page }, testInfo) => {
+      test.fixme(
+        process.platform === "linux" && testInfo.project.name === "authenticated-pixel7",
+        "KB-042 (#216): the focused Form factor shows no tooltip on Linux at Pixel 7 size",
+      );
       await signIn(page, "release_member");
 
       // The picker carries last week's result with the way to its bracket.
@@ -514,6 +518,10 @@ test.describe("Midweek Madness results (PR 8)", () => {
   });
 
   test("from lg, every bracket line meets the match it leads to (KB-031)", async ({ page }) => {
+    test.fixme(
+      process.platform === "linux",
+      "KB-042 (#216): a round-1 pairing sits off its quarter point with Linux text metrics",
+    );
     await signIn(page, "release_member");
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto(`/midweek/${COMPLETED_WEEK}`);

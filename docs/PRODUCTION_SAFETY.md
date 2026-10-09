@@ -295,7 +295,8 @@ candidate are printed. The [Vercel create-deployment API](https://vercel.com/doc
 supports Git-source deployments, and [CLI API input](https://vercel.com/docs/cli/api)
 accepts the JSON request on stdin using `--input -`.
 The verification command uses the existing authenticated checker and requires
-`candidate_live`, the same SHA and a complete candidate lookup. Run it after
+`candidate_live`, the same SHA, a complete candidate lookup and a verified
+legacy-host redirect (ADR-139). Run it after
 Vercel is READY; an incomplete build/binding returns nonzero. Keep the final
 preparation/deployment/verification results as private release evidence and
 record the release in the next normal PR. No broad gate is needed just to test

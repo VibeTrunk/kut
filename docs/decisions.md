@@ -32,15 +32,11 @@ product name shown to users is KUT.
 
 ## Open items
 
-- **Blurb for `home`'s tools grid** was drafted ("Collectible football cards
-  for Kelderklasse — showing up matters as much as scoring.") but not yet
-  added to `VibeTrunk/home/src/data/tools.ts`, even though KUT is now live —
-  offer that edit (per the `vibetrunk-new-tool` skill, step 6).
-
 Resolved: framework/stack scaffolding is built (see ADR-001 onward), and the
 CSP `connect-src` placeholder was replaced with the real project ref and
 moved to a per-request nonce in `src/proxy.ts` (see the "Fix login hydration
-under strict CSP" commit).
+under strict CSP" commit). The `home` tools-grid listing was added in home #4
+and replaced by the FLUT listing in home #5 (ADR-137 slice 4).
 
 ## Speculative ideas → moved to `ROADMAP.md`
 

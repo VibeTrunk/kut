@@ -1,13 +1,35 @@
 # FLUT rename handover — 9 October 2026
 
-Slice 1 of the KUT → FLUT rename (in-app branding) is merged, gated and live.
-This note is for the owner and the next agent session that continues the
-rename: slices 2–5 and the optional template migration. ADR-137 holds the
+Slices 1–4 of the KUT → FLUT rename are live: the in-app branding (#208), the
+`flut.vibetrunk.com` domain and redirect (#210) and the vibetrunk.com listing
+(home #5). This note is for the owner and the next agent session that continues
+the rename: slice 5 and the optional template migration. It starts with the
+slice 1 picture, then dated status updates below. ADR-137 holds the
 decisions, and ROADMAP "FLUT rename — remaining slices" tracks the status.
 
 ## Prompt for the fresh session
 
 > Read `CLAUDE.md`, the mandatory project documents in its reading order, and `docs/session-prompts/flut-rename-handover-2026-10-09.md`. FLUT slice 1 (PR #208, ADR-137, ADR-138) is live at `f23ee2af28f2ea6af9d035e40376a3b8a9f8566c`. Continue the FLUT rename only, starting with the "Before anything else" list in the handover. Slices 2–5 each need my explicit authorization for their external or published steps. Ask me which slice to start, and prepare the read-only checks for it first. Keep internal `kut` names. Do not widen the auth cookie domain, and never schedule a cutover on a Midweek Wednesday evening.
+
+## Prompt for the slice 4 session
+
+> Read `CLAUDE.md`, the mandatory project documents in its reading order, and `docs/session-prompts/flut-rename-handover-2026-10-09.md`. FLUT slices 1–3 are live: #208 (branding) and #210 (`flut.vibetrunk.com` primary, `kut.vibetrunk.com` 307-redirects, ADR-139), with production at `b371932b0690ed9c87d2e37b1692de134bdecc38` (`dpl_EXNx6zGYJAR3qgQe8dggvh54L9wP`). Work on FLUT slice 4 only: the `VibeTrunk/home` listing. Keep internal `kut` names.
+>
+> **Before editing, check read-only and report:**
+> 1. The kut ordinary checkout is on `main` at `b371932` with unpublished records: the #210 deployment record in `docs/DEPLOYMENTS.md`, plus edits to `docs/ROADMAP.md`, `docs/PRODUCTION_SAFETY.md` and this handover. Keep them; never stash-pop or discard them. Run `node scripts/release/check-vercel-deployment.mjs --candidate b371932b0690ed9c87d2e37b1692de134bdecc38` and confirm `candidate_live` with `legacy_redirect.verified: true`.
+> 2. The sibling `VibeTrunk/home` checkout (`..\home`, Astro) is still on `feat/kut-live`. That branch was squash-merged as home #4 and its remote is gone. Read home's `CLAUDE.md` and `AGENTS.md`. Fetch, then check that the working tree is clean before switching to an up-to-date `main` (fast-forward only). Deleting the old branch is owner-only: the hook blocks agent branch deletion.
+> 3. On home `main`, `src/data/tools.ts` lists `Kelderklasse Ultimate Team`, the blurb "Collectible football cards for Kelderklasse — showing up matters as much as scoring." and `https://kut.vibetrunk.com`, status `live`. Confirm this is unchanged, and find out how home deploys after a merge (Vercel project, and whether `main` auto-deploys).
+>
+> **The change (ADR-137 slice 4), on branch `feat/flut-listing` in home:** change only the KUT entry. It becomes name `FLUT`, blurb `Collectible football cards for TFH — showing up matters.` (56 characters; the file asks for fewer than about 70) and url `https://flut.vibetrunk.com`, with status `live`. Leave Cogitster and the rest of the file alone, and add no other coupling to kut. Verify with `npm run check` and `npm run build`, and look at the built page (local preview) to confirm the card text and link. Then stop and ask me before committing, pushing or opening the PR. I review and merge home PRs.
+>
+> **After my merge:** check read-only that `https://vibetrunk.com` shows the FLUT card linking to `https://flut.vibetrunk.com`. Then prepare a kut docs PR, `docs/flut-slice-4`, that carries the unpublished records from step 1. It should also:
+> - mark slice 4 done in `docs/ROADMAP.md`;
+> - remove the out-of-date "home tools-grid blurb" one-off item from ROADMAP and from `docs/decisions.md` "Open items" (it was added in home #4 and is now replaced);
+> - add a dated `docs/PROGRESS.md` entry and update this handover.
+>
+> That PR is documentation-only, so it needs no gate or deployment unless I ask (ADR-124 amendment of 2026-10-05). Say so in the PR body, and record in `DEPLOYMENTS.md` that production stays at `b371932`. Publishing it also needs my go.
+>
+> Not in scope: slice 5 (307 → 308) and the optional server template migration. Ask before any external or published step.
 
 ## Current state
 
@@ -54,7 +76,27 @@ What shipped in #208:
   PR, along with the ROADMAP note that slice 1 was "built in PR".
 - The auto-mode classifier blocks agent Vercel domain and env changes, and the
   repository hook blocks local branch deletion. The owner runs those steps.
-- **Slice 3:** built locally on `feat/flut-domain` (ADR-139). It has the 307 in
+- **Slice 3 is live.** #210 was merged at 09:51:48Z as `b371932`. The gate
+  passed (175 cases, the 2 approved skips), and `dpl_EXNx6zGYJAR3qgQe8dggvh54L9wP`
+  was verified at 10:07:46Z with the legacy redirect probe passing (307).
+  The record is in `DEPLOYMENTS.md`, unpublished; it goes into the next PR.
+  Still to check: a newly created invite link starts with `https://flut.`.
+  Next are slice 4 (`VibeTrunk/home`) and slice 5 (308), each with its own
+  authorization. The slice 3 notes below are kept for history.
+- **Slice 4 is live.** Home #5 (`600d958`, merged by the owner at 10:23:42Z)
+  lists FLUT, "Collectible football cards for TFH — showing up matters.",
+  linking to `https://flut.vibetrunk.com`. Vercel project `home` deploys
+  `main` from Git: `dpl_9jeSQ31CEwpe5LmBrhYbPsgHxEQT` was READY within
+  seconds, and a read-only check of vibetrunk.com confirmed the card. The
+  home checkout is on an up-to-date `main`. Its old local branches
+  (`feat/kut-live`, `feat/flut-listing`, `docs/branch-protection-status`,
+  `docs/dedupe-agent-safety-docs`) are for the owner to delete. The kut docs
+  PR `docs/flut-slice-4` carries the #210 record and the slice 4 notes. It is
+  documentation-only, so production stays at `b371932`.
+- **Still open:** slice 5 (307 → 308) and the optional server template
+  migration, each needing its own authorization, plus the check that a new
+  invite link starts with `https://flut.`.
+- Slice 3 as built: on `feat/flut-domain` (ADR-139). It has the 307 in
   `next.config.ts`, the checker on `flut.` with the legacy-binding check and
   the live redirect probe, a verification command that requires the probe,
   tests and docs. `verify:fast` passes (746). It carries this session's
@@ -122,9 +164,10 @@ What shipped in #208:
 
 ### Slice 4 — `VibeTrunk/home` listing
 
-Name FLUT, URL `https://flut.vibetrunk.com`, blurb "Collectible football
-cards for TFH — showing up matters." This is a separate repo with its own PR.
-ROADMAP's "home tools-grid blurb" one-off item overlaps it.
+Done 2026-10-09 in home #5. Name FLUT, URL `https://flut.vibetrunk.com`,
+blurb "Collectible football cards for TFH — showing up matters." ROADMAP's
+out-of-date "home tools-grid blurb" one-off item and its decisions.md "Open
+items" entry were removed in `docs/flut-slice-4`.
 
 ### Slice 5 — 308
 

@@ -23,6 +23,88 @@ deployment identity and domain-verification time; do not change the latest
 migration line when no migration was applied. Records accompany the next PR
 opened for other work, never a standalone record PR.
 
+## 2026-10-09 — documentation-only FLUT slice 4 records; production stays at `b371932` (ADR-124 / ADR-126)
+
+The `docs/flut-slice-4` PR changes Markdown only: this file, ROADMAP,
+PROGRESS, decisions.md "Open items", PRODUCTION_SAFETY.md and the FLUT
+handover. It carries the unpublished #210 record below. Under the ADR-124
+documentation-only amendment of 2026-10-05, its merge needs no release gate
+and no production deployment unless the owner asks for one. Full main CI
+still runs on the merged SHA (ADR-126).
+
+- **Production stays at #210:** `b371932b0690ed9c87d2e37b1692de134bdecc38`,
+  `dpl_EXNx6zGYJAR3qgQe8dggvh54L9wP`. Production intentionally lags `main` by
+  this documentation-only commit. Automatic main deployment remains held.
+- **Before the PR:** the authenticated checker reported `candidate_live` for
+  `b371932` on `flut.vibetrunk.com` at 10:14:12Z. It had a complete lookup and
+  `legacy_redirect` verified (307).
+- **Slice 4 itself is not a kut deployment.** It changed the listing on
+  `vibetrunk.com`, which is a separate Vercel project (`home`) that deploys
+  `main` from Git. Home #5 was merged at 10:23:42Z as `600d958` and deployed
+  as `dpl_9jeSQ31CEwpe5LmBrhYbPsgHxEQT`. The FLUT card there links to
+  `https://flut.vibetrunk.com`.
+- **Rollback:** none needed for kut. For home, revert #5 through a home PR;
+  merging that redeploys the earlier card.
+
+## 2026-10-09 — gated release of the FLUT domain move #210 (ADR-139)
+
+MartinFloris merged https://github.com/VibeTrunk/kut/pull/210 at
+2026-10-09T09:51:48Z, producing exact candidate
+`b371932b0690ed9c87d2e37b1692de134bdecc38`. That merge authorized the gated
+Vercel production release under ADR-124. The release makes
+`flut.vibetrunk.com` the primary domain and redirects `kut.vibetrunk.com`
+there with a 307. It also moves the release checker to the new domain, with
+the legacy-binding check and a live redirect probe. It is not
+documentation-only. Slice 2 had already attached the domain and set
+Production `APP_URL`, both done by the owner. No migration, function,
+credential or protection change was performed. All times below are UTC.
+
+- **Checkout and CI:** the ordinary checkout was fast-forwarded to the exact
+  merged SHA, which matched remote main, with the same lockfile as #208. The
+  central `VibeTrunk/supabase` checkout was already at `main` (`39204c1`).
+  All exact-SHA main checks passed, `merge-gate` included.
+- **Deployment hold:** an authenticated check at about 09:53 found no
+  deployment for the candidate (complete lookup), while #208's `f23ee2a`
+  remained live.
+- **Preflight:** passed first time inside release preparation.
+- **Backup:** no new dump was needed. #208's
+  `kut-backup-20261009-100158.sql.enc` (created 08:02:37.5508464) was still
+  inside the 24-hour window. The gate decrypted it again in a separate process
+  at 09:54:39.1470554, with plaintext SHA-256
+  `A34685AD844B19B4E5389710D8AD0F1575F474A1ECCA7BBFE4F2C221503B9D3E` and
+  locator `backup-encryption-v1`.
+- **Catalogue:** central parity passed for 88 catalogued KUT migrations at
+  09:54:30.0118565, aggregate SHA-256
+  `f519943ec0609fe30ce9f5317d60fe3046522ab46182c35bbce25a6a2957ed8b`. No hosted
+  migration list was queried.
+- **Gate:** one full gate passed at 10:05:04.7699514,
+  `gate-20261009-120504.json`, SHA-256
+  `e4859c0b70f83a5fcbad227355974dcfdb1ad0a8162d515c2b3408bacdeea20b`. It made a
+  fresh production build (build id `Usgyy0UoC4Nih6E9WeW-h`). Authenticated E2E
+  against `next start` ran 09:54:40.403–10:05:04.518. All 175 required cases
+  passed: Pixel 7 (58), narrow Chromium (59) and WebKit (58), with exactly the
+  two approved duplicate-device skips and zero retries.
+- **Approval and assertion:** approval was recorded at 10:05:07.7486525
+  (approval SHA-256
+  `771465fdc32037b4eb6489dce77900b5641ae5717e5aa231e9b5690c916c204f`), and the
+  evidence assertion passed.
+- **Deployment:** the separate printed deployment command rechecked
+  authorization and evidence, then created `dpl_EXNx6zGYJAR3qgQe8dggvh54L9wP`
+  from the exact Git SHA. It reached READY. At 10:07:46.070 the printed
+  verification command confirmed `candidate_live` on `flut.vibetrunk.com`, with
+  the `kut.vibetrunk.com` alias on the same deployment and complete lookup.
+  `legacy_redirect` was verified: a 307 to the matching `flut.` URL.
+- **Smoke:** a read-only live check of `flut.` returned the title
+  `FLUT — Football League Ultimate Team`, and `/login`, `/favicon.ico`,
+  `/icon.svg` and `/apple-icon.png` returned 200. On `kut.`, `/`, `/login`,
+  `/invite/…` and `/midweek?view=pick` returned 307 to the same path and query
+  on `flut.`; following the redirect took one hop to a 200. Members sign in
+  again on the new host (ADR-137). Not yet checked: that a newly created invite
+  link starts with `https://flut.vibetrunk.com`, which would confirm `APP_URL`.
+- **Rollback:** promote #208's `dpl_Co8cziBQFT6E3Bt1gW2nFuWLvcj7` (`f23ee2a`)
+  in Vercel; no database step is involved. That removes the redirect, and both
+  hosts keep serving the app.
+
 ## 2026-10-09 — gated release of the FLUT branding and Next.js 16.3.8 #208 (ADR-137, ADR-138)
 
 MartinFloris merged https://github.com/VibeTrunk/kut/pull/208 at

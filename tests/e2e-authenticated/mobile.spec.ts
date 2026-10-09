@@ -147,7 +147,6 @@ async function resetMidweek(username: string) {
 
 test("member can sign in and use core mobile routes", { tag: "@narrow" }, async ({ page }) => {
   await signIn(page, "release_member");
-  expect(1, "S2 deliberate red check; revert before merge").toBe(2);
   await expect(page.getByRole("heading", { name: `This week in ${BRAND.shortName}` })).toBeVisible({
     timeout: 15_000,
   });

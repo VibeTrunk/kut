@@ -8080,6 +8080,7 @@ would send this tool's auth tokens to every other tool's subdomain.
 4. Update the `VibeTrunk/home` listing: FLUT, `https://flut.vibetrunk.com`,
    "Collectible football cards for TFH — showing up matters."
 5. Change the redirect from 307 to 308 after production acceptance.
+   (Declined by the owner on 2026-10-09; see the ADR-139 amendment.)
 
 Consequences: there is no migration, and no RPC, payload, economy or
 permission change. New server notices still store "KUT Coins" and are shown as
@@ -8189,3 +8190,74 @@ returned 200 for `flut.`, `127.0.0.1` and a preview hostname. Run against
 live production (`f23ee2a`), the new checker gave `candidate_live` for both
 bindings and `legacy_redirect` unverified (404), as expected before this
 release.
+
+**Owner amendment, 2026-10-09: slice 5 is declined.** The redirect stays a
+307 for good. A 308 changes nothing for members, who land on the same page
+either way. Its search-engine benefit does not apply to a members-only app.
+Browsers cache a 308, so a rollback to a deployment without the redirect would
+not reach members who had already visited, while the 307 keeps rollback
+immediate. Reopen only if the legacy host is retired for good. The checker
+still accepts 307 or 308. The same day, the owner confirmed that a newly
+created invite link starts with `https://flut.vibetrunk.com`, so production
+`APP_URL` is in effect.
+
+## ADR-140 — Process reset: transition rules
+
+Date: 2026-10-09
+
+Status: Accepted (owner decisions of 2026-10-09; extended by the S4 PR of the reset)
+
+Context: in the week before 2026-10-09, 20 of 25 PRs (#186–#211) were release,
+cleanup or test infrastructure rather than game work. CI takes about two
+minutes, while the local Windows release gate takes about ten, with flaky
+WebKit and file locks. Agents also read about 1.2 MB of docs at the start of a
+session, and a ~1,600-line cleanup engine has never run for real. The reset is
+staged in sessions S0–S9 in tracking issue VibeTrunk/kut#212. Each replacement
+is built and proved before the thing it replaces is removed. Rigour stays where
+harm is irreversible: member data, migrations and unpushed local work.
+
+Decision: this ADR defines only the transition. Every other rule stays in force
+until the S4 PR removes it.
+
+1. **CI-only merges.** A merge whose complete diff touches only `.github/**`,
+   `tests/**`, `playwright*.config.ts`, `scripts/ci/**` or documentation is
+   CI-only. Like a documentation-only merge (ADR-126), it needs no release gate
+   and no deployment, and production may lag main by it. The PR and
+   `docs/DEPLOYMENTS.md` say so. Anything else, including `package.json`, the
+   lockfile, `src/**`, `supabase/**`, `next.config.ts` and `vercel.json`,
+   follows the normal rules. The agent reviews the full diff to classify it.
+   Full main CI still runs.
+2. **The S4 PR deploys without the old gate.** The owner's merge of the S4 PR
+   (PR D) authorizes Vercel's Git integration to deploy that exact SHA without
+   the old release gate. PR D deletes that gate, and the CI authenticated E2E
+   job added in S2 replaces it. The merge does not authorize migrations,
+   function deployments, branch-protection or secret changes. After that merge
+   the agent verifies the SHA is live on `flut.vibetrunk.com` and the legacy
+   redirect works, read-only.
+3. **Emergency route until S4 merges.** Game merges are frozen. An urgent game
+   fix goes through a normal PR, and after the owner's merge the old full gate
+   runs from `C:\Users\mfvan\dev\kut` only (ADR-128). It never runs from the old
+   OneDrive checkout or a worktree. The gate's backup writes to
+   `%USERPROFILE%\backups\kut` and needs no state from the old checkout. This
+   path has not been exercised from the new checkout. If it fails, stop and
+   report instead of improvising a route.
+4. **Backup credential.** The backup route never holds write or migration
+   rights, and the `postgres` credential never goes into GitHub. If a read-only
+   backup role proves impossible in S3, there is no GitHub backup: the owner
+   keeps running the old local backups, S4 does not retire them, and S9 is
+   skipped.
+5. **Agent workspace.** Agents work only in `C:\Users\mfvan\dev\kut` (and
+   `C:\Users\mfvan\dev\supabase`), one agent per checkout. The OneDrive checkout
+   is frozen until S8.
+
+Consequences:
+
+- Until S4, production may lag main by documentation-only and CI-only commits.
+- S2 and S3 can merge without a gate, as long as their diffs stay inside the
+  CI-only paths. If a change outside those paths is unavoidable, stop and ask:
+  it would need the old gate.
+- The first auto-deploy (PR D) is the one gate-less deploy of non-CI code. It
+  carries a documented trade-off: PR validation replaces the gate.
+- S4 extends this ADR with what it supersedes.
+
+Tracking: VibeTrunk/kut#212.

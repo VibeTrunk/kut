@@ -1159,7 +1159,7 @@ ADR-139.
 | Slice 2 — attach `flut.vibetrunk.com` | done 2026-10-09 | The owner attached the domain in Vercel, added the Porkbun CNAME and set Production `APP_URL`. Both hosts serve the same deployment with a valid certificate (ADR-139). Supabase Site URL and redirect allow-list unchanged: no app flow uses an Auth redirect. |
 | Slice 3 — `feat/flut-domain` | live 2026-10-09 (#210, ADR-139; `DEPLOYMENTS.md`) | Exact-host 307 `kut.vibetrunk.com/:path*` → `https://flut.vibetrunk.com/:path*` in `next.config.ts`; the release checker moves to the new domain, asserts the legacy alias serves the same deployment without a Vercel-level redirect, and probes the redirect live. Announce the sign-in-again cutover; never on a Midweek Wednesday evening. |
 | Slice 4 — `VibeTrunk/home` listing | done 2026-10-09 (home #5) | The vibetrunk.com card reads FLUT, "Collectible football cards for TFH — showing up matters.", and links to `https://flut.vibetrunk.com`. Home's `main` deploys through Vercel's Git integration; verified live. |
-| Slice 5 — permanent redirect | planned | 307 → 308 after production acceptance. |
+| Slice 5 — permanent redirect | declined 2026-10-09 (ADR-139 amendment) | 307 → 308 was planned after production acceptance. The owner declined it: members see no difference, search ranking does not matter for a members-only app, and the 307 keeps rollback immediate because browsers do not cache it. Reopen only if `kut.vibetrunk.com` is retired for good. |
 
 ## One-off open items
 

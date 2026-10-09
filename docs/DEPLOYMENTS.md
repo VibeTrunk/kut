@@ -8,7 +8,7 @@ counts before and after, the hosted smoke test, and how to roll it back.
 Hosted migrations are catalogued and pushed only from
 [`VibeTrunk/supabase`](https://github.com/VibeTrunk/supabase); the process is
 the risk-tiered checklist in `OPERATIONS.md`. This file is KUT's record of what
-landed and how it was checked. `CLAUDE.md` names only the latest applied
+landed and how it was checked. `AGENTS.md` names only the latest applied
 migration and links here.
 
 Deploys before 2026-08-30 (the 2026-08-17 alpha, the roster and formula
@@ -16,12 +16,30 @@ updates, the admin roster RPCs, the ADR-027..030 batch) are recorded in the
 dated "Hosted deployment…" entries in `PROGRESS.md`.
 
 **Adding an entry:** put it at the top as `## <date> — <migration> <what> (ADR)`,
-then bump the "Latest hosted migration" line in `CLAUDE.md`. Record the tier,
+then bump the "Latest hosted migration" line in `AGENTS.md`. Record the tier,
 backup id, pre/post `migration list` counts, the smoke row, and the rollback.
 For a Vercel release, record the exact SHA, gate/approval/assertion ordering,
 deployment identity and domain-verification time; do not change the latest
 migration line when no migration was applied. Records accompany the next PR
 opened for other work, never a standalone record PR.
+
+## 2026-10-09 — documentation-only process reset S1 (ADR-140); production stays at `b371932` (ADR-124 / ADR-126)
+
+The `docs/process-reset-s1` PR (reset session S1, tracking issue
+VibeTrunk/kut#212) changes Markdown only: `AGENTS.md`, `CLAUDE.md`,
+`docs/README.md`, `docs/decisions.md` (ADR-140 and the ADR-139 slice 5
+amendment), this file, ROADMAP, the FLUT handover and the policy source
+`policy/PRODUCTION_INVARIANTS.md` with its two generated copies. Its merge
+needs no release gate and no production deployment unless the owner asks for
+one. Full main CI still runs on the merged SHA (ADR-126). Production
+intentionally lags `main` by this documentation-only commit and stays at
+`b371932b0690ed9c87d2e37b1692de134bdecc38` (#210). Automatic main deployment
+remains held.
+
+- **ADR-140 is in force from this merge:** a merge whose complete diff touches
+  only `.github/**`, `tests/**`, `playwright*.config.ts`, `scripts/ci/**` or
+  documentation is CI-only and is recorded like a documentation-only merge.
+- **Rollback:** none needed; revert the PR through a PR if the wording is wrong.
 
 ## 2026-10-09 — documentation-only FLUT slice 4 records; production stays at `b371932` (ADR-124 / ADR-126)
 
@@ -45,6 +63,22 @@ still runs on the merged SHA (ADR-126).
   `https://flut.vibetrunk.com`.
 - **Rollback:** none needed for kut. For home, revert #5 through a home PR;
   merging that redeploys the earlier card.
+- **Closeout:**
+  - MartinFloris merged #211 at 10:45:37Z as
+    `d0d4cd4a05f27caec6b671daad8156a37537e072`. Its tree is identical to the
+    reviewed commit `dbe95f3`.
+  - Full main CI passed on that exact SHA: changes, migrations, fast,
+    database, security, e2e and merge-gate, plus gitleaks. The last job
+    completed at 10:47:26Z.
+  - No gate or deployment was run. At 10:48:02.759Z, an authenticated check
+    returned `candidate_not_live` with a complete lookup and zero candidate
+    deployments. Production stayed at `dpl_EXNx6zGYJAR3qgQe8dggvh54L9wP`
+    (`b371932`), and `legacy_redirect` was still verified (307).
+  - Private evidence:
+    `.release-evidence/deployments/d0d4cd4a05f27caec6b671daad8156a37537e072/`.
+- **#210 follow-up:** the owner confirmed that a newly created invite link
+  starts with `https://flut.vibetrunk.com`. That settles the `APP_URL` check
+  left open in the record below.
 
 ## 2026-10-09 — gated release of the FLUT domain move #210 (ADR-139)
 

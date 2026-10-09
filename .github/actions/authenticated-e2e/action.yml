@@ -55,9 +55,10 @@ runs:
     - name: EXPERIMENT install Arial and Times New Roman
       shell: bash
       run: |
-        echo ttf-mscorefonts-installer msttcorefonts/accept-mscorefonts-eula select true | sudo debconf-set-selections
-        sudo apt-get install -y -q ttf-mscorefonts-installer
+        echo "ttf-mscorefonts-installer msttcorefonts/accept-mscorefonts-eula boolean true" | sudo debconf-set-selections
+        sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -q ttf-mscorefonts-installer
         fc-list | grep -i -E "arial|times new roman" | head -3
+        fc-list | grep -q -i "arial"
 
     - name: Install the Playwright browser
       shell: bash

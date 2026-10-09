@@ -23,6 +23,69 @@ deployment identity and domain-verification time; do not change the latest
 migration line when no migration was applied. Records accompany the next PR
 opened for other work, never a standalone record PR.
 
+## 2026-10-09 — gated release of the FLUT branding and Next.js 16.3.8 #208 (ADR-137, ADR-138)
+
+MartinFloris merged https://github.com/VibeTrunk/kut/pull/208 at
+2026-10-09T08:00:03Z, producing exact candidate
+`f23ee2af28f2ea6af9d035e40376a3b8a9f8566c`. That merge authorized the gated
+Vercel production release under ADR-124. The release contains the FLUT
+in-app branding and the Next.js 16.3.8 security pin; it is not
+documentation-only. No migration, function, credential, domain or protection
+change was performed, and the domain is still `kut.vibetrunk.com`. All times
+below are UTC.
+
+- **Checkout and CI:** the ordinary checkout was clean at the exact merged SHA,
+  which matched remote main, and `node_modules` matched its lockfile. The
+  central `VibeTrunk/supabase` checkout was moved, fast-forward only, from its
+  already squash-merged #82 branch to `main` at `39204c1`. All seven required
+  exact-SHA main checks passed between 08:00:09 and 08:02:02.
+- **Deployment hold:** authenticated verification at 08:03:03.761 found no
+  candidate deployment (complete lookup) while #207's `c919037` remained live,
+  so the automatic main-deployment hold held.
+- **Preflight:** the first preflight failed with incomplete CI, a Vercel probe
+  timeout and a stale backup pointer. After CI finished, a fresh backup and a
+  successful direct Vercel check, all preflight checks passed inside release
+  preparation.
+- **Backup:** new `kut-backup-20261009-100158.sql.enc` passed separate-process
+  cold verification and was published at 08:02:37.5508464. Gate-time recovery
+  passed again at 08:03:44.0478190: plaintext SHA-256
+  `A34685AD844B19B4E5389710D8AD0F1575F474A1ECCA7BBFE4F2C221503B9D3E`, locator
+  `backup-encryption-v1`. The agent ran this read-only hosted dump as a gate
+  prerequisite under the merge authorization, without a separate owner backup
+  approval. The usual exclusions in BACKUP.md (account identities, storage
+  objects) apply.
+- **Catalogue:** central parity passed for 88 catalogued KUT migrations at
+  08:03:35.5849181, aggregate SHA-256
+  `f519943ec0609fe30ce9f5317d60fe3046522ab46182c35bbce25a6a2957ed8b`. No hosted
+  migration list was queried.
+- **Gate:** one full gate passed at 08:14:48.6609682,
+  `gate-20261009-101448.json`, SHA-256
+  `3fb38e146a4704e7ddde04eeba9b4abca6bf9885cf265d3e83284b2b3bd36a88`. It made a
+  fresh production build (build id `XBVFkoUWSEq76Uaz1553a`). Authenticated E2E
+  against `next start` ran 08:03:45.211–08:14:48.223. All 175 required cases
+  passed: Pixel 7 (58), narrow Chromium (59) and WebKit (58), with exactly the
+  two approved duplicate-device skips and zero retries. The dev-server WebKit
+  slowdown on 16.3.8 (ADR-138) does not apply to this production-mode run.
+- **Approval and assertion:** preparation reverified owner authorization,
+  recorded approval at 08:14:51.3782465 (approval SHA-256
+  `75282a90111689ff92fdbfa8ebcd26eed648deb2275f2ec515212c29a925cddb`) and
+  passed the evidence assertion.
+- **Deployment:** the separate printed deployment command rechecked
+  authorization and evidence, then created `dpl_Co8cziBQFT6E3Bt1gW2nFuWLvcj7`
+  from the exact Git SHA. It reached READY. At 08:16:55.454 the printed
+  verification command confirmed `kut.vibetrunk.com` was `candidate_live` on
+  that deployment and SHA, with complete lookup.
+- **Smoke:** a read-only live check found the title
+  `FLUT — Football League Ultimate Team` and the login lockup. It also found
+  `/favicon.ico`, `/icon.svg` and `/apple-icon.png` serving 200, with
+  `icon.svg` matching the approved asset hash. Later on 2026-10-09 the owner
+  checked a signed-in view on production: messages read "FLUT Coins",
+  including very old notices stored with "KUT Coins".
+- **Rollback:** promote #207's `dpl_DXBqscbVCbR5tLUvBazn6DSXqkcq` (`c919037`)
+  in Vercel; no database step is involved. That restores the KUT branding and
+  Next 16.3.6, which is vulnerable to the advisories in ADR-138. Prefer a
+  forward fix.
+
 ## 2026-10-08 — `20261019000000_basic_pack_price_250.sql`, basic pack price to 250 (ADR-136)
 
 MartinFloris merged [KUT PR #207](https://github.com/VibeTrunk/kut/pull/207) at

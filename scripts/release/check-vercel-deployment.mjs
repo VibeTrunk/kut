@@ -72,6 +72,16 @@ try {
           "100",
         ]),
       ),
+    async (url) => {
+      // Never follow the redirect: its status and Location are the evidence.
+      const response = await fetch(url, {
+        redirect: "manual",
+        cache: "no-store",
+        signal: AbortSignal.timeout(20_000),
+      });
+      await response.body?.cancel();
+      return { status: response.status, location: response.headers.get("location") };
+    },
   );
   console.log(JSON.stringify(evidence, null, 2));
 } catch (error) {

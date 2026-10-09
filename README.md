@@ -5,8 +5,8 @@ Haarlem (TFH): real attendance and match performance drive a card economy
 players collect, open packs of, and trade. Part of the
 [VibeTrunk](https://vibetrunk.com) hub. FLUT was called KUT (Kelderklasse
 Ultimate Team) until 2026-10-08 (ADR-137). The repository, the Supabase
-schema `kut`, the Vercel project and the `kut.vibetrunk.com` domain keep the
-old name for now.
+schema `kut` and the Vercel project keep the old name; the old
+`kut.vibetrunk.com` address redirects to `flut.vibetrunk.com` (ADR-139).
 
 Start with [`CLAUDE.md`](CLAUDE.md) for project context, then
 [`docs/README.md`](docs/README.md) — the documentation map: what each document
@@ -20,7 +20,7 @@ accounts, starter assets, packs, discard, the transfer market, Club Value, a
 private message inbox, and a club-wide activity feed on the home page. Later
 tester-feedback batches added the canonical currency name (now "FLUT Coins"),
 a Goalkeeper archetype, a bibs-washing coin bonus, and admin economy tools.
-FLUT is live at [kut.vibetrunk.com](https://kut.vibetrunk.com), deployed from
+FLUT is live at [flut.vibetrunk.com](https://flut.vibetrunk.com), deployed from
 its own Vercel project using the shared VibeTrunk Supabase project's `kut`
 schema. Hosted
 migrations are catalogued and deployed only from the central

@@ -1,6 +1,7 @@
 # Operations and deployment checklist
 
-KUT is live at `https://kut.vibetrunk.com`. This document covers alpha
+FLUT is live at `https://flut.vibetrunk.com`; the legacy
+`https://kut.vibetrunk.com` redirects there (ADR-139). This document covers alpha
 operations; following it does **not** itself authorize a hosted schema change.
 
 ## Shared migration authority

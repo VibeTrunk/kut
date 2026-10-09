@@ -113,7 +113,9 @@ This block is generated from `policy/PRODUCTION_INVARIANTS.md`. Run
     does not certify the commit serving the production domain.
   - **The packaging agent reads `git diff main...HEAD` in full** before
     writing the PR body — not only its own changes.
-- **Vercel:** connected as project `kut` at `kut.vibetrunk.com`.
+- **Vercel:** connected as project `kut` at `flut.vibetrunk.com`; the legacy
+  `kut.vibetrunk.com` alias serves the same deployment, and the app redirects it
+  (ADR-139).
 - **Supabase:** uses the shared VibeTrunk Supabase project, schema `kut`
   (not `public`); the hosted schema is created and migrated — see below.
 
@@ -121,13 +123,14 @@ This block is generated from `policy/PRODUCTION_INVARIANTS.md`. Run
 Own KUT end to end, per `docs/BUILD_SPEC.md`: the Next.js/TypeScript
 frontend, the Supabase backend (migrations, RLS policies, RPC/Edge
 Functions for atomic economy operations), and its deployment as the `kut`
-Vercel project on the `kut.vibetrunk.com` subdomain. `VibeTrunk/home` knows
+Vercel project on the `flut.vibetrunk.com` subdomain. `VibeTrunk/home` knows
 nothing about this repo beyond its name, blurb, and URL — keep it that way;
 don't add cross-repo coupling beyond the shared Supabase project.
 
 ## Current hosted deployment
 
-KUT is live at `https://kut.vibetrunk.com` as Vercel project `kut`.
+FLUT is live at `https://flut.vibetrunk.com` as Vercel project `kut`; the
+legacy `https://kut.vibetrunk.com` redirects there (ADR-139).
 
 **Latest hosted migration:** `20261019000000_basic_pack_price_250.sql`
 (ADR-136), applied 2026-10-08 from central catalogue PR #81; all 89

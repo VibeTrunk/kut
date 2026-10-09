@@ -40,7 +40,7 @@ export function handoffCommands(root, { sha, authorization, gate, approval }) {
     header +
     `try {
   const output=JSON.parse(call(process.execPath,[path.join(data.root,"scripts/release/check-vercel-deployment.mjs"),"--candidate",data.sha]));
-  if(output.result!=="candidate_live" || output.candidate_sha!==data.sha || output.candidate_lookup_complete!==true) throw Error("binding_unverified");
+  if(output.result!=="candidate_live" || output.candidate_sha!==data.sha || output.candidate_lookup_complete!==true || output.legacy_redirect?.verified!==true) throw Error("binding_unverified");
   console.log(JSON.stringify(output));
 } catch { console.log(JSON.stringify({result:"verification_failed",candidate_sha:data.sha})); process.exitCode=1; }`;
   return { deployment: nodeCommand(deployment), verification: nodeCommand(verification) };

@@ -6380,3 +6380,40 @@ under `.release-evidence/next-16.3.8-webkit-20261009/`. The owner then had 16.3.
 published in #208. Until a later Next release fixes the dev-server slowdown,
 treat a local dev-server WebKit failure in that suite as a known risk on 16.3.8,
 and confirm it with a production-mode run before judging the code.
+
+## FLUT rename, slices 2 and 3: the new domain (ADR-139) — 2026-10-09
+
+**Slice 2 (external, owner-run).** The owner attached `flut.vibetrunk.com` to
+the Vercel project `kut`, added its CNAME in Porkbun and set Production
+`APP_URL` to `https://flut.vibetrunk.com`. The agent's attempts at the Vercel
+domain step were blocked by the auto-mode classifier, so the owner ran them.
+A read-only check at about 09:07Z passed. The CNAME is the same Vercel target
+as `kut.`'s, and it overrides Porkbun's catch-all parking record. The Let's
+Encrypt certificate for the new host is valid until 2027-01-07. `vercel
+inspect` gives `dpl_Co8cziBQFT6E3Bt1gW2nFuWLvcj7` (`f23ee2a`) for both hosts,
+with no Vercel-level redirect. No app flow uses a Supabase Auth redirect, so
+the shared Site URL and allow-list are unchanged.
+
+**Slice 3 (this PR).** `next.config.ts` sends every path and query on the
+exact host `kut.vibetrunk.com` to `https://flut.vibetrunk.com` with a 307. The
+Vercel checker moves to the new domain. It also requires the legacy alias to
+bind the same deployment without a Vercel redirect, and it probes the
+redirect live. The printed post-deployment verification now requires the
+probe to pass. Docs: ADR-139, PRODUCTION_SAFETY.md, CLAUDE.md, README,
+OPERATIONS, the spec's naming note and ROADMAP. The ROADMAP item to narrow the
+redirect allow-list was marked done; OPERATIONS had recorded it on 2026-09-02.
+The owner also made it a general rule that a merge covers the gate's fresh
+backup (ADR-124 owner amendment).
+
+Verification: `npm run verify:fast` passed (policy, format, lint, types and
+746 unit tests in 68 files). That includes 16 new cases: the checker's
+two-alias binding, the probe outcomes and the redirect rule, and the
+post-deployment command refusing an unverified redirect. A production build
+served with `next start` was probed with real `Host` headers. The legacy
+host returned 307 to the matching `flut.` URL for `/`, `/login`,
+`/invite/…`, `/favicon.ico`, `/club/midweek/…`, the probe path and a POST.
+Query strings, mixed case and a port were all handled. `flut.`, `127.0.0.1`
+and a preview hostname returned 200; `/_next/static` is served before
+redirects. Against live production, the new checker reported
+`candidate_live` with both bindings and `legacy_redirect` unverified (404),
+as expected before this release.

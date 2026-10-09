@@ -23,8 +23,8 @@
 > League Ultimate Team**, and its currency is **FLUT Coins**. Read "KUT",
 > "Kelderklasse Ultimate Team" and "KUT Coins" anywhere below as FLUT,
 > Football League Ultimate Team and FLUT Coins. Internal names (the repo, the
-> Supabase schema `kut`, the Vercel project, `kut.vibetrunk.com` until the
-> domain slice) are unchanged.
+> Supabase schema `kut`, the Vercel project) are unchanged. The public address
+> is `flut.vibetrunk.com`; `kut.vibetrunk.com` redirects to it (ADR-139).
 
 ---
 

@@ -1149,14 +1149,15 @@ are complete. This table records follow-up scope, not publication or removal app
 
 ## FLUT rename — remaining slices (ADR-137)
 
-Slice 1, the in-app branding, is built in PR `feat/flut-branding`. Each item
-below needs its own authorization; the order and checks are in ADR-137.
+Slice 1, the in-app branding, shipped in #208 (live 2026-10-09). Each item
+below needs its own authorization; the order and checks are in ADR-137 and
+ADR-139.
 
 | Item | Status | Notes / next step |
 |---|---|---|
 | Server template migration | idea (optional) | One new migration, in its own PR with a database test, re-creates the functions that write "KUT Coins" (notices, the Midweek result, the admin reset, RPC exceptions) with FLUT wording; `design/flut/HANDOFF.md` §8 lists them. Not needed for members: the display adapter already shows FLUT Coins, and stays for rows already stored. Messages are never back-filled. |
-| Slice 2 — attach `flut.vibetrunk.com` | planned | Vercel `kut` domain, DNS/TLS check, Production `APP_URL`. Supabase Auth Site URL is shared by all tools: verify only. |
-| Slice 3 — `feat/flut-domain` | planned | Exact-host 307 `kut.vibetrunk.com/:path*` → `https://flut.vibetrunk.com/:path*` in `next.config.ts`; the release checker moves to the new domain, asserts the legacy alias serves the same deployment without a Vercel-level redirect, and probes the redirect live. Announce the sign-in-again cutover; never on a Midweek Wednesday evening. |
+| Slice 2 — attach `flut.vibetrunk.com` | done 2026-10-09 | The owner attached the domain in Vercel, added the Porkbun CNAME and set Production `APP_URL`. Both hosts serve the same deployment with a valid certificate (ADR-139). Supabase Site URL and redirect allow-list unchanged: no app flow uses an Auth redirect. |
+| Slice 3 — `feat/flut-domain` | in PR (ADR-139) | Exact-host 307 `kut.vibetrunk.com/:path*` → `https://flut.vibetrunk.com/:path*` in `next.config.ts`; the release checker moves to the new domain, asserts the legacy alias serves the same deployment without a Vercel-level redirect, and probes the redirect live. Announce the sign-in-again cutover; never on a Midweek Wednesday evening. |
 | Slice 4 — `VibeTrunk/home` listing | planned | FLUT, `https://flut.vibetrunk.com`, "Collectible football cards for TFH — showing up matters." |
 | Slice 5 — permanent redirect | planned | 307 → 308 after production acceptance. |
 
@@ -1165,7 +1166,8 @@ below needs its own authorization; the order and checks are in ADR-137.
 - **`home` tools-grid blurb** — drafted in `decisions.md` ("Open items"), not
   yet added to `VibeTrunk/home/src/data/tools.ts`.
 - **Narrow the Supabase auth redirect allow-list** to KUT's own preview
-  pattern — `OPERATIONS.md` "Follow-ups" (2026-08-19).
+  pattern — **done 2026-09-02** (`OPERATIONS.md` "Follow-ups": production,
+  `https://kut-*-vibetrunk.vercel.app/**` and localhost only).
 - **`player-photos` storage bucket** is not covered by the SQL backup —
   `BACKUP.md`.
 - **Photo consent toggle + admin photo moderation** — still open (ADR-027).

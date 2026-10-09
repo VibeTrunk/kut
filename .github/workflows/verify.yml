@@ -63,6 +63,28 @@ jobs:
         run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
 
+  # The signed-in suite on a production build (`next build` + `next start`)
+  # against this runner's local stack: the Pixel 7 project in full, and the
+  # @narrow tests at 320 px. Once it has proven itself, it replaces the local
+  # release gate's browser run (S4 of the process reset, #212).
+  e2e-authenticated:
+    needs: changes
+    if: needs.changes.outputs.docs_only != 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci --prefer-offline --no-audit --no-fund
+      - uses: ./.github/actions/authenticated-e2e
+        with:
+          browser: chromium
+          projects: authenticated-pixel7 authenticated-320
+          artifact-name: e2e-authenticated-results
+
   database:
     needs: changes
     if: needs.changes.outputs.docs_only != 'true'
@@ -112,7 +134,7 @@ jobs:
   # and is deliberately not performed by repository code.
   merge-gate:
     if: always()
-    needs: [changes, fast, e2e, database, migrations, security]
+    needs: [changes, fast, e2e, e2e-authenticated, database, migrations, security]
     runs-on: ubuntu-latest
     steps:
       - name: Require complete evidence for this change class
@@ -120,6 +142,7 @@ jobs:
           DOCS_ONLY: ${{ needs.changes.outputs.docs_only }}
           FAST: ${{ needs.fast.result }}
           E2E: ${{ needs.e2e.result }}
+          E2E_AUTHENTICATED: ${{ needs.e2e-authenticated.result }}
           DATABASE: ${{ needs.database.result }}
           MIGRATIONS: ${{ needs.migrations.result }}
           SECURITY: ${{ needs.security.result }}
@@ -129,10 +152,12 @@ jobs:
           test "$MIGRATIONS" = success
           if [ "$DOCS_ONLY" = true ]; then
             test "$E2E" = skipped
+            test "$E2E_AUTHENTICATED" = skipped
             test "$DATABASE" = skipped
             test "$SECURITY" = skipped
           else
             test "$E2E" = success
+            test "$E2E_AUTHENTICATED" = success
             test "$DATABASE" = success
             test "$SECURITY" = success
           fi

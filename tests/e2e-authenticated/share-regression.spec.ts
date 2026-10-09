@@ -5,6 +5,7 @@ import {
   advanceFixtureEvening,
   COMPLETED_WEEK,
   endFixtureEvening,
+  FIXTURE_PHOTO,
   startFixtureEvening,
 } from "./midweek-fixture";
 
@@ -96,7 +97,7 @@ for (const version of ["older", "newer"] as const) {
     await database(async (client) => {
       await client.query(
         "update kut.players set photo_path = $1 where id = '00000097-0000-4000-8000-000000010005'",
-        ["players/920069c8-43ac-4278-ae15-0373604696cb/profile.webp"],
+        [FIXTURE_PHOTO],
       );
     });
     try {
@@ -152,6 +153,10 @@ test("hung fonts and failed photos still export using fallbacks", async ({ page 
 
 for (const stage of ["canvas-context", "draw", "png-export", "png-timeout"] as const) {
   test(`${stage} failure is sanitized, isolated and retryable`, async ({ page }) => {
+    test.fixme(
+      process.platform === "linux",
+      "KB-041 (#215): without Arial the font load fails too, adding a `fonts` diagnostic",
+    );
     await page.addInitScript((stage) => {
       let fail = true;
       const records: unknown[] = [];
@@ -558,7 +563,7 @@ for (const delayed of [false, true]) {
     await database(async (client) => {
       await client.query(
         "update kut.players set photo_path=$1 where id='00000097-0000-4000-8000-000000010005'",
-        ["players/920069c8-43ac-4278-ae15-0373604696cb/profile.webp"],
+        [FIXTURE_PHOTO],
       );
     });
     try {

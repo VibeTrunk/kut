@@ -1,0 +1,80 @@
+name: Authenticated E2E on the production build
+description: >
+  Starts the local Supabase stack, builds the app against it with `next build`,
+  and runs the authenticated Playwright suite on `next start`. Expects the
+  repository checked out and `npm ci` done. Everything it touches is the
+  runner's own loopback stack; the fixtures refuse any other target.
+
+inputs:
+  browser:
+    description: Playwright browser to install (chromium or webkit).
+    required: true
+  projects:
+    description: Space-separated Playwright project names to run.
+    required: true
+  artifact-name:
+    description: Name of the test-results artifact uploaded when the suite fails.
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Start the local stack (auth, REST, Storage and the gateway)
+      shell: bash
+      run: npx supabase start -x realtime,imgproxy,mailpit,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
+
+    # The release gate's mapping (scripts/release/production-e2e-contract.mjs):
+    # the NEXT_PUBLIC_ values are inlined by the build, so they must be set
+    # before it; the service-role key is read by `next start` at run time.
+    - name: Export the stack's URL and keys
+      shell: bash
+      run: |
+        set -euo pipefail
+        npx supabase status -o env \
+          | grep -E '^(API_URL|DB_URL|ANON_KEY|SERVICE_ROLE_KEY)=' \
+          | sed -E 's/^([A-Z_]+)="(.*)"$/\1=\2/' > "$RUNNER_TEMP/stack.env"
+        test "$(wc -l < "$RUNNER_TEMP/stack.env")" -eq 4
+        set -a
+        . "$RUNNER_TEMP/stack.env"
+        set +a
+        {
+          cat "$RUNNER_TEMP/stack.env"
+          echo "NEXT_PUBLIC_SUPABASE_URL=$API_URL"
+          echo "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=$ANON_KEY"
+          echo "SUPABASE_SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY"
+        } >> "$GITHUB_ENV"
+
+    - name: Build for production against the local stack
+      shell: bash
+      run: npm run build
+
+    - name: Skip the flaky azure.archive.ubuntu.com mirror
+      shell: bash
+      run: echo "https://archive.ubuntu.com/ubuntu" | sudo tee /etc/apt/apt-mirrors.txt
+
+    - name: Install the Playwright browser
+      shell: bash
+      env:
+        BROWSER: ${{ inputs.browser }}
+      run: npx playwright install --with-deps "$BROWSER"
+
+    - name: Run the authenticated suite
+      shell: bash
+      env:
+        PROJECTS: ${{ inputs.projects }}
+      run: |
+        set -euo pipefail
+        args=()
+        for project in $PROJECTS; do args+=(--project "$project"); done
+        npx playwright test --config playwright.authenticated.config.ts "${args[@]}"
+
+    # The repository is public, so anyone can download this. It holds only
+    # fictional fixture users on a throwaway stack.
+    - name: Keep the test results of a failed run
+      if: failure()
+      uses: actions/upload-artifact@v7
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: test-results
+        retention-days: 7
+        if-no-files-found: ignore

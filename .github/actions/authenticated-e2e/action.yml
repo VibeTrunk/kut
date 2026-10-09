@@ -52,13 +52,6 @@ runs:
       shell: bash
       run: echo "https://archive.ubuntu.com/ubuntu" | sudo tee /etc/apt/apt-mirrors.txt
 
-    - name: EXPERIMENT install Arial and Times New Roman
-      shell: bash
-      run: |
-        echo ttf-mscorefonts-installer msttcorefonts/accept-mscorefonts-eula select true | sudo debconf-set-selections
-        sudo apt-get install -y -q ttf-mscorefonts-installer
-        fc-list | grep -i -E "arial|times new roman" | head -3
-
     - name: Install the Playwright browser
       shell: bash
       env:

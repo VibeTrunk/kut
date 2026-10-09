@@ -1,0 +1,132 @@
+name: Encrypted kut backup with a restore check
+description: >
+  Dumps schema kut as kut_backup from one exported snapshot, encrypts the dump
+  and its manifest with age, uploads them, and restores them into a disposable
+  `kut_restore` stack to prove the backup (ADR-141). Expects the repository
+  checked out, `npm ci` done, and PGHOST, PGPORT, PGUSER, PGPASSWORD and
+  PGSSLMODE in the environment. The repository is public: database output goes
+  to a private log, which is uploaded only age-encrypted, and only on failure.
+
+inputs:
+  source:
+    description: hosted (the nightly run) or selftest (pull requests).
+    required: true
+  recipients-file:
+    description: age recipients file the backup is encrypted to.
+    required: true
+  retention-days:
+    description: How long the encrypted artifact is kept.
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Install age
+      shell: bash
+      run: |
+        set -euo pipefail
+        if ! command -v age > /dev/null; then
+          echo "https://archive.ubuntu.com/ubuntu" | sudo tee /etc/apt/apt-mirrors.txt > /dev/null
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq --no-install-recommends age > /dev/null
+        fi
+        age --version
+
+    - name: Prepare a private work directory
+      shell: bash
+      run: |
+        set -euo pipefail
+        work="$RUNNER_TEMP/kut-backup"
+        mkdir -p "$work/private" "$work/plain" "$work/out"
+        chmod -R go-rwx "$work"
+        : > "$work/private/log.txt"
+        echo "BACKUP_WORK=$work" >> "$GITHUB_ENV"
+        echo "BACKUP_STAMP=$(date -u +%Y%m%dT%H%M%SZ)" >> "$GITHUB_ENV"
+
+    # The postgres:17 client runs in a long-lived container driven with
+    # `docker exec`. PGPASSWORD is passed by name, so its value never appears
+    # in a process argument.
+    - name: Start the postgres:17 client
+      shell: bash
+      env:
+        BACKUP_SOURCE: ${{ inputs.source }}
+      run: |
+        set -euo pipefail
+        for attempt in 1 2 3; do
+          docker pull -q postgres:17 && break
+          [ "$attempt" = 3 ] && exit 1
+          sleep 15
+        done
+        docker run -d --name kut-backup-client --network host \
+          --user "$(id -u):$(id -g)" \
+          -e PGHOST -e PGPORT -e PGUSER -e PGPASSWORD -e PGSSLMODE \
+          -e PGDATABASE=postgres -e PGCONNECT_TIMEOUT=20 \
+          -e REPO_SHA="$GITHUB_SHA" -e BACKUP_SOURCE \
+          -v "$BACKUP_WORK:/work" \
+          -v "$GITHUB_WORKSPACE/scripts/ci/backup:/scripts:ro" \
+          postgres:17 sleep infinity > /dev/null
+
+    - name: Dump kut from one snapshot
+      shell: bash
+      run: docker exec kut-backup-client bash /scripts/dump.sh /work
+
+    - name: Stop the client
+      if: always()
+      shell: bash
+      run: docker stop kut-backup-client > /dev/null 2>&1 || true
+
+    - name: Encrypt
+      shell: bash
+      env:
+        RECIPIENTS: ${{ inputs.recipients-file }}
+      run: >
+        scripts/ci/backup/encrypt.sh "$BACKUP_WORK/plain" "$BACKUP_WORK/out"
+        "$RECIPIENTS" "$BACKUP_STAMP"
+
+    # Anyone can download artifacts of a public repository; this one holds
+    # only age ciphertext and the plaintext tar's SHA-256.
+    - name: Upload the encrypted backup
+      uses: actions/upload-artifact@v7
+      with:
+        name: kut-backup-${{ env.BACKUP_STAMP }}
+        path: ${{ env.BACKUP_WORK }}/out/
+        retention-days: ${{ inputs.retention-days }}
+        if-no-files-found: error
+
+    - name: Restore check in a disposable kut_restore stack
+      shell: bash
+      run: scripts/ci/backup/restore-check.sh "$BACKUP_WORK/plain" "$BACKUP_WORK/restore"
+
+    - name: Encrypt the private logs of a failed run
+      if: failure()
+      shell: bash
+      env:
+        RECIPIENTS: ${{ inputs.recipients-file }}
+      run: |
+        set -euo pipefail
+        RECIPIENTS=$(realpath "$RECIPIENTS")
+        mkdir -p "$BACKUP_WORK/failure"
+        cd "$BACKUP_WORK"
+        logs=(private/log.txt)
+        [ -f restore/private/log.txt ] && logs+=(restore/private/log.txt)
+        tar -cf failure/logs.tar "${logs[@]}"
+        age -R "$RECIPIENTS" -o "failure/kut-backup-log-$BACKUP_STAMP.tar.age" failure/logs.tar
+        rm -- failure/logs.tar
+
+    - name: Upload the encrypted private logs
+      if: failure()
+      uses: actions/upload-artifact@v7
+      with:
+        name: kut-backup-log-${{ env.BACKUP_STAMP }}
+        path: ${{ env.BACKUP_WORK }}/failure/*.age
+        retention-days: 7
+        if-no-files-found: ignore
+
+    - name: Delete the plaintext
+      if: always()
+      shell: bash
+      run: |
+        for file in "$BACKUP_WORK/plain/kut.dump" "$BACKUP_WORK/plain/manifest.json"; do
+          if [ -e "$file" ]; then rm -- "$file"; fi
+        done
+        echo "plaintext deleted"

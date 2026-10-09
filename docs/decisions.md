@@ -8261,3 +8261,89 @@ Consequences:
 - S4 extends this ADR with what it supersedes.
 
 Tracking: VibeTrunk/kut#212.
+
+## ADR-141 — Nightly encrypted kut backup in GitHub Actions, kut only
+
+Date: 2026-10-09
+
+Status: Accepted (owner decision of 2026-10-09, after the S3 spike in VibeTrunk/kut#212)
+
+Context: the process reset (ADR-140) replaces the owner-run local backup with a
+nightly encrypted backup in GitHub Actions. The owner's rule is that the backup
+route never holds write or migration rights, and the `postgres` credential never
+goes into GitHub. The plan covered schema `kut` plus the `auth.users` and
+`auth.identities` data. The S3 spike found, locally and then on hosted (a
+read-only catalogue check the owner ran):
+
+- `postgres` can create a `BYPASSRLS` login role and grant it `SELECT` on every
+  `kut` table and on the auth tables, but it has no grant option on schema
+  `auth`, which `supabase_admin` owns. A role without `USAGE` on `auth` cannot
+  read the auth tables. So no read-only role can take the auth data.
+- Through PUBLIC, every role can execute six `kut` SECURITY DEFINER functions:
+  five trigger functions (`_clear_availability_for_listing`,
+  `_maintain_trade_discovery_for_card`, `_open_session_survey`,
+  `_version_and_open_session_survey`, `prevent_burning_listed_card`) and
+  `is_admin()`. Postgres refuses to run a trigger function outside a trigger,
+  and `is_admin()` only reports whether the caller is an admin.
+- The local image gives PUBLIC write rights on the pg_net tables; hosted does
+  not.
+
+Decision:
+
+1. **Scope is schema `kut` only.** The backup holds every `kut` object and row,
+   but no auth data. The old local backup (`supabase db dump -s kut`) never held
+   auth data either, so coverage does not shrink.
+2. **Read-only role `kut_backup`** (`scripts/ci/backup/kut-backup-role.sql`):
+   `LOGIN BYPASSRLS NOINHERIT`, connection limit 4, read-only by default.
+   `USAGE` on `kut` and `supabase_migrations`, and `SELECT` on every `kut` table
+   and sequence (never sequence `USAGE`), including future ones through default
+   privileges. Also `SELECT` on `supabase_migrations.schema_migrations` for the
+   manifest.
+3. **Reviewed exceptions** in `scripts/ci/backup/audit-kut-backup.sql`: the six
+   functions above by exact signature. Also these PostgreSQL defaults from
+   PUBLIC: `TEMPORARY` on the database (session-private temp tables), `CONNECT`
+   on the empty template databases, and `USAGE` on schema `public`. Every right
+   on an object in `public` is still audited. Any other privilege, including a
+   new PUBLIC-executable SECURITY DEFINER function, is a finding and fails the
+   run. A privilege on an object in a schema the role cannot use is reported as
+   unreachable.
+4. **Each night** (`.github/workflows/backup.yml`, 03:17 UTC, environment
+   `backup`, branch `main` only), as `kut_backup` through the Session pooler:
+   - the audit and a denied-insert check run first;
+   - a held `REPEATABLE READ` transaction exports a snapshot, and both the
+     `pg_dump -Fc -n kut` and the manifest's row counts read it;
+   - the dump and manifest are age-encrypted to the owner's key and kept as an
+     artifact for 30 days.
+5. **Restore check** in a fresh, disposable `kut_restore` stack (ports 553xx),
+   guarded by container name, project label and port:
+   - Restore pre-data, then data. Insert stand-in `auth.users` rows for every
+     referenced user id, then restore post-data, so every constraint is checked.
+   - Recreate the dependents outside `kut` (the player-photo storage policies).
+   - Gate: the schema dump equals the migrated reference, after both have made
+     one dump and restore round trip, because Postgres deparses some views
+     differently afterwards. The row counts equal the snapshot, and a restored
+     member signs in and reads their own profile through the API.
+6. **Logs:** database tool output goes to a private log. It is uploaded only
+   age-encrypted, and only for a failed run. The public log shows step, exit
+   code and SQLSTATE.
+
+Consequences:
+
+- Member accounts are not backed up. If auth data were lost but `kut` survived,
+  members would sign up again and their `kut` rows would need re-linking to the
+  new user ids by hand. A whole-project loss loses the accounts either way: the
+  free plan has no managed backup.
+- The nightly check proves the `kut` data and schema restore exactly, but uses
+  stand-in accounts. It cannot prove a profile matches a real account. The
+  owner's drill checks the data and a stand-in sign-in, not a real member's
+  login.
+- The audit carries a named allowlist. Fixing the six functions (revoking
+  PUBLIC execute) is a migration and can follow after S4.
+- The pull-request self-test runs the same pipeline against the runner's own
+  stack with a fictional fixture. It revokes the local-only pg_net and
+  `_supabase` PUBLIC rights there to match hosted.
+- S4 may retire the old local backup once the owner's drill passes, since it
+  covers the same scope. The spike did produce a read-only role, which is
+  S9's precondition. The owner confirms it when S9 starts.
+
+Tracking: VibeTrunk/kut#212.

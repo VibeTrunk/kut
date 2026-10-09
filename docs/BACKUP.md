@@ -13,9 +13,85 @@ trade history.
 
 | Data | Covered by | Notes |
 | --- | --- | --- |
-| `kut` schema DDL + all `kut` table data | `scripts/backup-kut-hosted.ps1` | The file this doc is about. |
+| `kut` schema DDL + all `kut` table data | The nightly GitHub backup (below), and `scripts/backup-kut-hosted.ps1` | ADR-141. The old local script stays until S4 of the process reset retires it after the owner's drill. |
 | Account identities (`auth.users`) | Supabase platform backup / dashboard export | Supabase-managed schema. Take a dashboard backup before any schema change (already in `docs/OPERATIONS.md`). A `kut`-only restore needs FK triggers disabled because `kut.profiles` references `auth.users` — see the drill below. |
 | Card photos (`player-photos` bucket) | Not yet | Storage objects are not in the SQL dump. Low volume, low stakes for now; note it as an open gap. |
+
+## Nightly GitHub backup (ADR-141)
+
+`.github/workflows/backup.yml` runs at 03:17 UTC, on manual dispatch, and as a
+callable workflow. It connects as the read-only `kut_backup` role through the
+Supabase Session pooler, from the `backup` environment (branch `main` only).
+
+- **What it holds:** one `pg_dump -Fc -n kut` (every `kut` object and row) plus
+  `manifest.json`. The manifest records the repo SHA, the hosted migration
+  versions, the Postgres version, the per-table row counts and the dump's
+  SHA-256. The dump and the counts come from one exported snapshot. There is
+  **no auth data**: no read-only role can read schema `auth` (ADR-141).
+- **Where:** artifact `kut-backup-<UTC stamp>`, kept 30 days, holding
+  `kut-backup-<stamp>.tar.age` (age-encrypted to `.github/backup-recipient.txt`)
+  and `kut-backup-<stamp>.tar.sha256` (the plaintext tar's hash). Artifacts of a
+  public repository are downloadable by anyone, so only ciphertext is
+  uploaded. Download one about monthly and keep it outside GitHub.
+- **Proof:** every run first audits the role's privileges and checks that an
+  insert is denied. After the dump it restores into a disposable `kut_restore`
+  stack and fails unless the schema matches the migrations at that SHA, the
+  row counts match the snapshot, and a restored member can sign in and read
+  their own profile. On a migration-window night, when hosted is ahead of
+  `main`, the schema check fails as expected and clears after the merge.
+- **Logs:** the public log shows only step, exit code and SQLSTATE. A failed
+  run uploads its private logs age-encrypted as `kut-backup-log-<stamp>`,
+  kept 7 days.
+- **Monitoring:** GitHub emails the owner about a failed run, if Actions
+  notifications are on. Runs that never start are caught by the agents'
+  start-up check in `AGENTS.md` (last success older than 36 hours).
+- **Pull requests** that touch the backup run the same pipeline against the
+  runner's own stack with a fictional fixture and a throwaway key.
+
+### One-time setup (owner)
+
+1. In the Supabase SQL editor, run `scripts/ci/backup/kut-backup-role.sql`.
+   Then set a password: `alter role kut_backup password '<new password>';`.
+2. Run `scripts/ci/backup/audit-kut-backup.sql` in the same editor. It must
+   return no `FINDING` row. Its `exception` rows are the ones ADR-141 accepts.
+3. In GitHub, create the environment `backup` with deployment branch `main`
+   only, and give it these secrets:
+   - `KUT_BACKUP_PGHOST`: the Session pooler host;
+   - `KUT_BACKUP_PGUSER`: `kut_backup.<project ref>`;
+   - `KUT_BACKUP_PGPASSWORD`: the password from step 1.
+
+To remove the role later, revoke its grants and default privileges, then run
+`drop role kut_backup`. The SQL editor's `postgres` cannot use
+`drop owned by kut_backup`.
+
+### Drill: download, decrypt, restore (owner)
+
+The restore check script is the drill. It runs in Git Bash on Windows beside
+the `kut` development stack, because the disposable stack uses ports 553xx and
+the project id `kut_restore`. It never touches `supabase_db_kut`.
+
+```powershell
+# 1. Download a backup. Its run id is in the Actions tab.
+gh run download <run-id> -R VibeTrunk/kut -n kut-backup-<stamp> -D $env:USERPROFILE\backups\kut-github
+
+# 2. Decrypt with the private key from the password manager, saved to a
+#    temporary file. Compare the hash with kut-backup-<stamp>.tar.sha256.
+age -d -i $keyFile -o kut-backup.tar kut-backup-<stamp>.tar.age
+(Get-FileHash kut-backup.tar -Algorithm SHA256).Hash
+New-Item -ItemType Directory plain | Out-Null; tar -xf kut-backup.tar -C plain
+
+# 3. A checkout at the manifest's repo_sha, with its own node_modules.
+git -C C:\Users\mfvan\dev\kut worktree add .release-evidence\worktrees\kut-restore <repo_sha>
+Set-Location C:\Users\mfvan\dev\kut\.release-evidence\worktrees\kut-restore; npm ci
+
+# 4. Restore and check. The work folder must be new.
+& "C:\Program Files\Git\bin\bash.exe" scripts/ci/backup/restore-check.sh <path\to\plain> <path\to\new-work-folder>
+```
+
+It ends with `restore check passed`. To also sign in through the app, point a
+local build at the `kut_restore` API (port 55321). Afterwards, stop the stack
+with `npx supabase stop --workdir <work-folder>\stack --no-backup`, then delete
+the decrypted tar, the `plain` files and the key file.
 
 ## Take a backup
 

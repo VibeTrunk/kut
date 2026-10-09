@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { IconCoin, IconMessages } from "@/components/icons";
+import { BRAND } from "@/lib/brand";
 import {
   activeEntryKey,
   ariaCurrent,
@@ -31,7 +32,9 @@ const focusRing =
 // must never say when it does not know (KB-014).
 const BALANCE_UNKNOWN = "—";
 function balanceLabel(balance: number | null) {
-  return balance === null ? "KUT Coins unavailable" : `${balance.toLocaleString()} KUT Coins`;
+  return balance === null
+    ? `${BRAND.currency} unavailable`
+    : `${balance.toLocaleString()} ${BRAND.currency}`;
 }
 
 function TabBadge({ item }: { item: NavItem }) {
@@ -115,7 +118,7 @@ export function AppNav({
             href="/"
           >
             <span aria-hidden="true" className="clip-pennant h-4 w-3.5 shrink-0 bg-brass" />
-            KUT
+            {BRAND.shortName}
           </Link>
           <nav aria-label="Primary" className="flex flex-1 items-center gap-1">
             {primaryItems.map((item) => (
@@ -147,7 +150,7 @@ export function AppNav({
               className={`grid h-9 w-9 place-items-center rounded-full bg-brass text-xs font-black text-ink-on-accent ${focusRing} ${settingsActive ? "ring-2 ring-brass/40 ring-offset-2 ring-offset-board-deep" : ""}`}
               href="/settings"
             >
-              {initials || "KUT"}
+              {initials || "F"}
             </Link>
           </div>
         </div>
@@ -159,7 +162,7 @@ export function AppNav({
           href="/"
         >
           <span aria-hidden="true" className="clip-pennant h-3.5 w-3 shrink-0 bg-brass" />
-          KUT
+          {BRAND.shortName}
         </Link>
         <div className="flex min-w-0 items-center gap-2">
           <span
@@ -178,7 +181,7 @@ export function AppNav({
             className={`grid h-11 w-11 shrink-0 place-items-center rounded-full bg-brass text-xs font-black text-ink-on-accent ${focusRing} ${settingsActive ? "ring-2 ring-brass/40 ring-offset-2 ring-offset-board" : ""}`}
             href="/settings"
           >
-            {initials || "KUT"}
+            {initials || "F"}
           </Link>
         </div>
       </header>

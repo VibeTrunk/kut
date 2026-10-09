@@ -1147,6 +1147,19 @@ are complete. This table records follow-up scope, not publication or removal app
 | Topic B / KB-037 | monitoring | Existing passive decisions remain: resume on recurrence and preserve the original failure before clearing state. Neither is established as sharing Topic A's cause. KB-037's canonical report/status stays in KNOWN_BUGS. |
 | Windows port-reservation persistence (ADR-125) | planned | Verify read-only after the owner's next reboot. No reboot has been confirmed for this check; do not repeat the port repair or alter exclusions now. |
 
+## FLUT rename — remaining slices (ADR-137)
+
+Slice 1, the in-app branding, is built in PR `feat/flut-branding`. Each item
+below needs its own authorization; the order and checks are in ADR-137.
+
+| Item | Status | Notes / next step |
+|---|---|---|
+| Server template migration | idea (optional) | One new migration, in its own PR with a database test, re-creates the functions that write "KUT Coins" (notices, the Midweek result, the admin reset, RPC exceptions) with FLUT wording; `design/flut/HANDOFF.md` §8 lists them. Not needed for members: the display adapter already shows FLUT Coins, and stays for rows already stored. Messages are never back-filled. |
+| Slice 2 — attach `flut.vibetrunk.com` | planned | Vercel `kut` domain, DNS/TLS check, Production `APP_URL`. Supabase Auth Site URL is shared by all tools: verify only. |
+| Slice 3 — `feat/flut-domain` | planned | Exact-host 307 `kut.vibetrunk.com/:path*` → `https://flut.vibetrunk.com/:path*` in `next.config.ts`; the release checker moves to the new domain, asserts the legacy alias serves the same deployment without a Vercel-level redirect, and probes the redirect live. Announce the sign-in-again cutover; never on a Midweek Wednesday evening. |
+| Slice 4 — `VibeTrunk/home` listing | planned | FLUT, `https://flut.vibetrunk.com`, "Collectible football cards for TFH — showing up matters." |
+| Slice 5 — permanent redirect | planned | 307 → 308 after production acceptance. |
+
 ## One-off open items
 
 - **`home` tools-grid blurb** — drafted in `decisions.md` ("Open items"), not

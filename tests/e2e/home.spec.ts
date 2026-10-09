@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { BRAND } from "../../src/lib/brand";
 
 test("requires sign-in before showing Live Ratings", async ({ page }) => {
   await page.goto("/");
@@ -192,7 +193,7 @@ test("rejects a malformed invite token without exposing an account flow", async 
 
   await page.getByLabel("Choose a username").fill("persontest");
   await page.getByLabel("Choose a password").fill("valid-password-123");
-  await page.getByRole("button", { name: "Create KUT account" }).click();
+  await page.getByRole("button", { name: `Create ${BRAND.shortName} account` }).click();
 
   await expect(
     page.getByText("This invitation is invalid, expired, or has already been used."),

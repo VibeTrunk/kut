@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" shape-rendering="crispEdges">
+  <!-- Hand-hinted 16 px master: the F sits on whole pixels so it stays sharp in a tab. -->
+  <path fill="#e0ac4a" shape-rendering="geometricPrecision" d="M8 0 16 6.08 13.12 16H2.88L0 6.08Z"/>
+  <path fill="#1c150a" d="M5 5h6v2H7v1h3v2H7v4H5Z"/>
+</svg>

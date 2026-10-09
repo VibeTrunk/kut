@@ -236,7 +236,7 @@ export function AttendanceForm({
               ))}
             </select>
             <span className="block text-sm text-brass">
-              Whoever brings the bibs gets a one-off bonus in KUT Coins. Changing this on a
+              Whoever brings the bibs gets a one-off bonus in FLUT Coins. Changing this on a
               correction pays the new bringer; the previous one keeps their bonus.
             </span>
           </label>

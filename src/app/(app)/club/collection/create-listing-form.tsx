@@ -27,7 +27,7 @@ export function CreateListingForm({
       <input name="cardId" type="hidden" value={cardId} />
       <p className="font-black text-steel">List on the market</p>
       <p className="mt-1 text-sm text-steel/80">
-        Choose a buy-now price from {minimumPrice} to {maximumPrice} KUT Coins, and how long the
+        Choose a buy-now price from {minimumPrice} to {maximumPrice} FLUT Coins, and how long the
         listing should run. It locks this card until it sells, expires, or you cancel it.
       </p>
       <label className="mt-4 block text-sm font-bold" htmlFor="listing-price">

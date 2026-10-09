@@ -201,7 +201,7 @@ function MidweekPredictCard({
     status =
       card.pick === card.winner ? (
         <>
-          <Called>✓ You called it</Called> {name(card.winner)} won. +{coins} KUT Coins
+          <Called>✓ You called it</Called> {name(card.winner)} won. +{coins} FLUT Coins
           {paid ? "" : " after the final"}.
         </>
       ) : (

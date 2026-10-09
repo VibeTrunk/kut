@@ -1,9 +1,12 @@
-# Kelderklasse Ultimate Team (KUT)
+# FLUT — Football League Ultimate Team
 
 A browser-based collectible football-card game for Terrible Football
 Haarlem (TFH): real attendance and match performance drive a card economy
 players collect, open packs of, and trade. Part of the
-[VibeTrunk](https://vibetrunk.com) hub.
+[VibeTrunk](https://vibetrunk.com) hub. FLUT was called KUT (Kelderklasse
+Ultimate Team) until 2026-10-08 (ADR-137). The repository, the Supabase
+schema `kut`, the Vercel project and the `kut.vibetrunk.com` domain keep the
+old name for now.
 
 Start with [`CLAUDE.md`](CLAUDE.md) for project context, then
 [`docs/README.md`](docs/README.md) — the documentation map: what each document
@@ -15,10 +18,11 @@ is for and the order to read them (`BUILD_SPEC.md`, `PROGRESS.md`,
 The MVP is feature-complete: attendance rewards, Live Cards, invite-only
 accounts, starter assets, packs, discard, the transfer market, Club Value, a
 private message inbox, and a club-wide activity feed on the home page. Later
-tester-feedback batches added the "KUT Coins" currency name, a Goalkeeper
-archetype, a bibs-washing coin bonus, and admin economy tools. KUT is live at
-[kut.vibetrunk.com](https://kut.vibetrunk.com), deployed from its own Vercel
-project using the shared VibeTrunk Supabase project's `kut` schema. Hosted
+tester-feedback batches added the canonical currency name (now "FLUT Coins"),
+a Goalkeeper archetype, a bibs-washing coin bonus, and admin economy tools.
+FLUT is live at [kut.vibetrunk.com](https://kut.vibetrunk.com), deployed from
+its own Vercel project using the shared VibeTrunk Supabase project's `kut`
+schema. Hosted
 migrations are catalogued and deployed only from the central
 [VibeTrunk/supabase](https://github.com/VibeTrunk/supabase) repository.
 

@@ -1,4 +1,5 @@
 import { eventLabel, type MessageTarget, type UserNotification } from "@/lib/messages";
+import { presentNotification } from "@/lib/notification-copy";
 
 /**
  * `MessageRow` (design/ux-review/HANDOFF.md "Messages", ADR-114): one compact
@@ -6,7 +7,9 @@ import { eventLabel, type MessageTarget, type UserNotification } from "@/lib/mes
  * which marks it read and goes to its subject; the link label ("Bracket →")
  * and the arrow say where. A message without a subject has no arrow: unread,
  * opening it only marks it read; read, it is no link at all. Unread rows carry
- * a filled dot and the word `New`, so colour is never the only signal.
+ * a filled dot and the word `New`, so colour is never the only signal. Server
+ * wording passes through the FLUT presentation adapter (ADR-137); the stored
+ * row is never changed.
  */
 export function MessageRow({
   message,
@@ -18,6 +21,7 @@ export function MessageRow({
   target: MessageTarget | null;
 }) {
   const unread = !message.read_at;
+  const { title, body: text } = presentNotification(message);
   const body = (
     <>
       <span
@@ -37,10 +41,10 @@ export function MessageRow({
         )}
       </span>
       <span className="block min-w-0 text-[15px] leading-snug font-extrabold [overflow-wrap:anywhere]">
-        {message.title}
+        {title}
       </span>
       <span className="block min-w-0 text-[13.5px] leading-normal text-ink-dim [overflow-wrap:anywhere]">
-        {message.body}
+        {text}
         {target && (
           <>
             {" "}

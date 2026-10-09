@@ -47,7 +47,7 @@ export default async function EditionCopiesPage({
           </p>
           <h1 className="display mt-3 text-3xl sm:text-6xl">Your copies</h1>
           <p className="mt-4 text-ink-dim">
-            {copies.length} copies. Each can be discarded for {first.discard_value} KUT Coins.
+            {copies.length} copies. Each can be discarded for {first.discard_value} FLUT Coins.
           </p>
         </header>
         <div className="overflow-x-auto">

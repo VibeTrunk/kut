@@ -7997,3 +7997,132 @@ Consequences: `20261019000000_basic_pack_price_250.sql` updates the active pack
 definition. `ECONOMY.basicPackPrice`, the canonical build-spec amendment and
 current contract fixtures use 250. No opening history is repriced, and no
 hosted migration is applied by this change.
+
+## ADR-137 — The game is FLUT, Football League Ultimate Team
+
+Date: 2026-10-08
+
+Status: Accepted
+
+Decision: the public game is renamed from KUT ("Kelderklasse Ultimate Team")
+to **FLUT — Football League Ultimate Team**, and its currency from "KUT Coins"
+to **FLUT Coins** (singular "FLUT Coin"; compact unit "FLUT"). Only the words
+change. Accounts, cards, balances, game rules, the economy and the Clubblad
+visual style stay as they are. ADR-034's rule of one currency name everywhere
+still holds; the name it fixes is now FLUT Coins.
+
+The owner approved `design/flut/HANDOFF.md` on 2026-10-08. It is the spec for
+the marks, the login and welcome lockups, the icons, the share images and the
+copy. Three points override it:
+
+- The root metadata title is the full name, `FLUT — Football League Ultimate
+  Team`, as the root title has always been. Page titles stay standalone
+  ("FLUT Chronicle", "How FLUT works").
+- Server-written text is translated at display time (below). It is not
+  deferred with "KUT Coins" visible in the meantime.
+- The handoff's line references were stale; the build worked from a fresh
+  search of `src` and `tests`.
+
+User-visible strings take their names from `src/lib/brand.ts`, which also
+exports the planned public URL `https://flut.vibetrunk.com`. Nothing routes
+on that URL yet.
+
+**Internal names stay `kut`.** That covers the Postgres schema, the repository,
+the Vercel project, `kut.vibetrunk.com` until the domain slice, `KUT_RELEASE_*`,
+credential locators, backup tooling, console and diagnostic prefixes, and test
+names. Members never see them. Renaming them would touch the release gate,
+backups and credential retrieval without changing anything a member reads.
+
+**Server-written text goes through a permanent display adapter.** Postgres
+functions write "KUT Coins" into notices and some RPC exceptions. Stored
+messages keep their wording, and nothing back-fills them, so the frontend has to
+translate old rows anyway. `src/lib/notification-copy.ts` is a pure function
+with a registry of every server template, current and historical, copied
+verbatim from the migrations. Each pattern is anchored. Only a template's fixed
+wording changes, so names, numbers, links and an admin's free-text wallet
+reason pass through as written. Unknown text is returned unchanged. Stored rows
+and read state are never touched. It runs wherever a message title or body is
+rendered (`MessageRow`, which the inbox uses) and on the raw RPC exception
+text that admin actions can show. A unit test parses the migrations and takes
+the latest definition of every function. It fails if a "KUT Coins" literal
+there is not translated, so a future template cannot slip past the adapter. A
+second guard keeps "KUT Coins", "Kelderklasse" and a standalone "KUT" out of
+`src/**`, apart from a commented allowlist. A migration that re-creates the
+functions with FLUT wording is an optional later slice (ROADMAP). The adapter
+stays even then, for the rows already stored.
+
+**Sign-in cookies stay per host.** The Supabase session cookies are set
+without a `Domain`, so they belong to the exact host. When the domain changes,
+every member signs in again on `flut.vibetrunk.com`. Widening the cookie
+domain to `.vibetrunk.com` would avoid that, but it is deliberately not done.
+Every VibeTrunk tool shares one Supabase project, so a parent-domain cookie
+would send this tool's auth tokens to every other tool's subdomain.
+
+**The domain moves in later slices, each with its own authorization:**
+
+1. This slice: in-app branding. There is no migration and no domain change.
+2. Attach `flut.vibetrunk.com` to the Vercel project `kut`, verify DNS and
+   TLS, and set Production `APP_URL`. The Supabase Auth Site URL is shared by
+   all tools, so it is verified only.
+3. PR `feat/flut-domain`: add an exact-host 307 redirect from
+   `kut.vibetrunk.com/:path*` to `https://flut.vibetrunk.com/:path*` in
+   `next.config.ts`. The release checker moves to the new primary domain. It
+   also asserts that the legacy alias resolves to the same deployment with no
+   Vercel-level redirect, and it runs a live redirect probe. Members are told
+   to sign in again, and the cutover never happens on a Midweek Wednesday
+   evening.
+4. Update the `VibeTrunk/home` listing: FLUT, `https://flut.vibetrunk.com`,
+   "Collectible football cards for TFH — showing up matters."
+5. Change the redirect from 307 to 308 after production acceptance.
+
+Consequences: there is no migration, and no RPC, payload, economy or
+permission change. New server notices still store "KUT Coins" and are shown as
+FLUT Coins. The favicon, `icon.svg` and `apple-icon.png` come from
+`design/flut/assets` through the App Router file conventions. Share-image
+downloads are named `flut-midweek-…png`. Historical ADRs, migrations,
+deployment records and older design packages keep the name they were written
+with.
+
+## ADR-138 — Next.js 16.3.8 for the high-severity Next advisories (PR #208)
+
+Date: 2026-10-09
+
+Status: Accepted
+
+PR #208's `security` check (`npm audit --omit=dev --audit-level=high`) failed
+on six new high-severity advisories covering `next` 16.0.0–16.3.7:
+GHSA-3w37-wq28-93x7, GHSA-4jqv-mc3x-m676, GHSA-39w2-rjm5-chcv,
+GHSA-f87g-xv8r-7p7x, GHSA-mcj8-r9mp-w47p and GHSA-cjq9-62q9-8jv4. The cause
+was the pinned Next 16.3.6, not the PR, so `main` and every other PR failed the
+same way. Dependabot's 16.3.7 (#162) is still inside the vulnerable range.
+
+The patched 16.3.8 was published by `vercel-release-bot` on 2026-09-30, eight
+days earlier, so the 14-day package-age guard blocked it until 2026-10-14. The
+owner chose to fix it now and inside #208. The owner explicitly approved a
+one-time exception to the package-age restriction. It covers `next`,
+`eslint-config-next` and the matching `@next/*` packages, all at 16.3.8. It
+grants no standing permission for young packages and changes neither safety
+hook nor agent permissions.
+
+Decision: pin `next` and `eslint-config-next` to exactly 16.3.8 in
+`package.json`, and let a bare install resolve the lockfile. The lockfile
+changes only the version, resolved URL and integrity of 12 entries: `next`,
+`eslint-config-next`, `@next/env`, `@next/eslint-plugin-next` and the eight
+`@next/swc-*` binaries. No other package moves. The audit threshold, CI jobs
+and gates are unchanged, and there is no override or audit exclusion.
+
+Consequences: the production audit reports zero vulnerabilities. The patch
+ships in the same squash commit as the FLUT branding, so reverting one reverts
+the other; the owner accepted that to keep a single gate and deployment. The
+merged SHA still needs full main CI and its exact-SHA production gate before
+release.
+
+Verification on 16.3.8, 2026-10-09: public Chromium E2E passed 28 of 28. The
+authenticated suite against a production build served with `next start`, as
+the gate runs it, passed 175 cases with the two approved skips. Against
+`next dev`, two full runs failed only WebKit cases (13, then 4). A control run
+on 16.3.6 in the same conditions passed. So 16.3.8's dev server most likely
+slows WebKit in this suite, while the production server the gate and members
+use does not. The local dev-server suite is therefore less reliable on 16.3.8
+until a later Next release; confirm a dev-server WebKit failure in production
+mode before judging the code.

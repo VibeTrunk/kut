@@ -10,7 +10,7 @@ export { ARCHETYPES, type Archetype };
  * (`kut._rebuild_season_core`, BUILD_SPEC Part XX). This module deliberately
  * holds only the pieces the browser needs to *render* a rating — the tier
  * boundaries, the activity curve and the discard curve used by the
- * "How KUT works" explainer and the rating history graph.
+ * "How FLUT works" explainer and the rating history graph.
  *
  * It is not a second implementation of the engine. The TypeScript mirrors of
  * the Form/OVR formulas were removed in ADR-064: nothing in `src/` called them,
@@ -22,7 +22,7 @@ export type RarityTier = "common" | "bronze" | "silver" | "gold" | "holo" | "eli
 
 /**
  * Live OVR range for each rarity tier. Derived from `getRarityTier` below and
- * the Live OVR bounds (30..83); kept as data so the "How KUT works" page can
+ * the Live OVR bounds (30..83); kept as data so the "How FLUT works" page can
  * render the tiers without re-deriving the boundaries.
  */
 export const RARITY_BANDS: { tier: RarityTier; min: number; max: number }[] = [

@@ -1,4 +1,5 @@
 import { roundStartAt } from "@/game/midweek/schedule";
+import { BRAND } from "@/lib/brand";
 import type { createClient } from "@/lib/supabase/server";
 import {
   formatClock,
@@ -312,7 +313,7 @@ async function finalEntryPoint(
     return {
       ...base,
       title: "You won Midweek Madness",
-      line: `+${coins} KUT Coins over the night.`,
+      line: `+${coins} ${BRAND.currency} over the night.`,
     };
   }
   const title = `${tournament.champion_name ?? "Somebody"} won Midweek Madness`;
@@ -321,7 +322,7 @@ async function finalEntryPoint(
     return {
       ...base,
       title,
-      line: `You reached ${stageName(furthest + 1, tournament.rounds)}: +${coins} KUT Coins.`,
+      line: `You reached ${stageName(furthest + 1, tournament.rounds)}: +${coins} ${BRAND.currency}.`,
     };
   }
   const entered = (entry.data ?? []).length > 0;

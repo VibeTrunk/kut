@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { BRAND } from "@/lib/brand";
 import {
   callCards,
   callError,
@@ -176,7 +177,7 @@ describe("call cards", () => {
     expect(cards.every((card) => card.split === null && card.pick === null)).toBe(true);
     expect(callsHeading(cards, 3, false)).toEqual({
       title: "Call the winners",
-      note: "+10 KUT Coins a correct pick · paid after the final",
+      note: `+10 ${BRAND.currency} a correct pick · paid after the final`,
     });
     expect(settledStatus(cards[0], false, 10)).toBe(
       "Tap a name to call it. Closes at kick-off, 20:15.",
@@ -262,15 +263,15 @@ describe("call cards", () => {
     expect(callsHeading(cards, 3, true)).toEqual({ title: "Your calls", note: "Paid" });
     const semi = cards.find((card) => card.label === "Semi-final 1")!;
     expect(settledStatus(semi, false, 10)).toBe(
-      "✓ You called it Ann won. +10 KUT Coins after the final.",
+      `✓ You called it Ann won. +10 ${BRAND.currency} after the final.`,
     );
-    expect(settledStatus(semi, true, 10)).toBe("✓ You called it Ann won. +10 KUT Coins.");
+    expect(settledStatus(semi, true, 10)).toBe(`✓ You called it Ann won. +10 ${BRAND.currency}.`);
   });
 });
 
 describe("call copy", () => {
   it("words the weekly line as the result message does", () => {
-    expect(weeklyCallsLine(2, 3, 2)).toBe("You called 2 of 3 right: +4 KUT Coins.");
+    expect(weeklyCallsLine(2, 3, 2)).toBe(`You called 2 of 3 right: +4 ${BRAND.currency}.`);
     expect(weeklyCallsLine(0, 2, 2)).toBe("You called 0 of 2 right.");
   });
 

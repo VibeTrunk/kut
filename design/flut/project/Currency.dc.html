@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Fit checks</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&amp;family=Instrument+Serif&amp;display=swap">
+<style>
+body{margin:0;background:#0b0a07}
+.serif{font-family:'Instrument Serif',Georgia,serif;font-weight:400;line-height:.94;letter-spacing:-.012em}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;font-size:10.4px;font-weight:800;letter-spacing:.15em;text-transform:uppercase;color:#8a8072;padding:0 12px 10px 0;border-bottom:1px solid #4a4030}
+td{padding:10px 12px 10px 0;border-bottom:1px solid rgb(74 64 48 / 50%);vertical-align:top;line-height:1.45;color:#b3a891}
+td:first-child{color:#f4efe3;font-weight:700}
+.num{font-variant-numeric:tabular-nums;white-space:nowrap}
+.ok{display:inline-block;border-radius:999px;padding:2px 8px;font-size:11px;font-weight:800;background:#1c2416;color:#8bbd6c;border:1px solid #3c5230}
+.fix{display:inline-block;border-radius:999px;padding:2px 8px;font-size:11px;font-weight:800;background:#2b190d;color:#d68a3c;border:1px solid #5c3c1f}
+.new{display:inline-block;border-radius:999px;padding:2px 8px;font-size:11px;font-weight:800;background:#16232a;color:#8fb0c2;border:1px solid #3a5866}
+code{font-family:ui-monospace,Consolas,monospace;font-size:12px;color:#8fb0c2}
+.cell{width:140px;box-sizing:border-box;padding:14px 16px;border:1px solid rgb(74 64 48 / 60%);background:linear-gradient(to bottom,rgb(42 35 24 / 70%),rgb(33 28 21 / 70%))}
+.dt{font-size:10.4px;font-weight:800;letter-spacing:.15em;text-transform:uppercase;color:#8a8072}
+.dd{margin-top:4px;font-size:26px;font-weight:900;letter-spacing:-.01em;font-variant-numeric:tabular-nums;color:#e0ac4a;white-space:nowrap}
+.sm{display:block;font-size:12px;font-weight:700;letter-spacing:normal;color:#8a8072;white-space:normal}
+.note{font-size:12px;font-weight:600;line-height:1.5;color:#8fb0c2}
+</style>
+</helmet>
+<div style="width:1200px;height:1260px;box-sizing:border-box;padding:48px;display:flex;flex-direction:column;gap:32px;background:#15130f;color:#f4efe3;font-family:Archivo,sans-serif">
+  <header style="display:flex;flex-direction:column;gap:10px">
+    <p style="margin:0;font-size:11.2px;font-weight:800;letter-spacing:.26em;text-transform:uppercase;color:#e0ac4a">Every brand string that grows by one letter</p>
+    <h1 class="serif" style="margin:0;font-size:48px">Fit checks, measured in Archivo and Instrument Serif</h1>
+    <p style="margin:0;font-size:14px;line-height:1.6;color:#b3a891;max-width:860px">Widths come from the real webfonts and the components' own px values, at 320, 360, 412, 640, 1024 and 1280. One label needs a fix. One string, the avatar fallback, no longer fits its circle. Everything else holds as it is.</p>
+  </header>
+
+  <table>
+    <thead><tr><th style="width:210px">Surface</th><th style="width:250px">Source</th><th style="width:150px">KUT → FLUT</th><th>Result</th></tr></thead>
+    <tbody>
+      <tr><td>Desktop header mark</td><td><code>app-nav.tsx:117</code></td><td class="num">46 → 55px</td><td><span class="ok">fits</span> Tab-row slack at 1024 is 69px (was 77); at 640, 33px (was 41).</td></tr>
+      <tr><td>Mobile header mark</td><td><code>app-nav.tsx:161</code></td><td class="num">63 → 72px</td><td><span class="ok">fits</span> At 320 a 12,345 balance still shows in full.</td></tr>
+      <tr><td>Avatar fallback</td><td><code>app-nav.tsx:150, 181</code></td><td class="num">"KUT" → "F"</td><td><span class="fix">change</span> FLUT at 12px 900 is 34px, which is too wide for the 36px avatar. Fall back to "F", like the favicon. This only shows when a member has no display name.</td></tr>
+      <tr><td>Login lockup</td><td><code>login/page.tsx:12–19</code></td><td class="num">1 → 2 lines</td><td><span class="new">new</span> The crest lockup replaces the mark row and the kicker. As one kicker, the new name orphans "TEAM" at 320.</td></tr>
+      <tr><td>Welcome lockup</td><td><code>welcome/page.tsx:37–39</code></td><td class="num">kicker → lockup</td><td><span class="new">new</span> "Welcome to" plus the stacked lockup.</td></tr>
+      <tr><td>Chronicle, index</td><td><code>chronicle/page.tsx:31, 42</code></td><td class="num">286 → 305px @60</td><td><span class="ok">fits</span> Two lines below 352px (was 336), splitting after FLUT just as KUT does today.</td></tr>
+      <tr><td>Chronicle, issue</td><td><code>chronicle/[week]/page.tsx:200</code></td><td class="num">one line ≥480 → ≥500</td><td><span class="ok">fits</span> Two lines on every phone, as today.</td></tr>
+      <tr><td>Home heading</td><td><code>(app)/page.tsx:251</code></td><td class="num">170 → 180px @30</td><td><span class="ok">fits</span> "This week in FLUT" stays on one line at 320.</td></tr>
+      <tr><td>How it works heading</td><td><code>how-it-works/page.tsx:100</code></td><td class="num">251 → 267px @48</td><td><span class="ok">fits</span> One line in the 280px column at 320.</td></tr>
+      <tr><td>Midweek "You" unit</td><td><code>midweek/views.tsx:827</code></td><td class="num">31 → 38px @14</td><td><span class="fix">fix</span> "+254 FLUT" runs 3px into the cell padding at 320–331px. Set the unit to <code>max-sm:text-xs</code> with <code>ml-[3px]</code>: it then ends 3px inside.</td></tr>
+      <tr><td>Now kicker</td><td><code>(app)/page.tsx:209</code></td><td class="num">≈ 218 → 224px</td><td><span class="ok">fits</span> "Your report · +50 FLUT Coins" in a 248px card at 320.</td></tr>
+      <tr><td>Open pack button</td><td><code>open-pack-form.tsx:73–74</code></td><td class="num">209 → 216px</td><td><span class="ok">fits</span> Already two lines inside the button at 320, and it stays two.</td></tr>
+      <tr><td>Discard button</td><td><code>discard-card-form.tsx:52</code></td><td class="num">199 → 207px</td><td><span class="ok">fits</span></td></tr>
+      <tr><td>Buy button</td><td><code>buy-listing-form.tsx:28</code></td><td class="num">label only</td><td><span class="ok">fits</span> The coin glyph is shown; "FLUT Coins" only reaches the aria-label.</td></tr>
+      <tr><td>Share images</td><td><code>share-draw.ts:551, 767</code></td><td class="num">+17px, +16px</td><td><span class="ok">fits</span> See the share page: 44px mark −0.9px tracking; 34px "FLUT Coins".</td></tr>
+    </tbody>
+  </table>
+
+  <section style="display:flex;flex-direction:column;gap:14px">
+    <p style="margin:0;font-size:10.4px;font-weight:800;letter-spacing:.15em;text-transform:uppercase;color:#8a8072">Midweek "You" stat at 320 — a 140px cell with 16px padding, content edge dashed</p>
+    <div style="display:flex;gap:40px;align-items:flex-start">
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div class="cell" style="position:relative"><span style="position:absolute;top:0;bottom:0;right:16px;border-right:1px dashed #3a5866"></span><div class="dt">You</div><div class="dd">+254<span style="margin-left:4px;font-size:14px;font-weight:800;letter-spacing:normal">KUT</span><small class="sm">250 for wins, 4 for calls</small></div></div>
+        <span class="note">Today: 4px inside</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div class="cell" style="position:relative"><span style="position:absolute;top:0;bottom:0;right:16px;border-right:1px dashed #d68a3c"></span><div class="dt">You</div><div class="dd">+254<span style="margin-left:4px;font-size:14px;font-weight:800;letter-spacing:normal">FLUT</span><small class="sm">250 for wins, 4 for calls</small></div></div>
+        <span class="note">FLUT as is: 3px over the edge</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div class="cell" style="position:relative"><span style="position:absolute;top:0;bottom:0;right:16px;border-right:1px dashed #3a5866"></span><div class="dt">You</div><div class="dd">+254<span style="margin-left:3px;font-size:12px;font-weight:800;letter-spacing:normal">FLUT</span><small class="sm">250 for wins, 4 for calls</small></div></div>
+        <span class="note">Fixed: 12px, 3px gap → 3px inside</span>
+      </div>
+      <p class="note" style="margin:0;max-width:420px">From <code>sm</code> up the unit stays 14px with a 4px gap. The stat grid has four columns there and plenty of room.</p>
+    </div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1200,"height":1260}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

@@ -4,7 +4,7 @@ export default function NotFound() {
   return (
     <main className="board-ground min-h-screen p-5 text-ink sm:p-10">
       <section className="mx-auto max-w-lg rounded-3xl border border-line bg-panel p-6">
-        <p className="text-[0.7rem] font-extrabold uppercase tracking-[0.26em] text-brass">KUT</p>
+        <p className="text-[0.7rem] font-extrabold uppercase tracking-[0.26em] text-brass">FLUT</p>
         <h1 className="mt-3 text-3xl font-black">Page not found</h1>
         <p className="mt-3 text-ink-dim">
           This link is unavailable, or the card or saved result no longer belongs to this account.

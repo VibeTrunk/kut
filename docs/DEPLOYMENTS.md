@@ -23,6 +23,44 @@ deployment identity and domain-verification time; do not change the latest
 migration line when no migration was applied. Records accompany the next PR
 opened for other work, never a standalone record PR.
 
+## 2026-10-08 — `20261019000000_basic_pack_price_250.sql`, basic pack price to 250 (ADR-136)
+
+MartinFloris merged [KUT PR #207](https://github.com/VibeTrunk/kut/pull/207) at
+2026-10-07T21:37:53Z, producing exact candidate
+`c91903730f121a7c260fb588fc4b7bb4424c96d6`. Central catalogue PR #81 was
+merged as `dfdfcdebea55e77b0884aa1c269eb523f0ad5e52`; the owner separately
+authorized applying this migration. All times below are UTC.
+
+- **Preflight and gate:** all ten release preflight checks passed. The full
+gate passed for the exact KUT SHA. It ran from a clean, standalone ordinary
+checkout after an initial WebKit sign-in timeout and two OneDrive build-file
+lock failures; the final run changed no code, tests, timeout settings or skips.
+The production build and authenticated mobile suite completed 175 cases with
+exactly two approved duplicate-device skips, zero unexpected failures and zero
+flaky cases. Finalizer readiness passed. Gate:
+`.release-evidence/gates/c91903730f121a7c260fb588fc4b7bb4424c96d6/gate-20261008-001853.json`;
+approval and assertion passed. The gate, approval and authenticated E2E
+artifacts are preserved under `.release-evidence/`.
+- **Catalogue and ledger before push:** central parity matched 89 sources.
+`migration list --linked` showed 89 local / 88 remote, this sole local-only
+migration, no remote-only versions or mismatches. The dry run named only this
+file.
+- **Backup:** the exact-SHA gate independently cold-verified
+`kut-backup-20261007-234906.sql.enc`. Immediately before the database push,
+fresh `kut-backup-20261008-001949.sql.enc` passed separate-process cold
+verification at `2026-10-07T22:20:22.201388Z`; backup log:
+`.private-backups/BACKUP_LOG.md`.
+- **Hosted migration:** applied from central `main` after its clean-ledger
+check and dry run. Afterward, `migration list --linked` showed 89/89, zero
+pending and zero drift. Read-only hosted smoke found exactly one
+`kut.pack_definitions` row for `tfh-pack`, with both min and max price 250.
+- **Production deployment:** Vercel deployment
+`dpl_DXBqscbVCbR5tLUvBazn6DSXqkcq` reached READY. At
+2026-10-07T22:25:39.396Z, the repository verifier confirmed
+`kut.vibetrunk.com` served the exact candidate SHA.
+- **Rollback:** if needed, use a separately reviewed migration to restore
+`price = 175` only while `tfh-pack` still has `price = 250`. Historical pack
+opening `price_paid` and ledger entries were unchanged.
 ## 2026-10-07 — gated release of named-file cleanup guidance and guarded adapters #206
 
 MartinFloris merged https://github.com/VibeTrunk/kut/pull/206 at

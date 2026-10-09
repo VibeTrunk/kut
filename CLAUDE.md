@@ -1,7 +1,8 @@
-# Kelderklasse Ultimate Team (KUT) — Project Context
+# FLUT — Football League Ultimate Team — Project Context
 
 ## What this is
-KUT (working title "TFH Ultimate Cards" in the build spec) is a browser-based
+FLUT, Football League Ultimate Team (formerly KUT, Kelderklasse Ultimate Team;
+working title "TFH Ultimate Cards" in the build spec), is a browser-based
 collectible football-card game for Terrible Football Haarlem (TFH): real
 attendance and match performance drive a card economy players collect, open
 packs of, and trade with each other. It is a tool in the
@@ -128,9 +129,9 @@ don't add cross-repo coupling beyond the shared Supabase project.
 
 KUT is live at `https://kut.vibetrunk.com` as Vercel project `kut`.
 
-**Latest hosted migration:** `20261018000000_special_snapshot_tiers.sql`
-(ADR-121 / KB-038), applied 2026-10-04 from central catalogue PR #79;
-all 88 local/remote migration versions match, with none pending. Every hosted
+**Latest hosted migration:** `20261019000000_basic_pack_price_250.sql`
+(ADR-136), applied 2026-10-08 from central catalogue PR #81; all 89
+local/remote migration versions match, with none pending. Every hosted
 deploy, with its backup, smoke test and rollback, is in
 [`docs/DEPLOYMENTS.md`](docs/DEPLOYMENTS.md).
 

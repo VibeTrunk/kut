@@ -49,7 +49,7 @@ export async function createInvite(
 
   if (profileError || linkedProfile) {
     return {
-      error: "This player already has a linked KUT account.",
+      error: "This player already has a linked FLUT account.",
       inviteUrl: null,
       playerName: null,
     };

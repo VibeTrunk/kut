@@ -31,7 +31,7 @@ export default async function MessagesPage() {
       <section className="mx-auto grid max-w-3xl gap-5 py-4 sm:py-8">
         <header className="grid gap-2">
           <p className="text-[0.7rem] font-extrabold tracking-[0.26em] text-brass uppercase">
-            KUT inbox
+            FLUT inbox
           </p>
           <h1 className="display text-[30px] sm:text-6xl">Messages</h1>
         </header>

@@ -42,7 +42,7 @@ export default async function PacksPage() {
           </p>
           <h1 className="display text-3xl sm:text-6xl">Packs</h1>
           <p className="hidden max-w-2xl text-base leading-relaxed text-ink-dim sm:block">
-            Spend KUT Coins on server-selected Live Cards. You have {balance.toLocaleString()} KUT
+            Spend FLUT Coins on server-selected Live Cards. You have {balance.toLocaleString()} FLUT
             Coins.
           </p>
         </header>

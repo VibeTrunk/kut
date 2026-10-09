@@ -1,0 +1,53 @@
+{
+  "v": 3,
+  "createdOnFiles": { "v": 1, "at": "2026-10-08T17:10:00Z" },
+  "title": "FLUT Rebrand",
+  "launch": { "view": "canvas", "page": "marks" },
+  "pages": [
+    { "id": "marks", "name": "Marks and lockup" },
+    { "id": "screens", "name": "Login and welcome" },
+    { "id": "chrome", "name": "Nav, Chronicle, currency" },
+    { "id": "share", "name": "Share images" },
+    { "id": "icons", "name": "Favicon and app icons" }
+  ],
+  "boards": {
+    "Main.dc.html": { "x": 0, "y": 0, "w": 1440, "h": 1320, "title": "Marks — wordmark, share mark, full-name lockup", "page": "marks" },
+    "Login-Mobile.dc.html": { "x": 0, "y": 0, "w": 320, "h": 780, "title": "/login · 320", "page": "screens" },
+    "Welcome-Mobile.dc.html": { "x": 400, "y": 0, "w": 320, "h": 1060, "title": "/welcome · 320", "page": "screens" },
+    "Login-Desktop.dc.html": { "x": 800, "y": 0, "w": 1440, "h": 900, "title": "/login · 1440", "page": "screens" },
+    "Welcome-Desktop.dc.html": { "x": 2320, "y": 0, "w": 1440, "h": 1060, "title": "/welcome · 1440", "page": "screens" },
+    "Nav-Mobile.dc.html": { "x": 0, "y": 0, "w": 320, "h": 700, "title": "App shell · 320", "page": "chrome" },
+    "Chronicle-Mobile.dc.html": { "x": 400, "y": 0, "w": 320, "h": 760, "title": "/chronicle mastheads · 320", "page": "chrome" },
+    "Nav-Desktop.dc.html": { "x": 800, "y": 0, "w": 1440, "h": 520, "title": "Desktop header · 1440, 1024, 640", "page": "chrome" },
+    "Chronicle-Desktop.dc.html": { "x": 800, "y": 640, "w": 1440, "h": 620, "title": "/chronicle mastheads · 1440", "page": "chrome" },
+    "Currency.dc.html": { "x": 2320, "y": 0, "w": 1200, "h": 1260, "title": "Fit checks — every KUT string that grows", "page": "chrome" },
+    "Share-Poster.dc.html": { "x": 0, "y": 0, "w": 1080, "h": 1350, "title": "image — the champion poster, 1080 × 1350", "page": "share" },
+    "Share-MyNight.dc.html": { "x": 1160, "y": 0, "w": 1080, "h": 1350, "title": "image — my night, 1080 × 1350", "page": "share" },
+    "Share-Spec.dc.html": { "x": 2320, "y": 0, "w": 1080, "h": 1350, "title": "share-draw.ts — exact text sizes", "page": "share" },
+    "Icons.dc.html": { "x": 0, "y": 0, "w": 1280, "h": 800, "title": "favicon.ico · icon.svg · apple-icon.png", "page": "icons" }
+  },
+  "order": [
+    "Main.dc.html",
+    "Login-Mobile.dc.html",
+    "Welcome-Mobile.dc.html",
+    "Login-Desktop.dc.html",
+    "Welcome-Desktop.dc.html",
+    "Nav-Mobile.dc.html",
+    "Chronicle-Mobile.dc.html",
+    "Nav-Desktop.dc.html",
+    "Chronicle-Desktop.dc.html",
+    "Currency.dc.html",
+    "Share-Poster.dc.html",
+    "Share-MyNight.dc.html",
+    "Share-Spec.dc.html",
+    "Icons.dc.html"
+  ],
+  "notes": {
+    "t-marks": { "x": 0, "y": -260, "text": "FLUT — the marks", "kind": "title1", "maxW": 1440, "page": "marks" },
+    "t-screens": { "x": 0, "y": -260, "text": "Login and welcome, with the full-name lockup", "kind": "title1", "maxW": 3760, "page": "screens" },
+    "t-chrome": { "x": 0, "y": -260, "text": "Where the extra letter lands", "kind": "title1", "maxW": 3520, "page": "chrome" },
+    "t-share": { "x": 0, "y": -260, "text": "Midweek share images, drawn by share-draw.ts", "kind": "title1", "maxW": 3400, "page": "share" },
+    "t-icons": { "x": 0, "y": -260, "text": "Favicon, icon and apple-icon", "kind": "title1", "maxW": 1280, "page": "icons" }
+  },
+  "designSystems": []
+}

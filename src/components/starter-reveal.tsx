@@ -28,7 +28,7 @@ export function StarterReveal({ cards }: { cards: RevealCard[] }) {
       <PackReveal
         cards={revealCards}
         doneHref="/"
-        doneLabel="Enter KUT"
+        doneLabel="Enter FLUT"
         title="Your starter pack"
       />
     );
@@ -45,7 +45,7 @@ export function StarterReveal({ cards }: { cards: RevealCard[] }) {
         </div>
       </div>
       <p className="mx-auto max-w-md leading-7 text-ink-dim">
-        250 KUT Coins and three Live Cards are already yours &mdash; open the pack to meet them.
+        250 FLUT Coins and three Live Cards are already yours &mdash; open the pack to meet them.
       </p>
       {error && <p className="rounded-xl bg-brick-bg p-3 text-sm text-brick">{error}</p>}
       <button

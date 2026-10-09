@@ -1,4 +1,5 @@
 import { predictionCoins } from "@/game/midweek/rewards";
+import { BRAND } from "@/lib/brand";
 import {
   capitalise,
   matchName,
@@ -207,13 +208,13 @@ export function callsHeading(
   if (right > 0)
     return { title, note: `${right} right so far · +${right * coins} after the final` };
   if (cards.every((card) => card.state === "notyet")) return { title, note: "Nothing to call yet" };
-  return { title, note: `+${coins} KUT Coins a correct pick · paid after the final` };
+  return { title, note: `+${coins} ${BRAND.currency} a correct pick · paid after the final` };
 }
 
-/** The weekly line, as in the result message: `You called 2 of 3 right: +4 KUT Coins.` */
+/** The weekly line, as in the result message: `You called 2 of 3 right: +4 FLUT Coins.` */
 export function weeklyCallsLine(correct: number, picks: number, coins: number): string {
   return correct > 0
-    ? `You called ${correct} of ${picks} right: +${correct * coins} KUT Coins.`
+    ? `You called ${correct} of ${picks} right: +${correct * coins} ${BRAND.currency}.`
     : `You called 0 of ${picks} right.`;
 }
 
@@ -252,7 +253,7 @@ export function settledStatus(card: CallCard, paid: boolean, coins: number): str
       const winner = name(card.winner ?? 0);
       if (card.pick === null) return `${winner} won. You didn’t call this one.`;
       return card.pick === card.winner
-        ? `✓ You called it ${winner} won. +${coins} KUT Coins${paid ? "" : " after the final"}.`
+        ? `✓ You called it ${winner} won. +${coins} ${BRAND.currency}${paid ? "" : " after the final"}.`
         : `Not this time ${winner} won.`;
     }
   }

@@ -116,7 +116,7 @@ export function RosterTable({ players, today }: { players: RosterRow[]; today: s
       </p>
       <p className="text-sm text-ink-faint">
         Injury mode protects a long-term injured player&rsquo;s card: each football week they sit
-        out, they check in from Home for 100 KUT Coins and their rating doesn&rsquo;t drop that
+        out, they check in from Home for 100 FLUT Coins and their rating doesn&rsquo;t drop that
         week. It ends by itself when they play a published session again. The note is visible to
         admins only.
       </p>

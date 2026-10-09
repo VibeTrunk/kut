@@ -106,7 +106,7 @@ export default async function MarketPage({ searchParams }: MarketPageProps) {
               and now sits above a tab that also says Buy (ADR-053). */}
           <h1 className="display text-3xl sm:text-6xl">Market</h1>
           <p className="hidden max-w-2xl text-base leading-relaxed text-ink-dim sm:block">
-            Buy now, or make a coin-and-card offer. Buy-now prices are paid in KUT Coins; a 5% tax
+            Buy now, or make a coin-and-card offer. Buy-now prices are paid in FLUT Coins; a 5% tax
             is burned.
           </p>
         </header>

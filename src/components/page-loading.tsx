@@ -1,10 +1,10 @@
 type PageLoadingProps = { label?: string };
 
-export function PageLoading({ label = "Loading KUT..." }: PageLoadingProps) {
+export function PageLoading({ label = "Loading FLUT..." }: PageLoadingProps) {
   return (
     <main aria-busy="true" className="board-ground min-h-screen p-5 text-ink sm:p-10">
       <section className="mx-auto max-w-6xl space-y-6">
-        <p className="text-[0.7rem] font-extrabold uppercase tracking-[0.26em] text-brass">KUT</p>
+        <p className="text-[0.7rem] font-extrabold uppercase tracking-[0.26em] text-brass">FLUT</p>
         <div className="animate-pulse space-y-4" role="status">
           <div className="h-11 max-w-sm rounded-xl bg-panel-2" />
           <div className="h-5 max-w-xl rounded bg-panel-2" />

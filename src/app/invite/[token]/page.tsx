@@ -16,7 +16,7 @@ export default async function InvitePage({ params }: InvitePageProps) {
           <p className="text-[0.7rem] font-extrabold uppercase tracking-[0.26em] text-brass">
             You’re invited
           </p>
-          <h1 className="display text-5xl">Join KUT</h1>
+          <h1 className="display text-5xl">Join FLUT</h1>
           <p className="text-ink-dim">
             Create your account to follow the live ratings and build your future collection.
           </p>

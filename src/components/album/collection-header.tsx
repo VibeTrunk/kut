@@ -69,7 +69,7 @@ export function CollectionHeader({
         <Completion count={uniquePlayers} total={totalPlayers} />
         <p className="text-xs font-bold text-ink-faint">
           {cardCount} {cardCount === 1 ? "card" : "cards"} &middot; {uniquePlayers} unique{" "}
-          {uniquePlayers === 1 ? "player" : "players"} &middot; {discardValue.toLocaleString()} KUT
+          {uniquePlayers === 1 ? "player" : "players"} &middot; {discardValue.toLocaleString()} FLUT
           Coins of discard value
         </p>
         {/* Club Value moved here when /club retired (ADR-053). It stays a link,
@@ -79,7 +79,7 @@ export function CollectionHeader({
             <IconScale aria-hidden="true" className="h-3.5 w-3.5" />
             Club Value
             <Link className="font-black tabular-nums text-brass hover:underline" href="/club/value">
-              {clubValue.toLocaleString()} KUT Coins &rarr;
+              {clubValue.toLocaleString()} FLUT Coins &rarr;
             </Link>
           </p>
         )}

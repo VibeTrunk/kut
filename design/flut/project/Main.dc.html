@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>FLUT marks</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&amp;family=Instrument+Serif&amp;display=swap">
+<style>
+body{margin:0;background:#0b0a07}
+a{color:#e0ac4a}a:hover{color:#f2c56a}
+.pen{clip-path:polygon(50% 0%,100% 38%,82% 100%,18% 100%,0% 38%);background:#e0ac4a;flex:none;display:block}
+.kick{font-family:Archivo,sans-serif;font-weight:800;font-size:11.2px;line-height:1.45;letter-spacing:.26em;text-transform:uppercase;color:#e0ac4a}
+.serif{font-family:'Instrument Serif',Georgia,serif;font-weight:400;line-height:.94;letter-spacing:-.012em}
+.note{font-family:Archivo,sans-serif;font-size:12px;font-weight:600;line-height:1.5;color:#8fb0c2}
+.panel{background:#211c15;border:1px solid #4a4030;border-radius:20px;padding:28px;display:flex;flex-direction:column;gap:20px;min-width:0}
+.strip{background:#0b0a07;border:1px solid rgb(74 64 48 / 60%);border-radius:12px;padding:16px 18px;display:flex;align-items:center;gap:24px}
+.lbl{font-size:10.4px;font-weight:800;letter-spacing:.15em;text-transform:uppercase;color:#8a8072}
+.sw{display:flex;flex-direction:column;gap:6px;font-size:11px;font-weight:700;color:#b3a891}
+.chip{width:100%;height:44px;border-radius:10px;border:1px solid rgb(244 239 227 / 12%)}
+</style>
+</helmet>
+<div style="width:1440px;height:1320px;box-sizing:border-box;padding:72px;background:radial-gradient(120% 78% at 50% -8%,#221c13 0%,#15130f 46%,#0b0a07 100%);color:#f4efe3;font-family:Archivo,sans-serif;display:flex;flex-direction:column;gap:40px">
+
+  <header style="display:flex;align-items:flex-end;justify-content:space-between;gap:48px">
+    <div style="display:flex;align-items:center;gap:28px">
+      <span class="pen" style="width:140px;height:160px"></span>
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <span style="font-weight:900;font-size:100px;line-height:.8;letter-spacing:-2px">FLUT</span>
+        <span class="kick" style="font-size:22px;letter-spacing:.26em;line-height:1.4"><span style="display:block">Football League</span><span style="display:block">Ultimate Team</span></span>
+      </div>
+    </div>
+    <div style="max-width:520px;display:flex;flex-direction:column;gap:12px">
+      <p class="kick" style="margin:0">Rebrand · replaces KUT</p>
+      <h1 class="serif" style="margin:0;font-size:56px">Four letters, same club.</h1>
+      <p style="margin:0;font-size:16px;line-height:1.6;color:#b3a891">Only the letters change. The Clubblad palette, Archivo and Instrument Serif, the shield glyph and all six card materials stay exactly as they are. Terrible Football Haarlem still owns the kicker lines.</p>
+    </div>
+  </header>
+
+  <section style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px">
+    <div class="panel">
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <p class="lbl" style="margin:0">01 · Pennant wordmark</p>
+        <h2 class="serif" style="margin:0;font-size:34px">App chrome and login</h2>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div class="strip">
+          <span class="lbl" style="width:64px">Before</span>
+          <span style="display:flex;align-items:center;gap:10px;font-size:20px;font-weight:900;letter-spacing:-.025em"><span class="pen" style="width:14px;height:16px"></span>KUT</span>
+          <span style="display:flex;align-items:center;gap:8px;font-size:18px;font-weight:900"><span class="pen" style="width:12px;height:14px"></span>KUT</span>
+        </div>
+        <div class="strip" style="border-color:#5c4419">
+          <span class="lbl" style="width:64px;color:#e0ac4a">After</span>
+          <span style="display:flex;align-items:center;gap:10px;font-size:20px;font-weight:900;letter-spacing:-.025em"><span class="pen" style="width:14px;height:16px"></span>FLUT</span>
+          <span style="display:flex;align-items:center;gap:8px;font-size:18px;font-weight:900"><span class="pen" style="width:12px;height:14px"></span>FLUT</span>
+        </div>
+      </div>
+      <div class="strip" style="justify-content:center;padding:28px 18px">
+        <span style="display:flex;align-items:center;gap:30px;font-size:60px;font-weight:900;letter-spacing:-1.5px;line-height:1"><span class="pen" style="width:42px;height:48px"></span>FLUT</span>
+      </div>
+      <p class="note" style="margin:0">Desktop: 20px Archivo 900, tracking −0.025em, pennant 14 × 16, gap 10 — width 55px (KUT 46). Mobile: 18px 900, pennant 12 × 14, gap 8 — width 51px (KUT 43). Same classes as today; only the text node changes. Shown at 1× and 3×.</p>
+    </div>
+
+    <div class="panel">
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <p class="lbl" style="margin:0">02 · Shield mark</p>
+        <h2 class="serif" style="margin:0;font-size:34px">Share images</h2>
+      </div>
+      <div class="strip" style="flex-direction:column;align-items:flex-start;gap:14px;padding:22px">
+        <span class="lbl">1 : 1 crop of the 1080 px canvas</span>
+        <span style="display:flex;align-items:flex-end;gap:12px"><span class="pen" style="width:34px;height:34px;margin-bottom:0"></span><span style="font-size:44px;font-weight:900;letter-spacing:-.9px;line-height:31px">FLUT</span></span>
+        <span style="display:flex;align-items:flex-end;gap:12px;opacity:.45"><span class="pen" style="width:34px;height:34px"></span><span style="font-size:44px;font-weight:900;line-height:31px">KUT</span></span>
+      </div>
+      <p class="note" style="margin:0">Shield 34 × 34 at (64, 72), unchanged. FLUT: Archivo 900, 44px, letter-spacing −0.9px (−0.02em), x 110, baseline 106. Advance 122.0px, so the mark ends at x 232; the date line starts at x 320 at its longest. Cap height stays 31px, matching the shield.</p>
+      <p class="note" style="margin:0">"FLUT Coins": Archivo 800, 34px, unchanged, 16px after the figure. 195.8px wide (KUT Coins 180.2).</p>
+    </div>
+
+    <div class="panel">
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <p class="lbl" style="margin:0">03 · Full-name lockup</p>
+        <h2 class="serif" style="margin:0;font-size:34px">Login and welcome</h2>
+      </div>
+      <div class="strip" style="padding:22px">
+        <div style="display:flex;align-items:center;gap:16px">
+          <span class="pen" style="width:70px;height:80px"></span>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <span style="font-size:40px;font-weight:900;line-height:1;letter-spacing:-.8px">FLUT</span>
+            <span class="kick"><span style="display:block">Football League</span><span style="display:block">Ultimate Team</span></span>
+          </div>
+        </div>
+      </div>
+      <div class="strip" style="justify-content:center;padding:22px">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center">
+          <span class="pen" style="width:44px;height:50px"></span>
+          <span style="font-size:48px;font-weight:900;line-height:1;letter-spacing:-1px">FLUT</span>
+          <span class="kick"><span style="display:block">Football League</span><span style="display:block">Ultimate Team</span></span>
+        </div>
+      </div>
+      <p class="note" style="margin:0">Crest (login, left): pennant 70 × 80, gap 16; FLUT 40px 900, −0.02em; name 0.7rem 800, +0.26em, brass, always two lines. 244px wide, fits the 272px column at 320. Stacked (welcome, centred): pennant 44 × 50, FLUT 48px, the same two lines.</p>
+    </div>
+  </section>
+
+  <section style="display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:24px">
+    <div class="panel">
+      <p class="lbl" style="margin:0">Why the name is set on two fixed lines</p>
+      <div style="display:flex;gap:24px">
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="width:272px;box-sizing:border-box;background:#0b0a07;border:1px dashed #5c3221;border-radius:12px;padding:16px 0">
+            <p class="kick" style="margin:0;width:272px">Football League Ultimate Team</p>
+          </div>
+          <p class="note" style="margin:0;width:272px">Today's kicker with the new name: 296px at 0.7rem and +0.26em. The 272px column at 320 orphans "TEAM".</p>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="width:272px;box-sizing:border-box;background:#0b0a07;border:1px solid #5c4419;border-radius:12px;padding:16px 0">
+            <div style="display:flex;align-items:center;gap:16px">
+              <span class="pen" style="width:70px;height:80px"></span>
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <span style="font-size:40px;font-weight:900;line-height:1;letter-spacing:-.8px">FLUT</span>
+                <span class="kick"><span style="display:block">Football League</span><span style="display:block">Ultimate Team</span></span>
+              </div>
+            </div>
+          </div>
+          <p class="note" style="margin:0;width:272px">The lockup breaks only between "League" and "Ultimate" at every width. Its widest line, FOOTBALL LEAGUE, is 158px. The break doesn't depend on viewport width.</p>
+        </div>
+      </div>
+    </div>
+    <div class="panel">
+      <p class="lbl" style="margin:0">Unchanged — palette, type, card stock</p>
+      <div style="display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px">
+        <div class="sw"><span class="chip" style="background:#15130f"></span>board</div>
+        <div class="sw"><span class="chip" style="background:#211c15"></span>panel</div>
+        <div class="sw"><span class="chip" style="background:#4a4030"></span>line</div>
+        <div class="sw"><span class="chip" style="background:#f4efe3"></span>ink</div>
+        <div class="sw"><span class="chip" style="background:#e0ac4a"></span>brass</div>
+        <div class="sw"><span class="chip" style="background:#8fb0c2"></span>steel</div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px">
+        <div class="sw"><span class="chip" style="background:#e9e5d9"></span>common</div>
+        <div class="sw"><span class="chip" style="background:#ecd8b1"></span>bronze</div>
+        <div class="sw"><span class="chip" style="background:linear-gradient(90deg,#5e6b77,#e3e8eb,#59646f)"></span>silver</div>
+        <div class="sw"><span class="chip" style="background:linear-gradient(90deg,#6b4a0d,#f2dd9a,#7a560f)"></span>gold</div>
+        <div class="sw"><span class="chip" style="background:linear-gradient(90deg,#ece7f4,#574481,#ece7f4)"></span>holo</div>
+        <div class="sw"><span class="chip" style="background:radial-gradient(circle at 50% 0,#2c2314,#090806)"></span>elite</div>
+      </div>
+      <div style="display:flex;align-items:baseline;gap:24px">
+        <span class="serif" style="font-size:44px">Instrument Serif</span>
+        <span style="font-size:24px;font-weight:900">Archivo 900</span>
+        <span style="font-size:16px;font-weight:600;color:#b3a891">Archivo 600</span>
+      </div>
+      <p class="note" style="margin:0">No card face carries the name, so LiveCard and its material ladder need no change.</p>
+    </div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1320}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

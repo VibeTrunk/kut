@@ -31,7 +31,7 @@ export function InjuryCheckInCard({
       <input name="week_start" type="hidden" value={weekStart} />
       <span className="min-w-0">
         <span className="text-xs font-black uppercase tracking-wider text-brass">
-          Rehab check-in → +{stipend} KUT Coins
+          Rehab check-in → +{stipend} FLUT Coins
         </span>
         <span className="display mt-1 block text-2xl">Keep your card protected</span>
         <span className="mt-1 block text-sm text-ink-dim">

@@ -197,7 +197,7 @@ export default async function ChronicleIssuePage({
         </Link>
         <header className="border-y-4 border-brass py-5">
           <div className="flex items-end justify-between gap-4">
-            <h1 className="display text-5xl sm:text-6xl">KUT Chronicle</h1>
+            <h1 className="display text-5xl sm:text-6xl">FLUT Chronicle</h1>
             <p className="text-right font-black text-brass">
               Week of {formatChronicleDate(current.week_start)}
             </p>

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { BRAND } from "@/lib/brand";
 import { MIDWEEK } from "@/game/midweek/config";
 import { ovrFactorPpm } from "@/game/midweek/power";
 import { copyStrengthPpm, strongestCopies } from "@/lib/midweek/copies";
@@ -408,7 +409,9 @@ describe("words for the picker", () => {
     expect(squadSaveError("P0002", "no Midweek Madness tournament is open")).toContain(
       "no Midweek",
     );
-    expect(squadSaveError("42501", "an active KUT account is required")).toContain("active KUT");
+    expect(squadSaveError("42501", "an active KUT account is required")).toContain(
+      `active ${BRAND.shortName}`,
+    );
     expect(squadSaveError("XX000", "boom")).toBe("Something went wrong. Please try again.");
   });
 });
@@ -425,7 +428,7 @@ describe("last week", () => {
           { round_no: 3, amount: 50 },
         ],
       }),
-    ).toBe("You reached the semi-finals. +100 KUT Coins. Lieke won it.");
+    ).toBe(`You reached the semi-finals. +100 ${BRAND.currency}. Lieke won it.`);
     expect(lastWeekSummary({ ...base, rewards: [] })).toBe(
       "You went out in round 1. Lieke won it.",
     );
@@ -438,7 +441,7 @@ describe("last week", () => {
         isChampion: true,
         rewards: [1, 2, 3, 4, 5].map((round_no) => ({ round_no, amount: 50 })),
       }),
-    ).toBe("You won it! +250 KUT Coins.");
+    ).toBe(`You won it! +250 ${BRAND.currency}.`);
   });
 
   it("words a skip or a void by its reason code", () => {

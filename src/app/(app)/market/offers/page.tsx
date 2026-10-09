@@ -51,7 +51,9 @@ function OfferCard({ offer }: { offer: TradeOffer }) {
               {offer.listing_card_name}
             </Link>
           </h2>
-          <p className="mt-0.5 text-sm text-ink-faint">Listed at {offer.listing_price} KUT Coins</p>
+          <p className="mt-0.5 text-sm text-ink-faint">
+            Listed at {offer.listing_price} FLUT Coins
+          </p>
         </div>
         <span
           className={`rounded-full px-3 py-1 text-xs font-black uppercase tracking-[0.1em] ${
@@ -107,7 +109,7 @@ function OfferCard({ offer }: { offer: TradeOffer }) {
 
       {offer.status === "accepted" && !offer.is_outgoing && offer.coins_to_seller !== null && (
         <p className="mt-3 text-sm font-bold text-moss">
-          You received {offer.coins_to_seller} KUT Coins after the 5% burn.
+          You received {offer.coins_to_seller} FLUT Coins after the 5% burn.
         </p>
       )}
 

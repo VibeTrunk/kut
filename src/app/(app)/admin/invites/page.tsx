@@ -34,7 +34,7 @@ export default async function InvitesPage() {
         <header className="space-y-3">
           <h1 className="text-4xl font-black tracking-tight">Invite a player</h1>
           <p className="text-ink-dim">
-            Each link can create one KUT account tied to one real player. It expires after 14 days.
+            Each link can create one FLUT account tied to one real player. It expires after 14 days.
           </p>
         </header>
         <InviteForm players={availablePlayers} />

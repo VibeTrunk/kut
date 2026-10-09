@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { Archivo, Caveat, Instrument_Serif, Permanent_Marker } from "next/font/google";
 import { connection } from "next/server";
+import { BRAND } from "@/lib/brand";
 import "./globals.css";
 
 // Self-hosted through next/font: production CSP is `font-src 'self'`, so a
@@ -40,7 +41,7 @@ const permanentMarker = Permanent_Marker({
 });
 
 export const metadata: Metadata = {
-  title: "Kelderklasse Ultimate Team",
+  title: `${BRAND.shortName} — ${BRAND.fullName}`,
   description: "A live football-card game for Terrible Football Haarlem.",
 };
 

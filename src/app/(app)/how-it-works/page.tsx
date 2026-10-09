@@ -22,7 +22,7 @@ import {
 } from "@/lib/midweek/entry";
 import { createClient } from "@/lib/supabase/server";
 
-export const metadata = { title: "How KUT works" };
+export const metadata = { title: "How FLUT works" };
 
 const RARITY_INTENT: Record<(typeof RARITY_BANDS)[number]["tier"], string> = {
   common: "Muted, basic frame",
@@ -97,7 +97,7 @@ export default async function HowItWorksPage() {
           <p className="text-[0.7rem] font-extrabold uppercase tracking-[0.26em] text-brass">
             The rules
           </p>
-          <h1 className="display text-5xl sm:text-6xl">How KUT works</h1>
+          <h1 className="display text-5xl sm:text-6xl">How FLUT works</h1>
           <p className="text-lg leading-8 text-ink-dim">
             Real Terrible Football Haarlem attendance, goals and assists drive every card&rsquo;s
             rating and rarity. Show up, collect your teammates, open packs, and trade.
@@ -131,13 +131,13 @@ export default async function HowItWorksPage() {
           </p>
           <p className="rounded-xl bg-moss-bg/50 p-3 text-sm font-semibold text-moss">
             Showing up also pays: every published session you attend credits{" "}
-            {ECONOMY.attendanceCoinReward} KUT Coins straight to your wallet, with a dated note in
+            {ECONOMY.attendanceCoinReward} FLUT Coins straight to your wallet, with a dated note in
             your{" "}
             <Link className="underline" href="/messages">
               Messages
             </Link>
             . It lands once the admin publishes that session&rsquo;s attendance. Whoever brings the
-            bibs to the session gets a one-off +{ECONOMY.bibsCoinBonus} KUT Coins on top.
+            bibs to the session gets a one-off +{ECONOMY.bibsCoinBonus} FLUT Coins on top.
           </p>
         </Section>
 
@@ -172,7 +172,7 @@ export default async function HowItWorksPage() {
           <p>
             After each session, attendees privately report one number: their goals and assists added
             together, <abbr title="goals + assists">G+A</abbr> for short. Two goals and two assists
-            is 4 G+A. Only the total is kept, so KUT never knows how it split. Attendees may also
+            is 4 G+A. Only the total is kept, so FLUT never knows how it split. Attendees may also
             recognize teammates in three positive categories.
           </p>
           <p>
@@ -183,7 +183,7 @@ export default async function HowItWorksPage() {
             {GAME_CONFIG.formCap}. Your G+A in the latest published football week also lifts
             Shooting (SHO) by 2 each, up to +8, until the next week is published. Completing every
             field, including an explicit zero and Skip choices, pays {ECONOMY.sessionReportReward}{" "}
-            KUT Coins once.
+            FLUT Coins once.
           </p>
           <p>
             Sessions before {cutoverLabel} counted goals only, and keep that meaning: their numbers
@@ -204,7 +204,7 @@ export default async function HowItWorksPage() {
               published. You can still do it the following week if you missed it.
             </li>
             <li>
-              Checking in pays <strong>{ECONOMY.injuryStipend} KUT Coins</strong> and keeps your
+              Checking in pays <strong>{ECONOMY.injuryStipend} FLUT Coins</strong> and keeps your
               Activity where it was, so your OVR doesn&rsquo;t drop for that week.
             </li>
             <li>
@@ -310,7 +310,7 @@ export default async function HowItWorksPage() {
 
         <Section title="7. Packs">
           <p>
-            A <strong>TFH Pack</strong> costs {ECONOMY.basicPackPrice} KUT Coins and gives{" "}
+            A <strong>TFH Pack</strong> costs {ECONOMY.basicPackPrice} FLUT Coins and gives{" "}
             {ECONOMY.basicPackCardCount} Live Cards. Draws are weighted by rarity, so Common players
             come up far more often than Gold or better. The result is fixed the moment you open
             &mdash; refreshing never rerolls it.
@@ -340,7 +340,7 @@ export default async function HowItWorksPage() {
               {discardRows.map((row) => (
                 <tr key={row.ovr} className="border-t border-line/60">
                   <td className="py-1 pr-4">{row.ovr}</td>
-                  <td className="py-1">{row.value} KUT Coins</td>
+                  <td className="py-1">{row.value} FLUT Coins</td>
                 </tr>
               ))}
             </tbody>
@@ -356,7 +356,7 @@ export default async function HowItWorksPage() {
             until it sells, is cancelled, or expires.
           </p>
           <p>
-            Instead of paying the buy-now price, you can <strong>make an offer</strong>: some KUT
+            Instead of paying the buy-now price, you can <strong>make an offer</strong>: some FLUT
             Coins and/or up to {ECONOMY.tradeOfferMaxCards} of your own cards. Everything you offer
             is held in escrow until the seller accepts or declines, or the offer expires after{" "}
             {ECONOMY.tradeOfferExpiryHours} hours. Accepting an offer pays the seller the coins
@@ -375,7 +375,7 @@ export default async function HowItWorksPage() {
         <Section title="10. Club Value & the standings">
           <p>Your Club Value is a plain sum of three numbers:</p>
           <ul className="ml-5 list-disc space-y-1">
-            <li>your wallet balance in KUT Coins;</li>
+            <li>your wallet balance in FLUT Coins;</li>
             <li>
               plus each edition&rsquo;s weighted copies: the first contributes 100% of discard
               value, the second 20%, the third 5%, and later copies 0%;
@@ -532,8 +532,8 @@ export default async function HowItWorksPage() {
           </p>
           <h3 className="pt-2 font-black text-ink">Coins</h3>
           <p>
-            Every match you win pays KUT Coins, more each round. A bye counts as a win. The champion
-            takes {MIDWEEK.championTotal} in all. Coins are paid after the final.{" "}
+            Every match you win pays FLUT Coins, more each round. A bye counts as a win. The
+            champion takes {MIDWEEK.championTotal} in all. Coins are paid after the final.{" "}
             <strong className="text-ink">Your cards are never at stake</strong>: entering
             doesn&rsquo;t move, lock or risk a card, and a result only ever pays coins.
           </p>
@@ -595,7 +595,7 @@ export default async function HowItWorksPage() {
             name again to clear it.
           </p>
           <p>
-            Every call that comes true pays {predictionCoins(5)} KUT Coins with up to 32 entrants,{" "}
+            Every call that comes true pays {predictionCoins(5)} FLUT Coins with up to 32 entrants,{" "}
             {predictionCoins(4)} with up to 16, {predictionCoins(3)} with up to 8 and{" "}
             {predictionCoins(2)} with 4, so a night&rsquo;s calls pay at most {PREDICTION_COINS_CAP}
             . They&rsquo;re paid with your wins after the final. From kick-off everyone sees how the
@@ -615,7 +615,7 @@ export default async function HowItWorksPage() {
           <p>
             After the final, the Midweek page can make two images for the club&rsquo;s group chat:
             the champion poster and your night. They show managers&rsquo; and Players&rsquo; names
-            and Players&rsquo; photos, so they travel beyond KUT once you send them. They&rsquo;re
+            and Players&rsquo; photos, so they travel beyond FLUT once you send them. They&rsquo;re
             made on your phone; nothing is uploaded.
           </p>
           <h3 className="pt-2 font-black text-ink">Fair draws</h3>

@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Favicon and app icons</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&amp;family=Instrument+Serif&amp;display=swap">
+<style>
+body{margin:0;background:#0b0a07}
+.serif{font-family:'Instrument Serif',Georgia,serif;font-weight:400;line-height:.94;letter-spacing:-.012em}
+.lbl{margin:0;font-size:10.4px;font-weight:800;letter-spacing:.15em;text-transform:uppercase;color:#8a8072}
+.panel{background:#211c15;border:1px solid #4a4030;border-radius:20px;padding:24px;display:flex;flex-direction:column;gap:18px;min-width:0}
+.px{image-rendering:pixelated;display:block}
+.tab{display:flex;align-items:center;gap:8px;height:34px;box-sizing:border-box;padding:0 14px;border-radius:10px 10px 0 0;font:500 13px system-ui,sans-serif;width:220px}
+.note{margin:0;font-size:12px;font-weight:600;line-height:1.5;color:#8fb0c2}
+code{font-family:ui-monospace,Consolas,monospace;font-size:12px;color:#f4efe3}
+</style>
+</helmet>
+<div style="width:1280px;height:800px;box-sizing:border-box;padding:48px;display:flex;flex-direction:column;gap:28px;background:#15130f;color:#f4efe3;font-family:Archivo,sans-serif">
+  <header style="display:flex;align-items:flex-end;justify-content:space-between;gap:32px">
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <p style="margin:0;font-size:11.2px;font-weight:800;letter-spacing:.26em;text-transform:uppercase;color:#e0ac4a">App Router file conventions</p>
+      <h1 class="serif" style="margin:0;font-size:48px">The shield, with an F where FLUT won't fit</h1>
+    </div>
+    <p class="note" style="max-width:360px">Below 48px the full mark turns to mush, so the tab icons carry the F and the home-screen icon carries all four letters.</p>
+  </header>
+
+  <section style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px">
+    <div class="panel">
+      <p class="lbl">src/app/favicon.ico · replaces today's</p>
+      <div style="display:flex;align-items:flex-end;gap:20px">
+        <img class="px" src="/_blob/b45ce8115759334ccd43c018b8841eb7" alt="favicon, 16 px" width="16" height="16">
+        <img class="px" src="/_blob/9ab553e8c90da181e1a46b6c82f78825" alt="favicon, 32 px" width="32" height="32">
+        <img class="px" src="/_blob/4bb7b26e69cd8745df49233bcb861323" alt="favicon, 48 px" width="48" height="48">
+        <img class="px" src="/_blob/b45ce8115759334ccd43c018b8841eb7" alt="favicon 16 px, zoomed 6 times" width="96" height="96" style="border:1px solid #4a4030">
+      </div>
+      <p class="note">16, 32 and 48 in one ICO. The 16 is hand-hinted: the F sits on whole pixels, with a 2px stem and bars. The 32 and 48 come from icon.svg. The 16 is shown at 6× on the right.</p>
+    </div>
+    <div class="panel">
+      <p class="lbl">src/app/icon.svg · new</p>
+      <div style="display:flex;align-items:flex-end;gap:20px">
+        <img src="/_blob/42c6bd72a874915dd886ecfd5d63cba8" alt="icon.svg at 64 px" width="64" height="64" style="display:block">
+        <img src="/_blob/42c6bd72a874915dd886ecfd5d63cba8" alt="icon.svg at 128 px" width="128" height="128" style="display:block">
+      </div>
+      <p class="note">The app's own shield path (.clip-pennant) in brass #e0ac4a, with the F in #1c150a. Next emits it as &lt;link rel="icon" type="image/svg+xml"&gt;, and modern browsers prefer it over the ICO.</p>
+    </div>
+    <div class="panel">
+      <p class="lbl">src/app/apple-icon.png · new · 180 × 180</p>
+      <div style="display:flex;align-items:flex-end;gap:20px">
+        <img src="/_blob/77243d310e580a2e05cd28dcf465c708" alt="apple-icon, square" width="90" height="90" style="display:block">
+        <img src="/_blob/77243d310e580a2e05cd28dcf465c708" alt="apple-icon as iOS masks it" width="120" height="120" style="display:block;border-radius:27px">
+      </div>
+      <p class="note">Full bleed, no transparency: iOS rounds the corners itself (right). Board vignette ground, a 128 × 140 shield, and FLUT in Archivo 900 at 30px with −0.6px tracking.</p>
+    </div>
+  </section>
+
+  <section style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px">
+    <div class="panel">
+      <p class="lbl">In a tab strip, light and dark</p>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div style="background:#dee1e6;padding:8px 8px 0;border-radius:10px;display:flex;gap:4px">
+          <div class="tab" style="background:#ffffff;color:#1f1f1f"><img src="/_blob/b45ce8115759334ccd43c018b8841eb7" alt="" width="16" height="16" style="display:block">This week in FLUT</div>
+          <div class="tab" style="color:#3c4043"><img src="/_blob/b45ce8115759334ccd43c018b8841eb7" alt="" width="16" height="16" style="display:block">FLUT Chronicle</div>
+        </div>
+        <div style="background:#202124;padding:8px 8px 0;border-radius:10px;display:flex;gap:4px">
+          <div class="tab" style="background:#35363a;color:#e8eaed"><img src="/_blob/b45ce8115759334ccd43c018b8841eb7" alt="" width="16" height="16" style="display:block">This week in FLUT</div>
+          <div class="tab" style="color:#9aa0a6"><img src="/_blob/b45ce8115759334ccd43c018b8841eb7" alt="" width="16" height="16" style="display:block">FLUT Chronicle</div>
+        </div>
+      </div>
+      <p class="note">Brass holds its silhouette on both. On white the shield reads by its dark F as much as by its edge.</p>
+    </div>
+    <div class="panel">
+      <p class="lbl">Files, as delivered in design/flut/assets</p>
+      <div style="display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px 16px;font-size:13px;color:#b3a891;line-height:1.45">
+        <code>favicon.ico</code><span>→ src/app/favicon.ico, replacing the Next.js default</span>
+        <code>icon.svg</code><span>→ src/app/icon.svg</span>
+        <code>apple-icon.png</code><span>→ src/app/apple-icon.png</span>
+        <code>src/*</code><span>The 16px master, the apple-icon master page and the PNG frames inside the ICO</span>
+      </div>
+      <p class="note">No metadata.icons entry is needed: the file conventions generate the &lt;link&gt; tags. Production CSP is unaffected, because these are same-origin static files.</p>
+    </div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

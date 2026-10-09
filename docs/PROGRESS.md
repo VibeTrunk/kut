@@ -6273,3 +6273,110 @@ runner verification remains required. Package identities, signature checks,
 browser/test commands, timeout, required jobs and gate behavior are unchanged.
 This edits repository CI configuration, not the owner's machine or hosted
 settings. No Topic A investigation, real cleanup or release was performed.
+
+## FLUT rename, slice 1: in-app branding (ADR-137) — 2026-10-08
+
+The public game is now **FLUT — Football League Ultimate Team**, and the
+currency is **FLUT Coins**. The owner approved `design/flut/HANDOFF.md` on
+2026-10-08, and this slice builds it with the owner's three overrides
+(ADR-137). Accounts, cards, balances, rules, the economy and the visual style
+are unchanged. There is no migration and no RPC, payload or permission change.
+The domain stays `kut.vibetrunk.com` in this slice.
+
+- **Brand module:** `src/lib/brand.ts` holds the short name, the full name,
+  the currency, the compact unit and the planned public URL. Nothing routes on
+  that URL yet. User-visible strings in the tested logic modules and the
+  chrome read from it.
+- **Handoff §1–§7:** pennant wordmark text; avatar fallback `F`; crest lockup
+  on login and stacked lockup on welcome; Chronicle, How it works and kicker
+  headings; the Midweek "You" unit (12px with a 3px gap below `sm`); the two
+  `share-draw.ts` calls and its comment; `flut-midweek-…png` downloads; and
+  the favicon, `icon.svg` and `apple-icon.png` copied from
+  `design/flut/assets`. Every other copy rename in §7 is done, including
+  accessibility labels, server-action errors and `activity.ts`. No code that
+  matches database error strings changed. The root title is the full name;
+  page titles stay standalone.
+- **Notification presentation adapter:** `src/lib/notification-copy.ts`
+  translates "KUT Coins" (and "Your KUT club", "an active KUT account") at
+  display time. It covers every server template, current and historical,
+  including the Midweek result composed with `concat_ws`. Names, numbers and
+  the admin's wallet reason pass through, and so does unknown text. Stored
+  rows and read state are untouched. `MessageRow` applies it to every message
+  title and body. The admin account actions apply it to the raw RPC exception
+  text they can show.
+- **Guards:** `tests/unit/notification-copy.test.ts` has one fixture per
+  template and the pass-through cases. It also parses the migrations, takes
+  the latest definition of each function and fails on any untranslated
+  "KUT Coins" literal (a second case checks every historical version).
+  `tests/unit/brand-copy.test.ts` keeps "KUT Coins", "Kelderklasse",
+  `kut-midweek` and a standalone "KUT" out of `src/**`, with comments
+  skipped. Its allowlist holds two diagnostic console prefixes and the
+  adapter's own template strings.
+- **Tooling:** an ESLint override lets CommonJS build scripts under
+  `design/**` use `require()`. The FLUT asset script is the first.
+- **Docs:** ADR-137; the spec's naming note; README; CLAUDE.md "What this
+  is"; the ROADMAP slice table, including the optional server template
+  migration; the handoff status; and `docs/design/README.md`. The #207
+  deployment record is carried in this PR.
+
+Verification: `npm run verify:fast` passed (policy, format, lint, types and
+730 unit tests in 67 files), and so did the production build. Public Chromium
+E2E passed 28 of 28. An isolated authenticated mobile run (Pixel 7, 320 and
+WebKit) passed 175 with the two approved duplicate-device skips. That run
+covers the share regression and the FLUT filename on both download and native
+sharing. An earlier run is void: its dev server stopped answering after case 89
+while a second local server was started from the same checkout.
+
+The share images, rendered from the built `share-draw.ts` with the design
+fixtures, are pixel-identical to `design/flut/assets/share-flut-*.png`. The
+favicon, `icon.svg` and `apple-icon.png` are served same-origin, match the
+assets byte for byte and emit their link tags. The production CSP reported no
+violations across 30 page loads at 320, 390, 412, 768, 1024 and 1440 px.
+
+None of those pages scrolls horizontally. The login lockup keeps two name
+lines at every width. With a seven-digit balance the header never overflows.
+At 320 the coin pill fits up to 999,999 and truncates 1,234,567, which is its
+existing design; that value fits from 390. The Chronicle mastheads split where
+the handoff measured them. The Midweek "You" stat, measured with the
+component's markup and the built CSS, puts "+254 FLUT" 3.6px inside the
+padding at 320. The final `rg` audit leaves only comments, test names, two
+allowlisted diagnostic prefixes, a database error string used as test input,
+and the adapter's registry.
+
+### PR #208 security check: Next.js 16.3.8 (ADR-138) — 2026-10-09
+
+CI's `security` job failed on six new high-severity Next.js advisories covering
+16.0.0–16.3.7. It did not come from the FLUT change; `main` would fail the same
+way. The owner approved a one-time package-age exception for `next`,
+`eslint-config-next` and `@next/*` 16.3.8, to be applied inside #208. The two
+direct pins moved to 16.3.8, and a bare install changed exactly 12 lockfile
+entries, all in that set. The production audit (high threshold) now reports
+zero vulnerabilities. `verify:fast` (730 tests in 67 files) and the production
+build pass on Next 16.3.8.
+
+The first authenticated run on 16.3.8 passed Pixel 7 and 320 but failed 13
+WebKit cases, none of which failed on 16.3.6 the day before. All 13 had the
+same symptom: after a tap, the page did not reach the next URL in time, or
+rows and elements did not appear. A WebKit-only rerun on the same tree passed
+all 58 cases plus the approved skip, including the 13, which first looked like
+the monitored slow-spell pattern (Topic A, ADR-134). Assertions, timeouts and
+skips were not changed at any point.
+
+A second full dev-server run on 16.3.8 again failed only WebKit, with 4 cases
+and the same symptoms. That made a control necessary. With the committed
+16.3.6 restored from the lockfile and nothing else changed, the full dev-server
+suite passed: 175 cases, the two approved skips and all 58 WebKit cases, in 14.7
+minutes. The two 16.3.8 dev-server runs took 18.2 and 16.2 minutes. Next
+16.3.8's dev server therefore most likely slows WebKit enough to break this
+suite; the evidence does not point to Topic A.
+
+The release gate does not use the dev server. It builds the app and serves it
+with `next start` on 127.0.0.1:3101. A fresh 16.3.8 production build, run the
+same way with the gate's environment, passed the full authenticated suite:
+175 cases, the two approved skips, all 58 WebKit cases, no failures, in 8.9
+minutes. This was not a gate run (the tree was uncommitted and no candidate SHA
+was recorded). Every run's logs and failure artefacts are preserved privately
+under `.release-evidence/next-16.3.8-webkit-20261009/`. The owner then had 16.3.8
+published in #208. Until a later Next release fixes the dev-server slowdown,
+treat a local dev-server WebKit failure in that suite as a known risk on 16.3.8,
+and confirm it with a production-mode run before judging the code.

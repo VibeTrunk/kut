@@ -23,7 +23,7 @@ export function CancelListingForm({
     <form action={action} className="rounded-2xl border border-steel-line/35 bg-steel-bg/20 p-4">
       <input name="cardId" type="hidden" value={cardId} />
       <input name="listingId" type="hidden" value={listingId} />
-      <p className="font-black text-steel">Listed for {price} KUT Coins</p>
+      <p className="font-black text-steel">Listed for {price} FLUT Coins</p>
       <p className="mt-1 text-sm text-steel/80">
         This card is locked while the listing is active
         {expiresAt ? `, until ${formatDate(expiresAt)}` : ""}.

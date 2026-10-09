@@ -104,7 +104,7 @@ export function ReportForm({
           role="status"
         >
           {state.rewarded
-            ? "Report submitted → +50 KUT Coins received."
+            ? "Report submitted → +50 FLUT Coins received."
             : "Your report is saved. Reward already received."}
         </p>
       )}
@@ -200,7 +200,7 @@ export function ReportForm({
       </fieldset>
       <p className="text-sm text-ink-dim">
         {combined ? "Enter your combined goals and assists total" : "Enter your goals"} and choose
-        or skip each category. A complete first submission earns 50 KUT Coins; edits never pay
+        or skip each category. A complete first submission earns 50 FLUT Coins; edits never pay
         twice.
       </p>
       {blocker && (

@@ -76,9 +76,9 @@ const path: MatchRow[] = [
 describe("share image copy", () => {
   it("dates the images and names the files", () => {
     expect(shareTop(LOCK)).toBe("Midweek Madness · Wed 7 Oct 2026");
-    expect(shareFileName(LOCK, "champion")).toBe("kut-midweek-7-oct-champion.png");
-    expect(shareFileName(LOCK, "Sanne")).toBe("kut-midweek-7-oct-sanne.png");
-    expect(shareFileName(LOCK, "Anne-Sophie Vél")).toBe("kut-midweek-7-oct-anne-sophie-vel.png");
+    expect(shareFileName(LOCK, "champion")).toBe("flut-midweek-7-oct-champion.png");
+    expect(shareFileName(LOCK, "Sanne")).toBe("flut-midweek-7-oct-sanne.png");
+    expect(shareFileName(LOCK, "Anne-Sophie Vél")).toBe("flut-midweek-7-oct-anne-sophie-vel.png");
   });
 
   it("writes the poster's path as score and opponent, the final on penalties included", () => {
@@ -188,7 +188,7 @@ describe("share images from a stored week", () => {
     );
     expect(poster!.tiles).toHaveLength(result.rounds);
     expect(poster!.line).toMatch(/^Beat .+ (on penalties )?in the final, /);
-    expect(poster!.fileName).toBe("kut-midweek-7-oct-champion.png");
+    expect(poster!.fileName).toBe("flut-midweek-7-oct-champion.png");
   });
 
   it("gives the runner-up their night, the best card ringed and its line, and the calls in the foot", () => {

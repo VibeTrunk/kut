@@ -24,6 +24,7 @@ import { MIDWEEK } from "@/game/midweek/config";
 import { predictionCoins } from "@/game/midweek/rewards";
 import { seedHash } from "@/game/midweek/rng";
 import { roundStartAt } from "@/game/midweek/schedule";
+import { BRAND } from "@/lib/brand";
 import { fetchInjuredPlayerIds } from "@/lib/injuries";
 import { callCards, weeklyCallsLine } from "@/lib/midweek/calls";
 import { toLiveCardPlayer, type OwnedCardRow } from "@/lib/live-card-player";
@@ -798,7 +799,7 @@ export async function WeekComplete({
             </h1>
           </div>
           <p className="text-[15px] leading-normal text-ink-dim">
-            {final && <b className="text-ink">{finalLine(final)}</b>} {MIDWEEK.championTotal} KUT
+            {final && <b className="text-ink">{finalLine(final)}</b>} {MIDWEEK.championTotal} FLUT
             Coins over the night.{" "}
             {final && (
               <Link
@@ -824,7 +825,7 @@ export async function WeekComplete({
             label="You"
             note={picks > 0 ? `${coins} for wins, ${callCoins} for calls` : "paid to your wallet"}
             tone="brass"
-            unit="KUT"
+            unit={BRAND.unit}
             value={`+${coins + callCoins}`}
           />
           <Stat label="Your finish" note={finish.note} value={finish.value} />
@@ -897,7 +898,9 @@ export async function WeekComplete({
             seedMatches={seed !== null && seedHash(seed) === seal}
           />
         )}
-        <p className="text-[13px] text-ink-faint">{totals.coins} KUT Coins paid across the club.</p>
+        <p className="text-[13px] text-ink-faint">
+          {totals.coins} FLUT Coins paid across the club.
+        </p>
       </section>
     </main>
   );
@@ -914,7 +917,10 @@ function Stat({
   value: string;
   note: string;
   tone?: "brass";
-  /** A small unit after the value: `+54 KUT` (DR3, round 2). */
+  /**
+   * A small unit after the value: `+54 FLUT` (DR3, round 2). Below `sm` it is
+   * 12px with a 3px gap, so "+254 FLUT" stays inside a 320px cell (FLUT HANDOFF §4).
+   */
   unit?: string;
 }) {
   return (
@@ -926,7 +932,11 @@ function Stat({
         className={`mt-1 text-[26px] font-black tracking-[-0.01em] tabular-nums ${tone === "brass" ? "text-brass" : ""}`}
       >
         {value}
-        {unit && <span className="ml-1 text-sm font-extrabold tracking-normal">{unit}</span>}
+        {unit && (
+          <span className="ml-[3px] text-xs font-extrabold tracking-normal sm:ml-1 sm:text-sm">
+            {unit}
+          </span>
+        )}
         <small className="block text-xs font-bold tracking-normal text-ink-faint">{note}</small>
       </dd>
     </div>

@@ -7,7 +7,7 @@ import { isAuthRetryableFetchError, type AuthError } from "@supabase/supabase-js
 // password either.
 export function signInErrorMessage(error: AuthError): string {
   if (isAuthRetryableFetchError(error)) {
-    return "Couldn't reach KUT. Check your connection and try again.";
+    return "Couldn't reach FLUT. Check your connection and try again.";
   }
   if (error.status === 429) {
     return "Too many sign-in attempts. Wait a minute and try again.";

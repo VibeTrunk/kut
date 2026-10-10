@@ -6,7 +6,7 @@ continues from ADR-142.
 
 ADR-001 to ADR-141 are at the git tag `docs-archive-2026-10`; read them with
 `git show docs-archive-2026-10:docs/archive/decisions-2026.md | rg "ADR-099"`.
-The two ADRs below are still in force, in their current form.
+The ADRs below are in force, in their current form.
 
 ## ADR-140 — Process reset: merge to main deploys
 
@@ -36,7 +36,8 @@ Date: 2026-10-09 (S3 spike, VibeTrunk/kut#212). Full text at the tag `docs-archi
 - `.github/workflows/backup.yml` runs nightly at 03:17 UTC as the read-only
   `kut_backup` role through the Session pooler. A privilege audit and a
   denied-insert check come first; the role never holds write or migration
-  rights, and the `postgres` credential never goes into GitHub.
+  rights, and never the `postgres` credential (which ADR-144 allows only in
+  the `VibeTrunk/supabase` migration workflow).
 - The dump and its manifest come from one snapshot, are age-encrypted to the
   owner's key and kept 30 days. A restore check in a disposable `kut_restore`
   stack must match the schema and row counts and sign a stand-in member in.
@@ -89,3 +90,29 @@ Date: 2026-10-10 (S7 live tests, VibeTrunk/kut#212).
   Codex commits and pushes reach the owner because the sandbox can't write
   `.git` and has no network, so Codex must ask to run them outside it.
   Approving "always" removes that check.
+
+## ADR-144 — Hosted migrations through a workflow in VibeTrunk/supabase
+
+Date: 2026-10-10 (process reset S9, VibeTrunk/kut#212). Amends ADR-141's
+credential rule.
+
+- `apply-migrations.yml` in `VibeTrunk/supabase` applies hosted migrations. It
+  is dispatched with a catalogue commit on main and the kut commit holding the
+  same files. The plan job runs `migration list` and `db push --dry-run` and
+  refuses any pending migration without a byte-identical copy in kut. The apply
+  job plans the same commit again, needs the identical list and a kut backup
+  under an hour old, pushes, and checks that nothing is left pending.
+- Only `postgres` can apply kut migrations; a dedicated role cannot inherit it
+  (no ADMIN option on `postgres` in Postgres 17). Its password is therefore a
+  secret of that repo's `production` environment only: main only, with the
+  owner as required reviewer of both jobs. It reaches the CLI through
+  `PGPASSWORD`. The backup route still never holds it. Accepted: a compromised
+  dependency of an approved job could read it, so actions are pinned by SHA
+  and the CLI by version.
+- Each approval of the apply job is the explicit yes for that push; a merge
+  still authorizes none.
+- kut CI's required `catalogue-parity` job checks every kut migration against
+  the catalogue's main, replacing `test-catalogue-parity.ps1`. A migration PR
+  stays red there until its catalogue PR merges (`docs/RELEASING.md`).
+- A local `db push` from `VibeTrunk/supabase` stays a fallback, with the
+  owner's OK.

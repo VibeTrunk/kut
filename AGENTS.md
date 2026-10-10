@@ -8,154 +8,129 @@ VibeTrunk/kut#212 (the process reset). Its plan says which rules change when.
 
 FLUT, Football League Ultimate Team (formerly KUT), is a browser-based
 collectible football-card game for Terrible Football Haarlem (TFH): real
-attendance and match performance drive a card economy that players collect,
-open packs of and trade. It is a tool in the [VibeTrunk](https://vibetrunk.com)
-hub; `VibeTrunk/home` knows only its name, blurb and URL, so add no coupling
-beyond the shared Supabase project.
+attendance and match performance drive a card economy of packs, collecting and
+trading. It is a tool in the [VibeTrunk](https://vibetrunk.com) hub; add no
+coupling to `VibeTrunk/home` beyond the shared Supabase project.
 
 - Stack: Next.js and TypeScript on Vercel (project `kut`, live at
-  `https://flut.vibetrunk.com`; the legacy `kut.vibetrunk.com` redirects, ADR-139).
+  `https://flut.vibetrunk.com`; `kut.vibetrunk.com` redirects, ADR-139).
 - Backend: the shared VibeTrunk Supabase project, schema `kut` (not `public`).
-  Row-level security is on for every table, and the browser never talks to
-  Postgres directly.
+  Row-level security is on for every table; the browser never talks to Postgres.
 - Economically valuable operations (pack opening, discard, market, starter
   grant, attendance rewards) are server-authoritative: validated database
   functions or Edge Functions, never client writes to `wallets`, `user_cards`
   or `market_listings`.
-- This is partly a deliberate learning project in production-grade practice:
-  favour clear structure and record decisions in markdown.
-- Latest hosted migration: `20261019000000_basic_pack_price_250.sql`
-  (ADR-136). The `VibeTrunk/supabase` catalogue is the hosted history; older
-  release records are at the tag `docs-archive-2026-10`.
+- A deliberate learning project in production-grade practice: clear structure,
+  decisions recorded in markdown.
+- Latest hosted migration: `20261019000000_basic_pack_price_250.sql` (ADR-136).
+  The `VibeTrunk/supabase` catalogue is the hosted history.
 
 ## Reading: grep on demand
 
 Start from `docs/PRODUCT.md`: per area, what the game does now and where it
-lives. `docs/README.md` is the map. The old build spec, delivery log, roadmap,
-bug register and ADR-001 to ADR-141 (over a megabyte) were archived at the git
-tag `docs-archive-2026-10`. Do not read them in full; grep the one you need:
+lives. The old spec, delivery log, roadmap, bug register and ADR-001 to ADR-141
+are at the git tag `docs-archive-2026-10`. Never read them in full; grep the
+one you need. A `BUILD_SPEC §N` or old `ADR-NNN` in the code resolves this way:
 
 ```powershell
 git show docs-archive-2026-10:docs/BUILD_SPEC.md | rg "^## 44\."
 git show docs-archive-2026-10:docs/archive/decisions-2026.md | rg "ADR-099"
 ```
 
-A `BUILD_SPEC §N` or old `ADR-NNN` in the code or docs resolves that way. Open
-work is in GitHub issues (`gh issue list`; labels bug, idea, next, ops).
-
-The design is deliberately prescriptive: security and data integrity win over
-convenience, and the Part L invariants in `docs/INVARIANTS.md` must never be
-violated. Changing a game rule, database invariant, public API or acceptance
-criterion means updating `docs/PRODUCT.md` and recording the deviation in
-`docs/decisions.md`. Never silently "improve" a formula.
+Security and data integrity win over convenience, and the Part L invariants in
+`docs/INVARIANTS.md` must never be violated. Changing a game rule, database
+invariant, public API or acceptance criterion means updating `docs/PRODUCT.md`
+and recording it in `docs/decisions.md`. Never silently "improve" a formula.
 
 ## Commands
 
-- `npm run verify:fast`: policy check, format, lint, typecheck, unit tests. Run
-  once per round of changes (about 7 min locally while the cleanup tests exist).
-  CI runs the database, integration and browser suites, so leave those to CI.
-- `npm run dev`, `npm run build`, `npm run format`, `npm run policy:sync`.
-- Optional locally: `npm run test:db`, `npm run test:integration`,
-  `npm run test:e2e:authenticated`. They need the local Supabase stack.
+- `npm run verify:fast`: policy and doc-size checks, format, lint, typecheck,
+  unit tests (about 1 min locally). Run it once per round of changes; CI runs
+  the database, integration and browser suites.
+- `npm run dev`, `build`, `format`, `policy:sync`. Optional locally, against
+  the local Supabase stack: `test:db`, `test:integration`, `test:e2e:authenticated`.
 - Local stack: project id `kut`, started and stopped by the `kut-up` and
-  `kut-down` PowerShell profile commands. `supabase db reset` is deny-listed,
-  so apply a migration or run pgTAP with `docker exec supabase_db_kut psql`.
-- Fixtures create and delete real rows, so they refuse any non-loopback target.
-- Batch typecheck, lint and tests into one verification per round of changes.
+  `kut-down` profile commands. `supabase db reset` is deny-listed, so apply a
+  migration or run pgTAP with `docker exec supabase_db_kut psql`. Fixtures
+  create and delete real rows, so they refuse any non-loopback target.
 
 ## Workspace and branches
 
-- Work only in `C:\Users\mfvan\dev\kut` (and `C:\Users\mfvan\dev\supabase`).
-  The old OneDrive checkout is frozen until S8. One agent per checkout: two
-  agents hold stale file state and clobber each other. Serialize them on the
-  branch, or give each a `git worktree` under the ignored
-  `.release-evidence/worktrees/` and merge into the PR branch.
-- `main` is protected: direct pushes are rejected, even for admins. Never commit
-  to `main` or force a rejected push. Branch as `feat/`, `fix/`, `docs/` and so
-  on, open a PR, and squash-merge. Branches auto-delete on merge. The owner
-  reviews and merges, unless they explicitly delegate it.
+- Work only in `C:\Users\mfvan\dev\kut` (and `C:\Users\mfvan\dev\supabase`);
+  the old OneDrive checkout is frozen until S8. One agent per checkout; a
+  second agent gets a `git worktree` under the ignored
+  `.release-evidence/worktrees/` and merges into the PR branch.
+- `main` is protected. Branch (`feat/`, `fix/`, `docs/`, ...) and open a PR; the
+  owner reviews and squash-merges unless they delegate it. Branches
+  auto-delete on merge. Use conventional commit prefixes (`feat:`, `docs+fix:`).
 - Never commit, push, deploy or mutate hosted state without authorization for
-  this change. One instruction such as "publish this slice" covers committing,
-  pushing and opening or updating its PR. Local implementation permission alone
-  does not. Do not re-ask for steps already covered.
-- Conventional commit prefixes (`feat:`, `fix:`, `docs:`, `chore:`, `refactor:`,
-  `test:`, or a combined one such as `docs+fix:`).
-- Independent slices branch from `main`. Never stack an independent migration
-  on a frontend branch. For a genuinely dependent stack, merge updated
-  `origin/main` into the child after its base is squash-merged. Never
-  force-push to repair it, and merge `main` into an already pushed PR branch.
-- Batch freely: docs, bug-issue filings, independent small UI
-  fixes, chores. Never batch anything carrying a `supabase/migrations/*.sql`,
-  or any change to a Part L invariant or RPC contract: one such change per PR.
-  Squash-merge makes a PR exactly one commit, so batching spends revert and
-  bisect granularity.
+  this change. "Publish this slice" covers committing, pushing and its PR;
+  local implementation permission does not. Don't re-ask for covered steps.
+- Independent slices branch from `main`; never stack a migration on a frontend
+  branch. Repair a dependent stack by merging updated `origin/main` into it,
+  never by force-pushing.
+- Batch docs, issue filings, small UI fixes and chores freely. A migration, a
+  Part L invariant or an RPC contract change gets a PR of its own.
 - The agent that packages a PR reads `git diff main...HEAD` in full first.
-- After publication, close out the checkout: compare local edits with merged
-  main, preserve unpublished work in a named stash and a verified private
-  archive, and bring the checkout onto current main without resets or broad
-  discards. Keep generated previews private.
+- After publication, bring the checkout onto current main. Preserve unpublished
+  work first (a named stash or a `tidy` archive); never reset or discard.
 
 ## Release
 
 A merge to `main` deploys to production through Vercel's Git integration
-(ADR-140); `docs/RELEASING.md` has the flow, the read-only check afterwards
-and rollback. There is no local gate and no deployment record. The merge
+(ADR-140); `docs/RELEASING.md` has the read-only check and rollback. The merge
 authorizes nothing else: migrations, function deployments, secrets, branch
 protection and other hosted changes need their own written instruction.
 
 ## Migrations and database
 
 - Hosted migrations are catalogued and applied only from
-  [`VibeTrunk/supabase`](https://github.com/VibeTrunk/supabase), because Supabase
-  records migration history globally. This repo keeps matching SQL files for
-  local development and tests. Never run a hosted `supabase db push` from here.
-- Existing migrations are immutable. A change adds at most one migration and a
-  database test (or a reviewed machine-readable exemption); the `migrations`
-  job in `.github/workflows/verify.yml` enforces this (ADR-070).
-- New code must degrade gracefully against the old schema (a tolerant read, a
-  flag, or a catalogue push ready to follow the merge). PR #86 broke listing
-  creation for about 2 hours by expecting a signature that did not exist yet.
-- Views only ever gain columns, at the end. `create or replace view` cannot
-  reorder or drop them, and pages read changed views with `select("*")`.
+  [`VibeTrunk/supabase`](https://github.com/VibeTrunk/supabase); Supabase keeps
+  one global history. This repo keeps matching SQL for local use and tests.
+  Never run a hosted `supabase db push` from here.
+- Existing migrations are immutable. A change adds at most one migration plus a
+  database test or reviewed exemption; CI's `migrations` job enforces it (ADR-070).
+- New code degrades gracefully against the old schema (a tolerant read, a flag,
+  or a catalogue push ready to follow the merge). PR #86 broke listing creation
+  for 2 hours by expecting a signature that wasn't live yet.
+- Views only gain columns, at the end; pages read them with `select("*")`.
 - A denied read returns zero rows, not an error. The ADR-079 member projections
-  are gated on `kut.is_active_member()`, false for a bare `postgres` session:
-  run `set role service_role;` first, or a query looks like data loss. After
-  any access change, smoke-test as an ordinary member.
+  need `kut.is_active_member()`, so in a `postgres` session run
+  `set role service_role;` first. After an access change, smoke-test as a member.
 - Never flip a definer projection to `security_invoker = true` to please the
-  Security Advisor: they are deliberate cross-RLS club projections, and doing so
-  blacked out the Chronicle (KB-013).
-- The backup tier follows what a migration can do: anything data-changing gets
-  a fresh cold-verified backup.
-- **Start-up check:** the nightly backup (ADR-141, `docs/BACKUP.md`) can fail
-  to start without any email. At the start of a session, run
-  `gh run list -w backup.yml -s success -L 1 --json createdAt`. Warn the owner
-  if the last success is older than 36 hours, or if there is none once the
-  backup has been set up.
+  Security Advisor; doing so blacked out the Chronicle (KB-013).
+- Anything data-changing gets a fresh cold-verified backup first.
+- **Start-up check:** run `gh run list -w backup.yml -s success -L 1 --json createdAt`
+  and warn the owner if the last success is over 36 hours old (ADR-141,
+  `docs/BACKUP.md`). A scheduled run can fail to start without any email.
 
 ## Agent safety
 
-- PreToolUse hooks (`.claude/`, `.codex/`) block destructive commands and npm
-  packages younger than 14 days. Whatever a hook enforces is non-negotiable:
-  do not look for workarounds. Changing a guard needs a PR the owner asked for.
-- `git commit`, `git push`, `supabase functions deploy`, `supabase db push` (real),
-  `supabase db reset` and `supabase secrets set` are never auto-allowed: each
-  gets a deliberate look. Read-only `supabase migration list` and
-  `db push --dry-run` are allowed. Direct pushes to `main` are denied.
-- Codex hooks and rules under `.codex/` need the repo to be trusted. Routine
-  read-only Git checks and `npm run *` have command rules.
-- Deleting files follows `docs/CLEANUP.md` (ADR-135). For ordinary named files,
-  inspect, verify independent preservation, get the owner's specific approval,
-  recheck, then remove only those files by literal path, with no recursive or
-  force options. Protect the ordinary checkout, retained worktrees, shared
-  dependencies, refs, stashes, archives and evidence. No plan, record or flag
-  grants removal approval; the owner does.
+- Hooks in `.claude/` and `.codex/` block destructive commands. What they
+  enforce is non-negotiable; changing a guard needs a PR the owner asked for.
+  Codex rules need the repo to be trusted.
+- Never auto-allowed: `git commit`, `git push`, `supabase functions deploy`,
+  `supabase db push` (real), `db reset` and `secrets set`. Read-only
+  `migration list` and `db push --dry-run` are allowed.
+- Dependabot waits 5 days after a release (ADR-142); review any manual install
+  in its PR diff.
+- Deleting, by tier (ADR-142):
+  - Tracked files: delete freely in a PR; Git history keeps them.
+  - Local Git state (branches, worktrees, stashes): only `node scripts/tidy.mjs`.
+    Its dry run lists everything; `--apply`, as the first argument, bundles and
+    proves the items before removing them. Each apply is the owner's approval
+    of that exact command.
+  - Untracked or ignored files: inspect them, then move them to the archive
+    with the owner's OK. Never delete them.
+  - Remote branches: `tidy --remote`, with the owner's approval.
+  - Hosted data: the owner only.
 
 ## Documentation map
 
-See `docs/README.md` for what each doc is for. Forward-looking ideas and open
-defects are GitHub issues (labels idea, next, bug), not files. This repo
-follows the same safety scaffold as every VibeTrunk repo (`.claude/`, `.codex/`,
-`AGENTS.md`, gitleaks CI).
+The PR description is the narrative, `docs/PRODUCT.md` the current state,
+`docs/decisions.md` the rules, GitHub issues the open work (labels bug, idea,
+next, ops) and archive tags the history. `docs/README.md` lists every doc;
+`npm run policy:check` enforces their size limits.
 
 <!-- BEGIN:KUT-PRODUCTION-INVARIANTS -->
 ## Production-safety invariants

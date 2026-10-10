@@ -2,10 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
 
   "permissions": {
-    "ask": [
-      "Bash(node scripts/cleanup/execute-cleanup.mjs *)",
-      "PowerShell(node scripts/cleanup/execute-cleanup.mjs *)"
-    ],
+    "ask": ["Bash(node scripts/tidy.mjs --apply*)", "PowerShell(node scripts/tidy.mjs --apply*)"],
     "allow": [
       "Bash(git status)",
       "Bash(git status *)",
@@ -98,13 +95,6 @@
             "args": [".claude/hooks/block-dangerous-commands.cjs"],
             "timeout": 10,
             "statusMessage": "Safety check"
-          },
-          {
-            "type": "command",
-            "command": "node",
-            "args": [".claude/hooks/block-young-packages.cjs"],
-            "timeout": 15,
-            "statusMessage": "Package age check"
           }
         ]
       }

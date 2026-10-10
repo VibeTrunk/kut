@@ -7,7 +7,10 @@ const fs = require("node:fs");
 const dangers = [
   [/\brm\s+(-\S+\s+)*-\S*[rf]\S*[rf]?/i, "recursive or forced delete"],
   [/\bgit\s+push\b[^\n]*(?:--force\b|--force-with-lease\b|\s-f\b)/i, "force push"],
-  [/\bgit\s+push\b[^\n]*(?:--delete\b|\s:[A-Za-z0-9._/-]+)/i, "remote branch deletion"],
+  [
+    /\bgit\s+push\b[^\n]*(?:--delete\b|\s:[A-Za-z0-9._/-]+)/i,
+    "remote branch deletion; use node scripts/tidy.mjs --remote",
+  ],
   [/\bgit\s+reset\s+--hard\b/i, "hard reset"],
   [/\bgit\s+clean\s+-\S*f/i, "forced git clean"],
   [/\bgit\s+checkout\s+(--\s|\.$|\.\s)/i, "broad checkout discard"],
@@ -25,9 +28,9 @@ const dangers = [
   ],
   [
     /\bgit\b[^\n]*\bworktree\s+(?:remove|prune)\b/i,
-    "direct worktree removal or broad pruning; use the bounded cleanup review",
+    "direct worktree removal or broad pruning; use node scripts/tidy.mjs",
   ],
-  [/\bgit\s+branch\s+-[dD]\b/i, "branch deletion is outside cleanup scope"],
+  [/\bgit\s+branch\s+-[dD]\b/i, "direct branch deletion; use node scripts/tidy.mjs"],
 ];
 
 function decision(value, reason) {
@@ -64,15 +67,6 @@ function evaluate(raw, agent) {
         "deny",
         "Repository safety policy blocks " + reason + ". A wrapper is not an exception.",
       );
-  // Both agents deny the unavailable entry. Native prompt support is not consent.
-  if (/cleanup[\\/]execute-cleanup\.mjs/i.test(command)) {
-    return decision(
-      "deny",
-      "Named cleanup needs the complete plan, per-type explanations, independent recovery and specific owner consent. Real execution is not activated in this installation.",
-    );
-  }
-  if (/\bnpm\s+run\b[^\n]*cleanup[^\n]*(?:execute|remove|resume)/i.test(command))
-    return decision("deny", "Cleanup execution cannot inherit generic npm run permission.");
   return null;
 }
 

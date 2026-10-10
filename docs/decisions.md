@@ -24,8 +24,7 @@ text, with the transition rules S1–S3 ran under, is at the tag `docs-archive-2
   a gated release), the deployment-record part of ADR-126 (full main CI stays),
   and ADR-128 to ADR-134 (gate checkout, preflight, E2E progress, release
   steps, release preparation, share-matrix attribution, Topic A monitoring).
-- ADR-135 (cleanup) and the 14-day package-age rule stay until S7 replaces
-  them.
+- ADR-135 (cleanup) and the 14-day package-age rule were replaced by ADR-142.
 
 ## ADR-141 — Nightly encrypted kut backup in GitHub Actions, kut only
 
@@ -45,3 +44,28 @@ Date: 2026-10-09 (S3 spike, VibeTrunk/kut#212). Full text at the tag `docs-archi
   exceptions in the audit. Revoking them is a later migration.
 - The old local backup stays in use until the owner's drill and a scheduled run
   have passed; then a follow-up PR retires it.
+
+## ADR-142 — Archive-first tidy, deletion tiers and doc size limits
+
+Date: 2026-10-10 (process reset S7, VibeTrunk/kut#212). Supersedes ADR-135 and
+the 14-day package-age hook.
+
+- Local Git state (branches, worktrees, stashes) is removed only by
+  `node scripts/tidy.mjs`. Its dry run inventories from Git alone. `--apply`
+  bundles every selected item, proves the bundle in an empty repository,
+  rechecks each SHA and removes only unchanged items. Dirty worktrees are
+  refused; untracked and ignored files are listed, never deleted.
+- `--apply` must be the first argument and carry the dry run's SHAs. It is an
+  ask rule for Claude and a prompt rule for Codex, so every apply is the
+  owner's approval of that exact command. Direct `git branch -D`,
+  `worktree remove` and `push --delete` stay blocked. Accepted residual risk:
+  an agent with a shell isn't fully containable; the archive makes mistakes
+  recoverable. Claude's hook and ask rule are proven live; Codex's are not yet
+  (the S7 live test, VibeTrunk/kut#212).
+- Tiers: tracked files are deleted freely in a PR; untracked or ignored files
+  move to the archive with the owner's OK; remote branches need
+  `tidy --remote` and approval; hosted data is owner-only.
+- Dependabot version updates wait 5 days (`cooldown`); security updates are
+  exempt and manual installs are reviewed in the PR diff.
+- `npm run policy:check` enforces size limits: PRODUCT.md 25 KB, decisions.md
+  30 KB with 25 lines per ADR, AGENTS.md + CLAUDE.md 11 KB.

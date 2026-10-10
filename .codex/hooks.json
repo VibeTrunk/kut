@@ -7,7 +7,7 @@
           {
             "type": "command",
             "command": "node \"$(git rev-parse --show-toplevel)/.codex/hooks/block-dangerous-commands.cjs\"",
-            "commandWindows": "powershell -NoProfile -Command \"$root = git rev-parse --show-toplevel; node (Join-Path $root '.codex/hooks/block-dangerous-commands.cjs')\"",
+            "commandWindows": "node .codex/hooks/block-dangerous-commands.cjs",
             "timeout": 10,
             "statusMessage": "Safety check"
           }

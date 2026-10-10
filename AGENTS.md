@@ -117,12 +117,13 @@ protection and other hosted changes need their own written instruction.
 - Deleting, by tier (ADR-142):
   - Tracked files: delete freely in a PR; Git history keeps them.
   - Local Git state (branches, worktrees, stashes): only `node scripts/tidy.mjs`.
-    Its dry run lists everything; `--apply`, as the first argument, bundles and
-    proves the items before removing them. Each apply is the owner's approval
-    of that exact command.
+    Agents run its dry run and give the owner the printed `--apply` line; the
+    hooks deny `--apply` to agents, and the owner runs it in their terminal.
   - Untracked or ignored files: inspect them, then move them to the archive
     with the owner's OK. Never delete them.
-  - Remote branches: `tidy --remote`, with the owner's approval.
+  - Remote branches: `tidy --remote`, run the same way.
+- Codex needs the repo hook trusted, approvals reviewer `user`, and a start at
+  the repo root (ADR-143). A crashing Codex hook doesn't block.
   - Hosted data: the owner only.
 
 ## Documentation map

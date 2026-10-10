@@ -124,7 +124,7 @@ describe("shared agent hook payloads", () => {
     expect(decisionOf(evaluate(raw, "codex"))).toBe("deny");
   });
 
-  it("blocks direct removal of Git state and leaves tidy to the approval rules", () => {
+  it("blocks direct removal of Git state and tidy --apply, but not the dry run", () => {
     for (const command of [
       "git worktree remove old",
       "git worktree prune",
@@ -135,11 +135,15 @@ describe("shared agent hook payloads", () => {
       "Remove-Item old -Recurse -Force",
     ])
       expect(decisionOf(evaluate(payload(command), "codex"))).toBe("deny");
-    // The hook stays silent so the ask/prompt rules below decide.
-    for (const command of [
-      "node scripts/tidy.mjs",
-      "node scripts/tidy.mjs --apply --branch old=0123456789abcdef0123456789abcdef01234567",
-    ])
+    // ADR-142: agents never apply; the owner runs the printed line themselves.
+    for (const agent of agents)
+      for (const command of [
+        "node scripts/tidy.mjs --apply --branch old=0123456789abcdef0123456789abcdef01234567",
+        "node ./scripts/tidy.mjs --remote --apply --remote-branch old=abc",
+        "cd scripts; node tidy.mjs --apply --stash abc",
+      ])
+        expect(decisionOf(runtime(agent).evaluate(payload(command), agent))).toBe("deny");
+    for (const command of ["node scripts/tidy.mjs", "node scripts/tidy.mjs --branch old --remote"])
       expect(evaluate(payload(command), "claude")).toBeNull();
   });
 });
@@ -167,5 +171,21 @@ describe("tidy approval rules", () => {
       expect(config).toMatch(/block-dangerous-commands\.cjs/);
       expect(config).not.toMatch(/block-young-packages/);
     }
+  });
+
+  // Codex lets the command through when a hook crashes, so the launcher must
+  // start cleanly. A nested PowerShell with `$root` exited 1 inside Codex.
+  it("launches the Codex hook on Windows with a plain relative node command", () => {
+    const codex = JSON.parse(fs.readFileSync(".codex/hooks.json", "utf8"));
+    const launcher = codex.hooks.PreToolUse[0].hooks[0].commandWindows;
+    expect(launcher).toBe("node .codex/hooks/block-dangerous-commands.cjs");
+    const result = spawnSync(launcher, {
+      shell: true,
+      input: "{",
+      windowsHide: true,
+      timeout: 10000,
+    });
+    expect(result.status).toBe(0);
+    expect(JSON.parse(result.stdout.toString()).hookSpecificOutput.permissionDecision).toBe("deny");
   });
 });

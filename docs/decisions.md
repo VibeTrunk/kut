@@ -55,13 +55,13 @@ the 14-day package-age hook.
   bundles every selected item, proves the bundle in an empty repository,
   rechecks each SHA and removes only unchanged items. Dirty worktrees are
   refused; untracked and ignored files are listed, never deleted.
-- `--apply` must be the first argument and carry the dry run's SHAs. It is an
-  ask rule for Claude and a prompt rule for Codex, so every apply is the
-  owner's approval of that exact command. Direct `git branch -D`,
-  `worktree remove` and `push --delete` stay blocked. Accepted residual risk:
-  an agent with a shell isn't fully containable; the archive makes mistakes
-  recoverable. Claude's hook and ask rule are proven live; Codex's are not yet
-  (the S7 live test, VibeTrunk/kut#212).
+- Agents run the dry run only: both hooks deny `tidy --apply`, and the owner
+  runs the printed line (`--apply` first, with the dry run's SHAs) in their own
+  terminal. Codex hooks can only allow or deny, so this is the one route that
+  behaves the same in both agents (ADR-143). The ask and prompt rules stay as a
+  fallback. Direct `git branch -D`, `worktree remove` and `push --delete` stay
+  blocked. Accepted residual risk: an agent with a shell isn't fully
+  containable; the archive makes mistakes recoverable.
 - Tiers: tracked files are deleted freely in a PR; untracked or ignored files
   move to the archive with the owner's OK; remote branches need
   `tidy --remote` and approval; hosted data is owner-only.
@@ -69,3 +69,23 @@ the 14-day package-age hook.
   exempt and manual installs are reviewed in the PR diff.
 - `npm run policy:check` enforces size limits: PRODUCT.md 25 KB, decisions.md
   30 KB with 25 lines per ADR, AGENTS.md + CLAUDE.md 11 KB.
+
+## ADR-143 — One safety system for Claude and Codex
+
+Date: 2026-10-10 (S7 live tests, VibeTrunk/kut#212).
+
+- Both agents run the same hook script (`block-dangerous-commands.cjs`, one
+  copy per agent, kept identical by a unit test). A command it denies is
+  blocked in both; this is proven live in each agent.
+- Codex setup on the owner's machine: the repo's hook trusted in Settings →
+  Hooks (again after any change to `.codex/hooks.json`), `approval_policy =
+  "on-request"` with `approvals_reviewer = "user"`, and Codex started at the
+  repo root (the hook path is relative).
+- Codex limits, from its docs: a hook can only allow or deny, never ask; a hook
+  that crashes or times out lets the command through. Hooks are a guardrail,
+  not a complete boundary. The Windows launcher is therefore a plain `node`
+  command, and a unit test runs it exactly as written.
+- Codex's `prompt` rules did not stop commands in the extension. In practice,
+  Codex commits and pushes reach the owner because the sandbox can't write
+  `.git` and has no network, so Codex must ask to run them outside it.
+  Approving "always" removes that check.

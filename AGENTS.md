@@ -34,7 +34,8 @@ Do not read the big docs in full. `docs/BUILD_SPEC.md`,
 `docs/archive/decisions-2026.md` (ADR-001 to ADR-141), `docs/PROGRESS.md` and
 `docs/DEPLOYMENTS.md` total over a megabyte. Grep for
 the area you are changing (a Part L rule, an ADR number or title, a function
-name) and read only those sections. `docs/README.md` is the map.
+name) and read only those sections. `docs/README.md` is the map, and
+`docs/PRODUCT.md` says per area what the game does now and where it lives.
 
 The build spec is deliberately prescriptive: security and data integrity win
 over convenience, and the Part L invariants must never be violated. Changing a

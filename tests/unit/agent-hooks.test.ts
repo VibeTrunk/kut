@@ -124,7 +124,7 @@ describe("shared agent hook payloads", () => {
     expect(decisionOf(evaluate(raw, "codex"))).toBe("deny");
   });
 
-  it("blocks direct removal of Git state and leaves tidy to the approval rules", () => {
+  it("blocks direct removal of Git state and tidy --apply, but not the dry run", () => {
     for (const command of [
       "git worktree remove old",
       "git worktree prune",
@@ -135,11 +135,15 @@ describe("shared agent hook payloads", () => {
       "Remove-Item old -Recurse -Force",
     ])
       expect(decisionOf(evaluate(payload(command), "codex"))).toBe("deny");
-    // The hook stays silent so the ask/prompt rules below decide.
-    for (const command of [
-      "node scripts/tidy.mjs",
-      "node scripts/tidy.mjs --apply --branch old=0123456789abcdef0123456789abcdef01234567",
-    ])
+    // ADR-142: agents never apply; the owner runs the printed line themselves.
+    for (const agent of agents)
+      for (const command of [
+        "node scripts/tidy.mjs --apply --branch old=0123456789abcdef0123456789abcdef01234567",
+        "node ./scripts/tidy.mjs --remote --apply --remote-branch old=abc",
+        "cd scripts; node tidy.mjs --apply --stash abc",
+      ])
+        expect(decisionOf(runtime(agent).evaluate(payload(command), agent))).toBe("deny");
+    for (const command of ["node scripts/tidy.mjs", "node scripts/tidy.mjs --branch old --remote"])
       expect(evaluate(payload(command), "claude")).toBeNull();
   });
 });

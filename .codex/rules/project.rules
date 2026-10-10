@@ -1,8 +1,9 @@
 # Mirror the routine command permissions in .claude/settings.json.
 
 # ADR-142: local Git state is removed only by tidy, which bundles and proves
-# every item first. Each apply is the owner's approval of the exact command;
-# tidy refuses --apply anywhere but first, so this prefix always matches it.
+# every item first. The dangerous-command hook denies `tidy --apply` to agents;
+# the owner runs it in their own terminal. This prompt is a fallback only, for a
+# hook that fails to start (Codex lets the command through then).
 prefix_rule(
     pattern = ["node", "scripts/tidy.mjs", "--apply"],
     decision = "prompt",

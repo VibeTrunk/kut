@@ -8,8 +8,9 @@
 // empty repository, then rechecks each item and removes only the unchanged
 // ones. Dirty worktrees are refused; the owner decides those.
 //
-// `--apply` must be the first argument and every selection must carry the SHA
-// the dry run printed, so the agents' approval rules match the exact command.
+// Agents run the dry run only; the hooks deny `--apply` to them. The owner runs
+// the printed `--apply` line in their own terminal. `--apply` must come first
+// and every selection must carry the SHA the dry run printed.
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import fs from "node:fs";
@@ -508,7 +509,9 @@ function printReport({ inventory: inv, items, archive }, options) {
   }
   if (!options.apply) {
     if (items.some((i) => !i.refused))
-      log(`\nTo archive and remove the ok items:\n  ${applyCommand(options, items)}`);
+      log(
+        `\nTo archive and remove the ok items, the owner runs this in their own terminal:\n  ${applyCommand(options, items)}`,
+      );
     return;
   }
   if (archive) log(`\nArchived and proven: ${archive.bundle}\nManifest: ${archive.manifest}`);

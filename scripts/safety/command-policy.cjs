@@ -31,6 +31,10 @@ const dangers = [
     "direct worktree removal or broad pruning; use node scripts/tidy.mjs",
   ],
   [/\bgit\s+branch\s+-[dD]\b/i, "direct branch deletion; use node scripts/tidy.mjs"],
+  [
+    /\btidy\.mjs\b[^\n]*--apply\b/i,
+    "tidy --apply by an agent; the owner runs the printed command in their own terminal",
+  ],
 ];
 
 function decision(value, reason) {

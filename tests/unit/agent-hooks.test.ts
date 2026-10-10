@@ -168,4 +168,20 @@ describe("tidy approval rules", () => {
       expect(config).not.toMatch(/block-young-packages/);
     }
   });
+
+  // Codex lets the command through when a hook crashes, so the launcher must
+  // start cleanly. A nested PowerShell with `$root` exited 1 inside Codex.
+  it("launches the Codex hook on Windows with a plain relative node command", () => {
+    const codex = JSON.parse(fs.readFileSync(".codex/hooks.json", "utf8"));
+    const launcher = codex.hooks.PreToolUse[0].hooks[0].commandWindows;
+    expect(launcher).toBe("node .codex/hooks/block-dangerous-commands.cjs");
+    const result = spawnSync(launcher, {
+      shell: true,
+      input: "{",
+      windowsHide: true,
+      timeout: 10000,
+    });
+    expect(result.status).toBe(0);
+    expect(JSON.parse(result.stdout.toString()).hookSpecificOutput.permissionDecision).toBe("deny");
+  });
 });

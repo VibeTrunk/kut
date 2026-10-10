@@ -6,12 +6,12 @@ need for the area you are changing.
 | Doc                                         | What it is                                                                         |
 | ------------------------------------------- | ---------------------------------------------------------------------------------- |
 | `BUILD_SPEC.md`                             | The canonical spec. Part L holds the invariants that must stay true.               |
-| `decisions.md`                              | ADR log, newest at the bottom. Grep `## ADR-NNN`. ADR-140 is the process reset.    |
+| `decisions.md`                              | Current ADRs (ADR-140 onward). ADR-001 to 141: `archive/decisions-2026.md`.        |
 | `PROGRESS.md`                               | Dated delivery log, one entry per shipped slice.                                   |
 | `ROADMAP.md`                                | Everything not yet built or declined, each with a status.                          |
 | `KNOWN_BUGS.md`                             | Open and fixed defects as `KB-NNN` rows.                                           |
-| `DEPLOYMENTS.md`                            | Hosted release and migration log, newest first.                                    |
-| `PRODUCTION_SAFETY.md`                      | The release gate, in force until S4 of the reset (ADR-140).                        |
+| `DEPLOYMENTS.md`                            | Release and migration log up to 2026-10-10; no new entries (ADR-140).              |
+| `RELEASING.md`                              | Merge-to-deploy flow, the check afterwards, and rollback (ADR-140).                |
 | `OPERATIONS.md`, `BACKUP.md`                | Runbooks: hosted migrations (ADR-032), alpha ops, encrypted backups and restore.   |
 | `CLEANUP.md`                                | Owner-approved file removal and the guarded worktree workflow (ADR-135).           |
 | `LAUNCH_PLAN.md`, `SECURITY_REVIEW.md`      | Go-live checklist and the MVP-era security review. References, not runbooks.       |

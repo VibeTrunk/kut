@@ -7,9 +7,9 @@ const nextConfig: NextConfig = {
       // The game moved to flut.vibetrunk.com (ADR-137). The legacy host keeps
       // serving the same deployment, and this sends every path and query string
       // on to the new one. Next anchors the host pattern, so only this exact
-      // host matches; previews and local hosts are unaffected. 307 until the
-      // owner accepts the new domain, then 308 (slice 5). The release checker
-      // probes this live (scripts/release/vercel-deployment-contract.mjs).
+      // host matches; previews and local hosts are unaffected. It stays a 307:
+      // the switch to 308 (slice 5) was declined. docs/RELEASING.md checks it
+      // after each deployment.
       {
         source: "/:path*",
         has: [{ type: "host", value: "kut\\.vibetrunk\\.com" }],

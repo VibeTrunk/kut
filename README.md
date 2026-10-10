@@ -142,9 +142,10 @@ the manual `e2e-webkit` workflow runs WebKit the same way.
 
 ## Operations
 
-[docs/OPERATIONS.md](docs/OPERATIONS.md) is the deploy / migration runbook
-(shared-migration authority, the risk-tiered hosted-migration checklist,
-preview-deploy preflight); [docs/BACKUP.md](docs/BACKUP.md) is the
+A merge to `main` deploys to production; [docs/RELEASING.md](docs/RELEASING.md)
+has the flow and rollback. [docs/OPERATIONS.md](docs/OPERATIONS.md) is the
+migration runbook (shared-migration authority, the risk-tiered hosted-migration
+checklist, preview-deploy preflight); [docs/BACKUP.md](docs/BACKUP.md) is the
 backup / restore runbook; [docs/SECURITY_REVIEW.md](docs/SECURITY_REVIEW.md)
 records the reviewed security boundaries. None of these authorize a hosted
 Supabase migration or Vercel deployment on their own. The completed MVP

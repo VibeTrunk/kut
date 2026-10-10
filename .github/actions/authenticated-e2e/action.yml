@@ -23,8 +23,7 @@ runs:
       shell: bash
       run: npx supabase start -x realtime,imgproxy,mailpit,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
 
-    # The release gate's mapping (scripts/release/production-e2e-contract.mjs):
-    # the NEXT_PUBLIC_ values are inlined by the build, so they must be set
+    # The NEXT_PUBLIC_ values are inlined by the build, so they must be set
     # before it; the service-role key is read by `next start` at run time.
     - name: Export the stack's URL and keys
       shell: bash

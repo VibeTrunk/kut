@@ -1,5 +1,10 @@
 # Hosted deployment log
 
+**Closed on 2026-10-10 (ADR-140).** From the S4 merge on, a merge to `main`
+deploys automatically and no records are kept; see `docs/RELEASING.md`. The
+last gated release recorded here is `b371932` (#210). S6 of the process reset
+deletes this file; it stays readable at tag `docs-archive-2026-10`.
+
 Every gated Vercel release and migration applied to the hosted `kut` schema,
 plus documentation-only production-lag records, **newest first**: what it
 changed, its risk tier, the backup it rode, the `migration list --linked`

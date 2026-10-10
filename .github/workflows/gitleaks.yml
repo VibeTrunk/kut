@@ -32,6 +32,6 @@ jobs:
           # reports "no leaks found" after scanning 0 commits — a silent
           # false pass, not a hard failure. Confirmed by planting a fake
           # secret and watching this exact failure mode before adding the
-          # config line (see docs/decisions.md).
+          # config line (see docs/archive/decisions-2026.md).
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
           gitleaks git -v --redact=50

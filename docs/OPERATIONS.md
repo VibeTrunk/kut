@@ -45,7 +45,7 @@ After the push, check the pre/post `migration list --linked` counts and run
 the hosted smoke query, then update the "Latest hosted migration" line in
 `AGENTS.md` in the next PR. Only that one line changes in `AGENTS.md`, so the
 file stays orientation rather than a changelog. The `VibeTrunk/supabase`
-catalogue is the migration history; `docs/DEPLOYMENTS.md` gets no new entries.
+catalogue is the migration history; there are no per-release records (ADR-140).
 
 Data-changing tier also requires, before the push:
 

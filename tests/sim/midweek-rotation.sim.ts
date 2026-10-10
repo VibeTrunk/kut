@@ -1,4 +1,4 @@
-import { writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { it } from "vitest";
 import { renderRotationReport, ROTATION_VARIANTS } from "./midweek-rotation-report";
@@ -8,8 +8,8 @@ import { DEFAULT_SIM, evaluateTargets, runSimulation } from "./midweek-world";
 // PR 7): every rotation variant over the same seasons, side by side. Run
 // through `node scripts/midweek/rotation.mjs`, which sets MIDWEEK_SIM_ROTATION;
 // a plain `npm run sim:midweek` skips it. MIDWEEK_SIM_SEASONS gives a quicker
-// exploratory run; docs/archive/MIDWEEK_ROTATION.md is written only for a full
-// run; an exploratory run prints it, or writes it to MIDWEEK_SIM_OUT.
+// exploratory run; sim-output/MIDWEEK_ROTATION.md (gitignored) is written only
+// for a full run; an exploratory run prints it, or writes it to MIDWEEK_SIM_OUT.
 it.skipIf(!process.env.MIDWEEK_SIM_ROTATION)("compares the archetype rotation variants", () => {
   const seasons = Number(process.env.MIDWEEK_SIM_SEASONS ?? DEFAULT_SIM.seasons);
   const started = Date.now();
@@ -24,10 +24,9 @@ it.skipIf(!process.env.MIDWEEK_SIM_ROTATION)("compares the archetype rotation va
   const seconds = (Date.now() - started) / 1000;
   const report = renderRotationReport(runs, seconds);
   if (seasons >= DEFAULT_SIM.seasons) {
-    writeFileSync(
-      path.resolve(import.meta.dirname, "../../docs/archive/MIDWEEK_ROTATION.md"),
-      report,
-    );
+    const dir = path.resolve(import.meta.dirname, "../../sim-output");
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(path.join(dir, "MIDWEEK_ROTATION.md"), report);
   } else if (process.env.MIDWEEK_SIM_OUT) {
     writeFileSync(process.env.MIDWEEK_SIM_OUT, report);
   } else {

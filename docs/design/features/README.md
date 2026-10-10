@@ -5,10 +5,10 @@
 - [Interactive gallery](http://127.0.0.1:4173/design/features/index.html) (local preview must be running)
 - [Gallery source](../../../design/features/index.html)
 - [Mobile overview](overview.png)
-- [Feature specs](../../archive/SPEC_NEXT_FEATURES.md)
 - [Rating balance review](../../RATING_BALANCE_REVIEW.md)
-- [Implementation plan](../../archive/IMPLEMENTATION_PLAN_NEXT_FEATURES.md)
-- [New-session prompt](../../archive/START_NEXT_FEATURES.md)
+- The feature specs, implementation plan and new-session prompt are at the git
+  tag `docs-archive-2026-10` (`docs/archive/SPEC_NEXT_FEATURES.md` and
+  friends; see `docs/README.md`).
 
 Filesystem HTML links may open source in your editor. Use the localhost link,
 which serves design artifacts from `test-results/design-preview`, or open the
@@ -30,30 +30,19 @@ Edit/Add goals actions require a reason and never impersonate form completion.
 
 ## Current screens
 
-| Screen | Mobile | Desktop |
-|---|---|---|
-| Wanted cards and availability | [Full](wanted-mobile.png) | [Render](wanted-desktop.png) |
-| Add wanted cards | [Picker](wanted-picker-mobile.png) | Centered dialog |
-| Available-copy selector | [Full](tradecards-mobile.png) | Unified into Trading preferences in the implementation |
-| How to complete a trade | [Dialog](trade-help-mobile.png) | Centered dialog |
-| Home reward prompt | [Full](home-mobile.png) | Existing Home structure |
-| Goals/kudos and +50 reward | [Full](report-mobile.png) | [Render](report-desktop.png) |
-| Teammate picker / Skip | [Picker](kudos-picker-mobile.png) | Centered dialog |
-| Submitted and rewarded | [Full](saved-mobile.png) | Narrow column |
-| Closed report | [Full](report-closed-mobile.png) | Same content |
-| Incomplete form | [Error](report-error-mobile.png) | Same content |
-| Chronicle results | [Full](recap-mobile.png) | Article + Form panel |
-| Admin attendance | [Full](attendance-mobile.png) | Narrow form |
-| Admin session reports | [Full](adminreports-mobile.png) | [Render](adminreports-desktop.png) |
-| Admin goal correction | [Dialog](admin-goals-mobile.png) | Centered dialog |
-| Corrected goals, unchanged rewards | [Full](adminreports-corrected-mobile.png) | Same content |
-| Original 175-coin pack design | [Full](packs-mobile.png) | [Render](packs-desktop.png) |
-| Original pack confirmation | [Dialog](pack-confirm-mobile.png) | Centered dialog |
-| Original 174-coin insufficient state | [State](pack-insufficient-mobile.png) | Same content |
-| Club Value | [Full](value-mobile.png) | [Render](value-desktop.png) |
-| Duplicate breakdown | [Full](copies-mobile.png) | Table + explanation |
-| Special scaffolding | [Full](editions-mobile.png) | [Render](editions-desktop.png) |
-| Empty wanted list | [State](wanted-empty-mobile.png) | Same content |
+One render per feature is kept. The other screens and states (pickers,
+dialogs, the viewport crops, the superseded matches/swap artboards) are at the
+git tag `docs-archive-2026-10`, under `docs/design/features/`.
+
+| Feature | Render |
+|---|---|
+| Wanted cards and availability, trade help, empty list | [Mobile](wanted-mobile.png) |
+| Goals/kudos report and the +50 reward, submitted and closed states | [Mobile](report-mobile.png) |
+| Chronicle results | [Mobile](recap-mobile.png) |
+| Admin session reports and goal correction | [Mobile](adminreports-mobile.png) |
+| Original 175-coin pack design (the price is now 250, ADR-136) | [Mobile](packs-mobile.png) |
+| Club Value and the duplicate breakdown | [Mobile](value-mobile.png) |
+| Special scaffolding | [Mobile](editions-mobile.png) |
 
 Former matches/swap artboards are superseded. Old prototype screen URLs resolve
 to Wanted. Supporting Market/Offers screens are contextual sketches of existing

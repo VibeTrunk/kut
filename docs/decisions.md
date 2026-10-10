@@ -4,15 +4,14 @@ Record an ADR only for a game, economy, schema or security rule, in about 20
 lines at most: context, decision, consequences. Newest at the bottom; numbering
 continues from ADR-142.
 
-ADR-001 to ADR-141 are in `docs/archive/decisions-2026.md`. Once S6 of the
-process reset deletes that file, read it with
-`git show docs-archive-2026-10:docs/archive/decisions-2026.md`. The two ADRs
-below are still in force, in their current form.
+ADR-001 to ADR-141 are at the git tag `docs-archive-2026-10`; read them with
+`git show docs-archive-2026-10:docs/archive/decisions-2026.md | rg "ADR-099"`.
+The two ADRs below are still in force, in their current form.
 
 ## ADR-140 — Process reset: merge to main deploys
 
 Date: 2026-10-09, extended 2026-10-10 by S4 (VibeTrunk/kut#212). The original
-text, with the transition rules S1–S3 ran under, is in the archive.
+text, with the transition rules S1–S3 ran under, is at the tag `docs-archive-2026-10`.
 
 - A merge to `main` deploys to production through Vercel's Git integration.
   PR validation is the release check: `merge-gate` and `scan`, with the branch
@@ -30,7 +29,7 @@ text, with the transition rules S1–S3 ran under, is in the archive.
 
 ## ADR-141 — Nightly encrypted kut backup in GitHub Actions, kut only
 
-Date: 2026-10-09 (S3 spike, VibeTrunk/kut#212). Full text in the archive.
+Date: 2026-10-09 (S3 spike, VibeTrunk/kut#212). Full text at the tag `docs-archive-2026-10`.
 
 - No read-only role can read the auth tables on hosted (`postgres` has no grant
   option on schema `auth`), so the backup covers schema `kut` only, like the old

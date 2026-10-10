@@ -9,7 +9,7 @@ import {
 } from "./midweek-world";
 
 /**
- * Renders docs/archive/MIDWEEK_ROTATION.md, the C0 harness report for the
+ * Renders sim-output/MIDWEEK_ROTATION.md (gitignored), the C0 harness report for the
  * weekly archetype rotation (MM 2.0, checkpoints Q8 and Q9). It is regenerated
  * by every full `node scripts/midweek/rotation.mjs`, so anything that should
  * survive a regeneration lives here, not in the file.
@@ -118,7 +118,7 @@ export function renderRotationReport(runs: RotationRun[], seconds: number): stri
   push("## The simulated club and the rotation");
   push("");
   push(
-    `- The tuning club (\`docs/archive/MIDWEEK_TUNING.md\`): ${o.world.rosterSize} Players, ${o.world.members} ` +
+    `- The tuning club (\`MIDWEEK_TUNING.md\`, from \`npm run sim:midweek\`): ${o.world.rosterSize} Players, ${o.world.members} ` +
       "members. Its seven specialists (two Goalkeepers, one each of Speedster, Finisher, Playmaker, " +
       "Defender, Tank) are the **claimed** Players: their members chose the archetype, and claiming ends " +
       `the rotation. The other ${o.world.rosterSize - 7} are unclaimed All-rounders, about 80% of the ` +

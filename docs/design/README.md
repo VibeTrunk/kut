@@ -11,7 +11,7 @@ are. It was approved by the owner on 2026-10-08 and built in PR
 **Groundmasters Special edition (2026-09-30):** five proposed card directions
 in [`../../design/groundmasters/README.md`](../../design/groundmasters/README.md).
 Not built and no direction chosen; the rules and open decisions are in
-`ROADMAP.md`, "Groundmasters — the first Special edition".
+issue #222.
 
 **Injury mode card (2026-09-23):** see
 [`injury-cast/README.md`](injury-cast/README.md) for the "plaster cast" that
@@ -28,28 +28,26 @@ Those are proposed, unbuilt screens; the references below describe the older
 album/Chronicle/history design that has already shipped.
 
 Rendered mockups for the three features specified in
-[`../archive/SPEC_ALBUM_CHRONICLE_GRAPH.md`](../archive/SPEC_ALBUM_CHRONICLE_GRAPH.md) and
-built per [`../archive/PLAN_ALBUM_CHRONICLE_GRAPH.md`](../archive/PLAN_ALBUM_CHRONICLE_GRAPH.md).
+`docs/archive/SPEC_ALBUM_CHRONICLE_GRAPH.md` and built per
+`docs/archive/PLAN_ALBUM_CHRONICLE_GRAPH.md`, both at the tag
+`docs-archive-2026-10` (see `docs/README.md`). One render per feature is kept
+here (desktop); the mobile ones are at the same tag.
 
 **These are the visual source of truth for the build.** Where the prose and a
 mockup disagree on layout, follow the mockup and note it; where they disagree
 on a *rule* (what data is shown, what is omitted, what a state does), the spec
 wins.
 
-Rendered at native size (desktop 1440px, mobile 390px) from the Claude Design
-canvas artboards. Regenerate by re-rendering the `.dc.html` artboards in
-`/design` at the sizes in `design/canvas.json`.
+Rendered at native size (desktop 1440px) from the Claude Design canvas
+artboards, which are archived at the same tag (`design/*.dc.html` and
+`design/canvas.json`).
 
 | File | Route | Spec | Look for |
 |---|---|---|---|
 | `main.png` | `/club/collection` desktop | §3 | The bound spread: two leaves, gutter, page headers, turn arrows, page index with per-page completion bars |
-| `album-mobile.png` | `/club/collection` mobile | §3 | One leaf, 2 columns × 5 rows, turn buttons naming their destination, same page numbers as desktop |
 | `chronicle-index.png` | `/chronicle` desktop | §4.5 | Masthead, latest issue as hero, back-issue run |
-| `chronicle-index-mobile.png` | `/chronicle` mobile | §4.5 | Same, stacked; tallies fold into one line per issue |
 | `chronicle.png` | `/chronicle/[week]` desktop | §4.3 | Masthead, standfirst, two matchday reports, two-column attendee lists, crossings |
-| `chronicle-mobile.png` | `/chronicle/[week]` mobile | §4.9 | Single-column attendee lists; crossing rows stack name/OVR over the tier move |
 | `graph.png` | `/players/[slug]` desktop | §2 | Tier bands behind the line, goal markers under the axis, and the one-point "first week" state study |
-| `graph-mobile.png` | `/players/[slug]` mobile | §2.6 | Bands run full width with labels inside; x labels thinned to first/middle/last |
 
 ## What the mockups are showing
 

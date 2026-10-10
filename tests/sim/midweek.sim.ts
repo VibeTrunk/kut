@@ -1,4 +1,4 @@
-import { writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { expect, it } from "vitest";
 import { DEFAULT_SIM, evaluateTargets, runSimulation } from "./midweek-world";
@@ -7,7 +7,7 @@ import { renderTuningReport } from "./midweek-report";
 // `npm run sim:midweek` — the full target table (BUILD_SPEC §44.12) over at
 // least 5,000 seasons, and the tuning sign-off artifact. Set
 // MIDWEEK_SIM_SEASONS for a quicker exploratory run; the report is written
-// only for a full run.
+// only for a full run, to the gitignored sim-output/MIDWEEK_TUNING.md.
 it("Midweek Madness hits every simulation target", () => {
   const seasons = Number(process.env.MIDWEEK_SIM_SEASONS ?? DEFAULT_SIM.seasons);
   const started = Date.now();
@@ -25,8 +25,9 @@ it("Midweek Madness hits every simulation target", () => {
   );
 
   if (seasons >= DEFAULT_SIM.seasons) {
-    const file = path.resolve(import.meta.dirname, "../../docs/archive/MIDWEEK_TUNING.md");
-    writeFileSync(file, renderTuningReport(stats, targets, seconds));
+    const dir = path.resolve(import.meta.dirname, "../../sim-output");
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(path.join(dir, "MIDWEEK_TUNING.md"), renderTuningReport(stats, targets, seconds));
   }
   expect(targets.filter((t) => !t.pass).map((t) => t.name)).toEqual([]);
 });

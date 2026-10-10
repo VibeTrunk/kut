@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Regenerates design/midweek/sample-tournament.{json,md}, an invented sample
+// Regenerates sim-output/midweek/sample-tournament.{json,md} (gitignored), an invented sample
 // tournament with rendered reports for the Midweek design pass. Run after an
 // engine or phrasebook change:
 //

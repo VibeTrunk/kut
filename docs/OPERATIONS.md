@@ -41,11 +41,11 @@ Always, both tiers:
    is not required.
 5. Explicit sign-off, then the real push from `VibeTrunk/supabase` only.
 
-After the push, record it: a new entry at the top of `docs/DEPLOYMENTS.md`
-(tier, backup id, pre/post `migration list --linked` counts, the hosted smoke
-row, rollback) and the "Latest hosted migration" line in `AGENTS.md`. Only
-that one line changes in `AGENTS.md`, so the file stays orientation rather
-than a changelog.
+After the push, check the pre/post `migration list --linked` counts and run
+the hosted smoke query, then update the "Latest hosted migration" line in
+`AGENTS.md` in the next PR. Only that one line changes in `AGENTS.md`, so the
+file stays orientation rather than a changelog. The `VibeTrunk/supabase`
+catalogue is the migration history; `docs/DEPLOYMENTS.md` gets no new entries.
 
 Data-changing tier also requires, before the push:
 
@@ -69,41 +69,21 @@ changes shape significantly.
 Git migrations are necessary but are **not** a backup of user accounts,
 wallets, cards, sessions, or market history.
 
-## Production evidence gate
+## Releases
 
-PR checks and release evidence are now mechanical; the detailed contract is
-`docs/PRODUCTION_SAFETY.md`. The always-present `merge-gate` accepts skipped
-expensive jobs only for a docs-only pull request; every main push runs full CI
-(ADR-126). Configure it and `scan` as required
-branch checks after the workflow has landed and passed once; changing branch
-protection is a separate external action. Those bare job names are the contexts
-GitHub actually reports — `verify / merge-gate` would never report and would
-block every PR.
+A merge to `main` deploys to production; `docs/RELEASING.md` has the flow, the
+read-only check and rollback (ADR-140). Branch protection requires the
+`merge-gate` and `scan` checks under those bare job names: `verify / merge-gate`
+would never report and would block every PR. The always-present `merge-gate`
+lets a docs-only pull request skip the expensive jobs; every main push runs full
+CI.
 
-A documentation-only merge needs no release gate or deployment unless the
-owner asks for that release (ADR-124, amended 2026-10-05). Production may lag
-main by those commits; say so explicitly in the PR and `DEPLOYMENTS.md`.
-Executable/configuration changes are not docs-only, and full main CI remains
-required. Deployment records accompany the next PR for other work, never a
-standalone record PR.
-
-A release candidate is one exact commit SHA. From the ordinary, non-linked
-checkout with real `node_modules`, clean at that commit (ADR-128), run:
+The catalogue parity check compares this repo's migrations with a
+`VibeTrunk/supabase` checkout:
 
 ```powershell
-powershell -NoProfile -File scripts/release/request-production-gate.ps1 `
-  -CandidateSha <40-character-sha>
+powershell -NoProfile -File scripts/test-catalogue-parity.ps1 -CentralRepository ..\supabase
 ```
-
-The gate reads rather than changes GitHub, checks catalogue and backup
-evidence, and runs authenticated mobile E2E against the local stack. It does
-not deploy or approve a release. Release approval has a separate interactive
-command, and even that records `deployment_authorized = false`. Except for the
-docs-only exception, the owner's merge of a reviewed PR authorizes that exact
-SHA's Vercel release: pass the full gate, record approval, assert evidence,
-deploy and verify the production binding without asking again. The gate and
-approval artifacts do not grant that authorization. Hosted Supabase migrations,
-functions, secrets and protection changes still need separate authorization.
 
 ## Preview deployment preflight
 

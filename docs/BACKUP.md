@@ -13,7 +13,7 @@ trade history.
 
 | Data | Covered by | Notes |
 | --- | --- | --- |
-| `kut` schema DDL + all `kut` table data | The nightly GitHub backup (below), and `scripts/backup-kut-hosted.ps1` | ADR-141. The old local script stays until S4 of the process reset retires it after the owner's drill. |
+| `kut` schema DDL + all `kut` table data | The nightly GitHub backup (below), and `scripts/backup-kut-hosted.ps1` | ADR-141. The old local script stays until a follow-up to S4 of the process reset retires it, after the owner's drill and a scheduled run. |
 | Account identities (`auth.users`) | Supabase platform backup / dashboard export | Supabase-managed schema. Take a dashboard backup before any schema change (already in `docs/OPERATIONS.md`). A `kut`-only restore needs FK triggers disabled because `kut.profiles` references `auth.users` — see the drill below. |
 | Card photos (`player-photos` bucket) | Not yet | Storage objects are not in the SQL dump. Low volume, low stakes for now; note it as an open gap. |
 
@@ -103,8 +103,10 @@ From the repo root, with the Supabase CLI logged in and the project linked
 ```
 
 By default the workers retrieve `backup-encryption-v1` and `hosted-db-v1`
-from the current Windows user's DPAPI store. Import `.env.local` only through
-the explicit bootstrap command in `docs/PRODUCTION_SAFETY.md`. For a manual
+from the current Windows user's DPAPI store. Import them from `.env.local` only
+once, explicitly, with
+`node scripts/bootstrap-kut-credentials.mjs --from-env-local --confirm-import`
+(`--replace` only for an intentional replacement). For a manual
 emergency run, pass `-Interactive`; encryption and cold verification then ask
 for the passphrase separately.
 
@@ -120,7 +122,7 @@ The script:
 5. Atomically publishes the candidate only after the cold check passes. A
    failure removes only that pending candidate; existing backups are untouched.
 6. Writes nonsecret locator/hash evidence to the gitignored backup log and
-   `latest-backup-evidence.json` for the production gate.
+   `latest-backup-evidence.json` (read by the release gate until S4 removed it).
 
 The cipher remains AES-256-CBC + HMAC-SHA256 with PBKDF2 600k. `-OutDir`
 must be outside the repository. There is no skip-verification switch.

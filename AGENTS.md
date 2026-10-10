@@ -25,12 +25,14 @@ beyond the shared Supabase project.
 - This is partly a deliberate learning project in production-grade practice:
   favour clear structure and record decisions in markdown.
 - Latest hosted migration: `20261019000000_basic_pack_price_250.sql`
-  (ADR-136). Hosted history is in `docs/DEPLOYMENTS.md`.
+  (ADR-136). The `VibeTrunk/supabase` catalogue is the hosted history; older
+  release records are in `docs/DEPLOYMENTS.md`.
 
 ## Reading: grep on demand
 
-Do not read the big docs in full. `docs/BUILD_SPEC.md`, `docs/decisions.md`,
-`docs/PROGRESS.md` and `docs/DEPLOYMENTS.md` total over a megabyte. Grep for
+Do not read the big docs in full. `docs/BUILD_SPEC.md`,
+`docs/archive/decisions-2026.md` (ADR-001 to ADR-141), `docs/PROGRESS.md` and
+`docs/DEPLOYMENTS.md` total over a megabyte. Grep for
 the area you are changing (a Part L rule, an ADR number or title, a function
 name) and read only those sections. `docs/README.md` is the map.
 
@@ -85,19 +87,14 @@ silently "improve" a formula.
   main, preserve unpublished work in a named stash and a verified private
   archive, and bring the checkout onto current main without resets or broad
   discards. Keep generated previews private.
-- Deployment records go into the next PR for other work, never a standalone
-  record PR (until S4 removes them).
 
 ## Release
 
-The current gate in `docs/PRODUCTION_SAFETY.md` remains in force until S4,
-except for ADR-140 CI-only merges. Game merges are frozen until S4. Automatic
-main deployment is held (`git.deploymentEnabled = false` in `vercel.json`).
-Check Vercel access early with the read-only checker in that doc: a green
-preview or missing deployment record does not certify the commit serving
-production. Release gates run only from the ordinary, non-linked checkout with
-real `node_modules` (ADR-128). Hosted application, function deployment and
-other external mutations need their own written instruction.
+A merge to `main` deploys to production through Vercel's Git integration
+(ADR-140); `docs/RELEASING.md` has the flow, the read-only check afterwards
+and rollback. There is no local gate and no deployment record. The merge
+authorizes nothing else: migrations, function deployments, secrets, branch
+protection and other hosted changes need their own written instruction.
 
 ## Migrations and database
 
@@ -159,25 +156,15 @@ follows the same safety scaffold as every VibeTrunk repo (`.claude/`, `.codex/`,
 This block is generated from `policy/PRODUCTION_INVARIANTS.md`. Run
 `npm run policy:sync` after changing the source; CI rejects drift.
 
+- Every game/economy invariant in `docs/BUILD_SPEC.md` Part L must stay true.
 - Never output secrets or reversible encodings of secrets.
-- One migration- or invariant-bearing feature is allowed per PR or independently reviewable change slice.
-- Never deploy when a required release gate has not run successfully for the exact candidate SHA, except as ADR-140 states for CI-only merges and the one-off merge of its gate-removal PR.
-- Never declare an encrypted backup successful unless its credential is durably retrievable and an independent recovery check passes.
-- The owner's merge of a reviewed PR into main authorizes release and Vercel production deployment of that exact resulting SHA, conditional on the full production gate passing first, except for documentation-only and CI-only merges. For any other merge, the agent runs the gate, records approval, asserts evidence and deploys without another confirmation. This does not authorize migration application, Supabase function deployment, branch-protection changes, secret changes or other external mutations.
-- A merge changing only documentation needs no release gate or deployment unless the owner asks for that release. A CI-only merge (ADR-140) is treated the same way: its complete diff touches only `.github/**`, `tests/**`, `playwright*.config.ts`, `scripts/ci/**` or documentation. Production may lag main by such commits; state that explicitly in the PR and `docs/DEPLOYMENTS.md`. Review the complete diff: any other executable or configuration change, including `package.json`, the lockfile, `src/**`, `supabase/**`, `next.config.ts` and `vercel.json`, is neither documentation-only nor CI-only. Full main CI remains required under ADR-126; any requested deployment still needs the full gate for its exact SHA.
-- One-off exception (ADR-140): the owner's merge of the process-reset PR that deletes the release gate authorizes Vercel's Git integration to deploy that exact SHA without the old gate. Until that merge, an urgent game fix uses the old gate from the ordinary checkout `C:\Users\mfvan\dev\kut` only.
-- Deployment records accompany the next PR opened for other work, never a standalone record PR. Release gates run only from the ordinary, non-linked checkout with real `node_modules` (ADR-128); the exact candidate SHA and clean checkout are separate requirements.
-- Hosted Supabase migrations are applied only from `VibeTrunk/supabase`, never from this repository. Existing migration files are immutable; a change may add at most one migration and must include a database test or reviewed machine-readable exemption.
-- A production candidate is one exact 40-character commit SHA. Every gate artifact and external check must name that SHA; skipped, stale, cancelled, missing, or mismatched evidence fails closed.
-- Production-sensitive work, including the release gate, runs in the owner's ordinary agent session. There is no production launcher or session receipt, and the gate does not certify which model ran it (ADR-108).
-- Committing, pushing, and deploying are per-change authorization decisions, never standing permissions. No agent rule set auto-allows `git commit`, `git push`, or a Supabase function deployment.
 - Database-backed test fixtures create and delete real rows and users. They refuse any non-loopback target unless an operator sets the explicit acknowledgement variable, which CI and every repository script leave unset.
-- Production credentials are retrieved by stable locator from the Windows DPAPI store under `%LOCALAPPDATA%\VibeTrunk\kut\credentials`. `.env.local` is an explicit, interactive bootstrap source only and is never a runtime fallback.
-- Backup plaintext and database passwords never appear in process arguments or durable logs. Encryption and cold verification run in separate child processes that independently retrieve credentials.
-- A backup becomes final only after a separate-process decrypt produces the expected plaintext SHA-256. Failure removes only the new pending candidate and never overwrites or bulk-deletes existing backups.
-- Rekeying always writes a new staged candidate. It verifies old and new plaintext hashes in separate processes and never overwrites the source backup.
-- The release gate is fail-closed and does not deploy. It requires the merge gate, secret scan, dependency scan, database and concurrency suites, authenticated mobile E2E, finalizer readiness, migration/catalogue parity, and a cold-verified backup.
-- Every game/economy invariant in `docs/BUILD_SPEC.md` Part L remains part of the canonical product regression checklist and must stay true.
+- Hosted Supabase migrations are applied only from `VibeTrunk/supabase`, never from this repository. Existing migration files are immutable. A PR adds at most one migration, with a database test or a reviewed machine-readable exemption.
+- New code works against the old schema until its migration is live: a tolerant read, a flag, or a catalogue push ready to follow the merge.
+- Never commit or push without the owner's authorization for that change; no agent rule set auto-allows `git commit` or `git push`. A merge to `main` deploys to production (ADR-140). It authorizes nothing else: migrations, function deployments, secrets, branch protection and other hosted changes each need their own explicit yes.
+- The backup route never holds write or migration rights, and the `postgres` credential never goes into GitHub (ADR-141).
+- Never declare a backup successful unless its decryption key is durably retrievable and an independent restore check passes.
+- Until the old local backup is retired: its credentials come from the Windows DPAPI store under `%LOCALAPPDATA%\VibeTrunk\kut\credentials` (`.env.local` is a one-off bootstrap source, never a runtime fallback); backup plaintext and database passwords never appear in process arguments or durable logs; and a backup or rekey becomes final only after a separate-process decrypt produces the expected SHA-256, never overwriting an existing backup.
 <!-- END:KUT-PRODUCTION-INVARIANTS -->
 
 <!-- BEGIN:nextjs-agent-rules -->

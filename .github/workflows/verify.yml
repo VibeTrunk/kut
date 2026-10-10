@@ -65,8 +65,8 @@ jobs:
 
   # The signed-in suite on a production build (`next build` + `next start`)
   # against this runner's local stack: the Pixel 7 project in full, and the
-  # @narrow tests at 320 px. Once it has proven itself, it replaces the local
-  # release gate's browser run (S4 of the process reset, #212).
+  # @narrow tests at 320 px. It replaced the local release gate's browser run
+  # (ADR-140).
   e2e-authenticated:
     needs: changes
     if: needs.changes.outputs.docs_only != 'true'

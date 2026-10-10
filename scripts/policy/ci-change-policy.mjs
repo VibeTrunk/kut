@@ -1,6 +1,5 @@
-// A docs-only shortcut is a pull-request convenience only. A main push names
-// the exact SHA an owner merge authorizes for release (ADR-124), and the gate
-// refuses skipped jobs, so every main SHA must earn complete evidence (ADR-126).
+// A docs-only shortcut is a pull-request convenience only. Every main push
+// runs full CI (ADR-126), so each deployed SHA has a complete run on record.
 export function isDocsOnlyChange({ event, changed }) {
   if (event !== "pull_request") return false;
   return (

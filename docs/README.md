@@ -5,6 +5,7 @@ need for the area you are changing.
 
 | Doc                                         | What it is                                                                         |
 | ------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `PRODUCT.md`                                | Current behaviour per area: the rules, their Part L items, where they live. Start here. |
 | `BUILD_SPEC.md`                             | The canonical spec. Part L holds the invariants that must stay true.               |
 | `decisions.md`                              | Current ADRs (ADR-140 onward). ADR-001 to 141: `archive/decisions-2026.md`.        |
 | `PROGRESS.md`                               | Dated delivery log, one entry per shipped slice.                                   |

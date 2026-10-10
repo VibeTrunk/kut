@@ -90,8 +90,8 @@ Ground rules for every area:
 - **Listings.** Buy-now only, 24 or 72 hours (ADR-072). The price must lie
   within `get_listing_bounds`:
   - minimum `max(1, floor(0.8 × discard))`;
-  - maximum `max(100, ceil(5 × reference value))`.
-  A listed card stays owned but cannot be discarded, re-listed or offered.
+  - maximum `max(100, ceil(5 × reference value))`;
+  - a listed card stays owned but cannot be discarded, re-listed or offered.
 - **Buying.** `buy_listing` is one locked transaction: debit the buyer, credit
   the seller minus 5%, move the card, write `market_sales`, and send both
   parties a message (ADR-019).
@@ -221,7 +221,7 @@ Ground rules for every area:
   - a category is recognised when at least two distinct teammates nominated
     it, and only once at least three reporters gave kudos;
   - results and rating snapshots are versioned and the ratings rebuilt;
-  - each attendee gets `session_results`;
+  - each linked attendee gets `session_results`;
   - each recognised Player gets `kudos_awarded`, which names the categories
     and the OVR change, never the nominators (ADR-069).
 - Ballots and per-player provisional values stay private until then.

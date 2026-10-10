@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { it } from "vitest";
 import { ARCHETYPE_LABELS } from "@/game/archetypes";
@@ -14,7 +14,7 @@ import { reportInput, type Directory } from "@/lib/midweek/report/from-engine";
 import { rateNight, type NightMatch } from "@/lib/midweek/report/ratings";
 import { generateWorld } from "./midweek-world";
 
-// Writes design/midweek/sample-ratings.json, the input for the ratings mock
+// Writes sim-output/midweek/sample-ratings.json (gitignored), the input for the ratings mock
 // (ADR-117): every member's five with its night rating, each match's ratings
 // and the line under each card. It replays the sample world of
 // tests/sim/midweek-sample.ts on today's engine; sample-tournament.json keeps
@@ -106,8 +106,7 @@ it.skipIf(!process.env.MIDWEEK_WRITE_RATINGS)("writes the Midweek ratings sample
     champion: directory.manager(tournament.championUserId),
     members,
   };
-  writeFileSync(
-    path.resolve(import.meta.dirname, "../../design/midweek/sample-ratings.json"),
-    `${JSON.stringify(sample, null, 2)}\n`,
-  );
+  const dir = path.resolve(import.meta.dirname, "../../sim-output/midweek");
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(path.join(dir, "sample-ratings.json"), `${JSON.stringify(sample, null, 2)}\n`);
 });

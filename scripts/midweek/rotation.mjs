@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Regenerates docs/archive/MIDWEEK_ROTATION.md, the C0 harness report on the
+// Regenerates sim-output/MIDWEEK_ROTATION.md (gitignored), the C0 harness report on the
 // weekly rotation of unclaimed Players' archetypes (MM 2.0, Q8 and Q9): every
 // rotation variant over the same simulated seasons. About half an hour:
 //

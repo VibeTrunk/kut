@@ -2,8 +2,17 @@
 
 What the game does today, per area, and where each rule lives. This is the first
 stop before changing behaviour. Read only the section you need. It replaces
-reading `BUILD_SPEC.md`, `ROADMAP.md` and the ADR log for orientation. Those
-stay the detail and the history; grep them for a section number or an ADR.
+reading the old build spec, roadmap and ADR log for orientation. Those were
+archived at the git tag `docs-archive-2026-10`; read a `BUILD_SPEC §N` or an
+older ADR (ADR-001 to ADR-141) from there:
+
+```powershell
+git show docs-archive-2026-10:docs/BUILD_SPEC.md | rg "^## 44\."
+git show docs-archive-2026-10:docs/archive/decisions-2026.md | rg "ADR-099"
+```
+
+Newer ADRs are in `docs/decisions.md`. Open work is in GitHub issues
+(`gh issue list`).
 
 Ground rules for every area:
 
@@ -13,7 +22,7 @@ Ground rules for every area:
   or `market_listings`. `src/game/` holds constants and display helpers only.
   ADR-064 deleted the TypeScript mirrors of the rating and economy formulas.
   The one TS twin with golden-vector parity is the Midweek engine.
-- **Part L** (`BUILD_SPEC.md` §162, items 1–28) lists the invariants. Each area
+- **Part L** (`docs/INVARIANTS.md`, items 1–28) lists the invariants. Each area
   below names the items that apply. Changing one needs an ADR, a spec change and
   its own PR.
 - **Values** (§145, `src/game/config.ts`, `ECONOMY` in `src/game/economy.ts`,
@@ -82,7 +91,7 @@ Ground rules for every area:
   (ADR-041); v3 added the duplicate discount.
 - "Untradeable" starter cards were retired (ADR-033). Every card is tradeable
   and discardable.
-- Ideas, not built: silver and gold packs (ROADMAP).
+- Ideas, not built: silver and gold packs (issue #223).
 
 ## Market and trades
 
@@ -333,8 +342,8 @@ Part L item).
 - Tests: `special_editions.test.sql`, `special_snapshot_tiers.test.sql`.
 
 **Next (favored, not decided).** Groundmasters, a one-off Special for the
-Players who helped renew the pitch agreement. The ROADMAP section holds the
-proposal and the delivery order:
+Players who helped renew the pitch agreement. Issue #222 holds the proposal
+and the delivery order:
 1. an ADR and spec update;
 2. the card design;
 3. the issuance migration;

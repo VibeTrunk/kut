@@ -6,9 +6,9 @@ never talks to Postgres directly — economically valuable operations (pack
 opening, discard, market transactions, wallet changes, starter grants,
 attendance rewards) run through tightly validated, server-authoritative
 database functions or Edge Functions, never direct client writes. See
-[`CLAUDE.md`](CLAUDE.md) and [`docs/BUILD_SPEC.md`](docs/BUILD_SPEC.md) for
-the full backend model and the invariants (Part L of the build spec) this
-must never violate.
+[`CLAUDE.md`](CLAUDE.md) and [`docs/INVARIANTS.md`](docs/INVARIANTS.md) for
+the invariants (Part L) this must never violate, and
+[`docs/PRODUCT.md`](docs/PRODUCT.md) for the backend model.
 
 If you notice something suspicious (an RLS gap, a CSP bypass, a vulnerable
 dependency, a leaked credential), report it to m.f.vanoostrom@gmail.com

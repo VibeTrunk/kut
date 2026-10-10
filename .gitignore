@@ -57,12 +57,15 @@ supabase/.temp
 supabase/snippets/
 
 # Claude Design canvas: the seeded editor payload is a ~3 MB generated artifact.
-# The artboard sources (design/*.dc.html, design/canvas.json) are kept so the
-# docs/design/ PNGs can be regenerated.
+# The artboard sources were archived at the tag docs-archive-2026-10 (S6).
 design/kut-feature-designs.html
 
+# Output of the Midweek simulation reports and sample generators
+# (tests/sim, scripts/midweek). Local only; commit nothing from here.
+/sim-output/
+
 # Design verification renders. These are point-in-time screenshots of a
-# build, regenerable from design/*.dc.html and design/features/, and they are
+# build, regenerable from design/features/, and they are
 # stale within a week — keep them out of history from here on (ADR-064).
 # The committed ones predate this rule and are left alone; rewriting history
 # to purge them is not worth it on a repo with open branches.

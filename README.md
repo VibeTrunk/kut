@@ -10,8 +10,8 @@ schema `kut` and the Vercel project keep the old name; the old
 
 Start with [`AGENTS.md`](AGENTS.md) for project context, then
 [`docs/README.md`](docs/README.md) — the documentation map: what each document
-is for. Grep `BUILD_SPEC.md`, `decisions.md` and the other docs for the area
-you are changing instead of reading them in full.
+is for. Start from `docs/PRODUCT.md` and grep the other docs for the area you
+are changing instead of reading them in full.
 
 ## Status
 
@@ -30,7 +30,7 @@ migrations are catalogued and deployed only from the central
 
 KUT now has a Next.js application, local Supabase configuration, Vitest,
 Playwright, database smoke testing, and CI. Read [AGENTS.md](AGENTS.md) and the
-relevant sections of [docs/BUILD_SPEC.md](docs/BUILD_SPEC.md) before
+relevant section of [docs/PRODUCT.md](docs/PRODUCT.md) before
 implementation work.
 
 ## Local development
@@ -148,9 +148,8 @@ migration runbook (shared-migration authority, the risk-tiered hosted-migration
 checklist, preview-deploy preflight); [docs/BACKUP.md](docs/BACKUP.md) is the
 backup / restore runbook; [docs/SECURITY_REVIEW.md](docs/SECURITY_REVIEW.md)
 records the reviewed security boundaries. None of these authorize a hosted
-Supabase migration or Vercel deployment on their own. The completed MVP
-hardening plan is archived in
-[docs/archive/](docs/archive/MVP_HARDENING_PLAN.md).
+Supabase migration or Vercel deployment on their own. Older plans and the build
+spec are archived at the git tag `docs-archive-2026-10`.
 
 ## Environment
 
@@ -229,6 +228,6 @@ their own password through this tool.
 The player-facing walkthrough — attendance rewards, Live Ratings, rarity,
 cards, packs, discard, the transfer market, Club Value, trade offers, and the
 message inbox — is the in-app **How KUT works** page (`/how-it-works`). The
-authoritative rules are `docs/BUILD_SPEC.md` Parts IV–XIII; canonical numbers
-(reward amounts, pack price, market tax) are `BUILD_SPEC.md` Part 145 and
-`src/game/economy.ts`. `docs/PROGRESS.md` is the dated build history.
+current rules are in [docs/PRODUCT.md](docs/PRODUCT.md); canonical numbers
+(reward amounts, pack price, market tax) are in `src/game/economy.ts` and the
+latest migration. Open work is in GitHub issues.

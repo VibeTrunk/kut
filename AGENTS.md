@@ -26,22 +26,28 @@ beyond the shared Supabase project.
   favour clear structure and record decisions in markdown.
 - Latest hosted migration: `20261019000000_basic_pack_price_250.sql`
   (ADR-136). The `VibeTrunk/supabase` catalogue is the hosted history; older
-  release records are in `docs/DEPLOYMENTS.md`.
+  release records are at the tag `docs-archive-2026-10`.
 
 ## Reading: grep on demand
 
-Do not read the big docs in full. `docs/BUILD_SPEC.md`,
-`docs/archive/decisions-2026.md` (ADR-001 to ADR-141), `docs/PROGRESS.md` and
-`docs/DEPLOYMENTS.md` total over a megabyte. Grep for
-the area you are changing (a Part L rule, an ADR number or title, a function
-name) and read only those sections. `docs/README.md` is the map, and
-`docs/PRODUCT.md` says per area what the game does now and where it lives.
+Start from `docs/PRODUCT.md`: per area, what the game does now and where it
+lives. `docs/README.md` is the map. The old build spec, delivery log, roadmap,
+bug register and ADR-001 to ADR-141 (over a megabyte) were archived at the git
+tag `docs-archive-2026-10`. Do not read them in full; grep the one you need:
 
-The build spec is deliberately prescriptive: security and data integrity win
-over convenience, and the Part L invariants must never be violated. Changing a
-game rule, database invariant, public API or acceptance criterion means
-updating the spec or recording the deviation in `docs/decisions.md`. Never
-silently "improve" a formula.
+```powershell
+git show docs-archive-2026-10:docs/BUILD_SPEC.md | rg "^## 44\."
+git show docs-archive-2026-10:docs/archive/decisions-2026.md | rg "ADR-099"
+```
+
+A `BUILD_SPEC §N` or old `ADR-NNN` in the code or docs resolves that way. Open
+work is in GitHub issues (`gh issue list`; labels bug, idea, next, ops).
+
+The design is deliberately prescriptive: security and data integrity win over
+convenience, and the Part L invariants in `docs/INVARIANTS.md` must never be
+violated. Changing a game rule, database invariant, public API or acceptance
+criterion means updating `docs/PRODUCT.md` and recording the deviation in
+`docs/decisions.md`. Never silently "improve" a formula.
 
 ## Commands
 
@@ -78,7 +84,7 @@ silently "improve" a formula.
   on a frontend branch. For a genuinely dependent stack, merge updated
   `origin/main` into the child after its base is squash-merged. Never
   force-push to repair it, and merge `main` into an already pushed PR branch.
-- Batch freely: docs, `KNOWN_BUGS.md` registrations, independent small UI
+- Batch freely: docs, bug-issue filings, independent small UI
   fixes, chores. Never batch anything carrying a `supabase/migrations/*.sql`,
   or any change to a Part L invariant or RPC contract: one such change per PR.
   Squash-merge makes a PR exactly one commit, so batching spends revert and
@@ -146,8 +152,8 @@ protection and other hosted changes need their own written instruction.
 
 ## Documentation map
 
-See `docs/README.md` for what each doc is for. Forward-looking ideas belong in
-`docs/ROADMAP.md` (ADR-045), open defects in `docs/KNOWN_BUGS.md`. This repo
+See `docs/README.md` for what each doc is for. Forward-looking ideas and open
+defects are GitHub issues (labels idea, next, bug), not files. This repo
 follows the same safety scaffold as every VibeTrunk repo (`.claude/`, `.codex/`,
 `AGENTS.md`, gitleaks CI).
 
@@ -157,7 +163,7 @@ follows the same safety scaffold as every VibeTrunk repo (`.claude/`, `.codex/`,
 This block is generated from `policy/PRODUCTION_INVARIANTS.md`. Run
 `npm run policy:sync` after changing the source; CI rejects drift.
 
-- Every game/economy invariant in `docs/BUILD_SPEC.md` Part L must stay true.
+- Every game/economy invariant in `docs/INVARIANTS.md` (Part L) must stay true.
 - Never output secrets or reversible encodings of secrets.
 - Database-backed test fixtures create and delete real rows and users. They refuse any non-loopback target unless an operator sets the explicit acknowledgement variable, which CI and every repository script leave unset.
 - Hosted Supabase migrations are applied only from `VibeTrunk/supabase`, never from this repository. Existing migration files are immutable. A PR adds at most one migration, with a database test or a reviewed machine-readable exemption.

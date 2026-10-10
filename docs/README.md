@@ -3,22 +3,27 @@
 Agents do not read these in full. Start from `AGENTS.md` and grep the doc you
 need for the area you are changing.
 
-| Doc                                         | What it is                                                                         |
-| ------------------------------------------- | ---------------------------------------------------------------------------------- |
-| `PRODUCT.md`                                | Current behaviour per area: the rules, their Part L items, where they live. Start here. |
-| `BUILD_SPEC.md`                             | The canonical spec. Part L holds the invariants that must stay true.               |
-| `decisions.md`                              | Current ADRs (ADR-140 onward). ADR-001 to 141: `archive/decisions-2026.md`.        |
-| `PROGRESS.md`                               | Dated delivery log, one entry per shipped slice.                                   |
-| `ROADMAP.md`                                | Everything not yet built or declined, each with a status.                          |
-| `KNOWN_BUGS.md`                             | Open and fixed defects as `KB-NNN` rows.                                           |
-| `DEPLOYMENTS.md`                            | Release and migration log up to 2026-10-10; no new entries (ADR-140).              |
-| `RELEASING.md`                              | Merge-to-deploy flow, the check afterwards, and rollback (ADR-140).                |
-| `OPERATIONS.md`, `BACKUP.md`                | Runbooks: hosted migrations (ADR-032), alpha ops, encrypted backups and restore.   |
-| `CLEANUP.md`                                | Owner-approved file removal and the guarded worktree workflow (ADR-135).           |
-| `LAUNCH_PLAN.md`, `SECURITY_REVIEW.md`      | Go-live checklist and the MVP-era security review. References, not runbooks.       |
-| `TESTER_FEEDBACK_BATCHES.md`                | Tester feedback ledger and what each item became.                                  |
-| `RATING_BALANCE_REVIEW.md`, `BUG_FIX_PLAN.md` | Point-in-time analyses behind rating and bug-fix decisions.                      |
-| `design/`, `session-prompts/`, `archive/`   | Rendered mockups, bounded session prompts and handovers, superseded documents.     |
+| Doc                                           | What it is                                                                                   |
+| --------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `PRODUCT.md`                                  | Current behaviour per area: the rules, their Part L items, where they live. Start here.       |
+| `INVARIANTS.md`                               | Part L: the 28 invariants that must never be violated.                                        |
+| `decisions.md`                                | Current ADRs (ADR-140 onward).                                                                |
+| `RELEASING.md`                                | Merge-to-deploy flow, the check afterwards, and rollback (ADR-140).                           |
+| `OPERATIONS.md`, `BACKUP.md`                  | Runbooks: hosted migrations (ADR-032), alpha ops, encrypted backups and restore.              |
+| `CLEANUP.md`                                  | Owner-approved file removal and the guarded worktree workflow (ADR-135).                      |
+| `SECURITY_REVIEW.md`                          | The MVP-era security review. A reference, not a runbook.                                      |
+| `RATING_BALANCE_REVIEW.md`                    | Point-in-time analysis behind the ADR-063 rating balance.                                     |
+| `design/`, and `../design/README.md`          | Rendered mockups and the design packages' decisions.                                          |
+
+**Archive.** The build spec, delivery log, release log, roadmap, bug register,
+ADR-001 to ADR-141, the old plans and session prompts, and the design canvas
+sources are at the git tag `docs-archive-2026-10`. Read one with
+`git show docs-archive-2026-10:<path>`, for example
+`git show docs-archive-2026-10:docs/BUILD_SPEC.md`. A `BUILD_SPEC §N` or an
+old `ADR-NNN` mentioned anywhere resolves there.
+
+**Open work** (ideas, defects, operations) is GitHub issues, with the labels
+`bug`, `idea`, `next` and `ops`. Process-reset state is VibeTrunk/kut#212.
 
 Root docs: `AGENTS.md` (canonical agent instructions), `CLAUDE.md` (imports
 it), `README.md` (intro and local development), `SECURITY.md` (disclosure).

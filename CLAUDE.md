@@ -17,7 +17,7 @@
 This block is generated from `policy/PRODUCTION_INVARIANTS.md`. Run
 `npm run policy:sync` after changing the source; CI rejects drift.
 
-- Every game/economy invariant in `docs/BUILD_SPEC.md` Part L must stay true.
+- Every game/economy invariant in `docs/INVARIANTS.md` (Part L) must stay true.
 - Never output secrets or reversible encodings of secrets.
 - Database-backed test fixtures create and delete real rows and users. They refuse any non-loopback target unless an operator sets the explicit acknowledgement variable, which CI and every repository script leave unset.
 - Hosted Supabase migrations are applied only from `VibeTrunk/supabase`, never from this repository. Existing migration files are immutable. A PR adds at most one migration, with a database test or a reviewed machine-readable exemption.

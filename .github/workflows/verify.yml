@@ -115,6 +115,25 @@ jobs:
           BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
         run: node scripts/policy/check-migration-policy.mjs --base "$BASE_SHA"
 
+  # Every migration here must already be in the VibeTrunk/supabase catalogue,
+  # byte-identical (ADR-144). A new migration stays red until its catalogue PR
+  # is merged; then rerun this job (docs/RELEASING.md).
+  catalogue-parity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7
+        with:
+          repository: VibeTrunk/supabase
+          ref: main
+          path: .catalogue
+          sparse-checkout: supabase/migrations
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - run: node scripts/policy/check-catalogue-parity.mjs --catalogue .catalogue
+
   security:
     needs: changes
     if: needs.changes.outputs.docs_only != 'true'
@@ -134,7 +153,7 @@ jobs:
   # and is deliberately not performed by repository code.
   merge-gate:
     if: always()
-    needs: [changes, fast, e2e, e2e-authenticated, database, migrations, security]
+    needs: [changes, fast, e2e, e2e-authenticated, database, migrations, catalogue-parity, security]
     runs-on: ubuntu-latest
     steps:
       - name: Require complete evidence for this change class
@@ -145,11 +164,13 @@ jobs:
           E2E_AUTHENTICATED: ${{ needs.e2e-authenticated.result }}
           DATABASE: ${{ needs.database.result }}
           MIGRATIONS: ${{ needs.migrations.result }}
+          CATALOGUE_PARITY: ${{ needs.catalogue-parity.result }}
           SECURITY: ${{ needs.security.result }}
         run: |
           set -euo pipefail
           test "$FAST" = success
           test "$MIGRATIONS" = success
+          test "$CATALOGUE_PARITY" = success
           if [ "$DOCS_ONLY" = true ]; then
             test "$E2E" = skipped
             test "$E2E_AUTHENTICATED" = skipped

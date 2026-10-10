@@ -8,7 +8,8 @@ operations; following it does **not** itself authorize a hosted schema change.
 
 The shared Supabase project has one global migration ledger. Hosted schema
 changes must be catalogued, reviewed, backed up, dry-run, and applied only
-from [`VibeTrunk/supabase`](https://github.com/VibeTrunk/supabase). KUT keeps
+by the `apply-migrations` workflow in
+[`VibeTrunk/supabase`](https://github.com/VibeTrunk/supabase) (ADR-144). KUT keeps
 matching migration files only so its local stack and database tests reproduce
 the hosted schema. Do not run a hosted `supabase db push` from this repository.
 
@@ -33,34 +34,33 @@ Always, both tiers:
 1. Confirm the shared Supabase project and database branch in scope. KUT uses
    the `kut` schema and must not affect other VibeTrunk schemas.
 2. Matching reviewed migration files exist in **this** repo and in the
-   `VibeTrunk/supabase` catalogue (ADR-021); catalogue parity check passes.
-3. `npx supabase db push --dry-run` reviewed line by line.
+   `VibeTrunk/supabase` catalogue (ADR-021); the `catalogue-parity` CI job
+   passes.
+3. The workflow's plan (its `db push --dry-run` list) reviewed line by line.
 4. Local `npm run verify:fast && npm run test:db` passes. CI's `verify`
    workflow runs the rest on every PR (`build`, `test:e2e`, and `test:db`
    against a fresh local stack) — running `verify:full` locally per migration
    is not required.
-5. Explicit sign-off, then the real push from `VibeTrunk/supabase` only.
+5. The owner's approval of the workflow's apply job is the sign-off. The
+   order of the steps is in `docs/RELEASING.md`.
 
-After the push, check the pre/post `migration list --linked` counts and run
-the hosted smoke query, then update the "Latest hosted migration" line in
-`AGENTS.md` in the next PR. Only that one line changes in `AGENTS.md`, so the
+The workflow requires a backup under an hour old and checks that nothing is
+pending after the push. Then run the hosted smoke query and update the
+"Latest hosted migration" line in `AGENTS.md` in the next PR. Only that one line changes in `AGENTS.md`, so the
 file stays orientation rather than a changelog. The `VibeTrunk/supabase`
 catalogue is the migration history; there are no per-release records (ADR-140).
 
 Data-changing tier also requires, before the push:
 
-6. A **fresh** `scripts/backup-kut-hosted.ps1` run (not just the last
-   scheduled one), its timestamp recorded in `.private-backups/BACKUP_LOG.md`.
+6. Until the old local backup is retired (ADR-141), also a **fresh**
+   `scripts/backup-kut-hosted.ps1` run, its timestamp recorded in
+   `.private-backups/BACKUP_LOG.md`.
 7. Write the migration to be reversible in SQL where practical — add a column
    instead of mutating one, or snapshot pre-state into a scratch table in the
    same migration — so a bad outcome is a one-line rollback, not a restore.
 
-Additive tier relies on the most recent **scheduled** backup instead of a
-fresh one. Keep that cadence tight (see `docs/BACKUP.md` — at least weekly
-once members trade, ideally right before each session) so "most recent
-scheduled backup" is never stale. Residual risk accepted: an additive
-migration that breaks in a way a follow-up migration cannot cleanly fix would
-fall back to that scheduled backup, losing whatever happened since.
+Additive tier relies on the GitHub backup the workflow requires (under an hour
+old, ADR-141) and needs no local backup.
 
 The restore drill (`docs/BACKUP.md`) is **periodic, not per-migration** — run
 it before the first real invite, then roughly monthly or whenever the schema
@@ -78,11 +78,11 @@ would never report and would block every PR. The always-present `merge-gate`
 lets a docs-only pull request skip the expensive jobs; every main push runs full
 CI.
 
-The catalogue parity check compares this repo's migrations with a
-`VibeTrunk/supabase` checkout:
+The `catalogue-parity` CI job compares this repo's migrations with the
+catalogue's main. Locally, against a sibling checkout:
 
 ```powershell
-powershell -NoProfile -File scripts/test-catalogue-parity.ps1 -CentralRepository ..\supabase
+node scripts/policy/check-catalogue-parity.mjs --catalogue ..\supabase
 ```
 
 ## Preview deployment preflight
@@ -90,11 +90,8 @@ powershell -NoProfile -File scripts/test-catalogue-parity.ps1 -CentralRepository
 1. Run `npm run verify:full` locally with Docker running.
 2. Review `docs/SECURITY_REVIEW.md` and resolve or consciously accept the
    remaining local two-client concurrency checks (`npm run test:integration`).
-3. In the central migration repository only, link the intended hosted
-   Supabase project after confirming its project reference. Run the catalogue
-   parity check and `npx supabase db push --dry-run`; review every listed
-   migration. Do not run the real push without explicit approval and a fresh
-   backup.
+3. Hosted migrations go through the `apply-migrations` workflow
+   (`docs/RELEASING.md`); review every planned migration before approving.
 4. In Vercel, configure Preview and Production environment values separately:
    `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`,
    `SUPABASE_SERVICE_ROLE_KEY`, and `APP_URL`. The service-role key is server

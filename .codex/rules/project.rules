@@ -1,25 +1,27 @@
 # Mirror the routine command permissions in .claude/settings.json.
 
-# ADR-135: exact cleanup execution requires a runtime permission decision.
-# This is not owner consent and cannot activate an unavailable executor.
+# ADR-142: local Git state is removed only by tidy, which bundles and proves
+# every item first. Each apply is the owner's approval of the exact command;
+# tidy refuses --apply anywhere but first, so this prefix always matches it.
 prefix_rule(
-    pattern = ["node", "scripts/cleanup/execute-cleanup.mjs"],
+    pattern = ["node", "scripts/tidy.mjs", "--apply"],
     decision = "prompt",
-    justification = "Review the exact named plan, per-type explanations and independent recovery; no generic npm run permission applies.",
-    match = ["node scripts/cleanup/execute-cleanup.mjs plan.json"],
+    justification = "Removes local branches, worktrees, stashes or remote branches after archiving them; the owner approves the exact selection and SHAs.",
+    match = ["node scripts/tidy.mjs --apply --branch old=0123456789abcdef0123456789abcdef01234567"],
+    not_match = ["node scripts/tidy.mjs --branch old"],
 )
 
 prefix_rule(
     pattern = ["git", "worktree", "remove"],
     decision = "forbidden",
-    justification = "Direct removal has no sealed full-operation contract; real cleanup remains inactive.",
+    justification = "Direct removal skips the archive; use node scripts/tidy.mjs.",
     match = ["git worktree remove old", "git worktree remove --force old"],
 )
 
 prefix_rule(
     pattern = ["git", "worktree", "prune"],
     decision = "forbidden",
-    justification = "Broad administration pruning is outside named cleanup scope.",
+    justification = "Broad pruning skips the archive; use node scripts/tidy.mjs.",
     match = ["git worktree prune"],
 )
 

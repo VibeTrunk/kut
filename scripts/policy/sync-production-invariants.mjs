@@ -6,7 +6,8 @@ import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const sourcePath = path.join(root, "policy", "PRODUCTION_INVARIANTS.md");
-const targets = [path.join(root, "AGENTS.md"), path.join(root, "CLAUDE.md")];
+// CLAUDE.md imports AGENTS.md, so one copy reaches both agents.
+const targets = [path.join(root, "AGENTS.md")];
 const begin = "<!-- BEGIN:KUT-PRODUCTION-INVARIANTS -->";
 const end = "<!-- END:KUT-PRODUCTION-INVARIANTS -->";
 
@@ -45,4 +46,4 @@ if (failed) {
   console.error("Run: npm run policy:sync");
   process.exit(1);
 }
-if (!write) console.log("Production invariant copies are byte-identical.");
+if (!write) console.log("The production-invariants block matches its source.");

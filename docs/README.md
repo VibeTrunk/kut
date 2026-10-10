@@ -7,10 +7,9 @@ need for the area you are changing.
 | --------------------------------------------- | -------------------------------------------------------------------------------------------- |
 | `PRODUCT.md`                                  | Current behaviour per area: the rules, their Part L items, where they live. Start here.       |
 | `INVARIANTS.md`                               | Part L: the 28 invariants that must never be violated.                                        |
-| `decisions.md`                                | Current ADRs (ADR-140 onward).                                                                |
+| `decisions.md`                                | Current ADRs (ADR-140 onward), including deletion tiers and `tidy` (ADR-142).                 |
 | `RELEASING.md`                                | Merge-to-deploy flow, the check afterwards, and rollback (ADR-140).                           |
 | `OPERATIONS.md`, `BACKUP.md`                  | Runbooks: hosted migrations (ADR-032), alpha ops, encrypted backups and restore.              |
-| `CLEANUP.md`                                  | Owner-approved file removal and the guarded worktree workflow (ADR-135).                      |
 | `SECURITY_REVIEW.md`                          | The MVP-era security review. A reference, not a runbook.                                      |
 | `RATING_BALANCE_REVIEW.md`                    | Point-in-time analysis behind the ADR-063 rating balance.                                     |
 | `design/`, and `../design/README.md`          | Rendered mockups and the design packages' decisions.                                          |
@@ -27,3 +26,5 @@ old `ADR-NNN` mentioned anywhere resolves there.
 
 Root docs: `AGENTS.md` (canonical agent instructions), `CLAUDE.md` (imports
 it), `README.md` (intro and local development), `SECURITY.md` (disclosure).
+`npm run policy:check` keeps `PRODUCT.md`, `decisions.md` and the agent start-up
+files within their size limits (ADR-142).

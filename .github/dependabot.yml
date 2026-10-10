@@ -8,6 +8,11 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    # Version updates wait 5 days after a release, so a compromised version
+    # is usually pulled before it reaches a PR (ADR-142). Security updates
+    # are exempt; manual installs are reviewed in the PR diff.
+    cooldown:
+      default-days: 5
     # Routine churn arrives as one PR a week; majors still come separately so
     # a breaking Next / React / Supabase bump gets its own review and its own
     # revertable commit on main.

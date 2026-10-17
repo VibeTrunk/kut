@@ -94,9 +94,11 @@ select throws_ok(
   '42501', 'admin access required', 'a member cannot start injury mode');
 
 select set_config('request.jwt.claim.sub', '00000082-0000-4000-8000-0000000000a1', true);
-select throws_ok(
+-- ADR-165: an unlinked Player can be injured too (lifecycle protection only:
+-- no message, no check-in; academy_lifecycle.test.sql covers it).
+select lives_ok(
   $$ select kut.admin_start_injury('00000082-0000-4000-8000-000000000103', current_date - 1, null) $$,
-  'P0001', 'player has no active account', 'a player without an account cannot be put in injury mode');
+  'a player without an account can be put in injury mode (ADR-165)');
 select throws_ok(
   $$ select kut.admin_start_injury('00000082-0000-4000-8000-000000000104', current_date - 1, null) $$,
   '42501', 'you cannot put your own player in injury mode', 'an admin cannot switch the stipend on for themselves');

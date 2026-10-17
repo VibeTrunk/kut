@@ -17,9 +17,9 @@ select has_column('kut', 'active_market_listings', 'discard_value',
 select is(
   (select column_name::text from information_schema.columns
    where table_schema = 'kut' and table_name = 'active_market_listings'
-   order by ordinal_position desc limit 1),
+   order by ordinal_position desc limit 1 offset 1),
   'discard_value',
-  'discard_value is the last column, so every existing column keeps its place');
+  'discard_value comes after every earlier column (only ADR-165''s player_stage follows), so each keeps its place');
 select is(
   (select reloptions from pg_class where oid = 'kut.active_market_listings'::regclass),
   array['security_invoker=false', 'security_barrier=true'],

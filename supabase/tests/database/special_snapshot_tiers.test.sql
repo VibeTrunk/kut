@@ -6,13 +6,13 @@ set local search_path to extensions, kut, public;
 select plan(51);
 
 -- Pin the full column contracts, intentional modes, and all read grants.
-select columns_are('kut','my_collection_cards',array['card_id','edition_id','source','acquired_at','edition_title','edition_type','is_live','player_id','player_slug','display_name','archetype','ovr','pac','sho','pas','dri','def','phy','rarity_tier','discard_value','active_listing_id','active_listing_price','active_listing_expires_at','photo_path','held_by_offer_id']);
-select columns_are('kut','active_market_listings',array['listing_id','price','listed_at','expires_at','card_id','edition_id','display_name','archetype','ovr','pac','sho','pas','dri','def','phy','rarity_tier','seller_display_name','photo_path','seller_id','player_id','is_live','discard_value']);
+select columns_are('kut','my_collection_cards',array['card_id','edition_id','source','acquired_at','edition_title','edition_type','is_live','player_id','player_slug','display_name','archetype','ovr','pac','sho','pas','dri','def','phy','rarity_tier','discard_value','active_listing_id','active_listing_price','active_listing_expires_at','photo_path','held_by_offer_id','player_stage']);
+select columns_are('kut','active_market_listings',array['listing_id','price','listed_at','expires_at','card_id','edition_id','display_name','archetype','ovr','pac','sho','pas','dri','def','phy','rarity_tier','seller_display_name','photo_path','seller_id','player_id','is_live','discard_value','player_stage']);
 select columns_are('kut','my_pack_opening_results',array['opening_id','opened_at','price_paid','pack_slug','pack_title','slot','card_id','display_name','archetype','ovr','pac','sho','pas','dri','def','phy','rarity_tier','photo_path','player_id','is_live','min_tier','opened_tier','opened_ovr','floor_draw']);
 select columns_are('kut','my_trade_offers',array['offer_id','listing_id','status','offered_coins','created_at','expires_at','resolved_at','coins_to_seller','coins_burned','proposer_id','seller_id','is_outgoing','proposer_name','seller_name','listing_card_name','listing_card_slug','listing_card_photo_path','listing_price','listing_status','offered_card_count','offered_cards']);
 -- columns_are pins names; ordinal arrays additionally pin their order.
 select is((select array_agg(attname::text order by attnum) from pg_attribute where attrelid='kut.active_market_listings'::regclass and attnum>0),
- array['listing_id','price','listed_at','expires_at','card_id','edition_id','display_name','archetype','ovr','pac','sho','pas','dri','def','phy','rarity_tier','seller_display_name','photo_path','seller_id','player_id','is_live','discard_value'], 'market columns stay in order');
+ array['listing_id','price','listed_at','expires_at','card_id','edition_id','display_name','archetype','ovr','pac','sho','pas','dri','def','phy','rarity_tier','seller_display_name','photo_path','seller_id','player_id','is_live','discard_value','player_stage'], 'market columns stay in order');
 select is(c.reloptions, array['security_invoker=' || v.invoker,'security_barrier=true'], v.name || ' keeps its security mode')
 from (values ('my_collection_cards','true'),('active_market_listings','false'),('my_pack_opening_results','true'),('my_trade_offers','false')) v(name,invoker)
 join pg_class c on c.oid=('kut.' || v.name)::regclass;

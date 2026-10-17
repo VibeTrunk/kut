@@ -256,7 +256,7 @@ Folded 2026-10-17 once #223 closed (design `design/pack-tiers/`, open reviews
 
 ## ADR-165 — Academy: Talent, First Team and Retired
 
-Date: 2026-10-17 (#246). Accepted, not yet live: S2 adds the schema, S4 go-live.
+Date: 2026-10-17 (#246). Accepted, not yet live: S2 adds the schema (20261024000000), S4 go-live.
 Rules: [#246 comment](https://github.com/VibeTrunk/kut/issues/246#issuecomment-6238677630).
 
 - Stages Talent, First Team, Retired; At risk is a derived warning. A counted
@@ -270,7 +270,7 @@ Rules: [#246 comment](https://github.com/VibeTrunk/kut/issues/246#issuecomment-6
   picker) and wear a "Retired" stamp on current card surfaces, not snapshots.
 - Go-live is activation; absence counts from it. Existing Players become
   founding First Team in the migration. Named trialists are names only.
-- Part L drafts, added to `docs/INVARIANTS.md` in S2: (1) promotion is
+- Part L 29-31 in `docs/INVARIANTS.md` (S2): (1) promotion is
   server-authoritative, from published attendance plus audited credits or an
   audited admin promotion, permanent, and re-evaluation never duplicates
   events or messages; (2) a lifecycle change never mints, burns, moves or
